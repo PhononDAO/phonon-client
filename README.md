@@ -1,15 +1,15 @@
 # Use Cases
 
-# Make a Payment
+### Make a Payment
 For example, buy a cup of coffee using phonons. Simple, one-time transfer of specific amount of phonons from one card to another.
 
-# Micropayments
+### Micropayments
 Make a series of streaming micropayments. Triggered over time or by a specific event?
 
-# Atomic Swaps
+### Atomic Swaps
 Exchange phonons between two parties at an agreed upon exchange rate
 
-# Changemaker
+### Changemaker
 Make change with a "changemaker" entity, who possesses various denominations of change, and allows users to swap phonons
 for larger or smaller denominations at their convenience, charging a nominal fee.
 Make the change you want to see in the world.

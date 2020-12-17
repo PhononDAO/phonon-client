@@ -12,11 +12,6 @@ type SafecardRAPDUStep1 struct {
 	safecardSig  []byte
 }
 
-type SafecardRAPDUStep2 struct {
-	pairingIdx int
-	salt       []byte
-}
-
 type SafecardRAPDUOpenSecureChannel struct {
 	salt          []byte
 	aesInitVector []byte

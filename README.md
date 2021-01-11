@@ -64,3 +64,4 @@ swap() //atomically swapping different asset types
 autopay() //regularly send a specified amount on an interval
 makeChange() //Send in two directions based on change calculation
 ```
+

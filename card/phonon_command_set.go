@@ -29,6 +29,7 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 
 func (cs *PhononCommandSet) Select() error {
 	cmd := globalplatform.NewCommandSelect(phononAID)
+	cmd.SetLe(0)
 	cmdBytes, _ := cmd.Serialize()
 	log.Info("select APDU: ", hex.Dump(cmdBytes))
 	resp, err := cs.c.Send(cmd)

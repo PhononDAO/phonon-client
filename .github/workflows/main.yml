@@ -6,9 +6,9 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ master ]
+    branches: [ master, develop, test ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, develop, test ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -39,11 +39,13 @@ jobs:
       - name: Build Windows
         run: make windows-build
       
-      - name: Bump version and push tag
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v5.1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag Version  
+        id: version  
+        uses: juliansangillo/tag-version@v1  
+        with:  
+          production-branch: master  
+          test-branch: test  
+          dev-branch: develop  
           
 
       - name: Create Release
@@ -52,11 +54,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.tag_version.outputs.new_tag }}
-          release_name: Release ${{ steps.tag_version.outputs.new_tag }}
-          body: ${{ steps.tag_version.outputs.changelog }}
+          tag_name: ${{ steps.version.outputs.revision }}
+          release_name: Release ${{ steps.version.outputs.revision }}
           draft: false
-          prerelease: true
+          prerelease: ${{ steps.version.outputs.is-prerelease }} 
       - name: Upload Linux Release Asset
         id: upload-linux-release-asset 
         uses: actions/upload-release-asset@v1

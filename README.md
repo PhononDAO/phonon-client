@@ -8,6 +8,7 @@ All commits to master will automatically create a tag with a bumped patch versio
 Commit with #minor or #major to bump minor and major version numbers rather than the patch number. Commits that reference an issue with the "enhancement" label will also automatically bump the minor version.
 
 
+
 # Use Cases
 Proposed use cases for the phonon network, which the client API should ultimately be able to support
 

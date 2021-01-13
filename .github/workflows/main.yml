@@ -39,14 +39,12 @@ jobs:
       - name: Build Windows
         run: make windows-build
       
-      - name: Tag Version  
-        id: version  
-        uses: juliansangillo/tag-version@v1  
-        with:  
-          production-branch: master  
-          test-branch: test  
-          dev-branch: develop  
-          
+      - name: Tag Version
+        id: tag-version
+        uses: phish108/autotag-action@1.1.32
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN}}
+          with-v: "true"
 
       - name: Create Release
         id: create_release
@@ -54,10 +52,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.version.outputs.revision }}
-          release_name: Release ${{ steps.version.outputs.revision }}
+          tag_name: ${{ steps.tag-version.outputs.new-tag }}
+          release_name: Release ${{ steps.tag-version.outputs.new-tag }}
           draft: false
           prerelease: ${{ steps.version.outputs.is-prerelease }} 
+          
       - name: Upload Linux Release Asset
         id: upload-linux-release-asset 
         uses: actions/upload-release-asset@v1

@@ -55,7 +55,7 @@ jobs:
           tag_name: ${{ steps.tag-version.outputs.new-tag }}
           release_name: Release ${{ steps.tag-version.outputs.new-tag }}
           draft: false
-          prerelease: ${{ steps.version.outputs.is-prerelease }} 
+          prerelease: true
           
       - name: Upload Linux Release Asset
         id: upload-linux-release-asset 

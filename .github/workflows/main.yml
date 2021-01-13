@@ -39,14 +39,22 @@ jobs:
       - name: Build Windows
         run: make windows-build
       
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v5.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          release_name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.outputs.changelog }}
           draft: false
           prerelease: true
       - name: Upload Linux Release Asset

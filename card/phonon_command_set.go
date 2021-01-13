@@ -36,17 +36,6 @@ func (cs *PhononCommandSet) Select() error {
 		log.Error("could not send select command. err: ", err)
 		return err
 	}
-	// respBytes := resp.Data
-	// log.Info("response data bytes: ", hex.Dump(respBytes))
-
-	// _, cardPubKey, err := gridplus.ParseSelectResponse(resp.Data)
-	// if err != nil {
-	// 	return err
-	// }
-	// err = cs.sc.GenerateSecret(cardPubKey)
-	// if err != nil {
-	// 	return err
-	// }
 
 	return nil
 }

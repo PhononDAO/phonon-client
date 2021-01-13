@@ -5,7 +5,6 @@ import (
 
 	"github.com/GridPlus/keycard-go"
 	"github.com/GridPlus/keycard-go/globalplatform"
-	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/keycard-go/types"
 	log "github.com/sirupsen/logrus"
 )
@@ -29,22 +28,12 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 
 func (cs *PhononCommandSet) Select() error {
 	cmd := globalplatform.NewCommandSelect(phononAID)
+	cmd.SetLe(0)
 	cmdBytes, _ := cmd.Serialize()
 	log.Info("select APDU: ", hex.Dump(cmdBytes))
-	resp, err := cs.c.Send(cmd)
+	_, err := cs.c.Send(cmd)
 	if err != nil {
 		log.Error("could not send select command. err: ", err)
-		return err
-	}
-	respBytes := resp.Data
-	log.Info("response data bytes: ", hex.Dump(respBytes))
-
-	_, cardPubKey, err := gridplus.ParseSelectResponse(resp.Data)
-	if err != nil {
-		return err
-	}
-	err = cs.sc.GenerateSecret(cardPubKey)
-	if err != nil {
 		return err
 	}
 

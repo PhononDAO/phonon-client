@@ -15,13 +15,13 @@ func Connect() (*PhononCommandSet, error) {
 	ctx, err := scard.EstablishContext()
 	if err != nil {
 		fmt.Println(err)
-		return &PhononCommandSet{}, err
+		return nil, err
 	}
 
 	readers, err := ctx.ListReaders()
 	if err != nil {
 		fmt.Println(err)
-		return &PhononCommandSet{}, err
+		return nil, err
 	}
 
 	for i, reader := range readers {

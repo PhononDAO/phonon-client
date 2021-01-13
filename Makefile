@@ -1,5 +1,5 @@
 run:
-	go run main/main.go
+	go run main/phonon.go
 
 build:
 	go build main/phonon.go

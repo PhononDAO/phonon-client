@@ -44,6 +44,8 @@ jobs:
         with:
           # tag name
           tag_name: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
       - name: Create Release
         id: create_release

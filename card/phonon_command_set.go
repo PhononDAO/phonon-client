@@ -170,12 +170,17 @@ func (cs *PhononCommandSet) SetPairingInfo(key []byte, index int) {
 
 func (cs *PhononCommandSet) Init(pin string) error {
 	log.Debug("sending INIT apdu")
+	secrets, err := keycard.GenerateSecrets()
+	if err != nil {
+		log.Error("unable to generate secrets: ", err)
+	}
+
 	//Reusing keycard Secrets implementation with PUK removed for now.
-	data, err := crypto.OneShotEncrypt(cs.sc.RawPublicKey(), cs.sc.Secret(), []byte(pin))
+	data, err := crypto.OneShotEncrypt(cs.sc.RawPublicKey(), cs.sc.Secret(), append([]byte(pin), secrets.PairingToken()...))
 	if err != nil {
 		return err
 	}
-
+	log.Debug("len of data: ", len(data))
 	init := keycard.NewCommandInit(data)
 	resp, err := cs.c.Send(init)
 

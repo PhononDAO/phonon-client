@@ -39,6 +39,12 @@ jobs:
       - name: Build Windows
         run: make windows-build
 
+      - name: Delete Current Release
+        uses: dev-drprasad/delete-tag-and-release@v0.1.2
+        with:
+          # tag name
+          tag_name: latest
+    
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

@@ -23,7 +23,7 @@ var phononAID = []byte{0xA0, 0x00, 0x00, 0x08, 0x20, 0x00, 0x03, 0x01}
 
 type PhononCommandSet struct {
 	c               types.Channel
-	sc              *keycard.SecureChannel
+	sc              *SecureChannel
 	ApplicationInfo *types.ApplicationInfo //TODO: Determine if needed
 	PairingInfo     *types.PairingInfo
 }
@@ -31,7 +31,7 @@ type PhononCommandSet struct {
 func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 	return &PhononCommandSet{
 		c:               c,
-		sc:              keycard.NewSecureChannel(c),
+		sc:              NewSecureChannel(c),
 		ApplicationInfo: &types.ApplicationInfo{},
 	}
 }
@@ -56,8 +56,9 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, err
 		return nil, nil, err
 	}
 
+	//TODO: Use random version GenerateSecret in production
 	//Generate secure channel secrets using card's public key
-	secretsErr := cs.sc.GenerateSecret(cardPubKey)
+	secretsErr := cs.sc.GenerateStaticSecret(cardPubKey)
 	if secretsErr != nil {
 		log.Error("could not generate secure channel secrets. err: ", err)
 		return nil, nil, secretsErr
@@ -166,6 +167,46 @@ func (cs *PhononCommandSet) SetPairingInfo(key []byte, index int) {
 		Key:   key,
 		Index: index,
 	}
+}
+
+func (cs *PhononCommandSet) Unpair(index uint8) error {
+	cmd := keycard.NewCommandUnpair(index)
+	resp, err := cs.sc.Send(cmd)
+	return cs.checkOK(resp, err)
+}
+
+func (cs *PhononCommandSet) OpenSecureChannel() error {
+	if cs.ApplicationInfo == nil {
+		return errors.New("cannot open secure channel without setting PairingInfo")
+	}
+
+	cmd := keycard.NewCommandOpenSecureChannel(uint8(cs.PairingInfo.Index), cs.sc.RawPublicKey())
+	resp, err := cs.c.Send(cmd)
+	if err = cs.checkOK(resp, err); err != nil {
+		return err
+	}
+
+	encKey, macKey, iv := crypto.DeriveSessionKeys(cs.sc.Secret(), cs.PairingInfo.Key, resp.Data)
+	cs.sc.Init(iv, encKey, macKey)
+
+	err = cs.mutualAuthenticate()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (cs *PhononCommandSet) mutualAuthenticate() error {
+	data := make([]byte, 32)
+	if _, err := rand.Read(data); err != nil {
+		return err
+	}
+
+	cmd := keycard.NewCommandMutuallyAuthenticate(data)
+	resp, err := cs.sc.Send(cmd)
+
+	return cs.checkOK(resp, err)
 }
 
 func (cs *PhononCommandSet) Init(pin string) error {

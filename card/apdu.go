@@ -15,7 +15,7 @@ func ParseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, er
 	switch resp[0] {
 	//Initialized
 	case 0xA4:
-		log.Debug("card wallet initialized")
+		log.Debug("pin initialized")
 		//If length of length is set this is a long format TLV response
 		if len(resp) < 88 {
 			log.Error("response should have been at least length 86 bytes, was length: ", len(resp))
@@ -29,7 +29,7 @@ func ParseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, er
 			cardPubKey = resp[23:88]
 		}
 	case 0x80:
-		log.Debug("card wallet uninitialized")
+		log.Debug("pin uninitialized")
 		length := int(resp[1])
 		cardPubKey = resp[2 : 2+length]
 		return nil, cardPubKey, ErrCardUninitialized

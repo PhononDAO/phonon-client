@@ -58,9 +58,9 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, err
 
 	//TODO: Use random version GenerateSecret in production
 	//Generate secure channel secrets using card's public key
-	secretsErr := cs.sc.GenerateStaticSecret(cardPubKey)
+	secretsErr := cs.sc.GenerateSecret(cardPubKey)
 	if secretsErr != nil {
-		log.Error("could not generate secure channel secrets. err: ", err)
+		log.Error("could not generate secure channel secrets. err: ", secretsErr)
 		return nil, nil, secretsErr
 	}
 

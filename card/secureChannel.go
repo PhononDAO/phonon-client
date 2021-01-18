@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"errors"
+	"strings"
 
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/crypto"
@@ -50,8 +51,13 @@ func (sc *SecureChannel) GenerateSecret(cardPubKeyData []byte) error {
 }
 
 func (sc *SecureChannel) GenerateStaticSecret(cardPubKeyData []byte) error {
-
-	key, err := ecdsa.GenerateKey(ethcrypto.S256(), bytes.NewReader([]byte{0xAA}))
+	//Generate a static 40 byte value suitable for generating a predictable key
+	var seed string
+	for i := 0; i < 40; i++ {
+		seed += "A"
+	}
+	staticSeed := strings.NewReader(seed)
+	key, err := ecdsa.GenerateKey(ethcrypto.S256(), staticSeed)
 	if err != nil {
 		return err
 	}

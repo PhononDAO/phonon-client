@@ -3,8 +3,12 @@ package card
 import (
 	"errors"
 
+	"github.com/GridPlus/keycard-go/apdu"
+	"github.com/GridPlus/keycard-go/globalplatform"
 	log "github.com/sirupsen/logrus"
 )
+
+const InsIdentifyCard = 0x14
 
 var ErrCardUninitialized = errors.New("card uninitialized")
 
@@ -12,6 +16,7 @@ func ParseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, er
 	if len(resp) == 0 {
 		return nil, nil, errors.New("received nil response")
 	}
+	log.Debug("length of select response data: ", len(resp))
 	switch resp[0] {
 	//Initialized
 	case 0xA4:
@@ -21,13 +26,14 @@ func ParseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, er
 			log.Error("response should have been at least length 86 bytes, was length: ", len(resp))
 			return nil, nil, errors.New("invalid response length")
 		}
-		if resp[3] == 0x81 {
-			instanceUID = resp[6:22]
-			cardPubKey = resp[24:89]
-		} else {
-			instanceUID = resp[5:21]
-			cardPubKey = resp[23:88]
-		}
+		instanceUID = resp[4:20]
+		cardPubKey = resp[22:87]
+		//Think this response pattern only existed when a safecard wallet was initialized
+		// if resp[3] == 0x81 {
+		// 	instanceUID = resp[6:22]
+		// 	cardPubKey = resp[24:89]
+		// } else {
+		//This would be the existing parsing above
 	case 0x80:
 		log.Debug("pin uninitialized")
 		length := int(resp[1])
@@ -36,4 +42,29 @@ func ParseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, er
 	}
 
 	return instanceUID, cardPubKey, nil
+}
+
+//NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU
+//As a response it receives the card's public key and and a signature
+//on the salt to prove posession of the private key
+func NewCommandIdentifyCard(nonce []byte) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaGp,
+		InsIdentifyCard,
+		0,
+		0,
+		nonce,
+	)
+}
+
+func ParseIdentifyCardResponse(resp []byte) (cardPubKey []byte, sig []byte, err error) {
+	correctLength := 67
+	if len(resp) < 67 {
+		log.Errorf("identify card response invalid length %v should be %v ", len(resp), correctLength)
+		return nil, nil, err
+	}
+	cardPubKey = resp[2:67]
+	sig = resp[67:]
+
+	return cardPubKey, sig, nil
 }

@@ -246,3 +246,31 @@ func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedRespo
 
 	return apdu.NewErrBadResponse(resp.Sw, "unexpected response")
 }
+
+func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardSig []byte, err error) {
+	cmd := NewCommandIdentifyCard(nonce)
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		log.Error("could not send identify card command", err)
+		return nil, nil, err
+	}
+	log.Debug("identify card resp:\n", hex.Dump(resp.Data))
+
+	cardPubKey, cardSig, err = ParseIdentifyCardResponse(resp.Data)
+	if err != nil {
+		log.Error("could not parse identify card response: ", err)
+		return nil, nil, err
+	}
+
+	return cardPubKey, cardSig, nil
+}
+
+// func (cs *PhononCommandSet) LoadCert(cert []byte) error {
+// 	cmd := NewCommandLoadCert(cert)
+// 	resp, err := cs.c.Send(cmd)
+// 	if err != nil {
+// 		log.Error("could not load certificate ")
+// 		return err
+// 	}
+
+// }

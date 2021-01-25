@@ -10,6 +10,7 @@ require (
 	github.com/ebfe/scard v0.0.0-20190212122703-c3d1b1916a95
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/pingcap/log v0.0.0-20201112100606-8f1e84a3abc8
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1

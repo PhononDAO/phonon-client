@@ -8,7 +8,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const InsIdentifyCard = 0x14
+const (
+	InsIdentifyCard = 0x14
+	InsVerifyPIN    = 0x20
+	InsChangePIN    = 0x21
+	InsCreatePhonon = 0x30
+)
 
 var ErrCardUninitialized = errors.New("card uninitialized")
 
@@ -67,4 +72,34 @@ func ParseIdentifyCardResponse(resp []byte) (cardPubKey []byte, sig []byte, err 
 	sig = resp[67:]
 
 	return cardPubKey, sig, nil
+}
+
+func NewCommandVerifyPIN(pin string) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaGp,
+		InsVerifyPIN,
+		0,
+		0,
+		[]byte(pin),
+	)
+}
+
+func NewCommandChangePIN(pin string) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaGp,
+		InsChangePIN,
+		0,
+		0,
+		[]byte(pin),
+	)
+}
+
+func NewCommandCreatePhonon() *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaISO7816,
+		InsCreatePhonon,
+		0x00,
+		0x00,
+		nil,
+	)
 }

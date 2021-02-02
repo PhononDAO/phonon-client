@@ -9,6 +9,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v2 v2.0.0
 	github.com/ebfe/scard v0.0.0-20190212122703-c3d1b1916a95
 	github.com/ethereum/go-ethereum v1.9.25
+	github.com/manifoldco/promptui v0.8.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pingcap/log v0.0.0-20201112100606-8f1e84a3abc8
 	github.com/sirupsen/logrus v1.7.0

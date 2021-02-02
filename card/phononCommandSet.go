@@ -58,7 +58,7 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, err
 
 	//TODO: Use random version GenerateSecret in production
 	//Generate secure channel secrets using card's public key
-	secretsErr := cs.sc.GenerateStaticSecret(cardPubKey)
+	secretsErr := cs.sc.GenerateSecret(cardPubKey)
 	if secretsErr != nil {
 		log.Error("could not generate secure channel secrets. err: ", secretsErr)
 		return nil, nil, secretsErr
@@ -139,6 +139,7 @@ func (cs *PhononCommandSet) Pair() error {
 
 	cryptogram := sha256.Sum256(append(pairStep1Resp.SafecardSalt, secretHash...))
 
+	log.Debug("sending pair step 2 cmd")
 	cmd = gridplus.NewAPDUPairStep2(cryptogram[0:])
 	resp, err = cs.c.Send(cmd)
 	if err != nil {
@@ -159,6 +160,7 @@ func (cs *PhononCommandSet) Pair() error {
 	//Store pairing info for use in OpenSecureChannel
 	cs.SetPairingInfo(pairingKey[0:], pairStep2Resp.PairingIdx)
 
+	log.Debug("pairing succeeded")
 	return nil
 }
 
@@ -228,7 +230,6 @@ func (cs *PhononCommandSet) Init(pin string) error {
 	return cs.checkOK(resp, err)
 }
 
-//TODO: decide if this is the best way to handle this
 func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedResponses ...uint16) error {
 	if err != nil {
 		return err
@@ -265,12 +266,15 @@ func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardS
 	return cardPubKey, cardSig, nil
 }
 
-// func (cs *PhononCommandSet) LoadCert(cert []byte) error {
-// 	cmd := NewCommandLoadCert(cert)
-// 	resp, err := cs.c.Send(cmd)
-// 	if err != nil {
-// 		log.Error("could not load certificate ")
-// 		return err
-// 	}
+func (cs *PhononCommandSet) VerifyPIN(pin string) error {
+	cmd := NewCommandVerifyPIN(pin)
+	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
+	return cs.checkOK(resp, err)
+}
 
-// }
+func (cs *PhononCommandSet) ChangePIN(pin string) error {
+	cmd := NewCommandChangePIN(pin)
+	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
+
+	return cs.checkOK(resp, err)
+}

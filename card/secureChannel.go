@@ -134,7 +134,7 @@ func (sc *SecureChannel) Send(cmd *apdu.Command) (*apdu.Response, error) {
 		return nil, ErrInvalidResponseMAC
 	}
 
-	log.Debug("apdu response decrypted", "hex", hexutils.BytesToHexWithSpaces(plainData))
+	log.Debug("apdu response decrypted hex: ", hexutils.BytesToHexWithSpaces(plainData))
 
 	return apdu.ParseResponse(plainData)
 }

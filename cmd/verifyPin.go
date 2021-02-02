@@ -19,12 +19,13 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/util"
 	"github.com/spf13/cobra"
 )
 
-// openSecureChannelCmd represents the openSecureChannel command
-var openSecureChannelCmd = &cobra.Command{
-	Use:   "openSecureChannel",
+// verifyPinCmd represents the verifyPin command
+var verifyPinCmd = &cobra.Command{
+	Use:   "verifyPin",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -33,43 +34,37 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		openSecureChannel()
+		verifyPin()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(openSecureChannelCmd)
+	rootCmd.AddCommand(verifyPinCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// openSecureChannelCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// verifyPinCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// openSecureChannelCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// verifyPinCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func openSecureChannel() {
-	cs, err := card.Connect()
+func verifyPin() {
+	cs, err := card.OpenSecureConnection()
 	if err != nil {
-		fmt.Println("could not connect to card: ", err)
-	}
-	_, _, err = cs.Select()
-	if err != nil {
-		fmt.Println("could not select phonon applet: ", err)
 		return
 	}
-	err = cs.Pair()
+	pin, err := util.PinPrompt()
 	if err != nil {
-		fmt.Println("could not pair: ", err)
+		fmt.Println("error receiving pin")
 		return
 	}
-	err = cs.OpenSecureChannel()
+	err = cs.VerifyPIN(pin)
 	if err != nil {
-		fmt.Println("could not open secure channel: ", err)
+		fmt.Println("unable to verify pin: ", err)
 		return
 	}
-	fmt.Println("secure channel opened without error")
 }

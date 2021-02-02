@@ -52,3 +52,27 @@ func Connect() (*PhononCommandSet, error) {
 	}
 	return nil, errors.New("no card reader found")
 }
+
+//Connects and Opens a Secure Connection with a card
+func OpenSecureConnection() (*PhononCommandSet, error) {
+	cs, err := Connect()
+	if err != nil {
+		fmt.Println("could not connect to card: ", err)
+	}
+	_, _, err = cs.Select()
+	if err != nil {
+		fmt.Println("could not select phonon applet: ", err)
+		return nil, err
+	}
+	err = cs.Pair()
+	if err != nil {
+		fmt.Println("could not pair: ", err)
+		return nil, err
+	}
+	err = cs.OpenSecureChannel()
+	if err != nil {
+		fmt.Println("could not open secure channel: ", err)
+		return nil, err
+	}
+	return cs, nil
+}

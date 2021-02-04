@@ -278,3 +278,20 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 
 	return cs.checkOK(resp, err)
 }
+
+func (cs *PhononCommandSet) CreatePhonon() (keyIndex int, pubKey *ecdsa.PublicKey, err error) {
+	cmd := NewCommandCreatePhonon()
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		log.Error("create phonon command failed: ", err)
+		return 0, nil, err
+	}
+	if resp.Sw == StatusPhononTableFull {
+		return 0, nil, ErrPhononTableFull
+	}
+	keyIndex, pubKey, err = ParseCreatePhononResponse(resp.Data)
+	if err != nil {
+		return 0, nil, err
+	}
+	return keyIndex, pubKey, nil
+}

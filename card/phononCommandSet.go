@@ -1,10 +1,12 @@
 package card
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/asn1"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"math/big"
@@ -15,6 +17,7 @@ import (
 	"github.com/GridPlus/keycard-go/globalplatform"
 	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/keycard-go/types"
+	"github.com/GridPlus/phonon-client/chain"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
@@ -268,20 +271,20 @@ func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardS
 
 func (cs *PhononCommandSet) VerifyPIN(pin string) error {
 	cmd := NewCommandVerifyPIN(pin)
-	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
+	resp, err := cs.sc.Send(cmd)
 	return cs.checkOK(resp, err)
 }
 
 func (cs *PhononCommandSet) ChangePIN(pin string) error {
 	cmd := NewCommandChangePIN(pin)
-	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
+	resp, err := cs.sc.Send(cmd)
 
 	return cs.checkOK(resp, err)
 }
 
 func (cs *PhononCommandSet) CreatePhonon() (keyIndex int, pubKey *ecdsa.PublicKey, err error) {
 	cmd := NewCommandCreatePhonon()
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.c.Send(cmd) //temp normal channel for testing
 	if err != nil {
 		log.Error("create phonon command failed: ", err)
 		return 0, nil, err
@@ -294,4 +297,32 @@ func (cs *PhononCommandSet) CreatePhonon() (keyIndex int, pubKey *ecdsa.PublicKe
 		return 0, nil, err
 	}
 	return keyIndex, pubKey, nil
+}
+
+func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType chain.CurrencyType, value float32) error {
+	keyIndexBytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(keyIndexBytes, keyIndex)
+
+	currencyBytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(currencyBytes, uint16(currencyType))
+
+	var valueBytes bytes.Buffer
+	err := binary.Write(&valueBytes, binary.BigEndian, value)
+	if err != nil {
+		log.Error("unable to write float value as bytes: ", err)
+		return err
+	}
+	log.Debug("length of valueBytes: ", valueBytes.Len())
+
+	data := append(keyIndexBytes, currencyBytes...)
+	data = append(data, valueBytes.Bytes()...)
+
+	cmd := NewCommandSetDescriptor(data)
+	resp, err := cs.c.Send(cmd) //temp normal channel for testing
+	if err != nil {
+		log.Error("set descriptor command failed: ", err)
+		return err
+	}
+
+	return cs.checkOK(resp, err)
 }

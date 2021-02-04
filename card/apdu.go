@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	InsIdentifyCard = 0x14
-	InsVerifyPIN    = 0x20
-	InsChangePIN    = 0x21
-	InsCreatePhonon = 0x30
+	InsIdentifyCard  = 0x14
+	InsVerifyPIN     = 0x20
+	InsChangePIN     = 0x21
+	InsCreatePhonon  = 0x30
+	InsSetDescriptor = 0x31
 
 	StatusPhononTableFull = 0x6A84
 )
@@ -111,6 +112,7 @@ func NewCommandCreatePhonon() *apdu.Command {
 	)
 }
 
+//TODO: implement with TLV encoding, fix for uint16 keyIndex return value
 func ParseCreatePhononResponse(resp []byte) (keyIndex int, pubKey *ecdsa.PublicKey, err error) {
 	log.Debug("create phonon response length: ", len(resp))
 	keyIndex = int(resp[4])
@@ -121,4 +123,14 @@ func ParseCreatePhononResponse(resp []byte) (keyIndex int, pubKey *ecdsa.PublicK
 	}
 
 	return keyIndex, pubKey, nil
+}
+
+func NewCommandSetDescriptor(data []byte) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaGp,
+		InsSetDescriptor,
+		0x00,
+		0x00,
+		data,
+	)
 }

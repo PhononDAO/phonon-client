@@ -1,10 +1,12 @@
 package card
 
 import (
+	"crypto/ecdsa"
 	"errors"
 
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/globalplatform"
+	"github.com/GridPlus/phonon-client/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -13,9 +15,14 @@ const (
 	InsVerifyPIN    = 0x20
 	InsChangePIN    = 0x21
 	InsCreatePhonon = 0x30
+
+	StatusPhononTableFull = 0x6A84
 )
 
-var ErrCardUninitialized = errors.New("card uninitialized")
+var (
+	ErrCardUninitialized = errors.New("card uninitialized")
+	ErrPhononTableFull   = errors.New("phonon table full")
+)
 
 func ParseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, err error) {
 	if len(resp) == 0 {
@@ -102,4 +109,16 @@ func NewCommandCreatePhonon() *apdu.Command {
 		0x00,
 		nil,
 	)
+}
+
+func ParseCreatePhononResponse(resp []byte) (keyIndex int, pubKey *ecdsa.PublicKey, err error) {
+	log.Debug("create phonon response length: ", len(resp))
+	keyIndex = int(resp[4])
+	pubKey, err = util.ParseECDSAPubKey(resp[7:72])
+	if err != nil {
+		log.Error("could not parse pubkey from phonon response: ", err)
+		return keyIndex, nil, err
+	}
+
+	return keyIndex, pubKey, nil
 }

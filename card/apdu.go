@@ -2,6 +2,7 @@ package card
 
 import (
 	"crypto/ecdsa"
+	"encoding/binary"
 	"errors"
 
 	"github.com/GridPlus/keycard-go/apdu"
@@ -17,6 +18,18 @@ const (
 	InsCreatePhonon  = 0x30
 	InsSetDescriptor = 0x31
 
+	TagSelectAppInfo           = 0xA4
+	TagCardUID                 = 0x8F
+	TagCardSecureChannelPubKey = 0x80
+	TagAppVersion              = 0x02
+	TagPairingSlots            = 0x03
+	TagAppCapability           = 0x8D
+
+	TagPhononKeyCollection = 0x40
+	TagKeyIndex            = 0x41
+	TagPhononPubKey        = 0x80
+
+	StatusSuccess         = 0x9000
 	StatusPhononTableFull = 0x6A84
 )
 
@@ -108,7 +121,7 @@ func NewCommandCreatePhonon() *apdu.Command {
 		InsCreatePhonon,
 		0x00,
 		0x00,
-		nil,
+		[]byte{0x00},
 	)
 }
 
@@ -121,13 +134,27 @@ func ParseCreatePhononResponse(resp []byte) (keyIndex int, pubKey *ecdsa.PublicK
 		return 0, nil, err
 	}
 
-	keyIndexBytes, exists := data[0x40]
+	phononKeyBytes, exists := data[0x40]
 	if !exists {
 		return 0, nil, errors.New("key doesn't exist")
 	}
+	phononKeyCollection, err := ParseTLVPacket(phononKeyBytes[0])
+	if err != nil {
+		return 0, nil, errors.New("key doesn't exist")
+	}
+	keyIndexBytes, err := phononKeyCollection.FindTag(TagKeyIndex)
+	if err != nil {
+		return 0, nil, err
+	}
 
-	keyIndex = int(resp[4])
-	pubKey, err = util.ParseECDSAPubKey(resp[7:72])
+	pubKeyBytes, err := phononKeyCollection.FindTag(TagPhononPubKey)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	keyIndex = int(binary.BigEndian.Uint16(keyIndexBytes))
+
+	pubKey, err = util.ParseECDSAPubKey(pubKeyBytes)
 	if err != nil {
 		log.Error("could not parse pubkey from phonon response: ", err)
 		return keyIndex, nil, err

@@ -97,7 +97,7 @@ func (sc *SecureChannel) RawPublicKey() []byte {
 
 //AES-GCM Symmetric encryption
 func (sc *SecureChannel) Send(cmd *apdu.Command) (*apdu.Response, error) {
-	log.Debug("about to send encrypted command: %+v", cmd)
+	log.Debugf("about to send encrypted command: %+v", cmd)
 	if sc.open {
 		encData, err := crypto.EncryptData(cmd.Data, sc.encKey, sc.iv)
 		if err != nil {

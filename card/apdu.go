@@ -115,6 +115,17 @@ func NewCommandCreatePhonon() *apdu.Command {
 //TODO: implement with TLV encoding, fix for uint16 keyIndex return value
 func ParseCreatePhononResponse(resp []byte) (keyIndex int, pubKey *ecdsa.PublicKey, err error) {
 	log.Debug("create phonon response length: ", len(resp))
+
+	data, err := ParseTLVPacket(resp)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	keyIndexBytes, exists := data[0x40]
+	if !exists {
+		return 0, nil, errors.New("key doesn't exist")
+	}
+
 	keyIndex = int(resp[4])
 	pubKey, err = util.ParseECDSAPubKey(resp[7:72])
 	if err != nil {

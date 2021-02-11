@@ -128,26 +128,17 @@ func NewCommandCreatePhonon() *apdu.Command {
 //TODO: implement with TLV encoding, fix for uint16 keyIndex return value
 func ParseCreatePhononResponse(resp []byte) (keyIndex int, pubKey *ecdsa.PublicKey, err error) {
 	log.Debug("create phonon response length: ", len(resp))
-
-	data, err := ParseTLVPacket(resp)
+	collection, err := ParseTLVPacket(resp, TagPhononKeyCollection)
 	if err != nil {
 		return 0, nil, err
 	}
 
-	phononKeyBytes, exists := data[0x40]
-	if !exists {
-		return 0, nil, errors.New("key doesn't exist")
-	}
-	phononKeyCollection, err := ParseTLVPacket(phononKeyBytes[0])
-	if err != nil {
-		return 0, nil, errors.New("key doesn't exist")
-	}
-	keyIndexBytes, err := phononKeyCollection.FindTag(TagKeyIndex)
+	keyIndexBytes, err := collection.FindTag(TagKeyIndex)
 	if err != nil {
 		return 0, nil, err
 	}
 
-	pubKeyBytes, err := phononKeyCollection.FindTag(TagPhononPubKey)
+	pubKeyBytes, err := collection.FindTag(TagPhononPubKey)
 	if err != nil {
 		return 0, nil, err
 	}

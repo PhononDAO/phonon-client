@@ -1,4 +1,4 @@
-package chain
+package model
 
 type CurrencyType uint16
 

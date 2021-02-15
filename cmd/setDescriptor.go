@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/chain"
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/spf13/cobra"
 )
 
@@ -66,7 +66,7 @@ func setDescriptor() {
 
 	fmt.Println("sending set descriptor")
 	//Create a mock BTC descriptor
-	err = cs.SetDescriptor(uint16(keyIndex), chain.Bitcoin, 0.5)
+	err = cs.SetDescriptor(uint16(keyIndex), model.Bitcoin, 0.5)
 	if err != nil {
 		fmt.Println("unable to set descriptor")
 		return

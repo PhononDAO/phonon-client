@@ -17,8 +17,7 @@ import (
 	"github.com/GridPlus/keycard-go/globalplatform"
 	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/keycard-go/types"
-	"github.com/GridPlus/phonon-client/chain"
-	"github.com/GridPlus/phonon-client/util"
+	"github.com/GridPlus/phonon-client/model"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
@@ -301,23 +300,12 @@ func (cs *PhononCommandSet) CreatePhonon() (keyIndex int, pubKey *ecdsa.PublicKe
 	return keyIndex, pubKey, nil
 }
 
-func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType chain.CurrencyType, value float32) error {
-	keyIndexBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(keyIndexBytes, keyIndex)
+func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
 
-	currencyBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(currencyBytes, uint16(currencyType))
-
-	var valueBytes bytes.Buffer
-	err := binary.Write(&valueBytes, binary.BigEndian, value)
+	data, err := encodeSetDescriptorData(keyIndex, currencyType, value)
 	if err != nil {
-		log.Error("unable to write float value as bytes: ", err)
 		return err
 	}
-	log.Debug("length of valueBytes: ", valueBytes.Len())
-
-	data := append(keyIndexBytes, currencyBytes...)
-	data = append(data, valueBytes.Bytes()...)
 
 	cmd := NewCommandSetDescriptor(data)
 	resp, err := cs.c.Send(cmd) //temp normal channel for testing
@@ -329,64 +317,99 @@ func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType chain.Cu
 	return cs.checkOK(resp, err)
 }
 
-func (cs *PhononCommandSet) ListPhonons(currencyType chain.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]Phonon, error) {
+func encodeSetDescriptorData(keyIndex uint16, currencyType model.CurrencyType, value float32) ([]byte, error) {
+	keyIndexBytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(keyIndexBytes, keyIndex)
+	keyIndexTLV, err := NewTLV(TagKeyIndex, keyIndexBytes)
+	if err != nil {
+		return nil, err
+	}
 
-	// cmd := NewCommandListPhonons(byte(currencyType), p2, cmdData)
+	currencyBytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(currencyBytes, uint16(currencyType))
+	currencyTypeTLV, err := NewTLV(TagCoinType, currencyBytes)
+	if err != nil {
+		return nil, err
+	}
 
+	var valueBytes bytes.Buffer
+	err = binary.Write(&valueBytes, binary.BigEndian, value)
+	if err != nil {
+		log.Error("unable to write float value as bytes: ", err)
+		return nil, err
+	}
+	valueTLV, err := NewTLV(TagPhononValue, valueBytes.Bytes())
+	if err != nil {
+		return nil, err
+	}
+
+	descriptorBytes := append(keyIndexTLV.Encode(), currencyTypeTLV.Encode()...)
+	descriptorBytes = append(descriptorBytes, valueTLV.Encode()...)
+	phononDescriptorTLV, err := NewTLV(TagPhononDescriptor, descriptorBytes)
+	if err != nil {
+		return nil, err
+	}
+	return phononDescriptorTLV.Encode(), nil
 }
 
-func encodeListPhononsData(currencyType chain.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]byte, error) {
-	//Toggle filter bytes for nonzero lessThan and greaterThan filter values
-	var p2 byte
-	if lessThanValue == 0 {
-		//Don't filter on value at all
-		if greaterThanValue == 0 {
-			p2 = 0x00
-		}
-		//Filter on only GreaterThan Value
-		if greaterThanValue > 0 {
-			p2 = 0x02
-		}
-	}
-	if lessThanValue > 0 {
-		//Filter on only LessThanValue
-		if greaterThanValue == 0 {
-			p2 = 0x01
-		}
-		//Filter on LessThan and GreaterThan
-		if greaterThanValue > 0 {
-			p2 = 0x03
-		}
+// func (cs *PhononCommandSet) ListPhonons(currencyType chain.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]Phonon, error) {
 
-	}
+// 	// cmd := NewCommandListPhonons(byte(currencyType), p2, cmdData)
 
-	//Translate coinType to bytes
-	coinTypeBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(coinTypeBytes, uint16(currencyType))
+// }
 
-	coinTypeTLV, err := NewTLV(TagCoinType, coinTypeBytes)
-	if err != nil {
-		return nil, err
-	}
-	//Translate filter values to bytes
-	lessThanBytes, err := util.Float32ToBytes(lessThanValue)
-	if err != nil {
-		return nil, err
-	}
-	greaterThanBytes, err := util.Float32ToBytes(greaterThanValue)
-	if err != nil {
-		return nil, err
-	}
-	lessThanTLV, err := NewTLV(TagValueFilterLessThan, lessThanBytes)
-	if err != nil {
-		return nil, err
-	}
-	greaterThanTLV, err := NewTLV(TagValueFilterMoreThan, greaterThanBytes)
-	if err != nil {
-		return nil, err
-	}
-	cmdData := append(coinTypeTLV.Encode(), lessThanTLV.Encode()...)
-	cmdData = append(cmdData, greaterThanTLV.Encode()...)
+// func encodeListPhononsData(currencyType chain.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]byte, error) {
+// 	//Toggle filter bytes for nonzero lessThan and greaterThan filter values
+// 	var p2 byte
+// 	if lessThanValue == 0 {
+// 		//Don't filter on value at all
+// 		if greaterThanValue == 0 {
+// 			p2 = 0x00
+// 		}
+// 		//Filter on only GreaterThan Value
+// 		if greaterThanValue > 0 {
+// 			p2 = 0x02
+// 		}
+// 	}
+// 	if lessThanValue > 0 {
+// 		//Filter on only LessThanValue
+// 		if greaterThanValue == 0 {
+// 			p2 = 0x01
+// 		}
+// 		//Filter on LessThan and GreaterThan
+// 		if greaterThanValue > 0 {
+// 			p2 = 0x03
+// 		}
 
-	return cmdData, nil
-}
+// 	}
+
+// 	//Translate coinType to bytes
+// 	coinTypeBytes := make([]byte, 2)
+// 	binary.BigEndian.PutUint16(coinTypeBytes, uint16(currencyType))
+
+// 	coinTypeTLV, err := NewTLV(TagCoinType, coinTypeBytes)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	//Translate filter values to bytes
+// 	lessThanBytes, err := util.Float32ToBytes(lessThanValue)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	greaterThanBytes, err := util.Float32ToBytes(greaterThanValue)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	lessThanTLV, err := NewTLV(TagValueFilterLessThan, lessThanBytes)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	greaterThanTLV, err := NewTLV(TagValueFilterMoreThan, greaterThanBytes)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	cmdData := append(coinTypeTLV.Encode(), lessThanTLV.Encode()...)
+// 	cmdData = append(cmdData, greaterThanTLV.Encode()...)
+
+// 	return cmdData, nil
+// }

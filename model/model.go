@@ -1,16 +1,12 @@
 package model
 
-import (
-	"crypto/ecdsa"
-
-	"github.com/GridPlus/phonon-client/chain"
-)
+import "crypto/ecdsa"
 
 type Phonon struct {
 	keyIndex     int
 	pubKey       *ecdsa.PublicKey
 	value        float32
-	currencyType chain.CurrencyType
+	currencyType CurrencyType
 }
 
 type CryptoAsset byte

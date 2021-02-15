@@ -35,6 +35,7 @@ const (
 	TagValueFilterMoreThan = 0x85
 
 	TagPhononCollection  = 0x52
+	TagPhononDescriptor  = 0x50
 	TagPhononDescription = 0x51
 	TagPhononValue       = 0x83
 	TagCoinType          = 0x81

@@ -95,17 +95,25 @@ func mergeTLVCollections(collections ...TLVCollection) TLVCollection {
 	return result
 }
 
-//FindTag takes a tag as input and returns the first instance of the tag
+//FindTag takes a tag as input and returns the first instance of the tag's value
 func (coll TLVCollection) FindTag(tag byte) (value []byte, err error) {
+	valueSlice, err := coll.FindTags(tag)
+	if err != nil {
+		return nil, err
+	}
+	return valueSlice[0], nil
+}
+
+//Findtags takes a tag as input and returns all instances of the tag's values as a slice of slice of byte
+func (coll TLVCollection) FindTags(tag byte) (value [][]byte, err error) {
 	valueSlice, exists := coll[tag]
 	if !exists {
 		return nil, ErrTagNotFound
 	}
-
 	if len(valueSlice) < 1 {
 		return nil, ErrTagEmpty
 	}
-	return valueSlice[0], nil
+	return valueSlice, nil
 }
 
 var SetDescriptorResponse struct {

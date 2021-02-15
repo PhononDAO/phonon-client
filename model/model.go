@@ -1,13 +1,16 @@
 package model
 
-type Phonon struct {
-	ID         []byte
-	Descriptor []Tlv
-}
+import (
+	"crypto/ecdsa"
 
-type Tlv struct {
-	Tag   string
-	Value byte
+	"github.com/GridPlus/phonon-client/chain"
+)
+
+type Phonon struct {
+	keyIndex     int
+	pubKey       *ecdsa.PublicKey
+	value        float32
+	currencyType chain.CurrencyType
 }
 
 type CryptoAsset byte

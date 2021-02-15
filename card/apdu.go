@@ -17,6 +17,7 @@ const (
 	InsChangePIN     = 0x21
 	InsCreatePhonon  = 0x30
 	InsSetDescriptor = 0x31
+	InsListPhonons   = 0x32
 
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F
@@ -28,6 +29,15 @@ const (
 	TagPhononKeyCollection = 0x40
 	TagKeyIndex            = 0x41
 	TagPhononPubKey        = 0x80
+
+	TagPhononFilter        = 0x60
+	TagValueFilterLessThan = 0x84
+	TagValueFilterMoreThan = 0x85
+
+	TagPhononCollection  = 0x52
+	TagPhononDescription = 0x51
+	TagPhononValue       = 0x83
+	TagCoinType          = 0x81
 
 	StatusSuccess         = 0x9000
 	StatusPhononTableFull = 0x6A84
@@ -160,6 +170,16 @@ func NewCommandSetDescriptor(data []byte) *apdu.Command {
 		InsSetDescriptor,
 		0x00,
 		0x00,
+		data,
+	)
+}
+
+func NewCommandListPhonons(p1 byte, p2 byte, data []byte) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaISO7816,
+		InsListPhonons,
+		p1,
+		p2,
 		data,
 	)
 }

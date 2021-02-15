@@ -1,7 +1,9 @@
 package util
 
 import (
+	"bytes"
 	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 
 	"github.com/manifoldco/promptui"
@@ -27,4 +29,13 @@ func PinPrompt() (string, error) {
 		return "", err
 	}
 	return result, nil
+}
+
+func Float32ToBytes(f float32) ([]byte, error) {
+	var result bytes.Buffer
+	err := binary.Write(&result, binary.BigEndian, f)
+	if err != nil {
+		return nil, err
+	}
+	return result.Bytes(), nil
 }

@@ -327,7 +327,7 @@ func encodeSetDescriptorData(keyIndex uint16, currencyType model.CurrencyType, v
 
 	currencyBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(currencyBytes, uint16(currencyType))
-	currencyTypeTLV, err := NewTLV(TagCoinType, currencyBytes)
+	currencyTypeTLV, err := NewTLV(TagCurrencyType, currencyBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -395,11 +395,11 @@ func encodeListPhononsData(currencyType model.CurrencyType, lessThanValue float3
 
 	}
 
-	//Translate coinType to bytes
-	coinTypeBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(coinTypeBytes, uint16(currencyType))
+	//Translate currencyType to bytes
+	currencyTypeBytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(currencyTypeBytes, uint16(currencyType))
 
-	coinTypeTLV, err := NewTLV(TagCoinType, coinTypeBytes)
+	currencyTypeTLV, err := NewTLV(TagCurrencyType, currencyTypeBytes)
 	if err != nil {
 		return p2, nil, err
 	}
@@ -421,7 +421,7 @@ func encodeListPhononsData(currencyType model.CurrencyType, lessThanValue float3
 		return p2, nil, err
 	}
 
-	innerData := EncodeTLVList(coinTypeTLV, lessThanTLV, greaterThanTLV)
+	innerData := EncodeTLVList(currencyTypeTLV, lessThanTLV, greaterThanTLV)
 	cmdData, err := NewTLV(TagPhononFilter, innerData)
 	if err != nil {
 		return p2, nil, err
@@ -451,12 +451,12 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 		if err != nil {
 			return phonons, err
 		}
-		coinTypeBytes, err := descriptionTLV.FindTag(TagCoinType)
+		currencyTypeBytes, err := descriptionTLV.FindTag(TagCurrencyType)
 		if err != nil {
 			return phonons, err
 		}
-		var coinType model.CurrencyType
-		err = binary.Read(bytes.NewReader(coinTypeBytes), binary.BigEndian, coinType)
+		var currencyType model.CurrencyType
+		err = binary.Read(bytes.NewReader(currencyTypeBytes), binary.BigEndian, currencyType)
 		if err != nil {
 			return phonons, err
 		}
@@ -471,7 +471,7 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 		}
 		phonon := model.Phonon{
 			KeyIndex:     int(binary.BigEndian.Uint16(keyIndexBytes)),
-			CurrencyType: coinType,
+			CurrencyType: currencyType,
 			Value:        value,
 		}
 		phonons = append(phonons, phonon)

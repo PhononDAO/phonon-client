@@ -38,7 +38,7 @@ const (
 	TagPhononDescriptor  = 0x50
 	TagPhononDescription = 0x51
 	TagPhononValue       = 0x83
-	TagCoinType          = 0x81
+	TagCurrencyType      = 0x81
 
 	StatusSuccess         = 0x9000
 	StatusPhononTableFull = 0x6A84

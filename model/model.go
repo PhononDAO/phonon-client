@@ -3,10 +3,10 @@ package model
 import "crypto/ecdsa"
 
 type Phonon struct {
-	keyIndex     int
-	pubKey       *ecdsa.PublicKey
-	value        float32
-	currencyType CurrencyType
+	KeyIndex     int
+	PubKey       *ecdsa.PublicKey
+	Value        float32
+	CurrencyType CurrencyType
 }
 
 type CryptoAsset byte

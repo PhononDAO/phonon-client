@@ -175,11 +175,11 @@ func NewCommandSetDescriptor(data []byte) *apdu.Command {
 	)
 }
 
-func NewCommandListPhonons(p1 byte, p2 byte, data []byte) *apdu.Command {
+func NewCommandListPhonons(p2 byte, data []byte) *apdu.Command {
 	return apdu.NewCommand(
 		globalplatform.ClaISO7816,
 		InsListPhonons,
-		p1,
+		0x00,
 		p2,
 		data,
 	)

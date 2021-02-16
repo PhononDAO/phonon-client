@@ -18,6 +18,7 @@ import (
 	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/keycard-go/types"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/util"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
@@ -301,7 +302,6 @@ func (cs *PhononCommandSet) CreatePhonon() (keyIndex int, pubKey *ecdsa.PublicKe
 }
 
 func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
-
 	data, err := encodeSetDescriptorData(keyIndex, currencyType, value)
 	if err != nil {
 		return err
@@ -352,64 +352,129 @@ func encodeSetDescriptorData(keyIndex uint16, currencyType model.CurrencyType, v
 	return phononDescriptorTLV.Encode(), nil
 }
 
-// func (cs *PhononCommandSet) ListPhonons(currencyType chain.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]Phonon, error) {
+func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
+	p2, cmdData, err := encodeListPhononsData(currencyType, lessThanValue, greaterThanValue)
+	if err != nil {
+		return nil, err
+	}
+	cmd := NewCommandListPhonons(p2, cmdData)
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
 
-// 	// cmd := NewCommandListPhonons(byte(currencyType), p2, cmdData)
+	phonons, err := parseListPhononsResponse(resp.Data)
+	if err != nil {
+		log.Error("could not parse list phonons response: ", err)
+		return nil, err
+	}
+	return phonons, nil
+}
 
-// }
+func encodeListPhononsData(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) (p2 byte, data []byte, err error) {
+	//Toggle filter bytes for nonzero lessThan and greaterThan filter values
+	if lessThanValue == 0 {
+		//Don't filter on value at all
+		if greaterThanValue == 0 {
+			p2 = 0x00
+		}
+		//Filter on only GreaterThan Value
+		if greaterThanValue > 0 {
+			p2 = 0x02
+		}
+	}
+	if lessThanValue > 0 {
+		//Filter on only LessThanValue
+		if greaterThanValue == 0 {
+			p2 = 0x01
+		}
+		//Filter on LessThan and GreaterThan
+		if greaterThanValue > 0 {
+			p2 = 0x03
+		}
 
-// func encodeListPhononsData(currencyType chain.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]byte, error) {
-// 	//Toggle filter bytes for nonzero lessThan and greaterThan filter values
-// 	var p2 byte
-// 	if lessThanValue == 0 {
-// 		//Don't filter on value at all
-// 		if greaterThanValue == 0 {
-// 			p2 = 0x00
-// 		}
-// 		//Filter on only GreaterThan Value
-// 		if greaterThanValue > 0 {
-// 			p2 = 0x02
-// 		}
-// 	}
-// 	if lessThanValue > 0 {
-// 		//Filter on only LessThanValue
-// 		if greaterThanValue == 0 {
-// 			p2 = 0x01
-// 		}
-// 		//Filter on LessThan and GreaterThan
-// 		if greaterThanValue > 0 {
-// 			p2 = 0x03
-// 		}
+	}
 
-// 	}
+	//Translate coinType to bytes
+	coinTypeBytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(coinTypeBytes, uint16(currencyType))
 
-// 	//Translate coinType to bytes
-// 	coinTypeBytes := make([]byte, 2)
-// 	binary.BigEndian.PutUint16(coinTypeBytes, uint16(currencyType))
+	coinTypeTLV, err := NewTLV(TagCoinType, coinTypeBytes)
+	if err != nil {
+		return p2, nil, err
+	}
+	//Translate filter values to bytes
+	lessThanBytes, err := util.Float32ToBytes(lessThanValue)
+	if err != nil {
+		return p2, nil, err
+	}
+	greaterThanBytes, err := util.Float32ToBytes(greaterThanValue)
+	if err != nil {
+		return p2, nil, err
+	}
+	lessThanTLV, err := NewTLV(TagValueFilterLessThan, lessThanBytes)
+	if err != nil {
+		return p2, nil, err
+	}
+	greaterThanTLV, err := NewTLV(TagValueFilterMoreThan, greaterThanBytes)
+	if err != nil {
+		return p2, nil, err
+	}
 
-// 	coinTypeTLV, err := NewTLV(TagCoinType, coinTypeBytes)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	//Translate filter values to bytes
-// 	lessThanBytes, err := util.Float32ToBytes(lessThanValue)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	greaterThanBytes, err := util.Float32ToBytes(greaterThanValue)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	lessThanTLV, err := NewTLV(TagValueFilterLessThan, lessThanBytes)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	greaterThanTLV, err := NewTLV(TagValueFilterMoreThan, greaterThanBytes)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	cmdData := append(coinTypeTLV.Encode(), lessThanTLV.Encode()...)
-// 	cmdData = append(cmdData, greaterThanTLV.Encode()...)
+	innerData := EncodeTLVList(coinTypeTLV, lessThanTLV, greaterThanTLV)
+	cmdData, err := NewTLV(TagPhononFilter, innerData)
+	if err != nil {
+		return p2, nil, err
+	}
 
-// 	return cmdData, nil
-// }
+	return p2, cmdData.Encode(), nil
+}
+
+func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
+	phononCollection, err := ParseTLVPacket(resp, TagPhononCollection)
+	if err != nil {
+		return nil, err
+	}
+
+	phonons := make([]model.Phonon, 0)
+	phononDescriptions, err := phononCollection.FindTags(TagPhononDescription)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, description := range phononDescriptions {
+		descriptionTLV, err := ParseTLVPacket(description)
+		if err != nil {
+			return phonons, err
+		}
+		keyIndexBytes, err := descriptionTLV.FindTag(TagKeyIndex)
+		if err != nil {
+			return phonons, err
+		}
+		coinTypeBytes, err := descriptionTLV.FindTag(TagCoinType)
+		if err != nil {
+			return phonons, err
+		}
+		var coinType model.CurrencyType
+		err = binary.Read(bytes.NewReader(coinTypeBytes), binary.BigEndian, coinType)
+		if err != nil {
+			return phonons, err
+		}
+		valueBytes, err := descriptionTLV.FindTag(TagPhononValue)
+		if err != nil {
+			return phonons, err
+		}
+		var value float32
+		err = binary.Read(bytes.NewReader(valueBytes), binary.BigEndian, value)
+		if err != nil {
+			return phonons, err
+		}
+		phonon := model.Phonon{
+			KeyIndex:     int(binary.BigEndian.Uint16(keyIndexBytes)),
+			CurrencyType: coinType,
+			Value:        value,
+		}
+		phonons = append(phonons, phonon)
+	}
+	return phonons, nil
+}

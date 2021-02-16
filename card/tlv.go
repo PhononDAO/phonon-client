@@ -116,7 +116,11 @@ func (coll TLVCollection) FindTags(tag byte) (value [][]byte, err error) {
 	return valueSlice, nil
 }
 
-var SetDescriptorResponse struct {
-	PhononKeyIndex  TLV
-	PhononPublicKey TLV
+//Takes a list of TLVs and encodes them as serialized bytes in FIFO order
+func EncodeTLVList(tlvList ...TLV) []byte {
+	var data []byte
+	for _, tlv := range tlvList {
+		data = append(data, tlv.Encode()...)
+	}
+	return data
 }

@@ -47,6 +47,7 @@ const (
 var (
 	ErrCardUninitialized = errors.New("card uninitialized")
 	ErrPhononTableFull   = errors.New("phonon table full")
+	ErrUnknown           = errors.New("unknown error")
 )
 
 func ParseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, err error) {
@@ -175,11 +176,11 @@ func NewCommandSetDescriptor(data []byte) *apdu.Command {
 	)
 }
 
-func NewCommandListPhonons(p2 byte, data []byte) *apdu.Command {
+func NewCommandListPhonons(p1 byte, p2 byte, data []byte) *apdu.Command {
 	return apdu.NewCommand(
 		globalplatform.ClaISO7816,
 		InsListPhonons,
-		0x00,
+		p1,
 		p2,
 		data,
 	)

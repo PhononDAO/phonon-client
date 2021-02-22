@@ -23,9 +23,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// setDescriptorCmd represents the setDescriptor command
-var setDescriptorCmd = &cobra.Command{
-	Use:   "setDescriptor",
+// listPhononsCmd represents the listPhonons command
+var listPhononsCmd = &cobra.Command{
+	Use:   "listPhonons",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -34,43 +34,36 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		setDescriptor()
+		listPhonons()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(setDescriptorCmd)
+	rootCmd.AddCommand(listPhononsCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// setDescriptorCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// listPhononsCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// setDescriptorCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// listPhononsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func setDescriptor() {
-	// cs, err := card.OpenSecureConnection()
+func listPhonons() {
 	cs, err := card.Connect()
 	if err != nil {
 		return
 	}
 	cs.Select()
-	keyIndex, _, err := cs.CreatePhonon()
+
+	phonons, err := cs.ListPhonons(model.Bitcoin, 0, 0)
 	if err != nil {
 		return
 	}
-
-	fmt.Println("sending set descriptor")
-	//Create a mock BTC descriptor
-	err = cs.SetDescriptor(uint16(keyIndex), model.Bitcoin, 0.1)
-	if err != nil {
-		fmt.Println("unable to set descriptor")
-		return
+	for _, phonon := range phonons {
+		fmt.Printf("retrieved phonon: %+v\n", phonon)
 	}
-
-	//Create a mock ETH descriptor
 }

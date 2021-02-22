@@ -353,12 +353,21 @@ func encodeSetDescriptorData(keyIndex uint16, currencyType model.CurrencyType, v
 }
 
 func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
+	log.Debug("sending list phonons command")
 	p2, cmdData, err := encodeListPhononsData(currencyType, lessThanValue, greaterThanValue)
 	if err != nil {
 		return nil, err
 	}
-	cmd := NewCommandListPhonons(p2, cmdData)
+	log.Debug("List phonons command data: ")
+	log.Debugf("% X", cmdData)
+	log.Debugf("p2: % X", p2)
+	cmd := NewCommandListPhonons(0x00, p2, cmdData)
 	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	continues, err := checkListPhononsStatus(resp.Sw)
 	if err != nil {
 		return nil, err
 	}
@@ -367,6 +376,46 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 	if err != nil {
 		log.Error("could not parse list phonons response: ", err)
 		return nil, err
+	}
+	if continues {
+		extendedPhonons, err := cs.listPhononsExtended()
+		if err != nil {
+			log.Error("could not read extended phonons list: ", err)
+			return nil, err
+		}
+		phonons = append(phonons, extendedPhonons...)
+	}
+	return phonons, nil
+}
+
+//Makes an additional list phonons command with p1 set to 0x01, indicating the card should return the remainder
+//of the last requested list. listPhononsExtended will run recursively until the card indicates there are no additional
+//phonons in the list
+func (cs *PhononCommandSet) listPhononsExtended() (phonons []model.Phonon, err error) {
+	log.Debug("sending request for extended phonons list")
+	cmd := NewCommandListPhonons(0x01, 0x00, nil)
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+	continues, err := checkListPhononsStatus(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+
+	phonons, err = parseListPhononsResponse(resp.Data)
+	if err != nil {
+		log.Error("could not parse extended list phonons response: ", err)
+		return nil, err
+	}
+
+	if continues {
+		extendedPhonons, err := cs.listPhononsExtended()
+		if err != nil {
+			log.Error("could not read additional extendend phonons list: ", err)
+			return nil, err
+		}
+		phonons = append(phonons, extendedPhonons...)
 	}
 	return phonons, nil
 }
@@ -435,7 +484,10 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	//No phonons in list, the only tag will be the overall collection
+	if len(phononCollection) <= 1 {
+		return nil, nil
+	}
 	phonons := make([]model.Phonon, 0)
 	phononDescriptions, err := phononCollection.FindTags(TagPhononDescription)
 	if err != nil {
@@ -455,26 +507,35 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 		if err != nil {
 			return phonons, err
 		}
-		var currencyType model.CurrencyType
-		err = binary.Read(bytes.NewReader(currencyTypeBytes), binary.BigEndian, currencyType)
-		if err != nil {
-			return phonons, err
-		}
+		currencyType := binary.BigEndian.Uint16(currencyTypeBytes)
+
 		valueBytes, err := descriptionTLV.FindTag(TagPhononValue)
 		if err != nil {
 			return phonons, err
 		}
+
 		var value float32
-		err = binary.Read(bytes.NewReader(valueBytes), binary.BigEndian, value)
+		err = binary.Read(bytes.NewReader(valueBytes), binary.BigEndian, &value)
 		if err != nil {
 			return phonons, err
 		}
 		phonon := model.Phonon{
 			KeyIndex:     int(binary.BigEndian.Uint16(keyIndexBytes)),
-			CurrencyType: currencyType,
+			CurrencyType: model.CurrencyType(currencyType),
 			Value:        value,
 		}
 		phonons = append(phonons, phonon)
 	}
 	return phonons, nil
+}
+
+func checkListPhononsStatus(status uint16) (continues bool, err error) {
+	if status == 0x9000 {
+		return false, nil
+	}
+	if status > 0x9000 {
+		return true, nil
+	}
+	//TODO: Add error conditions
+	return false, ErrUnknown
 }

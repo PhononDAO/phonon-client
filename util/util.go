@@ -39,3 +39,9 @@ func Float32ToBytes(f float32) ([]byte, error) {
 	}
 	return result.Bytes(), nil
 }
+
+func Uint16ToBytes(i uint16) []byte {
+	bytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(bytes, i)
+	return bytes
+}

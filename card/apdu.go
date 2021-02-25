@@ -12,12 +12,13 @@ import (
 )
 
 const (
-	InsIdentifyCard  = 0x14
-	InsVerifyPIN     = 0x20
-	InsChangePIN     = 0x21
-	InsCreatePhonon  = 0x30
-	InsSetDescriptor = 0x31
-	InsListPhonons   = 0x32
+	InsIdentifyCard    = 0x14
+	InsVerifyPIN       = 0x20
+	InsChangePIN       = 0x21
+	InsCreatePhonon    = 0x30
+	InsSetDescriptor   = 0x31
+	InsListPhonons     = 0x32
+	InsGetPhononPubKey = 0x41
 
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F
@@ -29,6 +30,7 @@ const (
 	TagPhononKeyCollection = 0x40
 	TagKeyIndex            = 0x41
 	TagPhononPubKey        = 0x80
+	TagPhononPrivKey       = 0x81
 
 	TagPhononFilter        = 0x60
 	TagValueFilterLessThan = 0x84
@@ -182,6 +184,16 @@ func NewCommandListPhonons(p1 byte, p2 byte, data []byte) *apdu.Command {
 		InsListPhonons,
 		p1,
 		p2,
+		data,
+	)
+}
+
+func NewCommandGetPhononPubKey(data []byte) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaISO7816,
+		InsGetPhononPubKey,
+		0x00,
+		0x00,
 		data,
 	)
 }

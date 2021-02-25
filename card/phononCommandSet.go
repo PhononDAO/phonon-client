@@ -539,3 +539,36 @@ func checkListPhononsStatus(status uint16) (continues bool, err error) {
 	//TODO: Add error conditions
 	return false, ErrUnknown
 }
+
+func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
+
+	data := util.Uint16ToBytes(keyIndex)
+	cmd := NewCommandGetPhononPubKey(data)
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	pubKey, err := parseGetPhononPubKeyResponse(resp.Data)
+	if err != nil {
+		return nil, err
+	}
+	return pubKey, nil
+}
+
+func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err error) {
+	collection, err := ParseTLVPacket(resp)
+	if err != nil {
+		return nil, err
+	}
+	rawPubKey, err := collection.FindTag(TagPhononPubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	pubKey, err = util.ParseECDSAPubKey(rawPubKey)
+	if err != nil {
+		return nil, err
+	}
+	return pubKey, nil
+}

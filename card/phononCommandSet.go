@@ -541,9 +541,11 @@ func checkListPhononsStatus(status uint16) (continues bool, err error) {
 }
 
 func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
-
-	data := util.Uint16ToBytes(keyIndex)
-	cmd := NewCommandGetPhononPubKey(data)
+	data, err := NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
+	if err != nil {
+		return nil, err
+	}
+	cmd := NewCommandGetPhononPubKey(data.Encode())
 	resp, err := cs.c.Send(cmd)
 	if err != nil {
 		return nil, err

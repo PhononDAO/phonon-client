@@ -63,5 +63,5 @@ func getPhononPubKey() {
 		fmt.Println("error getting phonon public key: ", err)
 		return
 	}
-	fmt.Println("got pubkey % X", pubKey)
+	fmt.Printf("got pubkey X: % X Y: % X\n", pubKey.X.Bytes(), pubKey.Y.Bytes())
 }

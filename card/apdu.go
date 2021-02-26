@@ -18,7 +18,7 @@ const (
 	InsCreatePhonon    = 0x30
 	InsSetDescriptor   = 0x31
 	InsListPhonons     = 0x32
-	InsGetPhononPubKey = 0x41
+	InsGetPhononPubKey = 0x33
 
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F

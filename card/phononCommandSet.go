@@ -574,3 +574,20 @@ func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err err
 	}
 	return pubKey, nil
 }
+
+func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) error {
+	data, err := NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
+	if err != nil {
+		return err
+	}
+	cmd := NewCommandDestroyPhonon(data.Encode())
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		return err
+	}
+	err = cs.checkOK(resp, err)
+	if err != nil {
+		return err
+	}
+	return nil
+}

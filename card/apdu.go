@@ -19,6 +19,7 @@ const (
 	InsSetDescriptor   = 0x31
 	InsListPhonons     = 0x32
 	InsGetPhononPubKey = 0x33
+	InsDestroyPhonon   = 0x34
 
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F
@@ -192,6 +193,16 @@ func NewCommandGetPhononPubKey(data []byte) *apdu.Command {
 	return apdu.NewCommand(
 		globalplatform.ClaISO7816,
 		InsGetPhononPubKey,
+		0x00,
+		0x00,
+		data,
+	)
+}
+
+func NewCommandDestroyPhonon(data []byte) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaISO7816,
+		InsDestroyPhonon,
 		0x00,
 		0x00,
 		data,

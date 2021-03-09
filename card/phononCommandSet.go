@@ -489,7 +489,7 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 		return nil, nil
 	}
 	phonons := make([]model.Phonon, 0)
-	phononDescriptions, err := phononCollection.FindTags(TagPhononDescription)
+	phononDescriptions, err := phononCollection.FindTags(TagPhononDescriptor)
 	if err != nil {
 		return nil, err
 	}
@@ -575,19 +575,21 @@ func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err err
 	return pubKey, nil
 }
 
-func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) error {
+func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
 	data, err := NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cmd := NewCommandDestroyPhonon(data.Encode())
 	resp, err := cs.c.Send(cmd)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = cs.checkOK(resp, err)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	//parse private key from response
+
+	return nil, nil
 }

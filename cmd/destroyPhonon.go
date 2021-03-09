@@ -64,7 +64,7 @@ func destroyPhonon(keyIndex uint16) {
 		return
 	}
 	cs.Select()
-	err = cs.DestroyPhonon(keyIndex)
+	_, err = cs.DestroyPhonon(keyIndex)
 	if err != nil {
 		return
 	}

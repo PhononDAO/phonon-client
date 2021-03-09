@@ -20,6 +20,7 @@ const (
 	InsListPhonons     = 0x32
 	InsGetPhononPubKey = 0x33
 	InsDestroyPhonon   = 0x34
+	InsSendPhonons     = 0x35
 
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F
@@ -37,14 +38,18 @@ const (
 	TagValueFilterLessThan = 0x84
 	TagValueFilterMoreThan = 0x85
 
-	TagPhononCollection  = 0x52
-	TagPhononDescriptor  = 0x50
-	TagPhononDescription = 0x51
-	TagPhononValue       = 0x83
-	TagCurrencyType      = 0x81
+	TagPhononCollection = 0x52
+	TagPhononDescriptor = 0x50
+	TagPhononValue      = 0x83
+	TagCurrencyType     = 0x81
+
+	TagPhononKeyList            = 0x42
+	TagTransferPhononPacket     = 0x43
+	TagPhononPrivateDescription = 0x44
 
 	StatusSuccess         = 0x9000
 	StatusPhononTableFull = 0x6A84
+	StatusInvalidFile     = 0x6983
 )
 
 var (

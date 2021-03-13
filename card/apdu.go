@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	maxAPDULength = 256
+
 	InsIdentifyCard    = 0x14
 	InsVerifyPIN       = 0x20
 	InsChangePIN       = 0x21
@@ -211,5 +213,33 @@ func NewCommandDestroyPhonon(data []byte) *apdu.Command {
 		0x00,
 		0x00,
 		data,
+	)
+}
+
+func NewCommandSendPhonons(keyIndices []uint16, extendedRequest bool) *apdu.Command {
+	var p1 byte
+	if extendedRequest {
+		p1 = 0x01
+	} else {
+		p1 = 0x00
+	}
+
+	p2 := byte(len(keyIndices))
+
+	var keyIndexBytes []byte
+	b := make([]byte, 2)
+	for _, keyIndex := range keyIndices {
+		binary.BigEndian.PutUint16(b, keyIndex)
+		keyIndexBytes = append(keyIndexBytes, b...)
+	}
+	//TODO: possibly handle potential error
+	data, _ := NewTLV(TagPhononKeyList, keyIndexBytes)
+
+	return apdu.NewCommand(
+		globalplatform.ClaISO7816,
+		InsSendPhonons,
+		p1,
+		p2,
+		data.Encode(),
 	)
 }

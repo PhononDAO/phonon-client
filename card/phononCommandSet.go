@@ -367,7 +367,7 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 		return nil, err
 	}
 
-	continues, err := checkListPhononsStatus(resp.Sw)
+	continues, err := checkStatusWord(resp.Sw)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func (cs *PhononCommandSet) listPhononsExtended() (phonons []model.Phonon, err e
 	if err != nil {
 		return nil, err
 	}
-	continues, err := checkListPhononsStatus(resp.Sw)
+	continues, err := checkStatusWord(resp.Sw)
 	if err != nil {
 		return nil, err
 	}
@@ -529,7 +529,8 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 	return phonons, nil
 }
 
-func checkListPhononsStatus(status uint16) (continues bool, err error) {
+//Generally checks status, including extended responses
+func checkStatusWord(status uint16) (continues bool, err error) {
 	if status == 0x9000 {
 		return false, nil
 	}
@@ -592,4 +593,59 @@ func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.Priva
 	//parse private key from response
 
 	return nil, nil
+}
+
+func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets [][]byte, err error) {
+	//Save this for extended requests
+	// tlvLength := 2
+	// bytesPerKeyIndex := 2
+	// apduHeaderLength := 4
+	// maxPhononsPerRequest := (maxAPDULength - apduHeaderLength - tlvLength) / bytesPerKeyIndex
+	// numPhonons := len(keyIndices)
+	// remainingKeyIndices := make([]uint16, 0)
+	// if numPhonons > maxPhononsPerRequest {
+	// 	remainingKeyIndices = keyIndices[maxPhononsPerRequest:]
+	// 	keyIndices = keyIndices[:maxPhononsPerRequest]
+	// }
+
+	//TODO: protect the caller from passing too many keyIndices for an APDU
+	cmd := NewCommandSendPhonons(keyIndices, extendedRequest)
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		log.Error("error in send phonons command: ", err)
+		return nil, err
+	}
+
+	//TODO: replace with specific status check
+	//TODO: parse response for extended status code
+	continues, err := checkStatusWord(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+
+	transferPhononPackets = append(transferPhononPackets, resp.Data)
+
+	//Recursively call the extended list and append the result packets to
+	var remainingPhononPackets [][]byte
+	if continues {
+		remainingPhononPackets, err = cs.SendPhonons(nil, true)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, packet := range remainingPhononPackets {
+		transferPhononPackets = append(transferPhononPackets, packet)
+	}
+
+	//Maybe save this for extended request form
+	// //Redo this to receive multiple responses, not to send multiple requests
+	// //Recursively call SendPhonons until all extended requests and responses are receivedy
+	// if len(remainingKeyIndices) > 0 {
+	// 	extendedPhononPackets, err := cs.SendPhonons(remainingKeyIndices, false)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	transferPhononPackets = append(transferPhononPackets, extendedPhononPackets...)
+	// }
+	return transferPhononPackets, nil
 }

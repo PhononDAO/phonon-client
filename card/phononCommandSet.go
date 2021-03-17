@@ -616,8 +616,6 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 		return nil, err
 	}
 
-	//TODO: replace with specific status check
-	//TODO: parse response for extended status code
 	continues, err := checkStatusWord(resp.Sw)
 	if err != nil {
 		return nil, err

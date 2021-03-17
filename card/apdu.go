@@ -23,6 +23,7 @@ const (
 	InsGetPhononPubKey = 0x33
 	InsDestroyPhonon   = 0x34
 	InsSendPhonons     = 0x35
+	InsRecvPhonons     = 0x36
 
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F
@@ -241,5 +242,17 @@ func NewCommandSendPhonons(keyIndices []uint16, extendedRequest bool) *apdu.Comm
 		p1,
 		p2,
 		data.Encode(),
+	)
+}
+
+//Receives a TLV encoded Phonon Transfer Packet Payload in encrypted form
+//and passes it on directly to a card
+func NewCommandReceivePhonons(phononTransferPacket []byte) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaISO7816,
+		InsRecvPhonons,
+		0x00,
+		0x00,
+		phononTransferPacket,
 	)
 }

@@ -22,9 +22,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// sendPhononsCmd represents the sendPhonons command
-var sendPhononsCmd = &cobra.Command{
-	Use:   "sendPhonons",
+// receivePhononsCmd represents the receivePhonons command
+var receivePhononsCmd = &cobra.Command{
+	Use:   "receivePhonons",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -33,36 +33,45 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		sendPhonons()
+		receivePhonons()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(sendPhononsCmd)
+	rootCmd.AddCommand(receivePhononsCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// sendPhononsCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// receivePhononsCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// sendPhononsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// receivePhononsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func sendPhonons() {
+func receivePhonons() {
 	cs, err := card.Connect()
 	if err != nil {
 		return
 	}
 	cs.Select()
 
+	//Have the card SendPhonons and receive them back for testing
 	testKeyIndices := []uint16{1, 2, 3, 4, 5, 6, 7, 8}
 	transferPackets, err := cs.SendPhonons(testKeyIndices, false)
 	if err != nil {
 		fmt.Print("error in SEND_PHONONS command: ", err)
 	} else {
 		fmt.Printf("received SEND_PHONONS transfer packet: % X\n", transferPackets)
+	}
+	for i, packet := range transferPackets {
+		err = cs.ReceivePhonons(packet)
+		if err != nil {
+			fmt.Println("error receiving phonons: ", err)
+		} else {
+			fmt.Printf("card received phonon packet number %v\n", i)
+		}
 	}
 }

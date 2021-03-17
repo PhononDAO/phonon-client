@@ -647,3 +647,16 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 	// }
 	return transferPhononPackets, nil
 }
+
+func (cs *PhononCommandSet) ReceivePhonons(phononTransferPacket []byte) error {
+	cmd := NewCommandReceivePhonons(phononTransferPacket)
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		return err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return err
+	}
+	return nil
+}

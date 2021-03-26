@@ -46,7 +46,7 @@ const (
 	TagPhononValue      = 0x83
 	TagCurrencyType     = 0x81
 
-	TagPhononKeyList            = 0x42
+	TagPhononKeyIndexList       = 0x42
 	TagTransferPhononPacket     = 0x43
 	TagPhononPrivateDescription = 0x44
 
@@ -234,7 +234,7 @@ func NewCommandSendPhonons(keyIndices []uint16, extendedRequest bool) *apdu.Comm
 		keyIndexBytes = append(keyIndexBytes, b...)
 	}
 	//TODO: possibly handle potential error
-	data, _ := NewTLV(TagPhononKeyList, keyIndexBytes)
+	data, _ := NewTLV(TagPhononKeyIndexList, keyIndexBytes)
 
 	return apdu.NewCommand(
 		globalplatform.ClaISO7816,

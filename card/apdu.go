@@ -8,6 +8,7 @@ import (
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/globalplatform"
 	"github.com/GridPlus/phonon-client/util"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,6 +25,7 @@ const (
 	InsDestroyPhonon   = 0x34
 	InsSendPhonons     = 0x35
 	InsRecvPhonons     = 0x36
+	InsSetRecvList     = 0x37
 
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F
@@ -49,6 +51,8 @@ const (
 	TagPhononKeyIndexList       = 0x42
 	TagTransferPhononPacket     = 0x43
 	TagPhononPrivateDescription = 0x44
+
+	TagPhononPubKeyList = 0x7F
 
 	StatusSuccess         = 0x9000
 	StatusPhononTableFull = 0x6A84
@@ -254,5 +258,23 @@ func NewCommandReceivePhonons(phononTransferPacket []byte) *apdu.Command {
 		0x00,
 		0x00,
 		phononTransferPacket,
+	)
+}
+
+func NewCommandSetReceiveList(phononPubKeys []*ecdsa.PublicKey) *apdu.Command {
+	var pubKeyTLVBytes []byte
+	for _, pubKey := range phononPubKeys {
+		pubKeyTLV, _ := NewTLV(TagPhononPubKey, ethcrypto.FromECDSAPub(pubKey))
+		pubKeyTLVBytes = append(pubKeyTLVBytes, pubKeyTLV.Encode()...)
+	}
+
+	data, _ := NewTLV(TagPhononPubKeyList, pubKeyTLVBytes)
+
+	return apdu.NewCommand(
+		globalplatform.ClaISO7816,
+		InsSetRecvList,
+		0x00,
+		0x00,
+		data.Encode(),
 	)
 }

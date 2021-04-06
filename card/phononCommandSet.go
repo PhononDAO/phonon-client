@@ -660,3 +660,17 @@ func (cs *PhononCommandSet) ReceivePhonons(phononTransferPacket []byte) error {
 	}
 	return nil
 }
+
+//Implemented with support for single
+func (cs *PhononCommandSet) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
+	cmd := NewCommandSetReceiveList(phononPubKeys)
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		return err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return err
+	}
+	return nil
+}

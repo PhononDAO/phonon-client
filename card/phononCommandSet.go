@@ -663,6 +663,7 @@ func (cs *PhononCommandSet) ReceivePhonons(phononTransferPacket []byte) error {
 
 //Implemented with support for single
 func (cs *PhononCommandSet) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
+	log.Debug("sending SET_RECV_LIST command")
 	cmd := NewCommandSetReceiveList(phononPubKeys)
 	resp, err := cs.c.Send(cmd)
 	if err != nil {

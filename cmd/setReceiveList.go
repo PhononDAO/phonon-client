@@ -25,7 +25,7 @@ import (
 
 // setReceiveListCmd represents the setReceiveList command
 var setReceiveListCmd = &cobra.Command{
-	Use:   "phonon-client setReceiveList",
+	Use:   "setReceiveList",
 	Short: "low level test of SET_RECV_LIST command",
 	Long:  `low level test of SET_RECV_LIST command`,
 	Run: func(cmd *cobra.Command, args []string) {

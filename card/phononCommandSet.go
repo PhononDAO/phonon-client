@@ -283,7 +283,7 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 	return cs.checkOK(resp, err)
 }
 
-func (cs *PhononCommandSet) CreatePhonon() (keyIndex int, pubKey *ecdsa.PublicKey, err error) {
+func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
 	cmd := NewCommandCreatePhonon()
 	log.Info("sending create phonon command")
 	resp, err := cs.c.Send(cmd) //temp normal channel for testing
@@ -665,6 +665,23 @@ func (cs *PhononCommandSet) ReceivePhonons(phononTransferPacket []byte) error {
 func (cs *PhononCommandSet) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 	log.Debug("sending SET_RECV_LIST command")
 	cmd := NewCommandSetReceiveList(phononPubKeys)
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
+		return err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
+	log.Debug("sending TRANSACTION_ACK command")
+
+	data := EncodeKeyIndexList(keyIndices)
+
+	cmd := NewCommandTransactionAck(data)
 	resp, err := cs.c.Send(cmd)
 	if err != nil {
 		return err

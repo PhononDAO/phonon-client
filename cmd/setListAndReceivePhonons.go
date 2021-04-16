@@ -31,9 +31,10 @@ var setListAndReceiveCmd = &cobra.Command{
 	Long: `Tests SET_RECV_LIST AND RECV_PHONONS functionality with a single card by doing the following.
 
 	1. Creates a phonon.
-	2. Sends SET_RECV_LIST referring to that same phonon.
-	3. Asks the card to send the phonon.
-	4. Asks the card to receive back the same phonon, now that it is validated by SET_RECV_LIST
+	2. Sets Descriptor on that phonon
+	3. Sends SET_RECV_LIST referring to that same phonon.
+	4. Asks the card to send the phonon.
+	5. Asks the card to receive back the same phonon, now that it is validated by SET_RECV_LIST
 
 	`,
 	Run: func(cmd *cobra.Command, args []string) {

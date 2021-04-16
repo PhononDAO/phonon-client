@@ -283,7 +283,7 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 	return cs.checkOK(resp, err)
 }
 
-func (cs *PhononCommandSet) CreatePhonon() (keyIndex int, pubKey *ecdsa.PublicKey, err error) {
+func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
 	cmd := NewCommandCreatePhonon()
 	log.Info("sending create phonon command")
 	resp, err := cs.c.Send(cmd) //temp normal channel for testing

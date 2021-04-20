@@ -1,12 +1,10 @@
 package card
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/asn1"
-	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"math/big"
@@ -73,6 +71,7 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, err
 }
 
 func (cs *PhononCommandSet) Pair() error {
+	log.Debug("sending PAIR command")
 	//Generate random salt and keypair
 	clientSalt := make([]byte, 32)
 	rand.Read(clientSalt)
@@ -176,12 +175,14 @@ func (cs *PhononCommandSet) SetPairingInfo(key []byte, index int) {
 }
 
 func (cs *PhononCommandSet) Unpair(index uint8) error {
+	log.Debug("sending UNPAIR command")
 	cmd := keycard.NewCommandUnpair(index)
 	resp, err := cs.sc.Send(cmd)
 	return cs.checkOK(resp, err)
 }
 
 func (cs *PhononCommandSet) OpenSecureChannel() error {
+	log.Debug("sending OPEN_SECURE_CHANNEL command")
 	if cs.ApplicationInfo == nil {
 		return errors.New("cannot open secure channel without setting PairingInfo")
 	}
@@ -204,6 +205,7 @@ func (cs *PhononCommandSet) OpenSecureChannel() error {
 }
 
 func (cs *PhononCommandSet) mutualAuthenticate() error {
+	log.Debug("sending MUTUAL_AUTH command")
 	data := make([]byte, 32)
 	if _, err := rand.Read(data); err != nil {
 		return err
@@ -271,12 +273,14 @@ func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardS
 }
 
 func (cs *PhononCommandSet) VerifyPIN(pin string) error {
+	log.Debug("sending VERIFY_PIN command")
 	cmd := NewCommandVerifyPIN(pin)
 	resp, err := cs.sc.Send(cmd)
 	return cs.checkOK(resp, err)
 }
 
 func (cs *PhononCommandSet) ChangePIN(pin string) error {
+	log.Debug("sending CHANGE_PIN command")
 	cmd := NewCommandChangePIN(pin)
 	resp, err := cs.sc.Send(cmd)
 
@@ -284,8 +288,8 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 }
 
 func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
-	cmd := NewCommandCreatePhonon()
 	log.Info("sending create phonon command")
+	cmd := NewCommandCreatePhonon()
 	resp, err := cs.c.Send(cmd) //temp normal channel for testing
 	if err != nil {
 		log.Error("create phonon command failed: ", err)
@@ -302,6 +306,7 @@ func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.Publi
 }
 
 func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
+	log.Debug("sending SET_DESCRIPTOR command")
 	data, err := encodeSetDescriptorData(keyIndex, currencyType, value)
 	if err != nil {
 		return err
@@ -315,41 +320,6 @@ func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.Cu
 	}
 
 	return cs.checkOK(resp, err)
-}
-
-func encodeSetDescriptorData(keyIndex uint16, currencyType model.CurrencyType, value float32) ([]byte, error) {
-	keyIndexBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(keyIndexBytes, keyIndex)
-	keyIndexTLV, err := NewTLV(TagKeyIndex, keyIndexBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	currencyBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(currencyBytes, uint16(currencyType))
-	currencyTypeTLV, err := NewTLV(TagCurrencyType, currencyBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	var valueBytes bytes.Buffer
-	err = binary.Write(&valueBytes, binary.BigEndian, value)
-	if err != nil {
-		log.Error("unable to write float value as bytes: ", err)
-		return nil, err
-	}
-	valueTLV, err := NewTLV(TagPhononValue, valueBytes.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	descriptorBytes := append(keyIndexTLV.Encode(), currencyTypeTLV.Encode()...)
-	descriptorBytes = append(descriptorBytes, valueTLV.Encode()...)
-	phononDescriptorTLV, err := NewTLV(TagPhononDescriptor, descriptorBytes)
-	if err != nil {
-		return nil, err
-	}
-	return phononDescriptorTLV.Encode(), nil
 }
 
 func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
@@ -392,7 +362,7 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 //of the last requested list. listPhononsExtended will run recursively until the card indicates there are no additional
 //phonons in the list
 func (cs *PhononCommandSet) listPhononsExtended() (phonons []model.Phonon, err error) {
-	log.Debug("sending request for extended phonons list")
+	log.Debug("sending LIST_PHONONS extended request")
 	cmd := NewCommandListPhonons(0x01, 0x00, nil)
 	resp, err := cs.c.Send(cmd)
 	if err != nil {
@@ -416,115 +386,6 @@ func (cs *PhononCommandSet) listPhononsExtended() (phonons []model.Phonon, err e
 			return nil, err
 		}
 		phonons = append(phonons, extendedPhonons...)
-	}
-	return phonons, nil
-}
-
-func encodeListPhononsData(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) (p2 byte, data []byte, err error) {
-	//Toggle filter bytes for nonzero lessThan and greaterThan filter values
-	if lessThanValue == 0 {
-		//Don't filter on value at all
-		if greaterThanValue == 0 {
-			p2 = 0x00
-		}
-		//Filter on only GreaterThan Value
-		if greaterThanValue > 0 {
-			p2 = 0x02
-		}
-	}
-	if lessThanValue > 0 {
-		//Filter on only LessThanValue
-		if greaterThanValue == 0 {
-			p2 = 0x01
-		}
-		//Filter on LessThan and GreaterThan
-		if greaterThanValue > 0 {
-			p2 = 0x03
-		}
-
-	}
-
-	//Translate currencyType to bytes
-	currencyTypeBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(currencyTypeBytes, uint16(currencyType))
-
-	currencyTypeTLV, err := NewTLV(TagCurrencyType, currencyTypeBytes)
-	if err != nil {
-		return p2, nil, err
-	}
-	//Translate filter values to bytes
-	lessThanBytes, err := util.Float32ToBytes(lessThanValue)
-	if err != nil {
-		return p2, nil, err
-	}
-	greaterThanBytes, err := util.Float32ToBytes(greaterThanValue)
-	if err != nil {
-		return p2, nil, err
-	}
-	lessThanTLV, err := NewTLV(TagValueFilterLessThan, lessThanBytes)
-	if err != nil {
-		return p2, nil, err
-	}
-	greaterThanTLV, err := NewTLV(TagValueFilterMoreThan, greaterThanBytes)
-	if err != nil {
-		return p2, nil, err
-	}
-
-	innerData := EncodeTLVList(currencyTypeTLV, lessThanTLV, greaterThanTLV)
-	cmdData, err := NewTLV(TagPhononFilter, innerData)
-	if err != nil {
-		return p2, nil, err
-	}
-
-	return p2, cmdData.Encode(), nil
-}
-
-func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
-	phononCollection, err := ParseTLVPacket(resp, TagPhononCollection)
-	if err != nil {
-		return nil, err
-	}
-	//No phonons in list, the only tag will be the overall collection
-	if len(phononCollection) <= 1 {
-		return nil, nil
-	}
-	phonons := make([]model.Phonon, 0)
-	phononDescriptions, err := phononCollection.FindTags(TagPhononDescriptor)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, description := range phononDescriptions {
-		descriptionTLV, err := ParseTLVPacket(description)
-		if err != nil {
-			return phonons, err
-		}
-		keyIndexBytes, err := descriptionTLV.FindTag(TagKeyIndex)
-		if err != nil {
-			return phonons, err
-		}
-		currencyTypeBytes, err := descriptionTLV.FindTag(TagCurrencyType)
-		if err != nil {
-			return phonons, err
-		}
-		currencyType := binary.BigEndian.Uint16(currencyTypeBytes)
-
-		valueBytes, err := descriptionTLV.FindTag(TagPhononValue)
-		if err != nil {
-			return phonons, err
-		}
-
-		var value float32
-		err = binary.Read(bytes.NewReader(valueBytes), binary.BigEndian, &value)
-		if err != nil {
-			return phonons, err
-		}
-		phonon := model.Phonon{
-			KeyIndex:     int(binary.BigEndian.Uint16(keyIndexBytes)),
-			CurrencyType: model.CurrencyType(currencyType),
-			Value:        value,
-		}
-		phonons = append(phonons, phonon)
 	}
 	return phonons, nil
 }
@@ -559,23 +420,6 @@ func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.Publ
 	return pubKey, nil
 }
 
-func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err error) {
-	collection, err := ParseTLVPacket(resp)
-	if err != nil {
-		return nil, err
-	}
-	rawPubKey, err := collection.FindTag(TagPhononPubKey)
-	if err != nil {
-		return nil, err
-	}
-
-	pubKey, err = util.ParseECDSAPubKey(rawPubKey)
-	if err != nil {
-		return nil, err
-	}
-	return pubKey, nil
-}
-
 func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
 	data, err := NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
 	if err != nil {
@@ -596,6 +440,7 @@ func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.Priva
 }
 
 func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets [][]byte, err error) {
+	log.Debug("sending SEND_PHONONS command")
 	//Save this for extended requests
 	// tlvLength := 2
 	// bytesPerKeyIndex := 2
@@ -649,6 +494,7 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 }
 
 func (cs *PhononCommandSet) ReceivePhonons(phononTransferPacket []byte) error {
+	log.Debug("sending RECV_PHONONS command")
 	cmd := NewCommandReceivePhonons(phononTransferPacket)
 	resp, err := cs.c.Send(cmd)
 	if err != nil {

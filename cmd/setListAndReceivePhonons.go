@@ -76,22 +76,23 @@ func setListAndReceive() {
 	}
 
 	fmt.Printf("created phonon with keyIndex % X\n", keyIndex)
-	_, err = cs.SendPhonons([]uint16{uint16(keyIndex)}, false)
+	phononTransfer, err := cs.SendPhonons([]uint16{uint16(keyIndex)}, false)
 	if err != nil {
 		fmt.Println("error sending phonon: ", err)
 		return
 	}
 
-	badTransfer, err := cs.SendPhonons([]uint16{uint16(1)}, false)
-	if err != nil {
-		return
-	}
+	//TODO: actually test this
+	// badTransfer, err := cs.SendPhonons([]uint16{uint16(1)}, false)
+	// if err != nil {
+	// 	return
+	// }
 	err = cs.SetReceiveList([]*ecdsa.PublicKey{phononPubKey})
 	if err != nil {
 		return
 	}
 	//bad request
-	err = cs.ReceivePhonons(badTransfer[0])
+	err = cs.ReceivePhonons(phononTransfer[0])
 	//good request
 	// err = cs.ReceivePhonons(transferPackets[0])
 	if err != nil {

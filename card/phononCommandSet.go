@@ -90,6 +90,10 @@ func (cs *PhononCommandSet) Pair() error {
 		log.Error("unable to send Pair Step 1 command. err: ", err)
 		return err
 	}
+	err = checkPairingErrors(1, resp.Sw)
+	if err != nil {
+		return err
+	}
 	pairStep1Resp, err := gridplus.ParsePairStep1Response(resp.Data)
 	if err != nil {
 		log.Error("could not parse pair step 2 response. err: ", err)
@@ -149,7 +153,10 @@ func (cs *PhononCommandSet) Pair() error {
 		log.Error("error sending pair step 2 command. err: ", err)
 		return err
 	}
-
+	err = checkPairingErrors(2, resp.Sw)
+	if err != nil {
+		return err
+	}
 	pairStep2Resp, err := gridplus.ParsePairStep2Response(resp.Data)
 	if err != nil {
 		log.Error("could not parse pair step 2 response. err: ", err)

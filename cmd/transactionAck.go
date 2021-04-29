@@ -65,9 +65,10 @@ func transactionAck() {
 	}
 	err = cs.VerifyPIN("111111")
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
-	err = cs.TransactionAck([]uint16{1})
+	err = cs.TransactionAck([]uint16{keyIndex})
 	if err != nil {
 		fmt.Println(err)
 		return

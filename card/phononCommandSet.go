@@ -528,7 +528,7 @@ func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
 	data := EncodeKeyIndexList(keyIndices)
 
 	cmd := NewCommandTransactionAck(data)
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return err
 	}

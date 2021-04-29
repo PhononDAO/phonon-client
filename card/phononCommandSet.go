@@ -176,6 +176,33 @@ func (cs *PhononCommandSet) Pair() error {
 	return nil
 }
 
+//checkPairingErrors takes a pairing step, either 1 or 2, and the SW value of the response to return appropriate error messages
+func checkPairingErrors(pairingStep int, status uint16) (err error) {
+	if pairingStep != 1 && pairingStep != 2 {
+		return errors.New("pairing step must be set to 1 or 2 to check pairing errors")
+	}
+	switch status {
+	case 0x6A80:
+		err = errors.New("invalid pairing data format")
+	case 0x6882:
+		err = errors.New("certificate not loaded")
+	case 0x6982:
+		if pairingStep == 1 {
+			err = errors.New("unable to generate secret")
+		} else if pairingStep == 2 {
+			err = errors.New("client cryptogram verification failed")
+		}
+	case 0x6A84:
+		err = errors.New("all available pairing slots taken")
+	case 0x6A86:
+		err = errors.New("P1 invalid or first pairing phase was not completed")
+	case 0x6985:
+		err = errors.New("secure channel is already open")
+	}
+
+	return err
+}
+
 func (cs *PhononCommandSet) SetPairingInfo(key []byte, index int) {
 	cs.PairingInfo = &types.PairingInfo{
 		Key:   key,
@@ -285,13 +312,22 @@ func (cs *PhononCommandSet) VerifyPIN(pin string) error {
 	log.Debug("sending VERIFY_PIN command")
 	cmd := NewCommandVerifyPIN(pin)
 	resp, err := cs.sc.Send(cmd)
-	_, err = checkStatusWord(resp.Sw)
+	triesRemaining, err := checkVerifyPINErrors(resp.Sw)
 	if err != nil {
 		log.Error("error verifying pin: ", err)
+		log.Error("triesRemaining: ", triesRemaining)
+		return err
 	}
-	return cs.checkOK(resp, err)
+	return nil
 }
 
+func checkVerifyPINErrors(status uint16) (triesRemaining int, err error) {
+	if status >= 0x63C0 && status < 0x63D0 {
+		triesRemaining = int(status - 0x63C0)
+		return triesRemaining, errors.New("incorrect pin")
+	}
+	return 0, nil
+}
 func (cs *PhononCommandSet) ChangePIN(pin string) error {
 	log.Debug("sending CHANGE_PIN command")
 	cmd := NewCommandChangePIN(pin)

@@ -25,7 +25,7 @@ func Connect() (*PhononCommandSet, error) {
 	}
 
 	for i, reader := range readers {
-		log.Errorf("[%d] %s\n", i, reader)
+		log.Debugf("[%d] %s\n", i, reader)
 	}
 
 	if len(readers) > 0 {

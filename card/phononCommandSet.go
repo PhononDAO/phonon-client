@@ -278,6 +278,10 @@ func (cs *PhononCommandSet) VerifyPIN(pin string) error {
 	log.Debug("sending VERIFY_PIN command")
 	cmd := NewCommandVerifyPIN(pin)
 	resp, err := cs.sc.Send(cmd)
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		log.Error("error verifying pin: ", err)
+	}
 	return cs.checkOK(resp, err)
 }
 

@@ -6,3 +6,6 @@ build:
 
 windows-build:
 	GOOS=windows go build main/phonon.go
+
+test:
+	go test -v ./...

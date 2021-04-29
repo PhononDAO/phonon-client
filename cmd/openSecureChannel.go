@@ -56,7 +56,7 @@ func openSecureChannel() {
 	if err != nil {
 		fmt.Println("could not connect to card: ", err)
 	}
-	_, _, err = cs.Select()
+	_, _, _, err = cs.Select()
 	if err != nil {
 		fmt.Println("could not select phonon applet: ", err)
 		return

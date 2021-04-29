@@ -55,6 +55,13 @@ const (
 
 	TagPhononPubKeyList = 0x7F
 
+	TagCardCertificate = 0x90
+	TagECCPublicKey    = 0x80 //TODO: resolve redundancy around 0x80 tag
+	TagSalt            = 0x91
+	TagAesIV           = 0x92
+	TagECDSASig        = 0x93
+	TagPairingIndex    = 0x94
+
 	StatusSuccess         = 0x9000
 	StatusPhononTableFull = 0x6A84
 	StatusInvalidFile     = 0x6983

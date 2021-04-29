@@ -40,8 +40,7 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 
 //TODO: determine if I should return these values or have the secure channel handle it internally
 //Selects the phonon applet for further usage
-//Returns ErrCardUninitialized if card is not yet initialized with a pin
-func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, err error) {
+func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, cardInitialized bool, err error) {
 	cmd := globalplatform.NewCommandSelect(phononAID)
 	cmd.SetLe(0)
 
@@ -49,13 +48,13 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, err
 	resp, err := cs.c.Send(cmd)
 	if err != nil {
 		log.Error("could not send select command. err: ", err)
-		return nil, nil, err
+		return nil, nil, false, err
 	}
 
-	instanceUID, cardPubKey, err = ParseSelectResponse(resp.Data) //unused var is intanceUID
+	instanceUID, cardPubKey, err = ParseSelectResponse(resp.Data)
 	if err != nil && err != ErrCardUninitialized {
 		log.Error("error parsing select response. err: ", err)
-		return nil, nil, err
+		return nil, nil, false, err
 	}
 
 	//TODO: Use random version GenerateSecret in production
@@ -63,11 +62,14 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, err
 	secretsErr := cs.sc.GenerateSecret(cardPubKey)
 	if secretsErr != nil {
 		log.Error("could not generate secure channel secrets. err: ", secretsErr)
-		return nil, nil, secretsErr
+		return nil, nil, true, secretsErr
 	}
 	log.Debug("Pairing generated key:\n", hex.Dump(cs.sc.RawPublicKey()))
 	//return ErrCardUninitialized if ParseSelectResponse returns that error code
-	return instanceUID, cardPubKey, err
+	if err == ErrCardUninitialized {
+		return instanceUID, cardPubKey, false, nil
+	}
+	return instanceUID, cardPubKey, true, nil
 }
 
 func (cs *PhononCommandSet) Pair() error {
@@ -528,7 +530,7 @@ func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
 	data := EncodeKeyIndexList(keyIndices)
 
 	cmd := NewCommandTransactionAck(data)
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return err
 	}

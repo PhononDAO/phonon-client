@@ -61,8 +61,8 @@ func identifyCard() {
 	if err != nil {
 		return
 	}
-	_, selectCardPubKey, err := cs.Select()
-	if err != nil && err != card.ErrCardUninitialized {
+	_, selectCardPubKey, _, err := cs.Select()
+	if err != nil {
 		fmt.Println("could not select applet during initialization:", err)
 		return
 	}

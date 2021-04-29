@@ -14,18 +14,18 @@ import (
 func Connect() (*PhononCommandSet, error) {
 	ctx, err := scard.EstablishContext()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
 	readers, err := ctx.ListReaders()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
 	for i, reader := range readers {
-		fmt.Printf("[%d] %s\n", i, reader)
+		log.Errorf("[%d] %s\n", i, reader)
 	}
 
 	if len(readers) > 0 {
@@ -57,21 +57,21 @@ func Connect() (*PhononCommandSet, error) {
 func OpenSecureConnection() (*PhononCommandSet, error) {
 	cs, err := Connect()
 	if err != nil {
-		fmt.Println("could not connect to card: ", err)
+		log.Error("could not connect to card: ", err)
 	}
-	_, _, err = cs.Select()
+	_, _, _, err = cs.Select()
 	if err != nil {
-		fmt.Println("could not select phonon applet: ", err)
+		log.Error("could not select phonon applet: ", err)
 		return nil, err
 	}
 	err = cs.Pair()
 	if err != nil {
-		fmt.Println("could not pair: ", err)
+		log.Error("could not pair: ", err)
 		return nil, err
 	}
 	err = cs.OpenSecureChannel()
 	if err != nil {
-		fmt.Println("could not open secure channel: ", err)
+		log.Error("could not open secure channel: ", err)
 		return nil, err
 	}
 	return cs, nil

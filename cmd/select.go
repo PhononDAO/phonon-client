@@ -37,7 +37,7 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			return
 		}
-		_, _, err = cs.Select()
+		_, _, _, err = cs.Select()
 		if err != nil && err != card.ErrCardUninitialized {
 			fmt.Println("could not select applet", err)
 			return

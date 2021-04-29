@@ -62,7 +62,7 @@ func setListAndReceive() {
 		return
 	}
 
-	_, _, err = cs.Select()
+	_, _, _, err = cs.Select()
 
 	keyIndex, phononPubKey, err := cs.CreatePhonon()
 	if err != nil {

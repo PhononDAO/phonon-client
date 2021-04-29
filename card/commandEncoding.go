@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/binary"
+	"errors"
 
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
@@ -169,4 +170,31 @@ func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err err
 		return nil, err
 	}
 	return pubKey, nil
+}
+
+//checkPairingErrors takes a pairing step, either 1 or 2, and the SW value of the response to return appropriate error messages
+func checkPairingErrors(pairingStep int, status uint16) (err error) {
+	if pairingStep != 1 && pairingStep != 2 {
+		return errors.New("pairing step must be set to 1 or 2 to check pairing errors")
+	}
+	switch status {
+	case 0x6A80:
+		err = errors.New("invalid pairing data format")
+	case 0x6882:
+		err = errors.New("certificate not loaded")
+	case 0x6982:
+		if pairingStep == 1 {
+			err = errors.New("unable to generate secret")
+		} else if pairingStep == 2 {
+			err = errors.New("client cryptogram verification failed")
+		}
+	case 0x6A84:
+		err = errors.New("all available pairing slots taken")
+	case 0x6A86:
+		err = errors.New("P1 invalid or first pairing phase was not completed")
+	case 0x6985:
+		err = errors.New("secure channel is already open")
+	}
+
+	return err
 }

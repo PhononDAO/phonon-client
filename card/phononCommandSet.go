@@ -64,7 +64,7 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, car
 		log.Error("could not generate secure channel secrets. err: ", secretsErr)
 		return nil, nil, true, secretsErr
 	}
-	log.Debug("Pairing generated key:\n", hex.Dump(cs.sc.RawPublicKey()))
+	log.Debugf("Pairing generated key: % X\n", cs.sc.RawPublicKey())
 	//return ErrCardUninitialized if ParseSelectResponse returns that error code
 	if err == ErrCardUninitialized {
 		return instanceUID, cardPubKey, false, nil

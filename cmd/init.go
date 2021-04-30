@@ -52,20 +52,19 @@ func init() {
 }
 
 func initializeCard() {
-	// cs, err := card.Connect()
-	// if err != nil {
-	// 	return
-	// }
-	// _, _, initialized, err := cs.Select()
-	// if err != nil && err != card.ErrCardUninitialized {
-	// 	fmt.Println("could not select applet during initialization:", err)
-	// 	return
-	// }
-	// if initialized {
-	// 	fmt.Println("card pin has already been initialized")
-	// 	return
-	// }
-	cs, err := card.OpenSecureConnection()
+	cs, err := card.Connect()
+	if err != nil {
+		return
+	}
+	_, _, initialized, err := cs.Select()
+	if err != nil && err != card.ErrCardUninitialized {
+		fmt.Println("could not select applet during initialization:", err)
+		return
+	}
+	if initialized {
+		fmt.Println("card pin has already been initialized")
+		return
+	}
 	testPin := "111111"
 
 	err = cs.Init(testPin)

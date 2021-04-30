@@ -10,7 +10,7 @@ import (
 
 func TestMain(m *testing.M) {
 	runtime.GOMAXPROCS(1)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	log.SetFormatter(&log.TextFormatter{})
 	os.Exit(m.Run())
 }

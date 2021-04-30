@@ -98,7 +98,8 @@ func (cs *PhononCommandSet) Pair() error {
 	}
 	pairStep1Resp, err := gridplus.ParsePairStep1Response(resp.Data)
 	if err != nil {
-		log.Error("could not parse pair step 2 response. err: ", err)
+		log.Error("could not parse pair step 1 response. err: ", err)
+		return err
 	}
 
 	//Validate card's certificate has valid GridPlus signature
@@ -136,6 +137,7 @@ func (cs *PhononCommandSet) Pair() error {
 	_, err = asn1.Unmarshal(pairStep1Resp.SafecardSig, signature)
 	if err != nil {
 		log.Error("could not unmarshal certificate signature.", err)
+		return err
 	}
 
 	//validate that card created valid signature over same salted and hashed ecdh secret
@@ -162,6 +164,7 @@ func (cs *PhononCommandSet) Pair() error {
 	pairStep2Resp, err := gridplus.ParsePairStep2Response(resp.Data)
 	if err != nil {
 		log.Error("could not parse pair step 2 response. err: ", err)
+		return err
 	}
 	log.Debugf("pairStep2Resp: % X", pairStep2Resp)
 

@@ -3,7 +3,7 @@ module github.com/GridPlus/phonon-client
 go 1.14
 
 require (
-	github.com/GridPlus/keycard-go v0.0.0-20210114165813-5f0c40a54a6c
+	github.com/GridPlus/keycard-go v0.0.0-20210303180011-9d65a48ed987
 	github.com/btcsuite/btcd v0.21.0-beta // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v2 v2.0.0
 	github.com/ebfe/scard v0.0.0-20190212122703-c3d1b1916a95
@@ -16,4 +16,4 @@ require (
 	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e // indirect
 )
 
-// replace github.com/GridPlus/keycard-go => /Users/dveenstra/projects/gridplus/keycard-go
+replace github.com/GridPlus/keycard-go => /Users/dveenstra/projects/gridplus/keycard-go

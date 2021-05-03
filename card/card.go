@@ -2,7 +2,6 @@ package card
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/GridPlus/keycard-go/io"
 	"github.com/ebfe/scard"
@@ -35,13 +34,13 @@ func Connect() (*PhononCommandSet, error) {
 		}
 		// defer card.Disconnect(scard.ResetCard)
 
-		fmt.Println("Card status:")
+		log.Debug("Card status:")
 		status, err := card.Status()
 		if err != nil {
 			log.Error(err)
 		}
 
-		fmt.Printf("\treader: %s\n\tstate: %x\n\tactive protocol: %x\n\tatr: % x\n",
+		log.Debugf("\treader: %s\n\tstate: %x\n\tactive protocol: %x\n\tatr: % x\n",
 			status.Reader, status.State, status.ActiveProtocol, status.Atr)
 
 		// c.c = io.NewNormalChannel(card)

@@ -103,7 +103,7 @@ func (cs *PhononCommandSet) Pair() error {
 	}
 
 	//Validate card's certificate has valid GridPlus signature
-	certValid := gridplus.ValidateCardCertificate(pairStep1Resp.SafecardCert)
+	certValid := gridplus.ValidateCardCertificate(pairStep1Resp.SafecardCert, gridplus.SafecardDevCAPubKey)
 	log.Debug("certificate signature valid: ", certValid)
 	if !certValid {
 		log.Error("unable to verify card certificate.")
@@ -340,7 +340,7 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 }
 
 func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
-	log.Info("sending create phonon command")
+	log.Info("sending CREATE_PHONON command")
 	cmd := NewCommandCreatePhonon()
 	resp, err := cs.c.Send(cmd) //temp normal channel for testing
 	if err != nil {

@@ -59,7 +59,7 @@ func listPhonons() {
 	}
 	cs.Select()
 
-	phonons, err := cs.ListPhonons(model.Bitcoin, 0, 0)
+	phonons, err := cs.ListPhonons(model.Unspecified, 0, 0)
 	if err != nil {
 		return
 	}

@@ -1,20 +1,22 @@
+//go:generate stringer -type=CurrencyType
+
 package model
 
 import "crypto/ecdsa"
 
 type Phonon struct {
-	KeyIndex     int
+	KeyIndex     uint16
 	PubKey       *ecdsa.PublicKey
 	Value        float32
 	CurrencyType CurrencyType
 }
 
-type CryptoAsset byte
+type CurrencyType uint16
 
 const (
-	Test CryptoAsset = iota
-	ETH
-	BTC
+	Unspecified CurrencyType = 0x0000
+	Bitcoin     CurrencyType = 0x0001
+	Ethereum    CurrencyType = 0x0002
 )
 
 type CryptoChain byte

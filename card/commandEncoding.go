@@ -145,7 +145,7 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 			return phonons, err
 		}
 		phonon := model.Phonon{
-			KeyIndex:     int(binary.BigEndian.Uint16(keyIndexBytes)),
+			KeyIndex:     binary.BigEndian.Uint16(keyIndexBytes),
 			CurrencyType: model.CurrencyType(currencyType),
 			Value:        value,
 		}

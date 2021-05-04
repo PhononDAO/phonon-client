@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/spf13/cobra"
 )
 
@@ -57,17 +58,23 @@ func transactionAck() {
 	keyIndex, _, err := cs.CreatePhonon()
 	if err != nil {
 		fmt.Println(err)
+		return
+	}
+	err = cs.SetDescriptor(keyIndex, model.Bitcoin, 1)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	err = cs.VerifyPIN("111111")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	// err = cs.VerifyPIN("111111")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
 	err = cs.TransactionAck([]uint16{keyIndex})
 	if err != nil {
 		fmt.Println(err)

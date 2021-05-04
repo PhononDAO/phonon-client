@@ -112,8 +112,8 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 	//TODO: pass different filters into this function
 	type phononFilter struct {
-		currencyType model.CurrencyType
-		lessThanValue float32
+		currencyType     model.CurrencyType
+		lessThanValue    float32
 		greaterThanValue float32
 	}
 
@@ -137,6 +137,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 			return
 		}
 	}
+	fmt.Printf("createdPhonons: %+v", createdPhonons)
 
 	//TODO: wrap up as list function, and pass different lists
 	receivedPhonons, err := cs.ListPhonons(model.Unspecified, 0, 0)
@@ -144,9 +145,11 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		t.Error("err listing all phonons: ", err)
 		return
 	}
+	fmt.Println("len of the received phonons: ", len(receivedPhonons))
 	// fmt.Print("received phonons: ", receivedPhonons)
 	expectedPhononCount := len(createdPhonons)
 	var matchedPhononCount int
+
 	for _, received := range receivedPhonons {
 		received.PubKey, err = cs.GetPhononPubKey(uint16(received.KeyIndex))
 		if err != nil {
@@ -173,6 +176,6 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 	}
 }
 
-func comparePhononList([]{model.CurrencyType, float32, float32})) {
-	for
-}
+// func comparePhononList([]{model.CurrencyType, float32, float32})) {
+// 	for
+// }

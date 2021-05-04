@@ -110,6 +110,13 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		{model.Ethereum, 1},
 	}
 
+	//TODO: pass different filters into this function
+	type phononFilter struct {
+		currencyType model.CurrencyType
+		lessThanValue float32
+		greaterThanValue float32
+	}
+
 	var createdPhonons []model.Phonon
 	for _, description := range phononTable {
 		keyIndex, pubKey, err := cs.CreatePhonon()
@@ -141,16 +148,15 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 	expectedPhononCount := len(createdPhonons)
 	var matchedPhononCount int
 	for _, received := range receivedPhonons {
-		receivedPubKey, err := cs.GetPhononPubKey(uint16(received.KeyIndex))
+		received.PubKey, err = cs.GetPhononPubKey(uint16(received.KeyIndex))
 		if err != nil {
 			t.Error("could not get phonon pubkey: ", err)
 		}
-		fmt.Printf("%+v", received)
-		fmt.Printf("receivedPubKey: % X", receivedPubKey)
+		fmt.Printf("%+v\n", received)
 		for _, created := range createdPhonons {
-			fmt.Printf("createdPubKey: % X", created.PubKey)
+			fmt.Printf("createdPubKey: % X\n", created.PubKey)
 			//Todo figure out why this isn't matching
-			if receivedPubKey.X == created.PubKey.X && receivedPubKey.Y == created.PubKey.Y {
+			if received.PubKey.Equal(created.PubKey) {
 				matchedPhononCount += 1
 				fmt.Printf("received: %+v\n", received)
 				fmt.Printf("created: %+v\n", created)
@@ -165,4 +171,8 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 	if expectedPhononCount > matchedPhononCount {
 		t.Errorf("expected %v received phonons to match list but only %v were found", expectedPhononCount, matchedPhononCount)
 	}
+}
+
+func comparePhononList([]{model.CurrencyType, float32, float32})) {
+	for
 }

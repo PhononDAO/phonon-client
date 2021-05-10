@@ -331,6 +331,7 @@ func checkVerifyPINErrors(status uint16) (triesRemaining int, err error) {
 	}
 	return 0, nil
 }
+
 func (cs *PhononCommandSet) ChangePIN(pin string) error {
 	log.Debug("sending CHANGE_PIN command")
 	cmd := NewCommandChangePIN(pin)

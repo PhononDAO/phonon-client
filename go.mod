@@ -1,6 +1,6 @@
 module github.com/GridPlus/phonon-client
 
-go 1.14
+go 1.16
 
 require (
 	github.com/GridPlus/keycard-go v0.0.0-20210430215704-920023c47335

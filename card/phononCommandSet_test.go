@@ -11,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var testPin string = "111111"
+
 func TestMain(m *testing.M) {
 	runtime.GOMAXPROCS(1)
 	log.SetLevel(log.InfoLevel)
@@ -26,7 +28,6 @@ func TestMain(m *testing.M) {
 		fmt.Println(err)
 		return
 	}
-	testPin := "111111"
 	if !initialized {
 		err = cs.Init(testPin)
 		if err != nil {
@@ -36,29 +37,6 @@ func TestMain(m *testing.M) {
 	}
 	os.Exit(m.Run())
 }
-
-// //Open a secure connection and make sure a pin is set on card
-// func TestMain(m *testing.M) {
-// 	cs, err := OpenSecureConnection()
-// 	testPin := "111111"
-// 	err = cs.VerifyPIN(testPin)
-// 	if err != nil {
-// 		fmt.Println("unable to verify pin: ", err)
-// 		return
-// 	}
-// 	m.Run()
-// }
-
-// //Integration tests to check card functionality against
-// func TestOpenSecureConnection(t *testing.T) {
-// 	cs, err := OpenSecureConnection()
-// 	if err != nil {
-// 		t.Error("error opening secure connection with card: ", err)
-// 	}
-// 	if cs == nil {
-// 		t.Error("received nil commandSet when opening secure connection")
-// 	}
-// }
 
 func TestSelect(t *testing.T) {
 	cs, err := Connect()
@@ -112,9 +90,10 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 	//TODO: pass different filters into this function
 	type phononFilter struct {
-		currencyType     model.CurrencyType
-		lessThanValue    float32
-		greaterThanValue float32
+		currencyType        model.CurrencyType
+		lessThanValue       float32
+		greaterThanValue    float32
+		expectedPhononCount int
 	}
 
 	var createdPhonons []model.Phonon
@@ -139,43 +118,95 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 	}
 	fmt.Printf("createdPhonons: %+v", createdPhonons)
 
-	//TODO: wrap up as list function, and pass different lists
-	receivedPhonons, err := cs.ListPhonons(model.Unspecified, 0, 0)
-	if err != nil {
-		t.Error("err listing all phonons: ", err)
-		return
+	filters := []phononFilter{
+		{
+			currencyType:        model.Unspecified,
+			lessThanValue:       0,
+			greaterThanValue:    0,
+			expectedPhononCount: 6,
+		},
+		{
+			currencyType:        model.Bitcoin,
+			lessThanValue:       0,
+			greaterThanValue:    0,
+			expectedPhononCount: 3,
+		},
+		{
+			currencyType:        model.Ethereum,
+			lessThanValue:       0,
+			greaterThanValue:    0,
+			expectedPhononCount: 3,
+		},
 	}
-	fmt.Println("len of the received phonons: ", len(receivedPhonons))
-	// fmt.Print("received phonons: ", receivedPhonons)
-	expectedPhononCount := len(createdPhonons)
-	var matchedPhononCount int
 
-	for _, received := range receivedPhonons {
-		received.PubKey, err = cs.GetPhononPubKey(uint16(received.KeyIndex))
+	for _, f := range filters {
+		//TODO: wrap up as list function, and pass different lists
+		receivedPhonons, err := cs.ListPhonons(f.currencyType, f.lessThanValue, f.greaterThanValue)
 		if err != nil {
-			t.Error("could not get phonon pubkey: ", err)
+			t.Error("err listing all phonons: ", err)
+			return
 		}
-		fmt.Printf("%+v\n", received)
-		for _, created := range createdPhonons {
-			fmt.Printf("createdPubKey: % X\n", created.PubKey)
-			//Todo figure out why this isn't matching
-			if received.PubKey.Equal(created.PubKey) {
-				matchedPhononCount += 1
-				fmt.Printf("received: %+v\n", received)
-				fmt.Printf("created: %+v\n", created)
-				if !cmp.Equal(received, created) {
-					t.Error("phonons with equal pubkeys had different values: ")
-					t.Errorf("received: %+v\n", received)
-					t.Errorf("created: %+v\n", created)
+		fmt.Println("len of the received phonons: ", len(receivedPhonons))
+		// fmt.Print("received phonons: ", receivedPhonons)
+		var matchedPhononCount int
+
+		for _, received := range receivedPhonons {
+			received.PubKey, err = cs.GetPhononPubKey(uint16(received.KeyIndex))
+			if err != nil {
+				t.Error("could not get phonon pubkey: ", err)
+			}
+			fmt.Printf("%+v\n", received)
+			for _, created := range createdPhonons {
+				fmt.Printf("createdPubKey: % X\n", created.PubKey)
+				//Todo figure out why this isn't matching
+				if received.PubKey.Equal(created.PubKey) {
+					matchedPhononCount += 1
+					fmt.Printf("received: %+v\n", received)
+					fmt.Printf("created: %+v\n", created)
+					if !cmp.Equal(received, created) {
+						t.Error("phonons with equal pubkeys had different values: ")
+						t.Errorf("received: %+v\n", received)
+						t.Errorf("created: %+v\n", created)
+					}
 				}
 			}
 		}
-	}
-	if expectedPhononCount > matchedPhononCount {
-		t.Errorf("expected %v received phonons to match list but only %v were found", expectedPhononCount, matchedPhononCount)
+		if f.expectedPhononCount != matchedPhononCount {
+			t.Errorf("expected %v received phonons to match list but only %v were found", f.expectedPhononCount, matchedPhononCount)
+		}
 	}
 }
 
-// func comparePhononList([]{model.CurrencyType, float32, float32})) {
-// 	for
+// func TestTransactionAck(t *testing.T) {
+// 	cs, err := OpenSecureConnection()
+// 	if err != nil {
+// 		t.Error("could not open secure connection: ", err)
+// 		return
+// 	}
+// 	err = cs.VerifyPIN(testPin)
+// 	if err != nil {
+// 		t.Error("could not verify pin: ", err)
+// 		return
+// 	}
+// 	keyIndex, _, err := cs.CreatePhonon()
+// 	if err != nil {
+// 		t.Error(err)
+// 		return
+// 	}
+// 	err = cs.SetDescriptor(keyIndex, model.Bitcoin, 1)
+// 	if err != nil {
+// 		t.Error(err)
+// 		return
+// 	}
+// 	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+// 	if err != nil {
+// 		t.Error(err)
+// 		return
+// 	}
+
+// 	err = cs.TransactionAck([]uint16{keyIndex})
+// 	if err != nil {
+// 		t.Error("error in transaction ack: ", err)
+// 		return
+// 	}
 // }

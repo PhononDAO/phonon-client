@@ -341,7 +341,7 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 }
 
 func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
-	log.Info("sending CREATE_PHONON command")
+	log.Debug("sending CREATE_PHONON command")
 	cmd := NewCommandCreatePhonon()
 	resp, err := cs.c.Send(cmd) //temp normal channel for testing
 	if err != nil {

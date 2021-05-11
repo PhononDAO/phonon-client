@@ -59,6 +59,10 @@ func setDescriptor() {
 		return
 	}
 	cs.Select()
+	// cs, err := card.OpenSecureConnection()
+	// if err != nil {
+	// 	return
+	// }
 	keyIndex, _, err := cs.CreatePhonon()
 	if err != nil {
 		return
@@ -66,7 +70,7 @@ func setDescriptor() {
 
 	fmt.Println("sending set descriptor")
 	//Create a mock BTC descriptor
-	err = cs.SetDescriptor(uint16(keyIndex), model.Bitcoin, 0.1)
+	err = cs.SetDescriptor(keyIndex, model.Bitcoin, 0.1)
 	if err != nil {
 		fmt.Println("unable to set descriptor")
 		return

@@ -96,8 +96,14 @@ func (sc *SecureChannel) RawPublicKey() []byte {
 }
 
 //AES-GCM Symmetric encryption
-func (sc *SecureChannel) Send(cmd *apdu.Command) (*apdu.Response, error) {
+func (sc *SecureChannel) Send(cmd *apdu.Command) (resp *apdu.Response, err error) {
 	log.Debugf("about to send encrypted command: %+v", cmd)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("recovered from panic: ", r)
+			err = errors.New("recovered from panic in secure channel send")
+		}
+	}()
 	if sc.open {
 		encData, err := crypto.EncryptData(cmd.Data, sc.encKey, sc.iv)
 		if err != nil {
@@ -113,7 +119,7 @@ func (sc *SecureChannel) Send(cmd *apdu.Command) (*apdu.Response, error) {
 		cmd.Data = newData
 	}
 
-	resp, err := sc.c.Send(cmd)
+	resp, err = sc.c.Send(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +132,9 @@ func (sc *SecureChannel) Send(cmd *apdu.Command) (*apdu.Response, error) {
 	rmac := resp.Data[:len(sc.iv)]
 	rdata := resp.Data[len(sc.iv):]
 	plainData, err := crypto.DecryptData(rdata, sc.encKey, sc.iv)
+	if err != nil {
+		return nil, err
+	}
 	if err = sc.updateIV(rmeta, rdata); err != nil {
 		return nil, err
 	}

@@ -53,6 +53,20 @@ func init() {
 }
 
 func listPhonons() {
+	// s, err := card.NewSession()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// phonons, err := s.ListPhonons(model.Unspecified, 0, 0)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// fmt.Println("listed phonons:")
+	// for _, phonon := range phonons {
+	// 	fmt.Printf("%+v\n", phonon)
+	// }
 	cs, err := card.Connect()
 	if err != nil {
 		return

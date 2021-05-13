@@ -375,6 +375,9 @@ func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.Cu
 	return cs.checkOK(resp, err)
 }
 
+//ListPhonons takes a currency type and range bounds and returns a listing of the phonons currently stored on the card
+//Set lessThanValue or greaterThanValue to 0 to ignore the parameter. Returned phonons omit the public key to reduce data transmission
+//After processing, the list client should send GET_PHONON_PUB_KEY to retrieve the corresponding pubkeys if necessary.
 func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
 	log.Debug("sending list phonons command")
 	p2, cmdData, err := encodeListPhononsData(currencyType, lessThanValue, greaterThanValue)
@@ -456,6 +459,7 @@ func checkStatusWord(status uint16) (continues bool, err error) {
 }
 
 func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
+	log.Debug("sending GET_PHONON_PUB_KEY command")
 	data, err := NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
 	if err != nil {
 		return nil, err

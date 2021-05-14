@@ -52,12 +52,18 @@ func init() {
 }
 
 func getPhononPubKey() {
-	cs, err := card.Connect()
+	cs, err := card.OpenSecureConnection()
 	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = cs.VerifyPIN("111111")
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
-	keyIndex := uint16(1)
+	keyIndex := uint16(3)
 	pubKey, err := cs.GetPhononPubKey(keyIndex)
 	if err != nil {
 		fmt.Println("error getting phonon public key: ", err)

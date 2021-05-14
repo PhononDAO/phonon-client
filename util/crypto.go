@@ -34,3 +34,12 @@ func ParseECDSAPubKey(pubKey []byte) (*ecdsa.PublicKey, error) {
 	}
 	return ecdsaPubKey, nil
 }
+
+func ParseECCPrivKey(privKey []byte) (*ecdsa.PrivateKey, error) {
+	eccPrivKey, err := ethcrypto.ToECDSA(privKey)
+	if err != nil {
+		log.Error("could not parse ecc priv key from raw bytes: ", err)
+		return nil, err
+	}
+	return eccPrivKey, nil
+}

@@ -492,9 +492,12 @@ func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.Priva
 	if err != nil {
 		return nil, err
 	}
-	//parse private key from response
+	privKey, err = parseDestroyPhononResponse(resp.Data)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	return privKey, nil
 }
 
 func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets [][]byte, err error) {

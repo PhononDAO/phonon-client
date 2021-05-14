@@ -75,5 +75,5 @@ func destroyPhonon(keyIndex uint16) {
 		return
 	}
 	fmt.Println("destroyed phonon and exported privKey: ")
-	fmt.Printf("X: % X\nY: % X\n", privKey.X, privKey.Y)
+	fmt.Printf("D: % X", privKey.D)
 }

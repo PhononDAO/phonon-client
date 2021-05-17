@@ -220,11 +220,13 @@ func TestDestroyPhonon(t *testing.T) {
 	}
 
 	resultPubKey := privKey.PublicKey
-	if !createdPubKey.Equal(resultPubKey) {
+	if !createdPubKey.Equal(&resultPubKey) {
+		t.Errorf("createdPubKey: %+v", createdPubKey)
+		t.Errorf("derivedPubKey: %+v", resultPubKey)
 		t.Error("derived pubKey from destroyed phonon was not equivalent to created PubKey")
 		t.Error("privKey from destroy: % X", append(privKey.X.Bytes(), privKey.Y.Bytes()...))
-		t.Error("derived result: % X", append(resultPubKey.X.Bytes(), resultPubKey.Y.Bytes()...))
-		t.Error("created pubKey: % X", append(createdPubKey.X.Bytes(), createdPubKey.Y.Bytes()...))
+		t.Errorf("derived result: % X\n", append(resultPubKey.X.Bytes(), resultPubKey.Y.Bytes()...))
+		t.Errorf("created pubKey: % X\n", append(createdPubKey.X.Bytes(), createdPubKey.Y.Bytes()...))
 	}
 }
 

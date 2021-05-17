@@ -231,6 +231,7 @@ func TestDestroyPhonon(t *testing.T) {
 }
 
 // TODO
+//Pairing + Send/Receive cycle
 // SEND_PHONONS
 // SET_RECV_LIST
 // RECV_PHONONS

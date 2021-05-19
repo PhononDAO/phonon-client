@@ -1,22 +1,28 @@
 package card
 
 import (
+	"errors"
 	"github.com/GridPlus/phonon-client/model"
 )
 
 type Session struct {
-	cs     *PhononCommandSet
-	active bool
+	cs          *PhononCommandSet
+	active      bool
+	initialized bool
 }
 
+var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
+var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
+
 func NewSession() (*Session, error) {
-	cs, err := OpenBestConnection()
+	cs, initialized, err := OpenBestConnection()
 	if err != nil {
 		return nil, err
 	}
 	return &Session{
-		cs:     cs,
-		active: true,
+		cs:          cs,
+		active:      true,
+		initialized: initialized,
 	}, nil
 }
 
@@ -31,6 +37,26 @@ func NewSession() (*Session, error) {
 // 	}
 // 	return s, nil
 // }
+
+func (s *Session) Init(pin string) error {
+	if s.initialized {
+		return ErrAlreadyInitialized
+	}
+	err := s.cs.Init(pin)
+	if err != nil {
+		return err
+	}
+	//Open new secure connection now that card is initialized
+	var initialized bool
+	s.cs, initialized, err = OpenBestConnection()
+	if err != nil {
+		return err
+	}
+	if !initialized {
+		return ErrInitFailed
+	}
+	return nil
+}
 
 func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
 	if !s.active {

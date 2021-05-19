@@ -24,17 +24,19 @@ import (
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize phonon card with PIN",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "init [pin]",
+	Short: "Initialize phonon card with PIN.",
+	Long:  `Initialize phonon card with PIN. Defaults to 111111 if no argument is given`,
 	Run: func(cmd *cobra.Command, args []string) {
-		initializeCard()
+		var pin string
+		if len(args) > 0 {
+			pin = args[0]
+		} else {
+			pin = "111111"
+		}
+		initializeCard(pin)
 	},
+	Args: cobra.MaximumNArgs(1),
 }
 
 func init() {
@@ -51,25 +53,36 @@ func init() {
 	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func initializeCard() {
-	cs, err := card.Connect()
-	if err != nil {
-		return
-	}
-	_, _, initialized, err := cs.Select()
-	if err != nil && err != card.ErrCardUninitialized {
-		fmt.Println("could not select applet during initialization:", err)
-		return
-	}
-	if initialized {
-		fmt.Println("card pin has already been initialized")
-		return
-	}
-	testPin := "111111"
+func initializeCard(pin string) {
+	// cs, err := card.Connect()
+	// if err != nil {
+	// 	return
+	// }
+	// _, _, initialized, err := cs.Select()
+	// if err != nil && err != card.ErrCardUninitialized {
+	// 	fmt.Println("could not select applet during initialization:", err)
+	// 	return
+	// }
+	// if initialized {
+	// 	fmt.Println("card pin has already been initialized")
+	// 	return
+	// }
+	// testPin := "111111"
 
-	err = cs.Init(testPin)
+	// err = cs.Init(testPin)
+	// if err != nil {
+	// 	fmt.Println("unable to initialize card:", err)
+	// 	return
+	// }
+	s, err := card.NewSession()
 	if err != nil {
-		fmt.Println("unable to initialize card:", err)
+		fmt.Println(err)
 		return
 	}
+	err = s.Init(pin)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("successfully set PIN")
 }

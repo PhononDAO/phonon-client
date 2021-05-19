@@ -74,6 +74,4 @@ func setDescriptor() {
 		fmt.Println("unable to set descriptor")
 		return
 	}
-
-	//Create a mock ETH descriptor
 }

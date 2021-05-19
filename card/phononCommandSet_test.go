@@ -15,7 +15,7 @@ var testPin string = "111111"
 
 func TestMain(m *testing.M) {
 	runtime.GOMAXPROCS(1)
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.TextFormatter{})
 
 	cs, err := Connect()
@@ -38,6 +38,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+//SELECT
 func TestSelect(t *testing.T) {
 	cs, err := Connect()
 	instanceUID, cardPubKey, cardInitialized, err := cs.Select()
@@ -61,6 +62,9 @@ func TestSelect(t *testing.T) {
 	log.Debugf("cardPubKey: % X", cardPubKey)
 }
 
+//PAIR
+//OPEN_SECURE_CHANNEL
+//MUTUAL_AUTH
 func TestOpenSecureConnection(t *testing.T) {
 	_, err := OpenSecureConnection()
 	if err != nil {
@@ -69,12 +73,23 @@ func TestOpenSecureConnection(t *testing.T) {
 	}
 }
 
+//VERIFY_PIN
+//CREATE_PHONON
+//SET_DESCRIPTOR
+//GET_PHONON_PUB_KEY
+//LIST_PHONONS
 func TestCreateSetAndListPhonons(t *testing.T) {
 	cs, err := OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
 		return
 	}
+	err = cs.VerifyPIN(testPin)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	type phononDescription struct {
 		currencyType model.CurrencyType
 		value        float32
@@ -177,6 +192,55 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		}
 	}
 }
+
+// DESTROY_PHONON
+func TestDestroyPhonon(t *testing.T) {
+	cs, err := OpenSecureConnection()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if err = cs.VerifyPIN(testPin); err != nil {
+		t.Error(err)
+		return
+	}
+	keyIndex, createdPubKey, err := cs.CreatePhonon()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = cs.SetDescriptor(keyIndex, model.Ethereum, .578)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	privKey, err := cs.DestroyPhonon(keyIndex)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	resultPubKey := privKey.PublicKey
+	if !createdPubKey.Equal(&resultPubKey) {
+		t.Errorf("createdPubKey: %+v", createdPubKey)
+		t.Errorf("derivedPubKey: %+v", resultPubKey)
+		t.Error("derived pubKey from destroyed phonon was not equivalent to created PubKey")
+		t.Error("privKey from destroy: % X", append(privKey.X.Bytes(), privKey.Y.Bytes()...))
+		t.Errorf("derived result: % X\n", append(resultPubKey.X.Bytes(), resultPubKey.Y.Bytes()...))
+		t.Errorf("created pubKey: % X\n", append(createdPubKey.X.Bytes(), createdPubKey.Y.Bytes()...))
+	}
+}
+
+// TODO
+//Pairing + Send/Receive cycle
+// SEND_PHONONS
+// SET_RECV_LIST
+// RECV_PHONONS
+// TRANSACTION_ACK
+// CARD_PAIR
+// CARD_PAIR_2
+// FINALIZE_CARD_PAIRING
+// IDENTIFY_CARD
 
 // func TestTransactionAck(t *testing.T) {
 // 	cs, err := OpenSecureConnection()

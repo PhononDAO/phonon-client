@@ -53,24 +53,23 @@ func init() {
 }
 
 func setDescriptor() {
-	// cs, err := card.OpenSecureConnection()
-	cs, err := card.Connect()
+	cs, err := card.OpenSecureConnection()
 	if err != nil {
 		return
 	}
-	cs.Select()
-	// cs, err := card.OpenSecureConnection()
-	// if err != nil {
-	// 	return
-	// }
-	keyIndex, _, err := cs.CreatePhonon()
+	err = cs.VerifyPIN("111111")
 	if err != nil {
 		return
 	}
 
+	keyIndex, _, err := cs.CreatePhonon()
+	if err != nil {
+		fmt.Println("error creating phonon: ", err)
+		return
+	}
+
 	fmt.Println("sending set descriptor")
-	//Create a mock BTC descriptor
-	err = cs.SetDescriptor(keyIndex, model.Bitcoin, 0.1)
+	err = cs.SetDescriptor(keyIndex, model.Ethereum, 100)
 	if err != nil {
 		fmt.Println("unable to set descriptor")
 		return

@@ -315,6 +315,10 @@ func (cs *PhononCommandSet) VerifyPIN(pin string) error {
 	log.Debug("sending VERIFY_PIN command")
 	cmd := NewCommandVerifyPIN(pin)
 	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		log.Error("could not send VERIFY_PIN command", err)
+		return err
+	}
 	triesRemaining, err := checkVerifyPINErrors(resp.Sw)
 	if err != nil {
 		log.Error("error verifying pin: ", err)
@@ -343,7 +347,7 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
 	log.Debug("sending CREATE_PHONON command")
 	cmd := NewCommandCreatePhonon()
-	resp, err := cs.c.Send(cmd) //temp normal channel for testing
+	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
 	if err != nil {
 		log.Error("create phonon command failed: ", err)
 		return 0, nil, err
@@ -366,7 +370,7 @@ func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.Cu
 	}
 
 	cmd := NewCommandSetDescriptor(data)
-	resp, err := cs.c.Send(cmd) //temp normal channel for testing
+	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
 	if err != nil {
 		log.Error("set descriptor command failed: ", err)
 		return err
@@ -388,7 +392,7 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 	log.Debugf("% X", cmdData)
 	log.Debugf("p2: % X", p2)
 	cmd := NewCommandListPhonons(0x00, p2, cmdData)
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -420,7 +424,7 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 func (cs *PhononCommandSet) listPhononsExtended() (phonons []model.Phonon, err error) {
 	log.Debug("sending LIST_PHONONS extended request")
 	cmd := NewCommandListPhonons(0x01, 0x00, nil)
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -465,7 +469,7 @@ func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.Publ
 		return nil, err
 	}
 	cmd := NewCommandGetPhononPubKey(data.Encode())
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -478,12 +482,13 @@ func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.Publ
 }
 
 func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
+	log.Debug("sending DESTROY_PHONON command")
 	data, err := NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
 	if err != nil {
 		return nil, err
 	}
 	cmd := NewCommandDestroyPhonon(data.Encode())
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -491,9 +496,12 @@ func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.Priva
 	if err != nil {
 		return nil, err
 	}
-	//parse private key from response
+	privKey, err = parseDestroyPhononResponse(resp.Data)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	return privKey, nil
 }
 
 func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets [][]byte, err error) {
@@ -512,7 +520,7 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 
 	//TODO: protect the caller from passing too many keyIndices for an APDU
 	cmd := NewCommandSendPhonons(keyIndices, extendedRequest)
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		log.Error("error in send phonons command: ", err)
 		return nil, err
@@ -553,7 +561,7 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 func (cs *PhononCommandSet) ReceivePhonons(phononTransferPacket []byte) error {
 	log.Debug("sending RECV_PHONONS command")
 	cmd := NewCommandReceivePhonons(phononTransferPacket)
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return err
 	}
@@ -568,7 +576,7 @@ func (cs *PhononCommandSet) ReceivePhonons(phononTransferPacket []byte) error {
 func (cs *PhononCommandSet) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 	log.Debug("sending SET_RECV_LIST command")
 	cmd := NewCommandSetReceiveList(phononPubKeys)
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return err
 	}

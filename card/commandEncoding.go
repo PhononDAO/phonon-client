@@ -170,3 +170,19 @@ func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err err
 	}
 	return pubKey, nil
 }
+
+func parseDestroyPhononResponse(resp []byte) (privKey *ecdsa.PrivateKey, err error) {
+	collection, err := ParseTLVPacket(resp)
+	if err != nil {
+		return nil, err
+	}
+	rawPrivKey, err := collection.FindTag(TagPhononPrivKey)
+	if err != nil {
+		return nil, err
+	}
+	privKey, err = util.ParseECCPrivKey(rawPrivKey)
+	if err != nil {
+		return nil, err
+	}
+	return privKey, nil
+}

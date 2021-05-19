@@ -59,13 +59,21 @@ func init() {
 }
 
 func destroyPhonon(keyIndex uint16) {
-	cs, err := card.Connect()
+	cs, err := card.OpenSecureConnection()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = cs.VerifyPIN("111111")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	privKey, err := cs.DestroyPhonon(keyIndex)
 	if err != nil {
 		return
 	}
-	cs.Select()
-	_, err = cs.DestroyPhonon(keyIndex)
-	if err != nil {
-		return
-	}
+	fmt.Println("destroyed phonon and exported privKey: ")
+	fmt.Printf("D: % X", privKey.D)
 }

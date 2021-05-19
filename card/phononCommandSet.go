@@ -599,3 +599,63 @@ func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
 	}
 	return nil
 }
+
+//InitCardPairing tells a card to initialized a pairing with another phonon card
+//Data is passed transparently from card to card since no client processing is necessary
+func (cs *PhononCommandSet) InitCardPairing() (initPairingData []byte, err error) {
+	cmd := NewCommandInitCardPairing()
+	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+	//parse response
+	//return parsed data
+}
+
+//CardPair takes the response from initCardPairing and passes it to the counterparty card
+//for the next step of pairing
+func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
+	cmd := NewCommandCardPair(initPairingData)
+	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
+	cmd := NewCommandCardPair2(cardPairData)
+	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+
+	return cardPair2Data, nil
+}
+
+func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
+	cmd := NewCommandFinalizeCardPair(cardPair2Data)
+	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		return err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

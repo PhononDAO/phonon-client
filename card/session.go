@@ -79,9 +79,36 @@ func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue flo
 	return phonons, nil
 }
 
-func SendPhonons() {
-	//TODO implement
-	return
+//TODO: Genericize for generic KV Pairs
+// func (s *Session) DepositPhonon(currencyType model.CurrencyType, value float32) (phonon model.Phonon, err error) {
+// 	phonon.KeyIndex, phonon.PubKey, err = s.cs.CreatePhonon()
+// 	if err != nil {
+// 		return
+// 	}
+// }
+
+func (s *Session) PairWithRemoteCard(remoteCard model.RemotePhononCard) error {
+	initPairingData, err := s.cs.InitCardPairing()
+	if err != nil {
+		return err
+	}
+	cardPairData, err := remoteCard.CardPair(initPairingData)
+	if err != nil {
+		return err
+	}
+	cardPair2Data, err := s.cs.CardPair2(cardPairData)
+	if err != nil {
+		return err
+	}
+	err = remoteCard.FinalizeCardPair(cardPair2Data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Session) SendPhonons(remoteCard model.RemotePhononCard) {
+
 }
 
 func ReceivePhonons() {

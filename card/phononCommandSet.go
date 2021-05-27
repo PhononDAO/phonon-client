@@ -560,6 +560,7 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 
 func (cs *PhononCommandSet) ReceivePhonons(phononTransfer []byte) error {
 	log.Debug("sending RECV_PHONONS command")
+
 	cmd := NewCommandReceivePhonons(phononTransfer)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {

@@ -69,12 +69,9 @@ func setDescriptor() {
 	}
 
 	fmt.Println("sending set descriptor")
-	//Create a mock BTC descriptor
 	err = cs.SetDescriptor(keyIndex, model.Ethereum, 100)
 	if err != nil {
 		fmt.Println("unable to set descriptor")
 		return
 	}
-
-	//Create a mock ETH descriptor
 }

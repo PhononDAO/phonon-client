@@ -75,3 +75,26 @@ func OpenSecureConnection() (*PhononCommandSet, error) {
 	}
 	return cs, nil
 }
+
+//Connects to a card and checks it's initialization status
+//If uninitialized, opens a normal channel
+//If initialized, opens a secure channel
+func OpenBestConnection() (cs *PhononCommandSet, initalized bool, err error) {
+	cs, err = Connect()
+	if err != nil {
+		return nil, false, err
+	}
+	_, _, initialized, err := cs.Select()
+	if !initialized {
+		return cs, false, err
+	}
+	err = cs.Pair()
+	if err != nil {
+		return nil, false, err
+	}
+	err = cs.OpenSecureChannel()
+	if err != nil {
+		return nil, false, err
+	}
+	return cs, initialized, nil
+}

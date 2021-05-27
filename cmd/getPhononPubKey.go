@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/spf13/cobra"
 )
 
@@ -62,8 +63,17 @@ func getPhononPubKey() {
 		fmt.Println(err)
 		return
 	}
-
-	keyIndex := uint16(3)
+	keyIndex, _, err := cs.CreatePhonon()
+	if err != nil {
+		fmt.Println("error creating phonon: ", err)
+		return
+	}
+	// keyIndex := uint16(1)
+	err = cs.SetDescriptor(keyIndex, model.Bitcoin, 1)
+	if err != nil {
+		fmt.Println("error setting descriptor", err)
+		return
+	}
 	pubKey, err := cs.GetPhononPubKey(keyIndex)
 	if err != nil {
 		fmt.Println("error getting phonon public key: ", err)

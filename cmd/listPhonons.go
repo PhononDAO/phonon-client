@@ -53,11 +53,6 @@ func init() {
 }
 
 func listPhonons() {
-	// cs, err := card.Connect()
-	// if err != nil {
-	// 	return
-	// }
-	// cs.Select()
 	cs, err := card.OpenSecureConnection()
 	if err != nil {
 		fmt.Println(err)

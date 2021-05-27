@@ -15,18 +15,22 @@ import (
 const (
 	maxAPDULength = 256
 
-	InsIdentifyCard    = 0x14
-	InsVerifyPIN       = 0x20
-	InsChangePIN       = 0x21
-	InsCreatePhonon    = 0x30
-	InsSetDescriptor   = 0x31
-	InsListPhonons     = 0x32
-	InsGetPhononPubKey = 0x33
-	InsDestroyPhonon   = 0x34
-	InsSendPhonons     = 0x35
-	InsRecvPhonons     = 0x36
-	InsSetRecvList     = 0x37
-	InsTransactionAck  = 0x38
+	InsIdentifyCard     = 0x14
+	InsVerifyPIN        = 0x20
+	InsChangePIN        = 0x21
+	InsCreatePhonon     = 0x30
+	InsSetDescriptor    = 0x31
+	InsListPhonons      = 0x32
+	InsGetPhononPubKey  = 0x33
+	InsDestroyPhonon    = 0x34
+	InsSendPhonons      = 0x35
+	InsRecvPhonons      = 0x36
+	InsSetRecvList      = 0x37
+	InsTransactionAck   = 0x38
+	InsInitCardPairing  = 0x50
+	InsCardPair         = 0x51
+	InsCardPair2        = 0x52
+	InsFinalizeCardPair = 0x53
 
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F
@@ -284,6 +288,46 @@ func NewCommandTransactionAck(data []byte) *apdu.Command {
 	return apdu.NewCommand(
 		globalplatform.ClaISO7816,
 		InsTransactionAck,
+		0x00,
+		0x00,
+		data,
+	)
+}
+
+func NewCommandInitCardPairing() *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaGp,
+		InsInitCardPairing,
+		0x00,
+		0x00,
+		nil,
+	)
+}
+
+func NewCommandCardPair(data []byte) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaGp,
+		InsCardPair,
+		0x00,
+		0x00,
+		data,
+	)
+}
+
+func NewCommandCardPair2(data []byte) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaGp,
+		InsCardPair2,
+		0x00,
+		0x00,
+		data,
+	)
+}
+
+func NewCommandFinalizeCardPair(data []byte) *apdu.Command {
+	return apdu.NewCommand(
+		globalplatform.ClaGp,
+		InsFinalizeCardPair,
 		0x00,
 		0x00,
 		data,

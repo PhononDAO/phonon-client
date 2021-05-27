@@ -345,7 +345,7 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 }
 
 func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
-	log.Info("sending CREATE_PHONON command")
+	log.Debug("sending CREATE_PHONON command")
 	cmd := NewCommandCreatePhonon()
 	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
 	if err != nil {
@@ -379,6 +379,9 @@ func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.Cu
 	return cs.checkOK(resp, err)
 }
 
+//ListPhonons takes a currency type and range bounds and returns a listing of the phonons currently stored on the card
+//Set lessThanValue or greaterThanValue to 0 to ignore the parameter. Returned phonons omit the public key to reduce data transmission
+//After processing, the list client should send GET_PHONON_PUB_KEY to retrieve the corresponding pubkeys if necessary.
 func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
 	log.Debug("sending list phonons command")
 	p2, cmdData, err := encodeListPhononsData(currencyType, lessThanValue, greaterThanValue)
@@ -460,6 +463,7 @@ func checkStatusWord(status uint16) (continues bool, err error) {
 }
 
 func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
+	log.Debug("sending GET_PHONON_PUB_KEY command")
 	data, err := NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
 	if err != nil {
 		return nil, err
@@ -554,9 +558,10 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 	return transferPhononPackets, nil
 }
 
-func (cs *PhononCommandSet) ReceivePhonons(phononTransferPacket []byte) error {
+func (cs *PhononCommandSet) ReceivePhonons(phononTransfer []byte) error {
 	log.Debug("sending RECV_PHONONS command")
-	cmd := NewCommandReceivePhonons(phononTransferPacket)
+
+	cmd := NewCommandReceivePhonons(phononTransfer)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return err
@@ -597,5 +602,65 @@ func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+//InitCardPairing tells a card to initialized a pairing with another phonon card
+//Data is passed transparently from card to card since no client processing is necessary
+func (cs *PhononCommandSet) InitCardPairing() (initPairingData []byte, err error) {
+	cmd := NewCommandInitCardPairing()
+	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+	//parse response
+	//return parsed data
+}
+
+//CardPair takes the response from initCardPairing and passes it to the counterparty card
+//for the next step of pairing
+func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
+	cmd := NewCommandCardPair(initPairingData)
+	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
+	cmd := NewCommandCardPair2(cardPairData)
+	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+
+	return cardPair2Data, nil
+}
+
+func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
+	cmd := NewCommandFinalizeCardPair(cardPair2Data)
+	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		return err
+	}
+	_, err = checkStatusWord(resp.Sw)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

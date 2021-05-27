@@ -28,3 +28,12 @@ const (
 //Key: denomination
 //value: quantity of the associated denomination
 type CoinList map[int]int
+
+type RemotePhononCard interface {
+	InitPhononCard() (initPairingData []byte, err error)
+	CardPair(initPairingData []byte) (cardPairData []byte, err error)
+	CardPair2(cardPairData []byte) (cardPairData2 []byte, err error)
+	FinalizeCardPair(cardPair2Data []byte) error
+	SendPhonons(phononTransfer []byte) error
+	RequestPhonons(phonons []Phonon) (phononTransfer []byte, err error)
+}

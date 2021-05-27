@@ -169,6 +169,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 			received.PubKey, err = cs.GetPhononPubKey(uint16(received.KeyIndex))
 			if err != nil {
 				t.Error("could not get phonon pubkey: ", err)
+				return
 			}
 			fmt.Printf("%+v\n", received)
 			for _, created := range createdPhonons {

@@ -5,9 +5,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Phonon struct {
-}
-
 func main() {
 	log.SetLevel(log.DebugLevel)
 

@@ -186,20 +186,3 @@ func parseDestroyPhononResponse(resp []byte) (privKey *ecdsa.PrivateKey, err err
 	}
 	return privKey, nil
 }
-
-// //parses out the pairingIdx for the terminal
-// func parseCardPair2(resp []byte) (cardPair2Data []byte, pairingIdx uint8, err error) {
-// 	collection, err := ParseTLVPacket(resp)
-// 	if err != nil {
-// 		return nil, 0, err
-// 	}
-// 	pairingIdxValue, err := collection.FindTag(TagPairingIndex)
-// 	if err != nil {
-// 		return nil, 0, err
-// 	}
-// 	if len(pairingIdxValue) != 1 {
-// 		return nil, 0, errors.New("parsed pairingIdx was not one byte length uint8")
-// 	}
-// 	pairingIdx = uint8(pairingIdxValue[0])
-// 	return cardPair2Data, pairingIdx, nil
-// }

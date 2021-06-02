@@ -16,8 +16,10 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/spf13/cobra"
+	"strconv"
 )
 
 // createPhononCmd represents the createPhonon command
@@ -31,7 +33,17 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		createPhonon()
+		var n int
+		if len(args) < 1 {
+			n = 1
+		} else {
+			var err error
+			if n, err = strconv.Atoi(args[0]); err != nil {
+				fmt.Println("argument must be an integer")
+				return
+			}
+		}
+		createPhonon(n)
 	},
 }
 
@@ -49,11 +61,17 @@ func init() {
 	// createPhononCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func createPhonon() {
+func createPhonon(n int) {
 	cs, err := card.OpenSecureConnection()
 	if err != nil {
 		return
 	}
-	cs.CreatePhonon()
-
+	for i := 0; i < n; i++ {
+		keyIndex, pubKey, err := cs.CreatePhonon()
+		if err != nil {
+			fmt.Println("error creating phonon")
+			fmt.Println(err)
+		}
+		fmt.Printf("created phonon with keyIndex %v and pubKey % X\n", keyIndex, append(pubKey.X.Bytes(), pubKey.Y.Bytes()...))
+	}
 }

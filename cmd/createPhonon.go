@@ -66,6 +66,10 @@ func createPhonon(n int) {
 	if err != nil {
 		return
 	}
+	err = cs.VerifyPIN("111111")
+	if err != nil {
+		return
+	}
 	for i := 0; i < n; i++ {
 		keyIndex, pubKey, err := cs.CreatePhonon()
 		if err != nil {

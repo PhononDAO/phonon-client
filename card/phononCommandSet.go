@@ -51,6 +51,10 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, car
 		return nil, nil, false, err
 	}
 
+	err = cs.checkOK(resp, err)
+	if err != nil {
+		return nil, nil, false, err
+	}
 	instanceUID, cardPubKey, err = ParseSelectResponse(resp.Data)
 	if err != nil && err != ErrCardUninitialized {
 		log.Error("error parsing select response. err: ", err)
@@ -185,6 +189,8 @@ func checkPairingErrors(pairingStep int, status uint16) (err error) {
 		return errors.New("pairing step must be set to 1 or 2 to check pairing errors")
 	}
 	switch status {
+	case 0x9000:
+		err = nil
 	case 0x6A80:
 		err = errors.New("invalid pairing data format")
 	case 0x6882:
@@ -198,9 +204,11 @@ func checkPairingErrors(pairingStep int, status uint16) (err error) {
 	case 0x6A84:
 		err = errors.New("all available pairing slots taken")
 	case 0x6A86:
-		err = errors.New("P1 invalid or first pairing phase was not completed")
+		err = errors.New("p1 invalid or first pairing phase was not completed")
 	case 0x6985:
 		err = errors.New("secure channel is already open")
+	case 0x6D00:
+		err = errors.New("pin has not been set")
 	}
 
 	return err

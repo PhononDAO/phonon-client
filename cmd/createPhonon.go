@@ -75,6 +75,7 @@ func createPhonon(n int) {
 		if err != nil {
 			fmt.Println("error creating phonon")
 			fmt.Println(err)
+			return
 		}
 		fmt.Printf("created phonon with keyIndex %v and pubKey % X\n", keyIndex, append(pubKey.X.Bytes(), pubKey.Y.Bytes()...))
 	}

@@ -17,9 +17,9 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/model"
 	"github.com/spf13/cobra"
 )
 
@@ -33,8 +33,14 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		getPhononPubKey()
+		keyIndex, err := strconv.Atoi(args[0])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		getPhononPubKey(uint16(keyIndex))
 	},
 }
 
@@ -52,7 +58,7 @@ func init() {
 	// getPhononPubKeyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func getPhononPubKey() {
+func getPhononPubKey(keyIndex uint16) {
 	cs, err := card.OpenSecureConnection()
 	if err != nil {
 		fmt.Println(err)
@@ -61,17 +67,6 @@ func getPhononPubKey() {
 	err = cs.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)
-		return
-	}
-	keyIndex, _, err := cs.CreatePhonon()
-	if err != nil {
-		fmt.Println("error creating phonon: ", err)
-		return
-	}
-	// keyIndex := uint16(1)
-	err = cs.SetDescriptor(keyIndex, model.Bitcoin, 1)
-	if err != nil {
-		fmt.Println("error setting descriptor", err)
 		return
 	}
 	pubKey, err := cs.GetPhononPubKey(keyIndex)

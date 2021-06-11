@@ -67,6 +67,10 @@ func listPhonons() {
 	if err != nil {
 		return
 	}
+	if len(phonons) == 0 {
+		fmt.Println("no phonons found")
+		return
+	}
 	for _, phonon := range phonons {
 		fmt.Printf("retrieved phonon: %+v\n", phonon)
 	}

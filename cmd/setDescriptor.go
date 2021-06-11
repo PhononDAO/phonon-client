@@ -68,7 +68,7 @@ func setDescriptor() {
 		return
 	}
 
-	fmt.Println("sending set descriptor")
+	fmt.Println("sending set descriptor for keyIndex ", keyIndex)
 	err = cs.SetDescriptor(keyIndex, model.Ethereum, 100)
 	if err != nil {
 		fmt.Println("unable to set descriptor")

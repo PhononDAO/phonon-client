@@ -29,8 +29,7 @@ const (
 //value: quantity of the associated denomination
 type CoinList map[int]int
 
-type RemotePhononCard interface {
-	InitPhononCard() (initPairingData []byte, err error)
+type CounterpartyPhononCard interface {
 	CardPair(initPairingData []byte) (cardPairData []byte, err error)
 	CardPair2(cardPairData []byte) (cardPairData2 []byte, err error)
 	FinalizeCardPair(cardPair2Data []byte) error

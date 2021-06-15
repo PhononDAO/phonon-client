@@ -8,9 +8,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// type Safecard keycard.CommandSet
+var ErrReaderNotFound = errors.New("card reader not found")
 
+//Connects to the first card reader listed by default
 func Connect() (*PhononCommandSet, error) {
+	return ConnectWithReaderIndex(0)
+}
+
+func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {
 	ctx, err := scard.EstablishContext()
 	if err != nil {
 		log.Error(err)
@@ -27,8 +32,8 @@ func Connect() (*PhononCommandSet, error) {
 		log.Debugf("[%d] %s\n", i, reader)
 	}
 
-	if len(readers) > 0 {
-		card, err := ctx.Connect(readers[0], scard.ShareShared, scard.ProtocolAny)
+	if len(readers) > index {
+		card, err := ctx.Connect(readers[index], scard.ShareExclusive, scard.ProtocolAny)
 		if err != nil {
 			log.Error(err)
 		}
@@ -43,13 +48,9 @@ func Connect() (*PhononCommandSet, error) {
 		log.Debugf("\treader: %s\n\tstate: %x\n\tactive protocol: %x\n\tatr: % x\n",
 			status.Reader, status.State, status.ActiveProtocol, status.Atr)
 
-		// c.c = io.NewNormalChannel(card)
-		// //Set card context
-		// c.ctx = ctx
-		// c.card = card
 		return NewPhononCommandSet(io.NewNormalChannel(card)), nil
 	}
-	return nil, errors.New("no card reader found")
+	return nil, ErrReaderNotFound
 }
 
 //Connects and Opens a Secure Connection with a card
@@ -79,8 +80,16 @@ func OpenSecureConnection() (*PhononCommandSet, error) {
 //Connects to a card and checks it's initialization status
 //If uninitialized, opens a normal channel
 //If initialized, opens a secure channel
+//Uses default reader index 0
 func OpenBestConnection() (cs *PhononCommandSet, initalized bool, err error) {
-	cs, err = Connect()
+	return OpenBestConnectionWithReaderIndex(0)
+}
+
+//Connects to a card and checks it's initialization status
+//If uninitialized, opens a normal channel
+//If initialized, opens a secure channel
+func OpenBestConnectionWithReaderIndex(index int) (cs *PhononCommandSet, initalized bool, err error) {
+	cs, err = ConnectWithReaderIndex(index)
 	if err != nil {
 		return nil, false, err
 	}

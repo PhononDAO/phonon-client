@@ -26,6 +26,18 @@ func NewSession() (*Session, error) {
 	}, nil
 }
 
+func NewSessionWithReaderIndex(index int) (*Session, error) {
+	cs, initialized, err := OpenBestConnectionWithReaderIndex(index)
+	if err != nil {
+		return nil, err
+	}
+	return &Session{
+		cs:          cs,
+		active:      true,
+		initialized: initialized,
+	}, nil
+}
+
 //TODO: fix this paradigm
 // func (s *Session) checkActive() (*Session, error) {
 // 	if !s.active {
@@ -87,7 +99,7 @@ func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue flo
 // 	}
 // }
 
-func (s *Session) PairWithRemoteCard(remoteCard model.RemotePhononCard) error {
+func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) error {
 	initPairingData, err := s.cs.InitCardPairing()
 	if err != nil {
 		return err
@@ -107,7 +119,7 @@ func (s *Session) PairWithRemoteCard(remoteCard model.RemotePhononCard) error {
 	return nil
 }
 
-func (s *Session) SendPhonons(remoteCard model.RemotePhononCard) {
+func (s *Session) SendPhonons(remoteCard model.CounterpartyPhononCard) {
 
 }
 

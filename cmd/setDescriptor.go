@@ -38,6 +38,8 @@ to quickly create a Cobra application.`,
 	},
 }
 
+var phononCount int
+
 func init() {
 	rootCmd.AddCommand(setDescriptorCmd)
 
@@ -46,7 +48,7 @@ func init() {
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// setDescriptorCmd.PersistentFlags().String("foo", "", "A help for foo")
-
+	setDescriptorCmd.PersistentFlags().IntVarP(&phononCount, "count", "c", 1, "number of phonons to create with descriptor set")
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// setDescriptorCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
@@ -61,17 +63,20 @@ func setDescriptor() {
 	if err != nil {
 		return
 	}
+	for i := 0; i < phononCount; i++ {
+		keyIndex, _, err := cs.CreatePhonon()
+		if err != nil {
+			fmt.Println("error creating phonon: ", err)
+			return
+		}
 
-	keyIndex, _, err := cs.CreatePhonon()
-	if err != nil {
-		fmt.Println("error creating phonon: ", err)
-		return
+		fmt.Println("sending set descriptor for keyIndex ", keyIndex)
+		err = cs.SetDescriptor(keyIndex, model.Ethereum, 100)
+		if err != nil {
+			fmt.Println("unable to set descriptor")
+			return
+		}
 	}
+	fmt.Printf("successfully created %v phonons with descriptor(s)\n", phononCount)
 
-	fmt.Println("sending set descriptor for keyIndex ", keyIndex)
-	err = cs.SetDescriptor(keyIndex, model.Ethereum, 100)
-	if err != nil {
-		fmt.Println("unable to set descriptor")
-		return
-	}
 }

@@ -33,7 +33,7 @@ func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {
 	}
 
 	if len(readers) > index {
-		card, err := ctx.Connect(readers[index], scard.ShareExclusive, scard.ProtocolAny)
+		card, err := ctx.Connect(readers[index], scard.ShareShared, scard.ProtocolAny)
 		if err != nil {
 			log.Error(err)
 		}

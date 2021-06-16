@@ -231,6 +231,57 @@ func TestDestroyPhonon(t *testing.T) {
 	}
 }
 
+//DestroyPhonon and reuse keyIndex
+
+//Create maximum number of phonons (256) and list them
+func TestFillPhononTable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestFillPhononTable in short mode")
+	}
+	cs, err := OpenSecureConnection()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if err = cs.VerifyPIN(testPin); err != nil {
+		t.Error(err)
+	}
+	initialList, err := cs.ListPhonons(model.Unspecified, 0, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	initialCount := len(initialList)
+	maxPhononCount := 256
+	var createdIndices []uint16
+	for i := 0; i < maxPhononCount-initialCount; i++ {
+		keyIndex, _, err := cs.CreatePhonon()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		createdIndices = append(createdIndices, keyIndex)
+	}
+	list, err := cs.ListPhonons(model.Unspecified, 0, 0)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//Check that all phonons created were listed
+	if len(list) != maxPhononCount {
+		t.Error(err)
+		return
+	}
+	//Clean up all phonons before next test
+	for _, keyIndex := range createdIndices {
+		_, err := cs.DestroyPhonon(keyIndex)
+		if err != nil {
+			t.Error("unable to delete phonon at keyIndex ", keyIndex)
+			t.Error(err)
+			return
+		}
+	}
+}
+
 // TODO
 //Pairing + Send/Receive cycle
 // SEND_PHONONS

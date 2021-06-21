@@ -41,6 +41,10 @@ func TestMain(m *testing.M) {
 //SELECT
 func TestSelect(t *testing.T) {
 	cs, err := Connect()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	instanceUID, cardPubKey, cardInitialized, err := cs.Select()
 	if err != nil {
 		t.Error("could not select initialized card: ", err)
@@ -245,10 +249,12 @@ func TestFillPhononTable(t *testing.T) {
 	}
 	if err = cs.VerifyPIN(testPin); err != nil {
 		t.Error(err)
+		return
 	}
 	initialList, err := cs.ListPhonons(model.Unspecified, 0, 0)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	initialCount := len(initialList)
 	maxPhononCount := 256
@@ -280,6 +286,57 @@ func TestFillPhononTable(t *testing.T) {
 			return
 		}
 	}
+}
+
+func TestReuseDestroyedIndex(t *testing.T) {
+	cs, err := OpenSecureConnection()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if err = cs.VerifyPIN(testPin); err != nil {
+		t.Error(err)
+		return
+	}
+	//Create three phonons so we can check reusing an index from the middle, beginning, and end of the list
+	keyIndex1, _, err := cs.CreatePhonon()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	keyIndex2, _, err := cs.CreatePhonon()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	keyIndex3, _, err := cs.CreatePhonon()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//Check the indices in order middle, last, first to ensure all index positions are properly reused
+	DestroyReuseAndCheck := func(keyIndex uint16) {
+		//Destroy and reused the middle index
+		_, err = cs.DestroyPhonon(keyIndex2)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		//Should be equivalent to index
+		reusedIndex, _, err := cs.CreatePhonon()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if reusedIndex != keyIndex {
+			t.Error("middle index was not reused properly")
+			return
+		}
+	}
+	DestroyReuseAndCheck(keyIndex2)
+	DestroyReuseAndCheck(keyIndex3)
+	DestroyReuseAndCheck(keyIndex1)
+
 }
 
 // TODO

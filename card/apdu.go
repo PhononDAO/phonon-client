@@ -66,11 +66,13 @@ const (
 	StatusSuccess         = 0x9000
 	StatusPhononTableFull = 0x6A84
 	StatusInvalidFile     = 0x6983
+	StatusOutOfMemory     = 0x6F00
 )
 
 var (
 	ErrCardUninitialized = errors.New("card uninitialized")
 	ErrPhononTableFull   = errors.New("phonon table full")
+	ErrOutOfMemory       = errors.New("card out of memory")
 	ErrUnknown           = errors.New("unknown error")
 )
 

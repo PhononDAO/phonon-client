@@ -184,6 +184,7 @@ func (cs *PhononCommandSet) Pair() error {
 }
 
 //checkPairingErrors takes a pairing step, either 1 or 2, and the SW value of the response to return appropriate error messages
+//Errors and error codes are defined internally to this function as they are specific to PAIR and do not apply to other commands
 func checkPairingErrors(pairingStep int, status uint16) (err error) {
 	if pairingStep != 1 && pairingStep != 2 {
 		return errors.New("pairing step must be set to 1 or 2 to check pairing errors")
@@ -370,6 +371,17 @@ func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.Publi
 	return keyIndex, pubKey, nil
 }
 
+func checkPhononTableErrors(sw uint16) error {
+	switch sw {
+	case StatusPhononTableFull:
+		return ErrPhononTableFull
+	case StatusOutOfMemory:
+		return ErrOutOfMemory
+	case StatusSuccess:
+		return nil
+	}
+}
+
 func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
 	log.Debug("sending SET_DESCRIPTOR command")
 	data, err := encodeSetDescriptorData(keyIndex, currencyType, value)
@@ -549,9 +561,7 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 			return nil, err
 		}
 	}
-	for _, packet := range remainingPhononPackets {
-		transferPhononPackets = append(transferPhononPackets, packet)
-	}
+	transferPhononPackets = append(transferPhononPackets, remainingPhononPackets...)
 
 	//Maybe save this for extended request form
 	// //Redo this to receive multiple responses, not to send multiple requests

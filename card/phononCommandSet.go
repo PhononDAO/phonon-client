@@ -55,7 +55,7 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, car
 	if err != nil {
 		return nil, nil, false, err
 	}
-	instanceUID, cardPubKey, err = ParseSelectResponse(resp.Data)
+	instanceUID, cardPubKey, err = parseSelectResponse(resp.Data)
 	if err != nil && err != ErrCardUninitialized {
 		log.Error("error parsing select response. err: ", err)
 		return nil, nil, false, err
@@ -310,7 +310,7 @@ func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardS
 	}
 	log.Debug("identify card resp:\n", hex.Dump(resp.Data))
 
-	cardPubKey, cardSig, err = ParseIdentifyCardResponse(resp.Data)
+	cardPubKey, cardSig, err = parseIdentifyCardResponse(resp.Data)
 	if err != nil {
 		log.Error("could not parse identify card response: ", err)
 		return nil, nil, err
@@ -363,7 +363,7 @@ func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.Publi
 	if resp.Sw == StatusPhononTableFull {
 		return 0, nil, ErrPhononTableFull
 	}
-	keyIndex, pubKey, err = ParseCreatePhononResponse(resp.Data)
+	keyIndex, pubKey, err = parseCreatePhononResponse(resp.Data)
 	if err != nil {
 		return 0, nil, err
 	}

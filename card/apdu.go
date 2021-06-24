@@ -2,14 +2,11 @@ package card
 
 import (
 	"crypto/ecdsa"
-	"encoding/binary"
 	"errors"
 
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/globalplatform"
-	"github.com/GridPlus/phonon-client/util"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -77,38 +74,6 @@ var (
 	ErrUnknown           = errors.New("unknown error")
 )
 
-func ParseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, err error) {
-	if len(resp) == 0 {
-		return nil, nil, errors.New("received nil response")
-	}
-	log.Debug("length of select response data: ", len(resp))
-	switch resp[0] {
-	//Initialized
-	case 0xA4:
-		log.Debug("pin initialized")
-		//If length of length is set this is a long format TLV response
-		if len(resp) < 88 {
-			log.Error("response should have been at least length 86 bytes, was length: ", len(resp))
-			return nil, nil, errors.New("invalid response length")
-		}
-		instanceUID = resp[4:20]
-		cardPubKey = resp[22:87]
-		//Think this response pattern only existed when a safecard wallet was initialized
-		// if resp[3] == 0x81 {
-		// 	instanceUID = resp[6:22]
-		// 	cardPubKey = resp[24:89]
-		// } else {
-		//This would be the existing parsing above
-	case 0x80:
-		log.Debug("pin uninitialized")
-		length := int(resp[1])
-		cardPubKey = resp[2 : 2+length]
-		return nil, cardPubKey, ErrCardUninitialized
-	}
-
-	return instanceUID, cardPubKey, nil
-}
-
 //NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU
 //As a response it receives the card's public key and and a signature
 //on the salt to prove posession of the private key
@@ -120,18 +85,6 @@ func NewCommandIdentifyCard(nonce []byte) *apdu.Command {
 		0,
 		nonce,
 	)
-}
-
-func ParseIdentifyCardResponse(resp []byte) (cardPubKey []byte, sig []byte, err error) {
-	correctLength := 67
-	if len(resp) < 67 {
-		log.Errorf("identify card response invalid length %v should be %v ", len(resp), correctLength)
-		return nil, nil, err
-	}
-	cardPubKey = resp[2:67]
-	sig = resp[67:]
-
-	return cardPubKey, sig, nil
 }
 
 func NewCommandVerifyPIN(pin string) *apdu.Command {
@@ -162,35 +115,6 @@ func NewCommandCreatePhonon() *apdu.Command {
 		0x00,
 		[]byte{0x00},
 	)
-}
-
-//TODO: implement with TLV encoding, fix for uint16 keyIndex return value
-func ParseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
-	log.Debug("create phonon response length: ", len(resp))
-	collection, err := ParseTLVPacket(resp, TagPhononKeyCollection)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	keyIndexBytes, err := collection.FindTag(TagKeyIndex)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	pubKeyBytes, err := collection.FindTag(TagPhononPubKey)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	keyIndex = binary.BigEndian.Uint16(keyIndexBytes)
-
-	pubKey, err = util.ParseECDSAPubKey(pubKeyBytes)
-	if err != nil {
-		log.Error("could not parse pubkey from phonon response: ", err)
-		return keyIndex, nil, err
-	}
-
-	return keyIndex, pubKey, nil
 }
 
 func NewCommandSetDescriptor(data []byte) *apdu.Command {

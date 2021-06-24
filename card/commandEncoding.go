@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/binary"
+	"errors"
 
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
@@ -185,4 +186,76 @@ func parseDestroyPhononResponse(resp []byte) (privKey *ecdsa.PrivateKey, err err
 		return nil, err
 	}
 	return privKey, nil
+}
+
+func parseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
+	log.Debug("create phonon response length: ", len(resp))
+	collection, err := ParseTLVPacket(resp, TagPhononKeyCollection)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	keyIndexBytes, err := collection.FindTag(TagKeyIndex)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	pubKeyBytes, err := collection.FindTag(TagPhononPubKey)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	keyIndex = binary.BigEndian.Uint16(keyIndexBytes)
+
+	pubKey, err = util.ParseECDSAPubKey(pubKeyBytes)
+	if err != nil {
+		log.Error("could not parse pubkey from phonon response: ", err)
+		return keyIndex, nil, err
+	}
+
+	return keyIndex, pubKey, nil
+}
+
+func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, err error) {
+	if len(resp) == 0 {
+		return nil, nil, errors.New("received nil response")
+	}
+	log.Debug("length of select response data: ", len(resp))
+	switch resp[0] {
+	//Initialized
+	case 0xA4:
+		log.Debug("pin initialized")
+		//If length of length is set this is a long format TLV response
+		if len(resp) < 88 {
+			log.Error("response should have been at least length 86 bytes, was length: ", len(resp))
+			return nil, nil, errors.New("invalid response length")
+		}
+		instanceUID = resp[4:20]
+		cardPubKey = resp[22:87]
+		//Think this response pattern only existed when a safecard wallet was initialized
+		// if resp[3] == 0x81 {
+		// 	instanceUID = resp[6:22]
+		// 	cardPubKey = resp[24:89]
+		// } else {
+		//This would be the existing parsing above
+	case 0x80:
+		log.Debug("pin uninitialized")
+		length := int(resp[1])
+		cardPubKey = resp[2 : 2+length]
+		return nil, cardPubKey, ErrCardUninitialized
+	}
+
+	return instanceUID, cardPubKey, nil
+}
+
+func parseIdentifyCardResponse(resp []byte) (cardPubKey []byte, sig []byte, err error) {
+	correctLength := 67
+	if len(resp) < 67 {
+		log.Errorf("identify card response invalid length %v should be %v ", len(resp), correctLength)
+		return nil, nil, err
+	}
+	cardPubKey = resp[2:67]
+	sig = resp[67:]
+
+	return cardPubKey, sig, nil
 }

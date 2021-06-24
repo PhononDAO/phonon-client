@@ -25,13 +25,8 @@ import (
 // openSecureChannelCmd represents the openSecureChannel command
 var openSecureChannelCmd = &cobra.Command{
 	Use:   "openSecureChannel",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Tests opening a secure channel",
+	Long:  `Tests opening a secure channel between terminal and card`,
 	Run: func(cmd *cobra.Command, args []string) {
 		openSecureChannel()
 	},

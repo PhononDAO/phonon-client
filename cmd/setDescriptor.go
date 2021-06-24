@@ -26,13 +26,9 @@ import (
 // setDescriptorCmd represents the setDescriptor command
 var setDescriptorCmd = &cobra.Command{
 	Use:   "setDescriptor",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Set a description of a phonon",
+	Long: `Set a phonon description in order to store metadata that identifies which blockchain assets
+the phonon corresponds to, so that they can later be retrieved for use in transactions.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		setDescriptor()
 	},

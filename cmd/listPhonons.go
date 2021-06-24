@@ -26,22 +26,27 @@ import (
 // listPhononsCmd represents the listPhonons command
 var listPhononsCmd = &cobra.Command{
 	Use:   "listPhonons",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Lists all phonons on card matching filter",
+	Long: `Lists all phonons on card matching the given filter, and returning the available phonon descriptor
+	`,
+	Args: cobra.ExactValidArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		listPhonons()
 	},
 }
 
+var currency uint16
+var greaterThanValue float32
+var lessThanValue float32
+
 func init() {
 	rootCmd.AddCommand(listPhononsCmd)
 
 	// Here you will define your flags and configuration settings.
+
+	listPhononsCmd.PersistentFlags().Uint16VarP(&currency, "currencyType", "c", 0, "0 matches all phonons, 1 for Bitcoin, 2 for Ethereum")
+	listPhononsCmd.PersistentFlags().Float32VarP(&greaterThanValue, "gt", "g", 0, "phonon denomination must be greater than this float32 value")
+	listPhononsCmd.PersistentFlags().Float32VarP(&lessThanValue, "lt", "l", 0, "phonon denomination must be less than this float32 value")
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
@@ -63,7 +68,7 @@ func listPhonons() {
 		return
 	}
 
-	phonons, err := cs.ListPhonons(model.Unspecified, 0, 0)
+	phonons, err := cs.ListPhonons(model.CurrencyType(currency), 0, 0)
 	if err != nil {
 		return
 	}

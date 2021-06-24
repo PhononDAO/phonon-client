@@ -25,14 +25,12 @@ import (
 
 // destroyPhononCmd represents the destroyPhonon command
 var destroyPhononCmd = &cobra.Command{
-	Use:   "destroyPhonon",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "destroyPhonon [keyIndex]",
+	Short: "Destroy a phonon by keyIndex",
+	Long: `Destroy a phonon by it's keyIndex, returning the private key.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+This allows one to utilize the phonon's private key outside of the phonon system,
+but the phonon will no longer be retrievable via the card.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		keyIndex, err := strconv.ParseUint(args[0], 10, 16)

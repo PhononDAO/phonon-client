@@ -25,13 +25,13 @@ import (
 // createPhononCmd represents the createPhonon command
 var createPhononCmd = &cobra.Command{
 	Use:   "createPhonon",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Create a new phonon",
+	Long: `Creates a new phonon returning the public key and current keyIndex,
+an identifier which is valid for the duration of a card session. KeyIndices may change
+when the SELECT command is run against the card again.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Phonons created by this command have no identifying descriptor information.
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var n int
 		if len(args) < 1 {

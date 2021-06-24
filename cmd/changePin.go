@@ -26,13 +26,9 @@ import (
 // changePinCmd represents the changePin command
 var changePinCmd = &cobra.Command{
 	Use:   "changePin",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Change card's 6 digit PIN",
+	Long: `Change the card's existing 6 digit PIN to a new one.
+command will prompt you securely for the existing PIN as well as the new one.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		changePin()
 	},

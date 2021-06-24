@@ -87,8 +87,8 @@ func identifyCard() {
 		return
 	}
 
-	log.Debug("ecdsaCardPubKey: ", ecdsaCardPubKey)
-	log.Debug("ecdsaSignature: ", ecdsaSignature)
+	log.Debugf("ecdsaCardPubKey: % X\n", append(ecdsaCardPubKey.X.Bytes(), ecdsaCardPubKey.Y.Bytes()...))
+	log.Debugf("ecdsaSignature: % X\n", append(ecdsaSignature.R.Bytes(), ecdsaSignature.S.Bytes()...))
 	//Validate sig
 
 	valid := ecdsa.Verify(ecdsaCardPubKey, nonce, ecdsaSignature.R, ecdsaSignature.S)

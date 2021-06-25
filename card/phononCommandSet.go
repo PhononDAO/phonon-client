@@ -441,7 +441,12 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 		return nil, err
 	}
 
-	continues, err := checkStatusWord(resp.Sw)
+	err = checkPhononTableErrors(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+
+	continues, err := checkContinuation(resp.Sw)
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +477,7 @@ func (cs *PhononCommandSet) listPhononsExtended() (phonons []model.Phonon, err e
 	if err != nil {
 		return nil, err
 	}
-	continues, err := checkStatusWord(resp.Sw)
+	continues, err := checkContinuation(resp.Sw)
 	if err != nil {
 		return nil, err
 	}
@@ -494,15 +499,15 @@ func (cs *PhononCommandSet) listPhononsExtended() (phonons []model.Phonon, err e
 	return phonons, nil
 }
 
+//TODO: replace this check in send and receive and other functions with specific error checks
 //Generally checks status, including extended responses
-func checkStatusWord(status uint16) (continues bool, err error) {
+func checkContinuation(status uint16) (continues bool, err error) {
 	if status == 0x9000 {
 		return false, nil
 	}
 	if status > 0x9000 {
 		return true, nil
 	}
-	//TODO: Add error conditions
 	return false, ErrUnknown
 }
 
@@ -576,7 +581,7 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 		return nil, err
 	}
 
-	continues, err := checkStatusWord(resp.Sw)
+	continues, err := checkContinuation(resp.Sw)
 	if err != nil {
 		return nil, err
 	}
@@ -614,7 +619,7 @@ func (cs *PhononCommandSet) ReceivePhonons(phononTransfer []byte) error {
 	if err != nil {
 		return err
 	}
-	_, err = checkStatusWord(resp.Sw)
+	_, err = checkContinuation(resp.Sw)
 	if err != nil {
 		return err
 	}
@@ -633,7 +638,7 @@ func (cs *PhononCommandSet) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) err
 	if err != nil {
 		return err
 	}
-	_, err = checkStatusWord(resp.Sw)
+	_, err = checkContinuation(resp.Sw)
 	if err != nil {
 		return err
 	}
@@ -650,7 +655,7 @@ func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
 	if err != nil {
 		return err
 	}
-	_, err = checkStatusWord(resp.Sw)
+	_, err = checkContinuation(resp.Sw)
 	if err != nil {
 		return err
 	}
@@ -665,7 +670,7 @@ func (cs *PhononCommandSet) InitCardPairing() (initPairingData []byte, err error
 	if err != nil {
 		return nil, err
 	}
-	_, err = checkStatusWord(resp.Sw)
+	_, err = checkContinuation(resp.Sw)
 	if err != nil {
 		return nil, err
 	}
@@ -682,7 +687,7 @@ func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byt
 	if err != nil {
 		return nil, err
 	}
-	_, err = checkStatusWord(resp.Sw)
+	_, err = checkContinuation(resp.Sw)
 	if err != nil {
 		return nil, err
 	}
@@ -695,7 +700,7 @@ func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte
 	if err != nil {
 		return nil, err
 	}
-	_, err = checkStatusWord(resp.Sw)
+	_, err = checkContinuation(resp.Sw)
 	if err != nil {
 		return nil, err
 	}
@@ -709,7 +714,7 @@ func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	if err != nil {
 		return err
 	}
-	_, err = checkStatusWord(resp.Sw)
+	_, err = checkContinuation(resp.Sw)
 	if err != nil {
 		return err
 	}

@@ -49,13 +49,18 @@ func init() {
 }
 
 func sendPhonons() {
-	cs, err := card.Connect()
+	cs, err := card.OpenSecureConnection()
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
-	cs.Select()
+	err = cs.VerifyPIN("111111")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	testKeyIndices := []uint16{1, 2, 3, 4, 5, 6, 7, 8}
+	testKeyIndices := []uint16{2, 3, 4, 5, 6, 7, 8}
 	transferPackets, err := cs.SendPhonons(testKeyIndices, false)
 	if err != nil {
 		fmt.Print("error in SEND_PHONONS command: ", err)

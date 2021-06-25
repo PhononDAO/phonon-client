@@ -21,6 +21,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	StatusSuccess         = 0x9000
+	StatusPhononTableFull = 0x6A84
+	StatusKeyIndexInvalid = 0x6983
+	StatusOutOfMemory     = 0x6F00
+	StatusPINNotEntered   = 0x6985
+)
+
+var (
+	ErrCardUninitialized = errors.New("card uninitialized")
+	ErrPhononTableFull   = errors.New("phonon table full")
+	ErrKeyIndexInvalid   = errors.New("key index out of valid range")
+	ErrOutOfMemory       = errors.New("card out of memory")
+	ErrPINNotEntered     = errors.New("valid PIN required")
+	ErrUnknown           = errors.New("unknown error")
+)
+
 var phononAID = []byte{0xA0, 0x00, 0x00, 0x08, 0x20, 0x00, 0x03, 0x01}
 
 type PhononCommandSet struct {
@@ -361,8 +378,8 @@ func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.Publi
 		log.Error("create phonon command failed: ", err)
 		return 0, nil, err
 	}
-	if resp.Sw == StatusPhononTableFull {
-		return 0, nil, ErrPhononTableFull
+	if err = checkPhononTableErrors(resp.Sw); err != nil {
+		return 0, nil, err
 	}
 	keyIndex, pubKey, err = parseCreatePhononResponse(resp.Data)
 	if err != nil {
@@ -371,15 +388,22 @@ func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.Publi
 	return keyIndex, pubKey, nil
 }
 
+//Common error code checks for commands that deal with the phonon table
+//CREATE_PHONON, LIST_PHONONS, DESTROY_PHONON, etc.
 func checkPhononTableErrors(sw uint16) error {
 	switch sw {
 	case StatusPhononTableFull:
 		return ErrPhononTableFull
 	case StatusOutOfMemory:
 		return ErrOutOfMemory
+	case StatusKeyIndexInvalid:
+		return ErrKeyIndexInvalid
+	case StatusPINNotEntered:
+		return ErrPINNotEntered
 	case StatusSuccess:
 		return nil
 	}
+	return nil
 }
 
 func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
@@ -494,6 +518,11 @@ func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.Publ
 		return nil, err
 	}
 
+	err = checkPhononTableErrors(resp.Sw)
+	if err != nil {
+		return nil, err
+	}
+
 	pubKey, err := parseGetPhononPubKeyResponse(resp.Data)
 	if err != nil {
 		return nil, err
@@ -539,7 +568,8 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 	// }
 
 	//TODO: protect the caller from passing too many keyIndices for an APDU
-	cmd := NewCommandSendPhonons(keyIndices, extendedRequest)
+	data, p2Length := encodeSendPhononsData(keyIndices)
+	cmd := NewCommandSendPhonons(data, p2Length, extendedRequest)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		log.Error("error in send phonons command: ", err)
@@ -594,7 +624,11 @@ func (cs *PhononCommandSet) ReceivePhonons(phononTransfer []byte) error {
 //Implemented with support for single
 func (cs *PhononCommandSet) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 	log.Debug("sending SET_RECV_LIST command")
-	cmd := NewCommandSetReceiveList(phononPubKeys)
+	data, err := encodeSetReceiveListData(phononPubKeys)
+	if err != nil {
+		return err
+	}
+	cmd := NewCommandSetReceiveList(data)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return err
@@ -609,7 +643,7 @@ func (cs *PhononCommandSet) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) err
 func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
 	log.Debug("sending TRANSACTION_ACK command")
 
-	data := EncodeKeyIndexList(keyIndices)
+	data := encodeKeyIndexList(keyIndices)
 
 	cmd := NewCommandTransactionAck(data)
 	resp, err := cs.sc.Send(cmd)

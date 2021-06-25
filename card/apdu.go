@@ -1,12 +1,8 @@
 package card
 
 import (
-	"crypto/ecdsa"
-	"errors"
-
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/globalplatform"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -62,18 +58,6 @@ const (
 	TagAesIV           = 0x92
 	TagECDSASig        = 0x93
 	TagPairingIndex    = 0x94
-
-	StatusSuccess         = 0x9000
-	StatusPhononTableFull = 0x6A84
-	StatusInvalidFile     = 0x6983
-	StatusOutOfMemory     = 0x6F00
-)
-
-var (
-	ErrCardUninitialized = errors.New("card uninitialized")
-	ErrPhononTableFull   = errors.New("phonon table full")
-	ErrOutOfMemory       = errors.New("card out of memory")
-	ErrUnknown           = errors.New("unknown error")
 )
 
 //NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU
@@ -159,7 +143,7 @@ func NewCommandDestroyPhonon(data []byte) *apdu.Command {
 	)
 }
 
-func NewCommandSendPhonons(keyIndices []uint16, extendedRequest bool) *apdu.Command {
+func NewCommandSendPhonons(data []byte, p2Length byte, extendedRequest bool) *apdu.Command {
 	var p1 byte
 	if extendedRequest {
 		p1 = 0x01
@@ -167,15 +151,11 @@ func NewCommandSendPhonons(keyIndices []uint16, extendedRequest bool) *apdu.Comm
 		p1 = 0x00
 	}
 
-	p2 := byte(len(keyIndices))
-
-	data := EncodeKeyIndexList(keyIndices)
-
 	return apdu.NewCommand(
 		globalplatform.ClaISO7816,
 		InsSendPhonons,
 		p1,
-		p2,
+		p2Length,
 		data,
 	)
 }
@@ -192,21 +172,14 @@ func NewCommandReceivePhonons(phononTransferPacket []byte) *apdu.Command {
 	)
 }
 
-func NewCommandSetReceiveList(phononPubKeys []*ecdsa.PublicKey) *apdu.Command {
-	var pubKeyTLVBytes []byte
-	for _, pubKey := range phononPubKeys {
-		pubKeyTLV, _ := NewTLV(TagPhononPubKey, ethcrypto.FromECDSAPub(pubKey))
-		pubKeyTLVBytes = append(pubKeyTLVBytes, pubKeyTLV.Encode()...)
-	}
-
-	data, _ := NewTLV(TagPhononPubKeyList, pubKeyTLVBytes)
+func NewCommandSetReceiveList(data []byte) *apdu.Command {
 
 	return apdu.NewCommand(
 		globalplatform.ClaISO7816,
 		InsSetRecvList,
 		0x00,
 		0x00,
-		data.Encode(),
+		data,
 	)
 }
 

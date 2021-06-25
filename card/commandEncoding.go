@@ -8,8 +8,22 @@ import (
 
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
+
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
+
+func encodeKeyIndexList(keyIndices []uint16) []byte {
+	var keyIndexBytes []byte
+	b := make([]byte, 2)
+	for _, keyIndex := range keyIndices {
+		binary.BigEndian.PutUint16(b, keyIndex)
+		keyIndexBytes = append(keyIndexBytes, b...)
+	}
+	//TODO: possibly handle potential error
+	data, _ := NewTLV(TagPhononKeyIndexList, keyIndexBytes)
+	return data.Encode()
+}
 
 func encodeSetDescriptorData(keyIndex uint16, currencyType model.CurrencyType, value float32) ([]byte, error) {
 	keyIndexBytes := make([]byte, 2)
@@ -103,6 +117,27 @@ func encodeListPhononsData(currencyType model.CurrencyType, lessThanValue float3
 	}
 
 	return p2, cmdData.Encode(), nil
+}
+
+func encodeSetReceiveListData(phononPubKeys []*ecdsa.PublicKey) ([]byte, error) {
+	var pubKeyTLVBytes []byte
+	for _, pubKey := range phononPubKeys {
+		pubKeyTLV, _ := NewTLV(TagPhononPubKey, ethcrypto.FromECDSAPub(pubKey))
+		pubKeyTLVBytes = append(pubKeyTLVBytes, pubKeyTLV.Encode()...)
+	}
+
+	data, err := NewTLV(TagPhononPubKeyList, pubKeyTLVBytes)
+	if err != nil {
+		return nil, err
+	}
+	return data.Encode(), nil
+}
+
+func encodeSendPhononsData(keyIndices []uint16) (data []byte, p2Length byte) {
+	p2Length = byte(len(keyIndices))
+
+	data = encodeKeyIndexList(keyIndices)
+	return data, p2Length
 }
 
 func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {

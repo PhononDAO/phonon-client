@@ -18,16 +18,16 @@ func TestParseTLV(t *testing.T) {
 		log.Error(err)
 		return
 	}
-	// appInfo, err := collection.FindTag(TagSelectAppInfo)
-	// if err != nil {
-	// 	log.Error(err)
-	// 	return
-	// }
-	// appInfoCollection, err := ParseTLVPacket(appInfo)
-	// if err != nil {
-	// 	log.Error(err)
-	// 	return
-	// }
+	appInfo, err := collection.FindTag(TagSelectAppInfo)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	_, err = ParseTLVPacket(appInfo)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 	_, err = collection.FindTag(TagCardUID)
 	if err != nil {
 		log.Error(err)

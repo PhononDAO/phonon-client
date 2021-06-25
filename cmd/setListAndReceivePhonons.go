@@ -57,15 +57,19 @@ func init() {
 }
 
 func setListAndReceive() {
-	cs, err := card.Connect()
+	cs, err := card.OpenSecureConnection()
 	if err != nil {
 		return
 	}
 
-	_, _, _, err = cs.Select()
-
+	err = cs.VerifyPIN("111111")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	keyIndex, phononPubKey, err := cs.CreatePhonon()
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 

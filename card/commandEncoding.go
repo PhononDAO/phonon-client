@@ -224,7 +224,6 @@ func parseDestroyPhononResponse(resp []byte) (privKey *ecdsa.PrivateKey, err err
 }
 
 func parseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
-	log.Debug("create phonon response length: ", len(resp))
 	collection, err := ParseTLVPacket(resp, TagPhononKeyCollection)
 	if err != nil {
 		return 0, nil, err

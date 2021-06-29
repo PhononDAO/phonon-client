@@ -15,7 +15,7 @@ var testPin string = "111111"
 
 func TestMain(m *testing.M) {
 	runtime.GOMAXPROCS(1)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	log.SetFormatter(&log.TextFormatter{})
 
 	cs, err := Connect()
@@ -159,6 +159,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 	}
 
 	for _, f := range filters {
+		fmt.Printf("listing phonons with filter: %+v\n", f)
 		//TODO: wrap up as list function, and pass different lists
 		receivedPhonons, err := cs.ListPhonons(f.currencyType, f.lessThanValue, f.greaterThanValue)
 		if err != nil {
@@ -172,7 +173,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		for _, received := range receivedPhonons {
 			received.PubKey, err = cs.GetPhononPubKey(uint16(received.KeyIndex))
 			if err != nil {
-				t.Error("could not get phonon pubkey: ", err)
+				t.Errorf("could not get phonon pubkey at index %v: %v\n", received.KeyIndex, err)
 				return
 			}
 			fmt.Printf("%+v\n", received)
@@ -314,24 +315,26 @@ func TestReuseDestroyedIndex(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	fmt.Printf("created phonons for reuse and destroy check at indices, %v, %v, and %v\n", keyIndex1, keyIndex2, keyIndex3)
 	//Check the indices in order middle, last, first to ensure all index positions are properly reused
-	DestroyReuseAndCheck := func(keyIndex uint16) {
+	DestroyReuseAndCheck := func(keyIndex uint16) error {
 		//Destroy and reused the middle index
-		_, err = cs.DestroyPhonon(keyIndex2)
+		_, err = cs.DestroyPhonon(keyIndex)
 		if err != nil {
 			t.Error(err)
-			return
+			return err
 		}
 		//Should be equivalent to index
 		reusedIndex, _, err := cs.CreatePhonon()
 		if err != nil {
 			t.Error(err)
-			return
+			return err
 		}
 		if reusedIndex != keyIndex {
-			t.Error("middle index was not reused properly")
-			return
+			t.Errorf("keyIndex %v not reused correctly\n", keyIndex)
+			return err
 		}
+		return nil
 	}
 	DestroyReuseAndCheck(keyIndex2)
 	DestroyReuseAndCheck(keyIndex3)

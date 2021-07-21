@@ -108,7 +108,7 @@ func InstallCardCommand() {
 	// Select Card
 	cs, err := card.ConnectInteractive()
 	if err != nil {
-		log.Fatalf("Unable to connect to card %d: %s", index, err.Error())
+		log.Fatalf("Unable to connect to card: %s", err.Error())
 	}
 	nonce := make([]byte, 32)
 	n, err := io.ReadFull(rand.Reader, nonce)

@@ -1,7 +1,11 @@
 package card
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/GridPlus/keycard-go/io"
 	"github.com/ebfe/scard"
@@ -15,13 +19,41 @@ func Connect() (*PhononCommandSet, error) {
 	return ConnectWithReaderIndex(0)
 }
 
-func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {
+func ConnectInteractive() (*PhononCommandSet, error){
 	ctx, err := scard.EstablishContext()
 	if err != nil {
 		log.Error(err)
 		return nil, err
 	}
 
+	readers, err := ctx.ListReaders()
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	if len(readers) == 0{
+		return nil, ErrReaderNotFound
+	}else if len(readers) == 1{
+		return connectWithContext(ctx, 0)	
+	}else{
+		fmt.Println("Please Select the index of the  card you wish to use:")
+		for i, reader := range(readers){
+			fmt.Printf("%d: %s", i, string(reader))
+		}
+		reader := bufio.NewReader(os.Stdin)
+		cardIndexStr, err := reader.ReadString('\n')
+		if err != nil{
+			return nil, err
+		}
+		cardIndexInt, err := strconv.Atoi(cardIndexStr)
+		if err != nil{
+			return nil, err
+		}
+		return connectWithContext(ctx, cardIndexInt)
+	}
+}
+
+func connectWithContext(ctx *scard.Context, index int)(*PhononCommandSet, error){
 	readers, err := ctx.ListReaders()
 	if err != nil {
 		log.Error(err)
@@ -51,6 +83,16 @@ func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {
 		return NewPhononCommandSet(io.NewNormalChannel(card)), nil
 	}
 	return nil, ErrReaderNotFound
+	
+}
+
+func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {
+	ctx, err := scard.EstablishContext()
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	return connectWithContext(ctx, index)
 }
 
 //Connects and Opens a Secure Connection with a card

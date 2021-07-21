@@ -16,29 +16,41 @@ limitations under the License.
 package cmd
 
 import (
+	"bufio"
+	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"log"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/GridPlus/phonon-client/card"
+	yubihsm "github.com/certusone/yubihsm-go"
+	"github.com/certusone/yubihsm-go/commands"
+	"github.com/certusone/yubihsm-go/connector"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // installCardCertCmd represents the installCardCert command
 var installCardCertCmd = &cobra.Command{
-	Use:   "Install Certificate to Card",
+	Use:   "installCert",
 	Short: "This is to sign and install a certificate to the card",
 	Long:  `This is a longer version of saying it installs a ceritificate to the card signed by the authority`,
 	Run: func(cmd *cobra.Command, args []string) {
-		DoTheThing()
+		InstallCardCommand() //todo rename this
 	},
 }
 
 var (
 	useDemoKey      bool
-	ubikeySlot      int
-	ubikeyPass      string
+	yubikeySlot     string
+	yubikeyPass     string
 	usePhononApplet bool
 )
 
@@ -46,8 +58,9 @@ func init() {
 	rootCmd.AddCommand(installCardCertCmd)
 
 	installCardCertCmd.Flags().BoolVarP(&useDemoKey, "demo", "d", false, "Use the demo key to sign -- insecure for demo purposes only")
-	installCardCertCmd.Flags().IntVarP(&ubikeySlot, "slot", "s", 0, "Slot in which the signing ubikey is insterted")
-	installCardCertCmd.Flags().StringVarP(&ubikeyPass, "pass", "", "", "Ubikey Password")
+
+	installCardCertCmd.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing ubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
+	installCardCertCmd.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Ubikey Password")
 	installCardCertCmd.Flags().BoolVarP(&usePhononApplet, "Phonon", "p", false, "install certificate on a phonon applet, instead of the safecard applet")
 
 	// Here you will define your flags and configuration settings.
@@ -61,74 +74,113 @@ func init() {
 	// installCardCertCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func DoTheThing() {
-	var signKeyFunc func([]byte)([]byte, error)
+func InstallCardCommand() {
+	var signKeyFunc func([]byte) ([]byte, error)
 	// Determine Signing Key
 	if useDemoKey {
 		fmt.Println("Using Demo Key!")
 		signKeyFunc = SignWithDemoKey
 	} else {
-		//todo: implement logic with yubikey
-	}
-	// get card readers
-	index := 0 //todo: get card reader index
+		//gather information for ubikey signing
+		var yubikeySlotInt int
+		yubikeySlotInt, err := strconv.Atoi(yubikeySlot)
+		if err != nil {
+			fmt.Println("Please enter the yubikey slot: ")
+			reader := bufio.NewReader(os.Stdin)
+			input, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			input = strings.TrimSuffix(input, "\n")
+			yubikeySlotInt, err = strconv.Atoi(input)
+		}
+		if yubikeyPass == "" {
+			fmt.Println("Please enter the yubikey password:")
+			passBytes, err := terminal.ReadPassword(0)
+			if err != nil {
+				log.Fatalf("Unable to retrieve password from console: %s", err.Error())
+			}
+			yubikeyPass = string(passBytes)
+		}
 
+		signKeyFunc = SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
+	}
 	// Select Card
-	cs, err := card.ConnectWithReaderIndex(index) //todo: make this a secure session
+	cs, err := card.ConnectInteractive()
 	if err != nil {
-		log.Fatalf("Unable to connect to card %d: %s",index, err.Error())
+		log.Fatalf("Unable to connect to card %d: %s", index, err.Error())
 	}
-
 	nonce := make([]byte, 32)
-	n, err := io.ReadFull(rand.Reader,nonce)
-	if err != nil{
+	n, err := io.ReadFull(rand.Reader, nonce)
+	if err != nil {
 		log.Fatalf("Unable to retrieve random challenge to card")
 	}
-	if n != 32{
+	if n != 32 {
 		log.Fatalf("Unable to read 32 bytes for challenge to card")
 	}
 	// Send Challenge to card
 	cardPubKey, _, err := cs.IdentifyCard(nonce)
-	if err != nil{
-		log.Fatalf("Unable to Verify card %s", err.Error())
+	if err != nil {
+		log.Fatalf("Unable to Identify card %s", err.Error())
 	}
-	
 	// make Card Certificate
-	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41} //todo: ask what this is
+	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
 	cardCertificate := append(perms, cardPubKey...)
-
 	// sign The Certificate
 	preImage := cardCertificate[2:]
-	
 	sig, err := signKeyFunc(preImage)
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Unable to sign Cert: %s", err.Error())
 	}
 	// Append CA Signature to certificate
 	signedCert := append(cardCertificate, sig...)
 	// Install Certificate into Safecard applet
 	err = cs.InstallCertificate(signedCert)
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Unable to install Certificate to card: %s", err.Error())
 	}
-	// Disconnect from card
-
-	// release card reader
 }
+func SignWithYubikeyFunc(slot int, password string) func([]byte) ([]byte, error) {
+	return func(cert []byte) ([]byte, error) {
 
-func SignWithUbikey() {
-	//todo: this
+		c := connector.NewHTTPConnector("localhost:1234")
+		sm, err := yubihsm.NewSessionManager(c, 1, "password")
+		if err != nil {
+			panic(err)
+		}
+
+		digest := sha256.Sum256(cert)
+		uint16slot := uint16(slot)
+		cmd, err := commands.CreateSignDataEcdsaCommand(uint16slot, digest[:])
+		if err != nil {
+			return []byte{}, err
+		}
+		res, err := sm.SendEncryptedCommand(cmd)
+		if err != nil {
+			return []byte{}, err
+		}
+
+		return res.(*commands.SignDataEddsaResponse).Signature, nil
+	}
 }
 
 func SignWithDemoKey(cert []byte) ([]byte, error) {
-/*	demoKey := []byte{
+	demoKey := []byte{
 		0x03, 0x8D, 0x01, 0x08, 0x90, 0x00, 0x00, 0x00,
 		0x10, 0xAA, 0x82, 0x07, 0x09, 0x80, 0x00, 0x00,
 		0x01, 0xBB, 0x03, 0x06, 0x90, 0x08, 0x35, 0xF9,
 		0x10, 0xCC, 0x04, 0x85, 0x09, 0x00, 0x00, 0x91,
 	}
-	digest := sha256.Sum256(cert)*/
-	return []byte{}, nil
-	
-}
+	reader := bytes.NewReader(demoKey)
+	key, err := ecdsa.GenerateKey(elliptic.P224(), reader)
+	if err != nil {
+		return []byte{}, err
+	}
+	digest := sha256.Sum256(cert)
+	ret, err := key.Sign(rand.Reader, digest[:], nil)
+	if err != nil {
+		return []byte{}, err
+	}
+	return ret, nil
 
+}

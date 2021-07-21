@@ -722,7 +722,6 @@ func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	return nil
 }
 
-//TODO: make sure this isn't wrong -N8
 func (cs *PhononCommandSet) InstallCertificate(certificate []byte) (err error) {
 	cmd := NewCommandInstallCert(certificate)
 	resp, err := cs.sc.Send(cmd)

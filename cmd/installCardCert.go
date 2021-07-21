@@ -61,8 +61,6 @@ func init() {
 
 	installCardCertCmd.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing ubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
 	installCardCertCmd.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Ubikey Password")
-	installCardCertCmd.Flags().BoolVarP(&usePhononApplet, "Phonon", "p", false, "install certificate on a phonon applet, instead of the safecard applet")
-
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -105,7 +103,8 @@ func InstallCardCommand() {
 
 		signKeyFunc = SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
 	}
-	// Select Card
+
+	// Select Card if multiple. Otherwise go with first one or error out
 	cs, err := card.ConnectInteractive()
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
@@ -113,33 +112,39 @@ func InstallCardCommand() {
 	nonce := make([]byte, 32)
 	n, err := io.ReadFull(rand.Reader, nonce)
 	if err != nil {
-		log.Fatalf("Unable to retrieve random challenge to card")
+		log.Fatalf("Unable to retrieve random challenge for card: %s", err.Error())
 	}
 	if n != 32 {
 		log.Fatalf("Unable to read 32 bytes for challenge to card")
 	}
+
 	// Send Challenge to card
 	cardPubKey, _, err := cs.IdentifyCard(nonce)
 	if err != nil {
 		log.Fatalf("Unable to Identify card %s", err.Error())
 	}
+
 	// make Card Certificate
 	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
 	cardCertificate := append(perms, cardPubKey...)
+
 	// sign The Certificate
 	preImage := cardCertificate[2:]
 	sig, err := signKeyFunc(preImage)
 	if err != nil {
 		log.Fatalf("Unable to sign Cert: %s", err.Error())
 	}
+
 	// Append CA Signature to certificate
 	signedCert := append(cardCertificate, sig...)
+
 	// Install Certificate into Safecard applet
 	err = cs.InstallCertificate(signedCert)
 	if err != nil {
 		log.Fatalf("Unable to install Certificate to card: %s", err.Error())
 	}
 }
+
 func SignWithYubikeyFunc(slot int, password string) func([]byte) ([]byte, error) {
 	return func(cert []byte) ([]byte, error) {
 

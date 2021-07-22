@@ -81,8 +81,9 @@ func connectWithContext(ctx *scard.Context, index int)(*PhononCommandSet, error)
 
 		log.Debugf("\treader: %s\n\tstate: %x\n\tactive protocol: %x\n\tatr: % x\n",
 			status.Reader, status.State, status.ActiveProtocol, status.Atr)
-
-		return NewPhononCommandSet(io.NewNormalChannel(card)), nil
+		cs :=  NewPhononCommandSet(io.NewNormalChannel(card))
+		_, _, _, err = cs.Select()
+		return cs, err
 	}
 	return nil, ErrReaderNotFound
 	

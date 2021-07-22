@@ -17,14 +17,13 @@ package cmd
 
 import (
 	"bufio"
-	"bytes"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"os"
 	"strconv"
 	"strings"
@@ -33,6 +32,7 @@ import (
 	yubihsm "github.com/certusone/yubihsm-go"
 	"github.com/certusone/yubihsm-go/commands"
 	"github.com/certusone/yubihsm-go/connector"
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -176,11 +176,10 @@ func SignWithDemoKey(cert []byte) ([]byte, error) {
 		0x01, 0xBB, 0x03, 0x06, 0x90, 0x08, 0x35, 0xF9,
 		0x10, 0xCC, 0x04, 0x85, 0x09, 0x00, 0x00, 0x91,
 	}
-	reader := bytes.NewReader(demoKey)
-	key, err := ecdsa.GenerateKey(elliptic.P224(), reader)
-	if err != nil {
-		return []byte{}, err
-	}
+	var key ecdsa.PrivateKey
+	key.D = new(big.Int).SetBytes(demoKey)
+	key.PublicKey.Curve = secp256k1.S256()
+	key.PublicKey.X,key.PublicKey.Y = key.PublicKey.Curve.ScalarBaseMult(key.D.Bytes())	
 	digest := sha256.Sum256(cert)
 	ret, err := key.Sign(rand.Reader, digest[:], nil)
 	if err != nil {

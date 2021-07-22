@@ -24,7 +24,7 @@ const (
 	InsCardPair         = 0x51
 	InsCardPair2        = 0x52
 	InsFinalizeCardPair = 0x53
-	InsInstallKey       = 0x15
+	InsLoadCert         = 0x15
 
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F
@@ -237,7 +237,7 @@ func NewCommandFinalizeCardPair(data []byte) *apdu.Command {
 func NewCommandInstallCert(data []byte) *apdu.Command {
 	return apdu.NewCommand(
 		globalplatform.ClaGp,
-		InsInstallKey,
+		InsLoadCert,
 		0x00,
 		0x00,
 		data,

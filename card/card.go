@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/GridPlus/keycard-go/io"
 	"github.com/ebfe/scard"
@@ -42,6 +43,7 @@ func ConnectInteractive() (*PhononCommandSet, error){
 		}
 		reader := bufio.NewReader(os.Stdin)
 		cardIndexStr, err := reader.ReadString('\n')
+		cardIndexStr = strings.Trim(cardIndexStr,"\n")
 		if err != nil{
 			return nil, err
 		}

@@ -41,7 +41,6 @@ import (
 var installCardCertCmd = &cobra.Command{
 	Use:   "installCert",
 	Short: "This is to sign and install a certificate to the card",
-	Long:  `This is a longer version of saying it installs a ceritificate to the card signed by the authority`,
 	Run: func(cmd *cobra.Command, args []string) {
 		InstallCardCommand() //todo rename this
 	},

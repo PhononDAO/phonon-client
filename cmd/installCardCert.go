@@ -137,6 +137,9 @@ func InstallCardCommand() {
 	// Append CA Signature to certificate
 	signedCert := append(cardCertificate, sig...)
 
+	//Substitute actual certificate length in certificate header
+	signedCert[1] = byte(len(signedCert))
+
 	// Install Certificate into Safecard applet
 	err = cs.InstallCertificate(signedCert)
 	if err != nil {
@@ -176,14 +179,17 @@ func SignWithDemoKey(cert []byte) ([]byte, error) {
 		0x10, 0xCC, 0x04, 0x85, 0x09, 0x00, 0x00, 0x91,
 	}
 	var key ecdsa.PrivateKey
+
+	// print("signing with demo key")
 	key.D = new(big.Int).SetBytes(demoKey)
 	key.PublicKey.Curve = secp256k1.S256()
-	key.PublicKey.X,key.PublicKey.Y = key.PublicKey.Curve.ScalarBaseMult(key.D.Bytes())	
+	key.PublicKey.X, key.PublicKey.Y = key.PublicKey.Curve.ScalarBaseMult(key.D.Bytes())
 	digest := sha256.Sum256(cert)
 	ret, err := key.Sign(rand.Reader, digest[:], nil)
 	if err != nil {
 		return []byte{}, err
 	}
+	print("finished signing")
 	return ret, nil
 
 }

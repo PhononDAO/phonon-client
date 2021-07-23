@@ -723,9 +723,10 @@ func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 }
 
 func (cs *PhononCommandSet) InstallCertificate(certificate []byte) (err error) {
+	log.Debug("sending INSTALL_CERTIFICATE command")
 	cmd := NewCommandInstallCert(certificate)
-	resp, err := cs.sc.Send(cmd)
-	if err != nil{
+	resp, err := cs.c.Send(cmd)
+	if err != nil {
 		return err
 	}
 	_, err = checkContinuation(resp.Sw)

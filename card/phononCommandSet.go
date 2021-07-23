@@ -7,6 +7,8 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"io"
 	"math/big"
 
 	"github.com/GridPlus/keycard-go"
@@ -722,8 +724,36 @@ func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	return nil
 }
 
-func (cs *PhononCommandSet) InstallCertificate(certificate []byte) (err error) {
-	cmd := NewCommandInstallCert(certificate)
+func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte)([]byte, error)) (err error) {
+	nonce := make([]byte, 32)
+	n, err := io.ReadFull(rand.Reader, nonce)
+	if err != nil {
+		return fmt.Errorf("Unable to retrieve random challenge for card: %s", err.Error())
+	}
+	if n != 32 {
+		return fmt.Errorf("Unable to read 32 bytes for challenge to card")
+	}
+
+	// Send Challenge to card
+	cardPubKey, _, err := cs.IdentifyCard(nonce)
+	if err != nil {
+		return fmt.Errorf("Unable to Identify card %s", err.Error())
+	}
+
+	// make Card Certificate
+	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
+	cardCertificate := append(perms, cardPubKey...)
+
+	// sign The Certificate
+	preImage := cardCertificate[2:]
+	sig, err := signKeyFunc(preImage)
+	if err != nil {
+		return fmt.Errorf("Unable to sign Cert: %s", err.Error())
+	}
+
+	// Append CA Signature to certificate
+	signedCert := append(cardCertificate, sig...)
+	cmd := NewCommandInstallCert(signedCert)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil{
 		return err
@@ -732,7 +762,9 @@ func (cs *PhononCommandSet) InstallCertificate(certificate []byte) (err error) {
 	if err != nil {
 		return err
 	}
-
+	if err != nil {
+		log.Fatalf("Unable to install Certificate to card: %s", err.Error())
+	}
 	return nil
 
 }

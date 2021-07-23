@@ -21,7 +21,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
-	"io"
 	"log"
 	"math/big"
 	"os"
@@ -109,41 +108,11 @@ func InstallCardCommand() {
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
 	}
-	nonce := make([]byte, 32)
-	n, err := io.ReadFull(rand.Reader, nonce)
-	if err != nil {
-		log.Fatalf("Unable to retrieve random challenge for card: %s", err.Error())
+	err = cs.InstallCertificate(signKeyFunc)
+	if err != nil{
+		log.Fatalf("Unable to Install Certificate: %s", err.Error())
 	}
-	if n != 32 {
-		log.Fatalf("Unable to read 32 bytes for challenge to card")
 	}
-
-	// Send Challenge to card
-	cardPubKey, _, err := cs.IdentifyCard(nonce)
-	if err != nil {
-		log.Fatalf("Unable to Identify card %s", err.Error())
-	}
-
-	// make Card Certificate
-	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
-	cardCertificate := append(perms, cardPubKey...)
-
-	// sign The Certificate
-	preImage := cardCertificate[2:]
-	sig, err := signKeyFunc(preImage)
-	if err != nil {
-		log.Fatalf("Unable to sign Cert: %s", err.Error())
-	}
-
-	// Append CA Signature to certificate
-	signedCert := append(cardCertificate, sig...)
-
-	// Install Certificate into Safecard applet
-	err = cs.InstallCertificate(signedCert)
-	if err != nil {
-		log.Fatalf("Unable to install Certificate to card: %s", err.Error())
-	}
-}
 
 func SignWithYubikeyFunc(slot int, password string) func([]byte) ([]byte, error) {
 	return func(cert []byte) ([]byte, error) {

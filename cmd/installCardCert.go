@@ -21,7 +21,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
-	"io"
 	"log"
 	"math/big"
 	"os"
@@ -32,6 +31,7 @@ import (
 	yubihsm "github.com/certusone/yubihsm-go"
 	"github.com/certusone/yubihsm-go/commands"
 	"github.com/certusone/yubihsm-go/connector"
+	"github.com/ebfe/scard"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
@@ -104,46 +104,14 @@ func InstallCardCommand() {
 	}
 
 	// Select Card if multiple. Otherwise go with first one or error out
-	cs, err := card.ConnectInteractive()
+	cs, err := scConnectInteractive()
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
 	}
-	nonce := make([]byte, 32)
-	n, err := io.ReadFull(rand.Reader, nonce)
+
+	err = cs.InstallCertificate(signKeyFunc)
 	if err != nil {
-		log.Fatalf("Unable to retrieve random challenge for card: %s", err.Error())
-	}
-	if n != 32 {
-		log.Fatalf("Unable to read 32 bytes for challenge to card")
-	}
-
-	// Send Challenge to card
-	cardPubKey, _, err := cs.IdentifyCard(nonce)
-	if err != nil {
-		log.Fatalf("Unable to Identify card %s", err.Error())
-	}
-
-	// make Card Certificate
-	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
-	cardCertificate := append(perms, cardPubKey...)
-
-	// sign The Certificate
-	preImage := cardCertificate[2:]
-	sig, err := signKeyFunc(preImage)
-	if err != nil {
-		log.Fatalf("Unable to sign Cert: %s", err.Error())
-	}
-
-	// Append CA Signature to certificate
-	signedCert := append(cardCertificate, sig...)
-
-	//Substitute actual certificate length in certificate header
-	signedCert[1] = byte(len(signedCert))
-
-	// Install Certificate into Safecard applet
-	err = cs.InstallCertificate(signedCert)
-	if err != nil {
-		log.Fatalf("Unable to install Certificate to card: %s", err.Error())
+		log.Fatalf("Unable to Install Certificate: %s", err.Error())
 	}
 }
 
@@ -192,4 +160,39 @@ func SignWithDemoKey(cert []byte) ([]byte, error) {
 	print("finished signing")
 	return ret, nil
 
+}
+
+func scConnectInteractive() (*card.PhononCommandSet, error) {
+	ctx, err := scard.EstablishContext()
+	if err != nil {
+		log.Fatalf("Unable to establish Smart Card context: %s", err.Error())
+		return nil, err
+	}
+
+	readers, err := ctx.ListReaders()
+	if err != nil {
+		log.Fatalf("Unable to list readers: %s", err.Error())
+		return nil, err
+	}
+	if len(readers) == 0 {
+		return nil, card.ErrReaderNotFound
+	} else if len(readers) == 1 {
+		return card.ConnectWithContext(ctx, 0)
+	} else {
+		fmt.Println("Please Select the index of the  card you wish to use:")
+		for i, reader := range readers {
+			fmt.Printf("%d: %s", i, string(reader))
+		}
+		reader := bufio.NewReader(os.Stdin)
+		cardIndexStr, err := reader.ReadString('\n')
+		cardIndexStr = strings.Trim(cardIndexStr, "\n")
+		if err != nil {
+			return nil, err
+		}
+		cardIndexInt, err := strconv.Atoi(cardIndexStr)
+		if err != nil {
+			return nil, err
+		}
+		return card.ConnectWithContext(ctx, cardIndexInt)
+	}
 }

@@ -3,8 +3,6 @@ package validator
 import (
 	"context"
 	"errors"
-	"fmt"
-	"math"
 	"os"
 
 	"github.com/GridPlus/phonon-client/model"

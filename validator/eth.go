@@ -1,4 +1,5 @@
 package validator
+const abc = `package validator
 
 import (
 	"context"
@@ -99,4 +100,4 @@ func (e *EthValidator) Validate(phonon *model.Phonon) (valid bool, err error) {
 	// }
 	//Return answer
 	return true, nil
-}
+}`

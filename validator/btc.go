@@ -10,6 +10,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 
 	log "github.com/sirupsen/logrus"
@@ -19,20 +20,38 @@ type BTCValidator struct {
 	bclient *bcoinClient
 }
 
-const transactionRequestLimit = 100
+const transactionRequestLimit int = 6
+
+type bcoinClient struct {
+	url       string
+	authtoken string
+}
+
+func NewBTCValidator(c *bcoinClient) *BTCValidator {
+	return &BTCValidator{
+		bclient: c,
+	}
+}
+
+func NewClient(url string, authToken string) *bcoinClient {
+	return &bcoinClient{
+		url:       url,
+		authtoken: authToken,
+	}
+}
 
 func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 	// get the public key of the phonon
 	key := phonon.PubKey
 
 	// turn it into an address
-	address, err := pubKeyToAddress(key)
+	addresses, err := pubKeyToAddress(key)
 	if err != nil {
 		return false, err
 	}
 
 	// get balance of address
-	balance, err := b.getBalance(address)
+	balance, err := b.getBalance(addresses)
 	if err != nil {
 		return false, err
 	}
@@ -44,7 +63,7 @@ func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 	return true, nil
 }
 
-func pubKeyToAddress(key *ecdsa.PublicKey) (string, error) {
+func pubKeyToAddress(key *ecdsa.PublicKey) ([]string, error) {
 	btcpubkey := btcec.PublicKey{
 		Curve: key.Curve,
 		X:     key.X,
@@ -52,20 +71,38 @@ func pubKeyToAddress(key *ecdsa.PublicKey) (string, error) {
 	}
 	// something feels wrong about serializing the pubkey just to unserialize it, but hopefully this all gets optimized out so it doesnt matter anyway
 	// as far as I can tell, the second argument to this call isn't used for creating an address
-	btcutilPubKey, err := btcutil.NewAddressPubKey(btcpubkey.SerializeCompressed(), nil)
+	pubKeyUncompressed, err := btcutil.NewAddressPubKey(btcpubkey.SerializeUncompressed(), &chaincfg.MainNetParams)
 	if err != nil {
 		log.Debug("Error generating address from public key")
-		return btcutilPubKey.EncodeAddress(), nil
+		return []string{}, nil
 	}
-	return btcutilPubKey.EncodeAddress(), nil
+
+	pubKeyHybrid, err := btcutil.NewAddressPubKey(btcpubkey.SerializeHybrid(), &chaincfg.MainNetParams)
+	if err != nil {
+		log.Debug("Error generating address from public key")
+		return []string{}, nil
+	}
+
+	pubKeyCompressed, err := btcutil.NewAddressPubKey(btcpubkey.SerializeCompressed(), &chaincfg.MainNetParams)
+	if err != nil {
+		log.Debug("Error generating address from public key")
+		return []string{}, nil
+	}
+
+
+	return []string{
+		pubKeyCompressed.EncodeAddress(),
+		pubKeyUncompressed.EncodeAddress(),
+		pubKeyHybrid.EncodeAddress(),
+	}, nil
 }
 
-func (b *BTCValidator) getBalance(address string) (int64, error) {
+func (b *BTCValidator) getBalance(addresses []string) (int64, error) {
+	fmt.Println("getting balance")
 	//get transactions
-	transactions, err := b.bclient.GetTransactions(context.Background(), address)
-
+	transactions, err := b.bclient.GetTransactions(context.Background(), addresses)
 	//aggregate transactions into a running balance
-	balance, err := aggregateTransactions(transactions, address)
+	balance, err := aggregateTransactions(transactions, addresses)
 	if err != nil {
 		return 0, err
 	}
@@ -73,65 +110,76 @@ func (b *BTCValidator) getBalance(address string) (int64, error) {
 	return balance, nil
 }
 
-func aggregateTransactions(txl transactionList, address string) (int64, error) {
+func aggregateTransactions(txl transactionList, addresses []string) (int64, error) {
 	var runningTotal int64 = 0
 	for _, transaction := range txl {
+		fmt.Println(runningTotal)
 		for _, input := range transaction.Inputs {
-			if input.Coin.Address == address {
-				runningTotal -= input.Coin.Value
+			for _, address := range addresses {
+				if input.Coin.Address == address {
+					fmt.Println(fmt.Sprintf("running total: %d, subtracting %d", runningTotal, input.Coin.Value))
+					runningTotal -= input.Coin.Value
+				}
 			}
 		}
 		for _, output := range transaction.Outputs {
-			if output.Address == address {
-				runningTotal += output.Value
+			for _, address := range addresses {
+				if output.Address == address {
+					fmt.Println(fmt.Sprintf("running total: %d, adding %d", runningTotal, output.Value))
+					runningTotal += output.Value
+				}
 			}
 		}
 	}
+	fmt.Println(runningTotal)
 	return runningTotal, nil
 }
 
-type bcoinClient struct {
-	url       string
-	authtoken string
-}
-
-func (bc *bcoinClient) GetTransactions(ctx context.Context, address string) (transactionList, error) {
-	url := fmt.Sprintf("%s?limit=%s", bc.url, transactionRequestLimit)
+func (bc *bcoinClient) GetTransactions(ctx context.Context, addresses []string) (transactionList, error) {
 	var ret transactionList
-	var listPart transactionList
-	listPart, err := bc.getTransactionList(ctx, url)
-	if err != nil {
-		return nil, err
-	}
-	// As long as we are getting a full list, keep checking for more and adding them to the list
-	for len(listPart) == transactionRequestLimit {
-		// Add limit parameters to url
-		url := fmt.Sprintf("%s?limit=%s&after=%s", bc.url, ret[len(ret)-1].Index)
-		listPart, err = bc.getTransactionList(ctx, url)
+	for _, address := range addresses {
+		url := fmt.Sprintf("%s/tx/address/%s?limit=%d", bc.url, address, transactionRequestLimit)
+		var listPart transactionList
+		listPart, err := bc.getTransactionList(ctx, url)
 		if err != nil {
 			return nil, err
 		}
 		ret = append(ret, listPart...)
+		// As long as we are getting a full list, keep checking for more and adding them to the list
+		for len(listPart) == transactionRequestLimit {
+			fmt.Println(len(ret))
+			// Add limit parameters to url
+			url := fmt.Sprintf("%s/tx/address/%s?limit=%d&after=%s", bc.url, address, transactionRequestLimit, ret[len(ret)-1].Hash)
+			listPart, err = bc.getTransactionList(ctx, url)
+			if err != nil {
+				return nil, err
+			}
+			newret := append(ret, listPart...)
+			ret = newret
+			fmt.Println(len(ret))
+		}
 	}
 	return ret, nil
 }
 
 func (bc *bcoinClient) getTransactionList(ctx context.Context, url string) (transactionList, error) {
+	fmt.Println(url)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		log.Debug("Unable to create request to bcoin api")
 		return nil, err
 	}
 
-	req.SetBasicAuth("x", bc.authtoken)
+	if bc.authtoken != "" {
+		req.SetBasicAuth("x", bc.authtoken)
 
+	}
 	httpClient := http.Client{}
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Debug("Error making request to bcoin")
 		return nil, err
 	}
-
 	var ret = transactionList{}
 	retBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

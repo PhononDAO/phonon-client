@@ -31,6 +31,10 @@ jobs:
           # The Go version to download (if necessary) and use. Supports semver spec and ranges.
           go-version: 1.14.4
 
+      - name: Set up MinGW
+        run: |
+          brew install mingw-w64
+
       # Runs a single command using the runners shell
       - name: Build Linux
         run: make build

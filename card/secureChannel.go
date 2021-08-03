@@ -95,7 +95,7 @@ func (sc *SecureChannel) RawPublicKey() []byte {
 	return ethcrypto.FromECDSAPub(sc.publicKey)
 }
 
-//AES-GCM Symmetric encryption
+//AES-CBC-256 Symmetric encryption
 func (sc *SecureChannel) Send(cmd *apdu.Command) (resp *apdu.Response, err error) {
 	log.Debugf("raw command before encryption: CLA: % X Ins: % X P1: % X P2: % X Data: % X", cmd.Cla, cmd.Ins, cmd.P1, cmd.P2, cmd.Data)
 	defer func() {

@@ -37,12 +37,12 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-// installCardCertCmd represents the installCardCert command
-var installCardCertCmd = &cobra.Command{
-	Use:   "installCert",
-	Short: "This is to sign and install a certificate to the card",
+// installCardCert represents the installCardCert command
+var installCardCert = &cobra.Command{
+	Use:   "installCardCert",
+	Short: "This is to sign and install an identity certificate to the card",
 	Run: func(cmd *cobra.Command, args []string) {
-		InstallCardCommand() //todo rename this
+		InstallCardCert() //todo rename this
 	},
 }
 
@@ -54,12 +54,12 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(installCardCertCmd)
+	rootCmd.AddCommand(installCardCert)
 
-	installCardCertCmd.Flags().BoolVarP(&useDemoKey, "demo", "d", false, "Use the demo key to sign -- insecure for demo purposes only")
+	installCardCert.Flags().BoolVarP(&useDemoKey, "demo", "d", false, "Use the demo key to sign -- insecure for demo purposes only")
 
-	installCardCertCmd.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing ubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
-	installCardCertCmd.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Ubikey Password")
+	installCardCert.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing ubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
+	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Ubikey Password")
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -71,7 +71,7 @@ func init() {
 	// installCardCertCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func InstallCardCommand() {
+func InstallCardCert() {
 	var signKeyFunc func([]byte) ([]byte, error)
 	// Determine Signing Key
 	if useDemoKey {

@@ -762,13 +762,22 @@ func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte,
 	if err != nil {
 		return err
 	}
-	_, err = checkContinuation(resp.Sw)
+	err = checkInstallCertError(resp.Sw)
 	if err != nil {
 		return err
 	}
-	if err != nil {
-		log.Fatalf("Unable to install Certificate to card: %s", err.Error())
-	}
 	return nil
 
+}
+
+func checkInstallCertError(status uint16) error {
+	switch status {
+	case 0x9000:
+		return nil
+	case 0x6986:
+		return errors.New("certificate already loaded")
+		//TODO handle the other error code
+	default:
+		return errors.New("unknown error")
+	}
 }

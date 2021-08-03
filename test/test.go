@@ -11,7 +11,7 @@ import (
 
 func main() {
 	pubkeys := []string{
-		"03110c89d71731d603059f919e1670cd335cb915bb7a27b56a667ee057a2e78f3e",
+		"04500369f4a8090ca7a1265854de8ab6019168ffe41d537392e6027c74fffcc558e385686cabd665a7954f5edba6af66d5bb9a7d9dc3602c9b4a5078ce0bf11cd4",
 	}
 	for _, addresspubkey := range pubkeys {
 		h, err := hex.DecodeString(addresspubkey)

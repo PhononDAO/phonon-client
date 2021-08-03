@@ -1,5 +1,4 @@
 package validator
-const abc = `package validator
 
 import (
 	"context"
@@ -68,7 +67,8 @@ func (e *EthValidator) Validate(phonon *model.Phonon) (valid bool, err error) {
 	log.Debug("derived eth address: ", ethAddress)
 
 	//Connect ETH client to network by chainID
-	client, err := connectInfuraEndpoint(EthChainID(phonon.ChainID))
+	// TODO: throw a chain id into the phonon and pull it out here
+	client, err := connectInfuraEndpoint(EthChainID(3))
 	if err != nil {
 		return false, err
 	}
@@ -100,4 +100,4 @@ func (e *EthValidator) Validate(phonon *model.Phonon) (valid bool, err error) {
 	// }
 	//Return answer
 	return true, nil
-}`
+}

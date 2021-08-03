@@ -36,3 +36,6 @@ type CounterpartyPhononCard interface {
 	SendPhonons(phononTransfer []byte) error
 	RequestPhonons(phonons []Phonon) (phononTransfer []byte, err error)
 }
+
+
+// TODO: add types for scripts for bitcoin to support script hashes

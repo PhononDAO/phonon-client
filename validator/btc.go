@@ -40,6 +40,9 @@ func NewClient(url string, authToken string) *bcoinClient {
 	}
 }
 
+// Validate returns true if the balance associated with the public key
+// on the bitcoin phonon is greater than or equal to the balance stated in 
+// the phonon using as many known address generation functions as possible. 
 func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 	// get the public key of the phonon
 	key := phonon.PubKey
@@ -64,6 +67,7 @@ func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 }
 
 func pubKeyToAddress(key *ecdsa.PublicKey) ([]string, error) {
+	// TODO: compute addresses for all possible (reasonable) scripts for P2SH addresses
 	btcpubkey := btcec.PublicKey{
 		Curve: key.Curve,
 		X:     key.X,
@@ -88,7 +92,6 @@ func pubKeyToAddress(key *ecdsa.PublicKey) ([]string, error) {
 		log.Debug("Error generating address from public key")
 		return []string{}, nil
 	}
-
 
 	return []string{
 		pubKeyCompressed.EncodeAddress(),

@@ -776,7 +776,8 @@ func checkInstallCertError(status uint16) error {
 		return nil
 	case 0x6986:
 		return errors.New("certificate already loaded")
-		//TODO handle the other error code
+	case 0x6984:
+		return errors.New("data invalid")
 	default:
 		return errors.New("unknown error")
 	}

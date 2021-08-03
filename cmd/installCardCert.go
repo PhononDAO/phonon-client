@@ -157,7 +157,7 @@ func SignWithDemoKey(cert []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	print("finished signing")
+	println("finished signing")
 	return ret, nil
 
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
 
 	log "github.com/sirupsen/logrus"
@@ -41,8 +42,8 @@ func NewClient(url string, authToken string) *bcoinClient {
 }
 
 // Validate returns true if the balance associated with the public key
-// on the bitcoin phonon is greater than or equal to the balance stated in 
-// the phonon using as many known address generation functions as possible. 
+// on the bitcoin phonon is greater than or equal to the balance stated in
+// the phonon using as many known address generation functions as possible.
 func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 	// get the public key of the phonon
 	key := phonon.PubKey
@@ -67,7 +68,7 @@ func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 }
 
 func pubKeyToAddress(key *ecdsa.PublicKey) ([]string, error) {
-	// TODO: compute addresses for all possible (reasonable) scripts for P2SH addresses
+	log.SetLevel(log.DebugLevel)
 	btcpubkey := btcec.PublicKey{
 		Curve: key.Curve,
 		X:     key.X,
@@ -78,22 +79,62 @@ func pubKeyToAddress(key *ecdsa.PublicKey) ([]string, error) {
 	pubKeyUncompressed, err := btcutil.NewAddressPubKey(btcpubkey.SerializeUncompressed(), &chaincfg.MainNetParams)
 	if err != nil {
 		log.Debug("Error generating address from public key")
-		return []string{}, nil
+		return []string{}, err
 	}
 
 	pubKeyHybrid, err := btcutil.NewAddressPubKey(btcpubkey.SerializeHybrid(), &chaincfg.MainNetParams)
 	if err != nil {
 		log.Debug("Error generating address from public key")
-		return []string{}, nil
+		return []string{}, err
 	}
 
 	pubKeyCompressed, err := btcutil.NewAddressPubKey(btcpubkey.SerializeCompressed(), &chaincfg.MainNetParams)
 	if err != nil {
 		log.Debug("Error generating address from public key")
-		return []string{}, nil
+		return []string{}, err
+	}
+
+
+
+	compressedWitnessPubKey, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(btcpubkey.SerializeCompressed()), &chaincfg.MainNetParams)
+	if err != nil {
+		log.Debug("Error generating compresssed Witness public key")
+		return []string{}, err
+	}
+
+	p2shScriptCompressed, err := txscript.PayToAddrScript(compressedWitnessPubKey)
+	if err != nil {
+		log.Debug("Error generating pay to address script")
+		return []string{}, err
+	}
+
+	p2shCompressed, err := btcutil.NewAddressScriptHash(p2shScriptCompressed, &chaincfg.MainNetParams)
+	if err != nil {
+		log.Debug("Error generating address from pay to address script")
+		return []string{}, err
+	}
+
+	uncompressedWitnessPubKey, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(btcpubkey.SerializeUncompressed()), &chaincfg.MainNetParams)
+	if err != nil {
+		log.Debug("Error generating compresssed public key")
+		return []string{}, err
+	}
+
+	p2shScriptUncompressed, err := txscript.PayToAddrScript(uncompressedWitnessPubKey)
+	if err != nil {
+		log.Debug("Error generating pay to address script")
+		return []string{}, err
+	}
+
+	p2shUncompressed, err := btcutil.NewAddressScriptHash(p2shScriptUncompressed, &chaincfg.MainNetParams)
+	if err != nil {
+		log.Debug("Error generating address from pay to address script")
+		return []string{}, err
 	}
 
 	return []string{
+		p2shCompressed.EncodeAddress(),
+		p2shUncompressed.EncodeAddress(),
 		pubKeyCompressed.EncodeAddress(),
 		pubKeyUncompressed.EncodeAddress(),
 		pubKeyHybrid.EncodeAddress(),
@@ -101,7 +142,6 @@ func pubKeyToAddress(key *ecdsa.PublicKey) ([]string, error) {
 }
 
 func (b *BTCValidator) getBalance(addresses []string) (int64, error) {
-	fmt.Println("getting balance")
 	//get transactions
 	transactions, err := b.bclient.GetTransactions(context.Background(), addresses)
 	//aggregate transactions into a running balance
@@ -116,11 +156,9 @@ func (b *BTCValidator) getBalance(addresses []string) (int64, error) {
 func aggregateTransactions(txl transactionList, addresses []string) (int64, error) {
 	var runningTotal int64 = 0
 	for _, transaction := range txl {
-		fmt.Println(runningTotal)
 		for _, input := range transaction.Inputs {
 			for _, address := range addresses {
 				if input.Coin.Address == address {
-					fmt.Println(fmt.Sprintf("running total: %d, subtracting %d", runningTotal, input.Coin.Value))
 					runningTotal -= input.Coin.Value
 				}
 			}
@@ -128,13 +166,11 @@ func aggregateTransactions(txl transactionList, addresses []string) (int64, erro
 		for _, output := range transaction.Outputs {
 			for _, address := range addresses {
 				if output.Address == address {
-					fmt.Println(fmt.Sprintf("running total: %d, adding %d", runningTotal, output.Value))
 					runningTotal += output.Value
 				}
 			}
 		}
 	}
-	fmt.Println(runningTotal)
 	return runningTotal, nil
 }
 
@@ -150,7 +186,6 @@ func (bc *bcoinClient) GetTransactions(ctx context.Context, addresses []string) 
 		ret = append(ret, listPart...)
 		// As long as we are getting a full list, keep checking for more and adding them to the list
 		for len(listPart) == transactionRequestLimit {
-			fmt.Println(len(ret))
 			// Add limit parameters to url
 			url := fmt.Sprintf("%s/tx/address/%s?limit=%d&after=%s", bc.url, address, transactionRequestLimit, ret[len(ret)-1].Hash)
 			listPart, err = bc.getTransactionList(ctx, url)
@@ -159,14 +194,12 @@ func (bc *bcoinClient) GetTransactions(ctx context.Context, addresses []string) 
 			}
 			newret := append(ret, listPart...)
 			ret = newret
-			fmt.Println(len(ret))
 		}
 	}
 	return ret, nil
 }
 
 func (bc *bcoinClient) getTransactionList(ctx context.Context, url string) (transactionList, error) {
-	fmt.Println(url)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		log.Debug("Unable to create request to bcoin api")

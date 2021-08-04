@@ -15,13 +15,8 @@ func Connect() (*PhononCommandSet, error) {
 	return ConnectWithReaderIndex(0)
 }
 
-func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {
-	ctx, err := scard.EstablishContext()
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
 
+func ConnectWithContext(ctx *scard.Context, index int)(*PhononCommandSet, error){
 	readers, err := ctx.ListReaders()
 	if err != nil {
 		log.Error(err)
@@ -47,10 +42,21 @@ func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {
 
 		log.Debugf("\treader: %s\n\tstate: %x\n\tactive protocol: %x\n\tatr: % x\n",
 			status.Reader, status.State, status.ActiveProtocol, status.Atr)
-
-		return NewPhononCommandSet(io.NewNormalChannel(card)), nil
+		cs :=  NewPhononCommandSet(io.NewNormalChannel(card))
+		_, _, _, err = cs.Select()
+		return cs, err
 	}
 	return nil, ErrReaderNotFound
+	
+}
+
+func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {
+	ctx, err := scard.EstablishContext()
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	return ConnectWithContext(ctx, index)
 }
 
 //Connects and Opens a Secure Connection with a card

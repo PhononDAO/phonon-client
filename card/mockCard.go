@@ -1,15 +1,19 @@
 package card
 
 import (
+	"errors"
+	"unicode"
+
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 type MockCard struct {
-	Phonons []model.Phonon
-	pin     string
-	sc      SecureChannel
+	Phonons     []model.Phonon
+	pin         string
+	pinVerified bool
+	sc          SecureChannel
 }
 
 //TODO
@@ -25,6 +29,54 @@ func (c MockCard) Select() (instanceUID []byte, cardPubKey []byte, cardInitializ
 		cardInitialized = false
 	}
 	return instanceUID, cardPubKey, true, nil
+}
+
+//PIN functions
+func validatePIN(pin string) error {
+	if len(pin) != 6 {
+		return errors.New("pin must be 6 digits")
+	}
+	for _, char := range pin {
+		if !unicode.IsDigit(char) {
+			return errors.New("pin contained characters not in range [0-9]")
+		}
+	}
+	return nil
+}
+
+func (c MockCard) Init(pin string) error {
+	if c.pin != "" {
+		return errors.New("pin already initialized")
+	}
+	if err := validatePIN(pin); err != nil {
+		return err
+	}
+	c.pin = pin
+	return nil
+}
+
+func (c MockCard) VerifyPIN(pin string) error {
+	if c.pin == "" {
+		return errors.New("pin not initialized")
+	}
+	if pin != c.pin {
+		c.pinVerified = false
+		return errors.New("pin did not match")
+	}
+	c.pinVerified = true
+	return nil
+}
+
+func (c MockCard) ChangePIN(pin string) error {
+	if !c.pinVerified {
+		return errors.New("pin not verified")
+	}
+	err := validatePIN(pin)
+	if err != nil {
+		return err
+	}
+	c.pin = pin
+	return nil
 }
 
 //TODO
@@ -51,12 +103,6 @@ func (c MockCard) OpenChannel() (string, error) {
 
 //TODO
 func (c MockCard) MutualAuthChannel() error {
-	//not implemented
-	return nil
-}
-
-//TODO
-func (c MockCard) VerifyPin() error {
 	//not implemented
 	return nil
 }

@@ -49,10 +49,12 @@ func init() {
 }
 
 func changePin() {
-	cs, err := card.OpenSecureConnection()
-	if err != nil {
-		return
-	}
+	//
+	// cs, err := card.OpenSecureConnection()
+	// if err != nil {
+	// 	return
+	// }
+	cs := card.MockCard{}
 	fmt.Println("enter current pin for verification")
 	verificationPin, err := util.PinPrompt()
 	if err != nil {
@@ -62,6 +64,7 @@ func changePin() {
 	err = cs.VerifyPIN(verificationPin)
 	if err != nil {
 		fmt.Println("unable to verify pin: ", err)
+		return
 	}
 	fmt.Println("enter new pin")
 	pin, err := util.PinPrompt()

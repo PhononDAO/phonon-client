@@ -15,7 +15,7 @@ var testPin string = "111111"
 
 func TestMain(m *testing.M) {
 	runtime.GOMAXPROCS(1)
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.TextFormatter{})
 
 	cs, err := Connect()

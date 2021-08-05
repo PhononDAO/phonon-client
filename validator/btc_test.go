@@ -2,6 +2,7 @@ package validator
 
 import (
 	"encoding/hex"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -40,9 +41,24 @@ func TestPubKeyToAddresses(t *testing.T) {
 
 }
 
-func TestAggreagateTransactions(t *testing.T) {
-	var tv transactionsAndValues
-	tv = append(tv, txlv1...)
+func TestCompromisedPhononTransactions(t *testing.T) {
+	res, err := aggregateTransactions(transactionListCompromisedPhonon, []string{"target"})
+	fmt.Println(res, err)
+	if res != 0 || err != ErrPhononCompromised {
+		t.Errorf("Expected Compromised Phonon error and zero balance returned, recieved error: %s, and balance of %d", err.Error(), res)
+	}
+}
+
+func TestAggregateTransactions(t *testing.T) {
+	var tv []transactionsAndValues
+	tv = append(tv, transactionsAndValues{
+		transactions: list1,
+		addresses: []string{
+			"phononAddress",
+		},
+		expectedTotal: int64(50),
+	},
+	)
 	for _, x := range tv {
 		bal, err := aggregateTransactions(x.transactions, x.addresses)
 		if err != nil {
@@ -53,18 +69,19 @@ func TestAggreagateTransactions(t *testing.T) {
 		}
 
 	}
+
 }
 
-type transactionsAndValues []struct {
+type transactionsAndValues struct {
 	transactions  transactionList
 	addresses     []string
 	expectedTotal int64
 }
 
-var list1 transactionList = transactionList{
+var transactionListCompromisedPhonon transactionList = transactionList{
 	{
 		Hash:   "NoNeedHere",
-		Inputs: Inputs{{Coin: Coin{Value: 100, Address: "fakeaddress1"}}},
+		Inputs: Inputs{{Coin: Coin{Value: 100, Address: "target"}}},
 		Outputs: []output{
 			{
 				Value:   int64(50),
@@ -77,13 +94,19 @@ var list1 transactionList = transactionList{
 		},
 	},
 }
-
-var txlv1 transactionsAndValues = transactionsAndValues{
+var list1 transactionList = transactionList{
 	{
-		transactions: list1,
-		addresses: []string{
-			"fakeAddress2",
+		Hash:   "NoNeedHere",
+		Inputs: Inputs{{Coin: Coin{Value: 100, Address: "fakeaddress1"}}},
+		Outputs: []output{
+			{
+				Value:   int64(50),
+				Address: "fakeAddress2",
+			},
+			{
+				Value:   int64(50),
+				Address: "phononAddress",
+			},
 		},
-		expectedTotal: 50,
 	},
 }

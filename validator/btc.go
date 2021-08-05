@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +17,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
+
+var ErrPhononCompromised error = errors.New("Transaction with phonon as sender detected")
 
 type BTCValidator struct {
 	bclient *bcoinClient
@@ -160,7 +163,7 @@ func aggregateTransactions(txl transactionList, addresses []string) (int64, erro
 		for _, input := range transaction.Inputs {
 			for _, address := range addresses {
 				if input.Coin.Address == address {
-					runningTotal -= input.Coin.Value
+					return 0, ErrPhononCompromised
 				}
 			}
 		}
@@ -232,19 +235,19 @@ func (bc *bcoinClient) getTransactionList(ctx context.Context, url string) (tran
 }
 
 type transactionList []struct {
-	Hash   string `json:"hash"`
-	Inputs Inputs `json:"inputs"`
+	Hash    string  `json:"hash"`
+	Inputs  Inputs  `json:"inputs"`
 	Outputs Outputs `json:"outputs"`
 }
 
-type Inputs []struct{
+type Inputs []struct {
 	Coin Coin `json:"coin"`
 }
 
-type Outputs []output 
+type Outputs []output
 
-type output struct{
-	Value int64 `json:"value"`
+type output struct {
+	Value   int64  `json:"value"`
 	Address string `json:"address"`
 }
 

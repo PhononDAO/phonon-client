@@ -43,7 +43,8 @@ func NewClient(url string, authToken string) *bcoinClient {
 
 // Validate returns true if the balance associated with the public key
 // on the bitcoin phonon is greater than or equal to the balance stated in
-// the phonon using as many known address generation functions as possible.
+// the phonon using as many known address generation functions as reasonable.
+// Currently: P2SH script and P2PKH addresses.
 func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 	// get the public key of the phonon
 	key := phonon.PubKey

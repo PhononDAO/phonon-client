@@ -21,7 +21,7 @@ type BTCValidator struct {
 	bclient *bcoinClient
 }
 
-const transactionRequestLimit int = 6
+const transactionRequestLimit int = 100
 
 type bcoinClient struct {
 	url       string
@@ -50,7 +50,7 @@ func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 	key := phonon.PubKey
 
 	// turn it into an address
-	addresses, err := pubKeyToAddress(key)
+	addresses, err := pubKeyToAddresses(key)
 	if err != nil {
 		return false, err
 	}
@@ -68,15 +68,14 @@ func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 	return true, nil
 }
 
-func pubKeyToAddress(key *ecdsa.PublicKey) ([]string, error) {
-	log.SetLevel(log.DebugLevel)
+func pubKeyToAddresses(key *ecdsa.PublicKey) ([]string, error) {
 	btcpubkey := btcec.PublicKey{
 		Curve: key.Curve,
 		X:     key.X,
 		Y:     key.Y,
 	}
-	// something feels wrong about serializing the pubkey just to unserialize it, but hopefully this all gets optimized out so it doesnt matter anyway
-	// as far as I can tell, the second argument to this call isn't used for creating an address
+	// something feels wrong about serializing jhe pubkey just to unserialize it, but hopefully this all gets optimized out so it doesnt matter anyway
+	
 	pubKeyUncompressed, err := btcutil.NewAddressPubKey(btcpubkey.SerializeUncompressed(), &chaincfg.MainNetParams)
 	if err != nil {
 		log.Debug("Error generating address from public key")
@@ -94,8 +93,6 @@ func pubKeyToAddress(key *ecdsa.PublicKey) ([]string, error) {
 		log.Debug("Error generating address from public key")
 		return []string{}, err
 	}
-
-
 
 	compressedWitnessPubKey, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(btcpubkey.SerializeCompressed()), &chaincfg.MainNetParams)
 	if err != nil {

@@ -26,6 +26,7 @@ const transactionRequestLimit int = 100
 type bcoinClient struct {
 	url       string
 	authtoken string
+	client    http.Client
 }
 
 func NewBTCValidator(c *bcoinClient) *BTCValidator {
@@ -38,6 +39,7 @@ func NewClient(url string, authToken string) *bcoinClient {
 	return &bcoinClient{
 		url:       url,
 		authtoken: authToken,
+		client:    http.Client{},
 	}
 }
 
@@ -75,7 +77,7 @@ func pubKeyToAddresses(key *ecdsa.PublicKey) ([]string, error) {
 		Y:     key.Y,
 	}
 	// something feels wrong about serializing jhe pubkey just to unserialize it, but hopefully this all gets optimized out so it doesnt matter anyway
-	
+
 	pubKeyUncompressed, err := btcutil.NewAddressPubKey(btcpubkey.SerializeUncompressed(), &chaincfg.MainNetParams)
 	if err != nil {
 		log.Debug("Error generating address from public key")
@@ -130,13 +132,14 @@ func pubKeyToAddresses(key *ecdsa.PublicKey) ([]string, error) {
 		return []string{}, err
 	}
 
-	return []string{
+	res := []string{
 		p2shCompressed.EncodeAddress(),
 		p2shUncompressed.EncodeAddress(),
 		pubKeyCompressed.EncodeAddress(),
 		pubKeyUncompressed.EncodeAddress(),
 		pubKeyHybrid.EncodeAddress(),
-	}, nil
+	}
+	return res, nil
 }
 
 func (b *BTCValidator) getBalance(addresses []string) (int64, error) {
@@ -208,8 +211,7 @@ func (bc *bcoinClient) getTransactionList(ctx context.Context, url string) (tran
 		req.SetBasicAuth("x", bc.authtoken)
 
 	}
-	httpClient := http.Client{}
-	resp, err := httpClient.Do(req)
+	resp, err := bc.client.Do(req)
 	if err != nil {
 		log.Debug("Error making request to bcoin")
 		return nil, err
@@ -230,39 +232,23 @@ func (bc *bcoinClient) getTransactionList(ctx context.Context, url string) (tran
 }
 
 type transactionList []struct {
-	Hash        string `json:"hash"`
-	WitnessHash string `json:"witnessHash"`
-	Fee         int    `json:"fee"`
-	Rate        int    `json:"rate"`
-	Mtime       int    `json:"mtime"`
-	Height      int    `json:"height"`
-	Block       string `json:"block"`
-	Time        int    `json:"time"`
-	Index       int    `json:"index"`
-	Version     int    `json:"version"`
-	Inputs      []struct {
-		Prevout struct {
-			Hash  string `json:"hash"`
-			Index int    `json:"index"`
-		} `json:"prevout"`
-		Script   string `json:"script"`
-		Witness  string `json:"witness"`
-		Sequence int64  `json:"sequence"`
-		Coin     struct {
-			Version  int    `json:"version"`
-			Height   int    `json:"height"`
-			Value    int64  `json:"value"`
-			Script   string `json:"script"`
-			Address  string `json:"address"`
-			Coinbase bool   `json:"coinbase"`
-		} `json:"coin"`
-	} `json:"inputs"`
-	Outputs []struct {
-		Value   int64  `json:"value"`
-		Script  string `json:"script"`
-		Address string `json:"address"`
-	} `json:"outputs"`
-	Locktime      int    `json:"locktime"`
-	Hex           string `json:"hex"`
-	Confirmations int    `json:"confirmations"`
+	Hash   string `json:"hash"`
+	Inputs Inputs `json:"inputs"`
+	Outputs Outputs `json:"outputs"`
+}
+
+type Inputs []struct{
+	Coin Coin `json:"coin"`
+}
+
+type Outputs []output 
+
+type output struct{
+	Value int64 `json:"value"`
+	Address string `json:"address"`
+}
+
+type Coin struct {
+	Value   int64  `json:"value"`
+	Address string `json:"address"`
 }

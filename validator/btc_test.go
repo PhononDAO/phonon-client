@@ -9,6 +9,13 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 )
 
+// Helper type for table testing
+type transactionsAndValues struct {
+	transactions  transactionList
+	addresses     []string
+	expectedTotal int64
+}
+
 func TestPubKeyToAddresses(t *testing.T) {
 	pubkey := "03110c89d71731d603059f919e1670cd335cb915bb7a27b56a667ee057a2e78f3e"
 
@@ -51,13 +58,31 @@ func TestCompromisedPhononTransactions(t *testing.T) {
 
 func TestAggregateTransactions(t *testing.T) {
 	var tv []transactionsAndValues
-	tv = append(tv, transactionsAndValues{
-		transactions: list1,
-		addresses: []string{
-			"phononAddress",
+	tv = append(tv, []transactionsAndValues{
+		{
+			transactions: list1,
+			addresses: []string{
+				"phononAddress",
+			},
+			expectedTotal: int64(50),
 		},
-		expectedTotal: int64(50),
-	},
+		{
+			transactions: list2,
+			addresses: []string{
+				"phononAddress",
+			},
+			expectedTotal: int64(49),
+		},
+		{
+			transactions: list3,
+			addresses: []string{
+				"phononAddress",
+				"phononAddress2",
+				"phononAddress3",
+			},
+			expectedTotal: int64(149),
+		},
+	}...,
 	)
 	for _, x := range tv {
 		bal, err := aggregateTransactions(x.transactions, x.addresses)
@@ -72,12 +97,7 @@ func TestAggregateTransactions(t *testing.T) {
 
 }
 
-type transactionsAndValues struct {
-	transactions  transactionList
-	addresses     []string
-	expectedTotal int64
-}
-
+// Example data for comporomised phonon transaction list
 var transactionListCompromisedPhonon transactionList = transactionList{
 	{
 		Hash:   "NoNeedHere",
@@ -94,6 +114,8 @@ var transactionListCompromisedPhonon transactionList = transactionList{
 		},
 	},
 }
+
+// Data for phonon testing
 var list1 transactionList = transactionList{
 	{
 		Hash:   "NoNeedHere",
@@ -105,6 +127,52 @@ var list1 transactionList = transactionList{
 			},
 			{
 				Value:   int64(50),
+				Address: "phononAddress",
+			},
+		},
+	},
+}
+var list2 transactionList = transactionList{
+	{
+		Hash:   "NoNeedHere",
+		Inputs: Inputs{{Coin: Coin{Value: 100, Address: "fakeaddress1"}}},
+		Outputs: []output{
+			{
+				Value:   int64(51),
+				Address: "fakeAddress2",
+			},
+			{
+				Value:   int64(49),
+				Address: "phononAddress",
+			},
+		},
+	},
+}
+var list3 transactionList = transactionList{
+	{
+		Hash:   "NoNeedHere",
+		Inputs: Inputs{{Coin: Coin{Value: 100, Address: "fakeaddress1"}}},
+		Outputs: []output{
+			{
+				Value:   int64(51),
+				Address: "fakeAddress2",
+			},
+			{
+				Value:   int64(49),
+				Address: "phononAddress",
+			},
+		},
+	},
+	{
+		Hash:   "NoNeedHere",
+		Inputs: Inputs{{Coin: Coin{Value: 100, Address: "fakeaddress1"}}},
+		Outputs: []output{
+			{
+				Value:   int64(51),
+				Address: "phononAddress2",
+			},
+			{
+				Value:   int64(49),
 				Address: "phononAddress",
 			},
 		},

@@ -35,15 +35,16 @@ func TestPubKeyToAddresses(t *testing.T) {
 	}
 
 	expected := []string{
-		"3EesGzvBgme1o4kB2oFvRnJ9BH3R9c8Uqr",
-		"349HmcWpNNkGBhEtZq9yFVJrVmtARbzy2d",
 		"1AtZ1U2d2SrW2V8A2Eqicx67zRSDeYYu5k",
+		"3EesGzvBgme1o4kB2oFvRnJ9BH3R9c8Uqr",
 		"1GAb3tibSSpnXMb5Af3VzPfj3956Xgzewy",
+		"349HmcWpNNkGBhEtZq9yFVJrVmtARbzy2d",
 		"1FQgJWXuFXiXQ51r1EjkzLyLrYedJ2cXH9",
+		"353jJx2n9TcTDrL64cv3H8kRfZhww7Sxwk",
 	}
 
 	if !reflect.DeepEqual(res, expected) {
-		t.Errorf("Expected results of pubkey to address to be %s, but were %s", res, expected)
+		t.Errorf("Expected results of pubkey to address to be \n%s, but were \n%s", expected, res)
 	}
 
 }

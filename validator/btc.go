@@ -79,70 +79,44 @@ func pubKeyToAddresses(key *ecdsa.PublicKey) ([]string, error) {
 		X:     key.X,
 		Y:     key.Y,
 	}
-	// something feels wrong about serializing jhe pubkey just to unserialize it, but hopefully this all gets optimized out so it doesnt matter anyway
+	var ret = []string{}
 
-	pubKeyUncompressed, err := btcutil.NewAddressPubKey(btcpubkey.SerializeUncompressed(), &chaincfg.MainNetParams)
-	if err != nil {
-		log.Debug("Error generating address from public key")
-		return []string{}, err
+	serializationFunctions := []func() []byte{
+		btcpubkey.SerializeCompressed,
+		btcpubkey.SerializeUncompressed,
+		btcpubkey.SerializeHybrid,
 	}
 
-	pubKeyHybrid, err := btcutil.NewAddressPubKey(btcpubkey.SerializeHybrid(), &chaincfg.MainNetParams)
-	if err != nil {
-		log.Debug("Error generating address from public key")
-		return []string{}, err
-	}
+	for _, x := range serializationFunctions {
+		k, err := btcutil.NewAddressPubKey(x(), &chaincfg.MainNetParams)
+		if err != nil {
+			log.Debug("Error Generating Address From Public Key")
+			return []string{}, err
+		}
+		ret = append(ret, k.EncodeAddress())
 
-	pubKeyCompressed, err := btcutil.NewAddressPubKey(btcpubkey.SerializeCompressed(), &chaincfg.MainNetParams)
-	if err != nil {
-		log.Debug("Error generating address from public key")
-		return []string{}, err
-	}
+		witnessKeyHash, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(x()), &chaincfg.MainNetParams)
+		if err != nil {
+			log.Debug("Error Generating Address Witness From Public Key")
+			return []string{}, err
 
-	compressedWitnessPubKey, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(btcpubkey.SerializeCompressed()), &chaincfg.MainNetParams)
-	if err != nil {
-		log.Debug("Error generating compresssed Witness public key")
-		return []string{}, err
-	}
+		}
+		script, err := txscript.PayToAddrScript(witnessKeyHash)
+		if err != nil {
+			log.Debug("Error Generating transaction script from witness hash")
+			return []string{}, err
 
-	p2shScriptCompressed, err := txscript.PayToAddrScript(compressedWitnessPubKey)
-	if err != nil {
-		log.Debug("Error generating pay to address script")
-		return []string{}, err
-	}
+		}
+		addrScriptHash, err := btcutil.NewAddressScriptHash(script, &chaincfg.MainNetParams)
+		if err != nil {
+			log.Debug("Error Generating Address From PayToAddressScript")
+			return []string{}, err
 
-	p2shCompressed, err := btcutil.NewAddressScriptHash(p2shScriptCompressed, &chaincfg.MainNetParams)
-	if err != nil {
-		log.Debug("Error generating address from pay to address script")
-		return []string{}, err
-	}
+		}
 
-	uncompressedWitnessPubKey, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(btcpubkey.SerializeUncompressed()), &chaincfg.MainNetParams)
-	if err != nil {
-		log.Debug("Error generating compresssed public key")
-		return []string{}, err
+		ret = append(ret, addrScriptHash.EncodeAddress())
 	}
-
-	p2shScriptUncompressed, err := txscript.PayToAddrScript(uncompressedWitnessPubKey)
-	if err != nil {
-		log.Debug("Error generating pay to address script")
-		return []string{}, err
-	}
-
-	p2shUncompressed, err := btcutil.NewAddressScriptHash(p2shScriptUncompressed, &chaincfg.MainNetParams)
-	if err != nil {
-		log.Debug("Error generating address from pay to address script")
-		return []string{}, err
-	}
-
-	res := []string{
-		p2shCompressed.EncodeAddress(),
-		p2shUncompressed.EncodeAddress(),
-		pubKeyCompressed.EncodeAddress(),
-		pubKeyUncompressed.EncodeAddress(),
-		pubKeyHybrid.EncodeAddress(),
-	}
-	return res, nil
+	return ret, nil
 }
 
 func (b *BTCValidator) getBalance(addresses []string) (int64, error) {

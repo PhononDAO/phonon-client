@@ -321,7 +321,7 @@ func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedRespo
 	return apdu.NewErrBadResponse(resp.Sw, "unexpected response")
 }
 
-func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardSig []byte, err error) {
+func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error) {
 	cmd := NewCommandIdentifyCard(nonce)
 	resp, err := cs.c.Send(cmd)
 	if err != nil {
@@ -334,6 +334,11 @@ func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardS
 	if err != nil {
 		log.Error("could not parse identify card response: ", err)
 		return nil, nil, err
+	}
+
+	valid := ecdsa.Verify(cardPubKey, nonce, cardSig.R, cardSig.S)
+	if !valid {
+		return cardPubKey, cardSig, errors.New("card signature over challenge salt is invalid")
 	}
 
 	return cardPubKey, cardSig, nil
@@ -739,16 +744,17 @@ func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte,
 	if err != nil {
 		return fmt.Errorf("Unable to Identify card %s", err.Error())
 	}
+	cardPubKeyBytes := util.SerializeECDSAPubKey(cardPubKey)
 
-	// make Card Certificate
+	// Create Card Certificate
 	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
-	cardCertificate := append(perms, cardPubKey...)
+	cardCertificate := append(perms, cardPubKeyBytes...)
 
-	// sign The Certificate
+	// Sign The Certificate
 	preImage := cardCertificate[2:]
 	sig, err := signKeyFunc(preImage)
 	if err != nil {
-		return fmt.Errorf("Unable to sign Cert: %s", err.Error())
+		return fmt.Errorf("unable to sign Cert: %s", err.Error())
 	}
 
 	// Append CA Signature to certificate

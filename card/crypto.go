@@ -88,15 +88,6 @@ func computeECDHSharedSecret(clientSalt []byte, privKey *secp256k1.PrivateKey, s
 	return secretHashArray[0:], cryptogramArray[0:], nil
 }
 
-func SerializePubKey(pubKey ecdsa.PublicKey) []byte {
-	var ECC_POINT_FORMAT_UNCOMPRESSED byte = 0x04
-	pubKeyBytes := []byte{ECC_POINT_FORMAT_UNCOMPRESSED}
-	pubKeyBytes = append(pubKeyBytes, pubKey.X.Bytes()...)
-	pubKeyBytes = append(pubKeyBytes, pubKey.Y.Bytes()...)
-
-	return pubKeyBytes
-}
-
 func validateECCPubKey(pubKey *ecdsa.PublicKey) bool {
 	if !pubKey.IsOnCurve(pubKey.X, pubKey.Y) {
 		log.Error("pubkey is not valid point on curve")

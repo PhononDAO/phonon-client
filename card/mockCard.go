@@ -16,7 +16,6 @@ type MockCard struct {
 	sc          SecureChannel
 }
 
-//TODO
 func (c MockCard) Select() (instanceUID []byte, cardPubKey []byte, cardInitialized bool, err error) {
 	instanceUID = util.RandomKey(16)
 
@@ -79,6 +78,22 @@ func (c MockCard) ChangePIN(pin string) error {
 	return nil
 }
 
+func (c MockCard) IdentifyCard(nonce []byte) (cardPubKey []byte, cardSig []byte, err error) {
+	//TODO: Implement
+	return nil, nil, nil
+}
+
+func (c MockCard) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) error {
+	//TODO
+	return nil
+}
+
+//TODO: implement
+func (c MockCard) InitCardPairing() (initPairingData []byte, err error) {
+	return nil, nil
+}
+
+//Phonon Management Functions
 //TODO
 func (c MockCard) CreatePhonons(n int) (pubKeys [][]byte, err error) {
 	phononPubKeys := make([][]byte, 0)

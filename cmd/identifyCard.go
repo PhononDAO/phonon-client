@@ -16,13 +16,11 @@ limitations under the License.
 package cmd
 
 import (
-	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -30,13 +28,9 @@ import (
 // identifyCardCmd represents the identifyCard command
 var identifyCardCmd = &cobra.Command{
 	Use:   "identifyCard",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Request card identity information",
+	Long: `Requests the card return it's identity public key along with a signature over
+	a supplied nonce, proving it's possession of the correcsponding private key`,
 	Run: func(cmd *cobra.Command, args []string) {
 		identifyCard()
 	},
@@ -72,31 +66,23 @@ func identifyCard() {
 	rand.Read(nonce)
 	cardPubKey, cardSig, err := cs.IdentifyCard(nonce)
 	if err != nil {
-		fmt.Println("error sending identify card: ", err)
+		fmt.Println("error identifying card: ", err)
 		return
 	}
 
-	log.Debug("cardPubKey:\n", hex.Dump(cardPubKey))
-	log.Debug("cardSig:\n", hex.Dump(cardSig))
-	ecdsaCardPubKey, err := util.ParseECDSAPubKey(cardPubKey)
-	if err != nil {
-		return
-	}
-	ecdsaSignature, err := util.ParseECDSASignature(cardSig)
-	if err != nil {
-		return
-	}
+	log.Debug("cardPubKey:\n", hex.Dump(append(cardPubKey.X.Bytes(), cardPubKey.Y.Bytes()...)))
+	log.Debug("cardSig:\n", hex.Dump(append(cardSig.R.Bytes(), cardSig.S.Bytes()...)))
 
-	log.Debugf("ecdsaCardPubKey: % X\n", append(ecdsaCardPubKey.X.Bytes(), ecdsaCardPubKey.Y.Bytes()...))
-	log.Debugf("ecdsaSignature: % X\n", append(ecdsaSignature.R.Bytes(), ecdsaSignature.S.Bytes()...))
+	log.Debugf("ecdsaCardPubKey: % X\n", append(cardPubKey.X.Bytes(), cardPubKey.Y.Bytes()...))
+	log.Debugf("ecdsaSignature: % X\n", append(cardSig.R.Bytes(), cardSig.S.Bytes()...))
 	//Validate sig
 
-	valid := ecdsa.Verify(ecdsaCardPubKey, nonce, ecdsaSignature.R, ecdsaSignature.S)
-	if !valid {
-		log.Error("card signature on nonce not valid")
-		return
-	}
-	log.Debug("identify card signature on nonce valid: ", valid)
+	// valid := ecdsa.Verify(ecdsaCardPubKey, nonce, ecdsaSignature.R, ecdsaSignature.S)
+	// if !valid {
+	// 	log.Error("card signature on nonce not valid")
+	// 	return
+	// }
+	log.Debug("identify card signature on nonce valid")
 	//Create cert
 
 	//Load Cert

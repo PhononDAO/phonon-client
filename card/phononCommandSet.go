@@ -733,35 +733,22 @@ func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte,
 	nonce := make([]byte, 32)
 	n, err := io.ReadFull(rand.Reader, nonce)
 	if err != nil {
-		return fmt.Errorf("Unable to retrieve random challenge for card: %s", err.Error())
+		return fmt.Errorf("unable to retrieve random challenge for card: %s", err.Error())
 	}
 	if n != 32 {
-		return fmt.Errorf("Unable to read 32 bytes for challenge to card")
+		return fmt.Errorf("unable to read 32 bytes for challenge to card")
 	}
 
 	// Send Challenge to card
 	cardPubKey, _, err := cs.IdentifyCard(nonce)
 	if err != nil {
-		return fmt.Errorf("Unable to Identify card %s", err.Error())
+		return fmt.Errorf("unable to identify card %s", err.Error())
 	}
-	cardPubKeyBytes := util.SerializeECDSAPubKey(cardPubKey)
 
-	// Create Card Certificate
-	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
-	cardCertificate := append(perms, cardPubKeyBytes...)
-
-	// Sign The Certificate
-	preImage := cardCertificate[2:]
-	sig, err := signKeyFunc(preImage)
+	signedCert, err := createCardCertificate(cardPubKey, signKeyFunc)
 	if err != nil {
-		return fmt.Errorf("unable to sign Cert: %s", err.Error())
+		return err
 	}
-
-	// Append CA Signature to certificate
-	signedCert := append(cardCertificate, sig...)
-
-	//Substitute actual certificate length in certificate header
-	signedCert[1] = byte(len(signedCert))
 
 	cmd := NewCommandInstallCert(signedCert)
 	resp, err := cs.c.Send(cmd)

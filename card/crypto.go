@@ -4,10 +4,13 @@ import (
 	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/asn1"
+	"fmt"
 	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/GridPlus/phonon-client/util"
 )
 
 func validateCardCertificate(cert SafecardCert) bool {
@@ -49,6 +52,28 @@ func validateCardCertificate(cert SafecardCert) bool {
 	log.Info("pubKey Y ", Y)
 
 	return ecdsa.Verify(CApubKey, certHash[0:], signature.R, signature.S)
+}
+
+func createCardCertificate(cardPubKey *ecdsa.PublicKey, signKeyFunc func([]byte) ([]byte, error)) ([]byte, error) {
+	cardPubKeyBytes := util.SerializeECDSAPubKey(cardPubKey)
+
+	// Create Card Certificate
+	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
+	cardCertificate := append(perms, cardPubKeyBytes...)
+
+	// Sign The Certificate
+	preImage := cardCertificate[2:]
+	sig, err := signKeyFunc(preImage)
+	if err != nil {
+		return nil, fmt.Errorf("unable to sign Cert: %s", err.Error())
+	}
+
+	// Append CA Signature to certificate
+	signedCert := append(cardCertificate, sig...)
+
+	//Substitute actual certificate length in certificate header
+	signedCert[1] = byte(len(signedCert))
+	return signedCert, nil
 }
 
 func computeECDHSharedSecret(clientSalt []byte, privKey *secp256k1.PrivateKey, safecardSalt []byte, cardPubKey *ecdsa.PublicKey, cardSig []byte) (secretHash []byte, cryptogram []byte, err error) {

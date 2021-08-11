@@ -6,9 +6,11 @@ import (
 	"errors"
 	"unicode"
 
+	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	log "github.com/sirupsen/logrus"
 )
 
 type MockCard struct {
@@ -115,8 +117,61 @@ func (c *MockCard) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) 
 	return nil
 }
 
-//TODO: implement
 func (c *MockCard) InitCardPairing() (initPairingData []byte, err error) {
+	cardCertTLV, err := NewTLV(TagCardCertificate, c.IdentityCert)
+	if err != nil {
+		return nil, err
+	}
+	cardPubKey, err := NewTLV(TagECCPublicKey, util.SerializeECDSAPubKey(c.IdentityPubKey))
+	if err != nil {
+		return nil, err
+	}
+	salt, err := NewTLV(TagSalt, util.RandomKey(32))
+	if err != nil {
+		return nil, err
+	}
+	initPairingData = EncodeTLVList(cardCertTLV, cardPubKey, salt)
+
+	return initPairingData, nil
+}
+
+func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte, err error) {
+	tlv, err := ParseTLVPacket(initCardPairingData)
+	if err != nil {
+		return nil, errors.New("could not parse TLV packet")
+	}
+	senderCardCertRaw, err := tlv.FindTag(TagCardCertificate)
+	if err != nil {
+		return nil, errors.New("could not find certificate tlv tag")
+	}
+	// senderPubKey, err := tlv.FindTag(TagECCPublicKey)
+	// if err != nil {
+	// 	return nil, errors.New("could not find sender pub key tlv tag")
+	// }
+	// senderSalt, err := tlv.FindTag(TagSalt)
+	// if err != nil {
+	// 	return nil, errors.New("could not find sender salt tlv tag")
+	// }
+
+	log.Debug("certificate length: ", len(senderCardCertRaw))
+	log.Debugf("% X", senderCardCertRaw)
+	certLength := senderCardCertRaw[1]
+	senderCardCert := CardCertificate{
+		Permissions: senderCardCertRaw[2:8],
+		PubKey:      senderCardCertRaw[8 : 8+65],
+		Sig:         senderCardCertRaw[8+65 : 0+certLength],
+	}
+	log.Debug("length of Permissions: ", len(senderCardCert.Permissions))
+	log.Debugf("Permissions: % X", senderCardCert.Permissions)
+	log.Debug("length of PubKey: ", len(senderCardCert.PubKey))
+	log.Debugf("PubKey: % X", senderCardCert.PubKey)
+	log.Debug("length of Sig: ", len(senderCardCert.Sig))
+	log.Debugf("Sig: % X", senderCardCert.Sig)
+
+	valid := ValidateCardCertificate(senderCardCert, gridplus.SafecardDevCAPubKey)
+	if !valid {
+		return nil, errors.New("counterparty certificate was invalid")
+	}
 	return nil, nil
 }
 

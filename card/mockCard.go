@@ -3,12 +3,16 @@ package card
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/sha512"
 	"errors"
 	"unicode"
 
+	"github.com/GridPlus/keycard-go/crypto"
 	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
+
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
@@ -122,20 +126,20 @@ func (c *MockCard) InitCardPairing() (initPairingData []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	cardPubKey, err := NewTLV(TagECCPublicKey, util.SerializeECDSAPubKey(c.IdentityPubKey))
-	if err != nil {
-		return nil, err
-	}
 	salt, err := NewTLV(TagSalt, util.RandomKey(32))
 	if err != nil {
 		return nil, err
 	}
-	initPairingData = EncodeTLVList(cardCertTLV, cardPubKey, salt)
+	initPairingData = EncodeTLVList(cardCertTLV, salt)
 
 	return initPairingData, nil
 }
 
 func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte, err error) {
+	//Initialize pairing salt
+	receiverSalt := util.RandomKey(32)
+
+	//Parse Pairing Values from counterparty
 	tlv, err := ParseTLVPacket(initCardPairingData)
 	if err != nil {
 		return nil, errors.New("could not parse TLV packet")
@@ -144,23 +148,21 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	if err != nil {
 		return nil, errors.New("could not find certificate tlv tag")
 	}
-	// senderPubKey, err := tlv.FindTag(TagECCPublicKey)
-	// if err != nil {
-	// 	return nil, errors.New("could not find sender pub key tlv tag")
-	// }
-	// senderSalt, err := tlv.FindTag(TagSalt)
-	// if err != nil {
-	// 	return nil, errors.New("could not find sender salt tlv tag")
-	// }
+	senderSalt, err := tlv.FindTag(TagSalt)
+	if err != nil {
+		return nil, errors.New("could not find sender salt tlv tag")
+	}
 
+	senderCardCert, err := ParseRawCardCertificate(senderCardCertRaw)
+	if err != nil {
+		return nil, err
+	}
+	senderPubKey, err := util.ParseECDSAPubKey(senderCardCert.PubKey)
+	if err != nil {
+		return nil, err
+	}
 	log.Debug("certificate length: ", len(senderCardCertRaw))
 	log.Debugf("% X", senderCardCertRaw)
-	certLength := senderCardCertRaw[1]
-	senderCardCert := CardCertificate{
-		Permissions: senderCardCertRaw[2:8],
-		PubKey:      senderCardCertRaw[8 : 8+65],
-		Sig:         senderCardCertRaw[8+65 : 0+certLength],
-	}
 	log.Debug("length of Permissions: ", len(senderCardCert.Permissions))
 	log.Debugf("Permissions: % X", senderCardCert.Permissions)
 	log.Debug("length of PubKey: ", len(senderCardCert.PubKey))
@@ -168,11 +170,47 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	log.Debug("length of Sig: ", len(senderCardCert.Sig))
 	log.Debugf("Sig: % X", senderCardCert.Sig)
 
+	//Validate counterparty certificate
 	valid := ValidateCardCertificate(senderCardCert, gridplus.SafecardDevCAPubKey)
 	if !valid {
-		return nil, errors.New("counterparty certificate was invalid")
+		return nil, errors.New("counterparty certificate signature was invalid")
 	}
-	return nil, nil
+
+	pubKeyValid := gridplus.ValidateECCPubKey(senderPubKey)
+	if !pubKeyValid {
+		return nil, errors.New("counterparty public key is not valid ECC point")
+	}
+
+	//Compute shared secret
+	ecdhSecret := crypto.GenerateECDHSharedSecret(c.identityKey, senderPubKey)
+
+	//Compute session key with salts from both parties and ECDH secret
+	sessionKeyMaterial := append(senderSalt, receiverSalt...)
+	sessionKeyMaterial = append(sessionKeyMaterial, ecdhSecret...)
+
+	sessionKey := sha512.Sum512(sessionKeyMaterial)
+
+	//Derive secure channel info
+	//Needed for TODO
+	// encKey := sessionKey[:len(sessionKey)/2]
+	// mac := sessionKey[len(sessionKey)/2:]
+
+	aesIV := util.RandomKey(16)
+
+	//TODO: Establish Secure Channel with encKey, mac, and aesIV
+
+	//Combine shared derived session key with randomly generated aesIV and sign to prove possession of the
+	//private key corresponding to the public key which established this channel's foundational ECDH secret
+	cryptogram := sha256.Sum256(append(sessionKey[0:], aesIV...))
+	receiverSig, err := ecdsa.SignASN1(rand.Reader, c.identityKey, cryptogram[0:])
+	if err != nil {
+		return nil, err
+	}
+	cardPairingData = append(c.IdentityCert, util.SerializeECDSAPubKey(c.IdentityPubKey)...)
+	cardPairingData = append(cardPairingData, receiverSalt...)
+	cardPairingData = append(cardPairingData, aesIV...)
+	cardPairingData = append(cardPairingData, receiverSig...)
+	return cardPairingData, nil
 }
 
 //Phonon Management Functions

@@ -213,47 +213,57 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	return cardPairingData, nil
 }
 
+func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
+	//TODO
+	return nil, nil
+}
+
+func (c *MockCard) FinalizeCardPair(cardPair2Data []byte) (err error) {
+	//TODO
+	return nil
+}
+
+func (c *MockCard) Pair() error {
+	//TODO
+	return nil
+}
+
 //Phonon Management Functions
 //TODO
-func (c *MockCard) CreatePhonons(n int) (pubKeys [][]byte, err error) {
-	phononPubKeys := make([][]byte, 0)
-	for i := 0; i < n; i++ {
-		//65 bytes ECC key
-		phononPubKeys = append(phononPubKeys, util.RandomKey(65))
-	}
-	return phononPubKeys, nil
+func (c *MockCard) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
+	//TODO
+	return 0, &ecdsa.PublicKey{}, nil
 }
 
 //TODO
-func (c *MockCard) SetDescriptors(phonons []model.Phonon) error {
-	c.Phonons = append(c.Phonons, phonons...)
+func (c *MockCard) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
+	//TODO
+	return nil
+}
+
+func (c *MockCard) OpenSecureChannel() error {
+	//TODO
 	return nil
 }
 
 //TODO
-func (c *MockCard) OpenChannel() (string, error) {
-	//not implemented
-	return "", nil
+func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
+	//TODO
+	return nil, nil
 }
 
-//TODO
-func (c *MockCard) MutualAuthChannel() error {
-	//not implemented
+func (c *MockCard) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
+	//TODO
+	return &ecdsa.PublicKey{}, nil
+}
+
+func (c *MockCard) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
+	//TODO
 	return nil
 }
 
 //TODO
-func (c *MockCard) ListPhonons(limit int, filterType string, filterValue []byte) (phonons []model.Phonon, err error) {
-	numStoredPhonons := len(c.Phonons)
-	if limit > numStoredPhonons {
-		limit = numStoredPhonons
-	}
-	return phonons[0:limit], nil
-}
-
-//TODO
-func (c *MockCard) SendPhonons(phononIDs []int) (transaction []byte, err error) {
-	//not implemented
+func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets [][]byte, err error) {
 	return nil, nil
 }
 
@@ -263,8 +273,11 @@ func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
 	return nil
 }
 
-//TODO
-func (c *MockCard) DestroyPhonon(phononID string) (err error) {
-	//not implemented
+func (c *MockCard) TransactionAck(keyIndices []uint16) error {
 	return nil
+}
+
+//TODO
+func (c *MockCard) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
+	return &ecdsa.PrivateKey{}, nil
 }

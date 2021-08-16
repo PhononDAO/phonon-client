@@ -196,7 +196,7 @@ func (cs *PhononCommandSet) Pair() error {
 	log.Debugf("derived pairing key: % X", pairingKey)
 
 	//Store pairing info for use in OpenSecureChannel
-	cs.SetPairingInfo(pairingKey[0:], pairStep2Resp.PairingIdx)
+	cs.setPairingInfo(pairingKey[0:], pairStep2Resp.PairingIdx)
 
 	log.Debug("pairing succeeded")
 	return nil
@@ -234,7 +234,7 @@ func checkPairingErrors(pairingStep int, status uint16) (err error) {
 	return err
 }
 
-func (cs *PhononCommandSet) SetPairingInfo(key []byte, index int) {
+func (cs *PhononCommandSet) setPairingInfo(key []byte, index int) {
 	cs.PairingInfo = &types.PairingInfo{
 		Key:   key,
 		Index: index,
@@ -672,6 +672,7 @@ func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
 //InitCardPairing tells a card to initialized a pairing with another phonon card
 //Data is passed transparently from card to card since no client processing is necessary
 func (cs *PhononCommandSet) InitCardPairing() (initPairingData []byte, err error) {
+	log.Debug("sending INIT_CARD_PAIRING command")
 	cmd := NewCommandInitCardPairing()
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
@@ -689,6 +690,7 @@ func (cs *PhononCommandSet) InitCardPairing() (initPairingData []byte, err error
 //CardPair takes the response from initCardPairing and passes it to the counterparty card
 //for the next step of pairing
 func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
+	log.Debug("sending CARD_PAIR command")
 	cmd := NewCommandCardPair(initPairingData)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
@@ -702,6 +704,7 @@ func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byt
 }
 
 func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
+	log.Debug("sending CARD_PAIR_2 command")
 	cmd := NewCommandCardPair2(cardPairData)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
@@ -716,6 +719,7 @@ func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte
 }
 
 func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
+	log.Debug("sending FINALIZE_CARD_PAIR command")
 	cmd := NewCommandFinalizeCardPair(cardPair2Data)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
@@ -730,6 +734,7 @@ func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 }
 
 func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) (err error) {
+	log.Debug("sending INSTALL_CERTIFICATE command")
 	nonce := make([]byte, 32)
 	n, err := io.ReadFull(rand.Reader, nonce)
 	if err != nil {

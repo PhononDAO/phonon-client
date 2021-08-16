@@ -53,6 +53,7 @@ func init() {
 	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
+//TODO: reimplement with new Session
 func initializeCard(pin string) {
 	// cs, err := card.Connect()
 	// if err != nil {
@@ -74,12 +75,18 @@ func initializeCard(pin string) {
 	// 	fmt.Println("unable to initialize card:", err)
 	// 	return
 	// }
-	s, err := card.NewSession()
+	cs, err := card.Connect()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	err = s.Init(pin)
+	// s := card.NewSession(cs, false)
+	_, _, _, err = cs.Select()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = cs.Init(pin)
 	if err != nil {
 		fmt.Println(err)
 		return

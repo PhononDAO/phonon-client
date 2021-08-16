@@ -30,20 +30,31 @@ var pairCardToCardCmd = &cobra.Command{
 	Long: `Establish a local pairing between 2 phonon cards connected via
 	2 different card readers attached to the the same phonon-client terminal`,
 	Run: func(cmd *cobra.Command, args []string) {
-		readerIndexA, err := strconv.Atoi(args[0])
+		var err error
+		senderReaderIndex, err = strconv.Atoi(args[0])
 		if err != nil {
 			fmt.Println(err)
 		}
-		readerIndexB, err := strconv.Atoi(args[1])
+		receiverReaderIndex, err = strconv.Atoi(args[1])
 		if err != nil {
 			fmt.Println(err)
 		}
-		PairCardToCard(readerIndexA, readerIndexB)
+		PairCardToCard()
 	},
 }
 
+var (
+	useMockReceiver     bool
+	useMockSender       bool
+	senderReaderIndex   int
+	receiverReaderIndex int
+)
+
 func init() {
 	rootCmd.AddCommand(pairCardToCardCmd)
+
+	pairCardToCardCmd.Flags().BoolVarP(&useMockReceiver, "mock-receiver", "r", false, "Use the mock card implementation as the receiver")
+	pairCardToCardCmd.Flags().BoolVarP(&useMockSender, "mock-sender", "s", false, "Use the mock card implementation as the sender")
 
 	// Here you will define your flags and configuration settings.
 
@@ -56,24 +67,49 @@ func init() {
 	// pairCardToCardCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func PairCardToCard(readerIndexA, readerIndexB int) {
+//TODO: Make flags to intelligently specify reader indices
+func PairCardToCard() {
 	fmt.Println("opening session with sender Card")
-	sender, err := card.NewSessionWithReaderIndex(readerIndexA)
-	if err != nil {
-		fmt.Println(err)
-		return
+	var senderCard card.PhononCard
+	var err error
+	if useMockSender {
+		senderCard, err = card.NewMockCard()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	} else {
+		senderCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
+	sender := card.NewSession(senderCard, true)
+
+	var receiverCard card.PhononCard
+	if useMockReceiver {
+		receiverCard, err = card.NewMockCard()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	} else {
+		receiverCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
 	fmt.Println("opening receiver session")
-	receiverSession, err := card.NewSessionWithReaderIndex(readerIndexB)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	receiverSession := card.NewSession(receiverCard, true)
+
 	receiver := card.NewLocalCounterParty(receiverSession)
 
 	fmt.Println("starting card to card pairing")
 	err = sender.PairWithRemoteCard(receiver)
 	if err != nil {
+		fmt.Println("error during pairing with counterparty")
 		fmt.Println(err)
 		return
 	}

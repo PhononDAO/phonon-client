@@ -57,14 +57,27 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 	}
 }
 
+func (cs PhononCommandSet) Send(cmd *Command) (*apdu.Response, error) {
+	resp, err := cs.c.Send(cmd.ApduCmd)
+	if err != nil {
+		return resp, err
+	}
+	err = cmd.HumanReadableErr(resp)
+	return resp, err
+
+}
+
 //TODO: determine if I should return these values or have the secure channel handle it internally
 //Selects the phonon applet for further usage
 func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, cardInitialized bool, err error) {
-	cmd := globalplatform.NewCommandSelect(phononAID)
-	cmd.SetLe(0)
+	cmd := &Command{
+		ApduCmd:      globalplatform.NewCommandSelect(phononAID),
+		PossibleErrs: map[int]string{},
+	}
+	cmd.ApduCmd.SetLe(0)
 
 	log.Debug("sending SELECT apdu")
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.Send(cmd)
 	if err != nil {
 		log.Error("could not send select command. err: ", err)
 		return nil, nil, false, err
@@ -109,8 +122,11 @@ func (cs *PhononCommandSet) Pair() error {
 	pairingPubKey := pairingPrivKey.PublicKey
 
 	//Exchange pairing key info with card
-	cmd := gridplus.NewAPDUPairStep1(clientSalt, &pairingPubKey)
-	resp, err := cs.c.Send(cmd)
+	cmd := &Command{
+		ApduCmd:      gridplus.NewAPDUPairStep1(clientSalt, &pairingPubKey),
+		PossibleErrs: map[int]string{},
+	}
+	resp, err := cs.Send(cmd)
 	if err != nil {
 		log.Error("unable to send Pair Step 1 command. err: ", err)
 		return err
@@ -174,8 +190,11 @@ func (cs *PhononCommandSet) Pair() error {
 	cryptogram := sha256.Sum256(append(pairStep1Resp.SafecardSalt, secretHash...))
 
 	log.Debug("sending pair step 2 cmd")
-	cmd = gridplus.NewAPDUPairStep2(cryptogram[0:])
-	resp, err = cs.c.Send(cmd)
+	cmd = &Command{
+		ApduCmd:      gridplus.NewAPDUPairStep2(cryptogram[0:]),
+		PossibleErrs: map[int]string{},
+	}
+	resp, err = cs.Send(cmd)
 	if err != nil {
 		log.Error("error sending pair step 2 command. err: ", err)
 		return err
@@ -257,8 +276,11 @@ func (cs *PhononCommandSet) OpenSecureChannel() error {
 		return errors.New("cannot open secure channel without setting PairingInfo")
 	}
 
-	cmd := keycard.NewCommandOpenSecureChannel(uint8(cs.PairingInfo.Index), cs.sc.RawPublicKey())
-	resp, err := cs.c.Send(cmd)
+	cmd := &Command{
+		ApduCmd:      keycard.NewCommandOpenSecureChannel(uint8(cs.PairingInfo.Index), cs.sc.RawPublicKey()),
+		PossibleErrs: map[int]string{},
+	}
+	resp, err := cs.Send(cmd)
 	if err = cs.checkOK(resp, err); err != nil {
 		return err
 	}
@@ -303,8 +325,10 @@ func (cs *PhononCommandSet) Init(pin string) error {
 		return err
 	}
 	log.Debug("len of data: ", len(data))
-	init := keycard.NewCommandInit(data)
-	resp, err := cs.c.Send(init)
+	init := &Command{
+		ApduCmd: keycard.NewCommandInit(data),
+	}
+	resp, err := cs.Send(init)
 
 	return cs.checkOK(resp, err)
 }
@@ -329,7 +353,7 @@ func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedRespo
 
 func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardSig []byte, err error) {
 	cmd := NewCommandIdentifyCard(nonce)
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.Send(cmd)
 	if err != nil {
 		log.Error("could not send identify card command", err)
 		return nil, nil, err
@@ -764,7 +788,7 @@ func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte,
 	signedCert[1] = byte(len(signedCert))
 
 	cmd := NewCommandInstallCert(signedCert)
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.Send(cmd)
 	if err != nil {
 		return err
 	}

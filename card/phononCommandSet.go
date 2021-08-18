@@ -243,7 +243,10 @@ func (cs *PhononCommandSet) SetPairingInfo(key []byte, index int) {
 
 func (cs *PhononCommandSet) Unpair(index uint8) error {
 	log.Debug("sending UNPAIR command")
-	cmd := keycard.NewCommandUnpair(index)
+	cmd := &Command{
+		ApduCmd:      keycard.NewCommandUnpair(index),
+		PossibleErrs: map[int]string{},
+	}
 	resp, err := cs.sc.Send(cmd)
 	return cs.checkOK(resp, err)
 }
@@ -278,7 +281,10 @@ func (cs *PhononCommandSet) mutualAuthenticate() error {
 		return err
 	}
 
-	cmd := keycard.NewCommandMutuallyAuthenticate(data)
+	cmd := &Command{
+		ApduCmd:      keycard.NewCommandMutuallyAuthenticate(data),
+		PossibleErrs: map[int]string{},
+	}
 	resp, err := cs.sc.Send(cmd)
 
 	return cs.checkOK(resp, err)
@@ -323,7 +329,7 @@ func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedRespo
 
 func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardSig []byte, err error) {
 	cmd := NewCommandIdentifyCard(nonce)
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.c.Send(cmd.ApduCmd)
 	if err != nil {
 		log.Error("could not send identify card command", err)
 		return nil, nil, err
@@ -758,7 +764,7 @@ func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte,
 	signedCert[1] = byte(len(signedCert))
 
 	cmd := NewCommandInstallCert(signedCert)
-	resp, err := cs.c.Send(cmd)
+	resp, err := cs.c.Send(cmd.ApduCmd)
 	if err != nil {
 		return err
 	}

@@ -96,8 +96,8 @@ func (sc *SecureChannel) RawPublicKey() []byte {
 }
 
 //AES-CBC-256 Symmetric encryption
-func (sc *SecureChannel) Send(cmd *apdu.Command) (resp *apdu.Response, err error) {
-	log.Debugf("raw command before encryption: CLA: % X Ins: % X P1: % X P2: % X Data: % X", cmd.Cla, cmd.Ins, cmd.P1, cmd.P2, cmd.Data)
+func (sc *SecureChannel) Send(cmd *Command) (resp *apdu.Response, err error) {
+	log.Debugf("raw command before encryption: CLA: % X Ins: % X P1: % X P2: % X Data: % X", cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2, cmd.ApduCmd.Data)
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error("recovered from panic: ", r)
@@ -105,21 +105,21 @@ func (sc *SecureChannel) Send(cmd *apdu.Command) (resp *apdu.Response, err error
 		}
 	}()
 	if sc.open {
-		encData, err := crypto.EncryptData(cmd.Data, sc.encKey, sc.iv)
+		encData, err := crypto.EncryptData(cmd.ApduCmd.Data, sc.encKey, sc.iv)
 		if err != nil {
 			return nil, err
 		}
 
-		meta := []byte{cmd.Cla, cmd.Ins, cmd.P1, cmd.P2, byte(len(encData) + 16), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+		meta := []byte{cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2, byte(len(encData) + 16), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 		if err = sc.updateIV(meta, encData); err != nil {
 			return nil, err
 		}
 
 		newData := append(sc.iv, encData...)
-		cmd.Data = newData
+		cmd.ApduCmd.Data = newData
 	}
 
-	resp, err = sc.c.Send(cmd)
+	resp, err = sc.c.Send(cmd.ApduCmd)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,16 @@ func (sc *SecureChannel) Send(cmd *apdu.Command) (resp *apdu.Response, err error
 
 	log.Debug("apdu response decrypted hex: ", hexutils.BytesToHexWithSpaces(plainData))
 
-	return apdu.ParseResponse(plainData)
+	return ParseResponseWithErrCheck(cmd, plainData)
+}
+
+func ParseResponseWithErrCheck(cmd *Command, plainData []byte) (*apdu.Response, error) {
+	res, err := apdu.ParseResponse(plainData)
+	if err != nil {
+		return res, err
+	}
+	err = cmd.HumanReadableErr(res)
+	return res, err
 }
 
 func (sc *SecureChannel) updateIV(meta, data []byte) error {
@@ -153,9 +162,7 @@ func (sc *SecureChannel) updateIV(meta, data []byte) error {
 	if err != nil {
 		return err
 	}
-
 	sc.iv = mac
-
 	return nil
 }
 

@@ -177,7 +177,6 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 
 	log.Debug("certificate length: ", len(senderCardCertRaw))
 	log.Debugf("% X", senderCardCertRaw)
-	log.Debug("length of Permissions: ", len(senderCardCert.Permissions))
 	log.Debugf("Permissions: % X", senderCardCert.Permissions)
 	log.Debug("length of PubKey: ", len(senderCardCert.PubKey))
 	log.Debugf("PubKey: % X", senderCardCert.PubKey)

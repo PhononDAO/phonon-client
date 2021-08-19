@@ -17,9 +17,19 @@ import (
 )
 
 type CardCertificate struct {
-	Permissions []byte
+	Permissions CertPermissions
 	PubKey      []byte
 	Sig         []byte
+}
+
+type CertPermissions struct {
+	certType    byte
+	certLen     byte
+	permType    byte
+	permLen     byte
+	permissions []byte
+	pubKeyType  byte
+	pubKeyLen   byte
 }
 
 // Dev cert CA Key
@@ -51,8 +61,8 @@ var SafecardProdCAPubKey = []byte{
 //Accepts a safecard certificate and validates it against the provided CA PubKey
 //Safecard CA's provided by SafecardProdCAPubKey or SafecardDevCAPubKey for the respective environments
 func ValidateCardCertificate(cert CardCertificate, CAPubKey []byte) bool {
-	//Hash of cert excepting signature
-	certBytes := append(cert.Permissions, cert.PubKey...)
+	//Hash of cert excepting signature, certType, and certLen
+	certBytes := cert.Serialize()
 	certHash := sha256.Sum256(certBytes)
 
 	CApubKey, err := util.ParseECDSAPubKey(CAPubKey)
@@ -140,19 +150,47 @@ func SignWithYubikeyFunc(slot int, password string) func([]byte) ([]byte, error)
 	}
 }
 
-func ParseRawCardCertificate(cardCertificateRaw []byte) (CardCertificate, error) {
-	if len(cardCertificateRaw) == 0 {
-		return CardCertificate{}, errors.New("cardCertificate was zero length")
+func ParseRawCardCertificate(cardCertificateRaw []byte) (cert CardCertificate, err error) {
+	if len(cardCertificateRaw) < 4 {
+		return CardCertificate{}, errors.New("card certificate length too short to read permissions length")
 	}
-	certLength := int(cardCertificateRaw[1])
+	cert.Permissions.certType = cardCertificateRaw[0]
+	cert.Permissions.certLen = cardCertificateRaw[1]
+	cert.Permissions.permType = cardCertificateRaw[2]
+	cert.Permissions.permLen = cardCertificateRaw[3]
 
+	permsLen := int(cert.Permissions.permLen)
+	if len(cardCertificateRaw) < 5+permsLen {
+		return CardCertificate{}, errors.New("card certificate too short to read full permissions block")
+	}
+	cert.Permissions.permissions = cardCertificateRaw[4 : 4+permsLen]
+	cert.Permissions.pubKeyType = cardCertificateRaw[4+permsLen]
+	cert.Permissions.pubKeyLen = cardCertificateRaw[5+permsLen]
+	pubKeyLen := int(cert.Permissions.pubKeyLen)
+	certLength := int(cert.Permissions.certLen)
 	if len(cardCertificateRaw) < certLength {
 		return CardCertificate{}, errors.New("certificate was incorrect length")
 	}
+
 	cardCertificate := CardCertificate{
-		Permissions: cardCertificateRaw[2:8],
-		PubKey:      cardCertificateRaw[8 : 8+65],
-		Sig:         cardCertificateRaw[8+65 : 0+certLength],
+		PubKey: cardCertificateRaw[6+int(cert.Permissions.permLen) : 6+permsLen+pubKeyLen],
+		Sig:    cardCertificateRaw[6+permsLen+pubKeyLen : certLength],
 	}
+
 	return cardCertificate, nil
+}
+
+//Serialize the certificate data, permissions and pubkey into bytes
+//This is the set of bytes used to sign and validate the certificate
+//(skips the first two bytes for cert type and length)
+func (cert CardCertificate) Serialize() []byte {
+	bytes := []byte{
+		cert.Permissions.permType,
+		cert.Permissions.permLen,
+	}
+	bytes = append(bytes, cert.Permissions.permissions...)
+	bytes = append(bytes, cert.Permissions.pubKeyType)
+	bytes = append(bytes, cert.Permissions.pubKeyLen)
+	bytes = append(bytes, cert.PubKey...)
+	return bytes
 }

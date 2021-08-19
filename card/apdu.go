@@ -64,10 +64,35 @@ const (
 	TagAesIV           = 0x92
 	TagECDSASig        = 0x93
 	TagPairingIndex    = 0x94
+
+	//ISO7816 Standard Responses
+	SW_APPLET_SELECT_FAILED           = 0x6999
+	SW_BYTES_REMAINING_00             = 0x6100
+	SW_CLA_NOT_SUPPORTED              = 0x6E00
+	SW_COMMAND_CHAINING_NOT_SUPPORTED = 0x6884
+	SW_COMMAND_NOT_ALLOWED            = 0x6986
+	SW_CONDITIONS_NOT_SATISFIED       = 0x6985
+	SW_CORRECT_LENGTH_00              = 0x6C00
+	SW_DATA_INVALID                   = 0x6984
+	SW_FILE_FULL                      = 0x6A84
+	SW_FILE_INVALID                   = 0x6983
+	SW_FILE_NOT_FOUND                 = 0x6A82
+	SW_FUNC_NOT_SUPPORTED             = 0x6A81
+	SW_INCORRECT_P1P2                 = 0x6A86
+	SW_INS_NOT_SUPPORTED              = 0x6D00
+	SW_LAST_COMMAND_EXPECTED          = 0x6883
+	SW_LOGICAL_CHANNEL_NOT_SUPPORTED  = 0x6881
+	SW_NO_ERROR                       = 0x9000
+	SW_RECORD_NOT_FOUND               = 0x6A83
+	SW_SECURE_MESSAGING_NOT_SUPPORTED = 0x6882
+	SW_SECURITY_STATUS_NOT_SATISFIED  = 0x6982
+	SW_UNKNOWN                        = 0x6F00
+	SW_WARNING_STATE_UNCHANGED        = 0x6200
+	SW_WRONG_DATA                     = 0x6A80
+	SW_WRONG_LENGTH                   = 0x6700
+	SW_WRONG_P1P2                     = 0x6B00
 )
 
-
-// Not exactly sure where this should go
 type Command struct {
 	ApduCmd      *apdu.Command
 	PossibleErrs CardErrors
@@ -75,13 +100,13 @@ type Command struct {
 
 type CardErrors map[int]string
 
-
-func(cmd *Command)HumanReadableErr(res *apdu.Response)error{
+func (cmd *Command) HumanReadableErr(res *apdu.Response) error {
 	var ret error
-	errormsg, exists := cmd.PossibleErrs[int(res.Sw)]; if exists{
+	errormsg, exists := cmd.PossibleErrs[int(res.Sw)]
+	if exists {
 		ret = fmt.Errorf(errormsg)
 	}
-	return  ret
+	return ret
 }
 
 //NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU
@@ -97,12 +122,12 @@ func NewCommandIdentifyCard(nonce []byte) *Command {
 			nonce,
 		),
 		PossibleErrs: map[int]string{
-			0x6984: "Returned data is anot SHA256",
+			SW_DATA_INVALID: "Invalid Data Received",
 		},
 	}
 }
 
-func NewCommandVerifyPIN(pin string)*Command {
+func NewCommandVerifyPIN(pin string) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaGp,
@@ -112,14 +137,12 @@ func NewCommandVerifyPIN(pin string)*Command {
 			[]byte(pin),
 		),
 		PossibleErrs: map[int]string{
-			//this one breaks the whole separation thing
-			//Not sure how to reconcile this
 			0x63c: "Pin Verification Failed",
 		},
 	}
 }
 
-func NewCommandChangePIN(pin string)*Command {
+func NewCommandChangePIN(pin string) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaGp,
@@ -128,11 +151,14 @@ func NewCommandChangePIN(pin string)*Command {
 			0,
 			[]byte(pin),
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
+			SW_INCORRECT_P1P2:           "Invalid parameters",
+		},
 	}
 }
 
-func NewCommandCreatePhonon()*Command {
+func NewCommandCreatePhonon() *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaISO7816,
@@ -142,12 +168,13 @@ func NewCommandCreatePhonon()*Command {
 			[]byte{0x00},
 		),
 		PossibleErrs: map[int]string{
-			0x6A84: "Phonon table full",
+			SW_FILE_FULL:                "Phonon table full",
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
 		},
 	}
 }
 
-func NewCommandSetDescriptor(data []byte)*Command {
+func NewCommandSetDescriptor(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaGp,
@@ -157,12 +184,15 @@ func NewCommandSetDescriptor(data []byte)*Command {
 			data,
 		),
 		PossibleErrs: map[int]string{
-			// find Key not found response code
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
+			SW_WRONG_LENGTH:             "Wrong data length",
+			SW_FILE_INVALID:             "Invalid data",
+			SW_FUNC_NOT_SUPPORTED:       "Phonon type not supported",
 		},
 	}
 }
 
-func NewCommandListPhonons(p1 byte, p2 byte, data []byte)*Command {
+func NewCommandListPhonons(p1 byte, p2 byte, data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaISO7816,
@@ -171,11 +201,15 @@ func NewCommandListPhonons(p1 byte, p2 byte, data []byte)*Command {
 			p2,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_WRONG_DATA:               "Request invalid",
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
+			SW_INCORRECT_P1P2:           "Incorrect Parameters received",
+		},
 	}
 }
 
-func NewCommandGetPhononPubKey(data []byte)*Command {
+func NewCommandGetPhononPubKey(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaISO7816,
@@ -184,11 +218,17 @@ func NewCommandGetPhononPubKey(data []byte)*Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
+			SW_WRONG_LENGTH:             "Data length incorrect",
+			SW_WRONG_DATA:               "Phonon index invalid",
+			SW_FILE_INVALID:             "Phonon Invalid",
+			SW_FILE_NOT_FOUND:           "Phonon not initialized",
+		},
 	}
 }
 
-func NewCommandDestroyPhonon(data []byte)*Command {
+func NewCommandDestroyPhonon(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaISO7816,
@@ -197,11 +237,16 @@ func NewCommandDestroyPhonon(data []byte)*Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
+			SW_WRONG_LENGTH:             "Incoming length wrong",
+			SW_WRONG_DATA:               "Invalid phonon index",
+			SW_FILE_INVALID:             "Invalid phonon index",
+		},
 	}
 }
 
-func NewCommandSendPhonons(data []byte, p2Length byte, extendedRequest bool)*Command {
+func NewCommandSendPhonons(data []byte, p2Length byte, extendedRequest bool) *Command {
 	var p1 byte
 	if extendedRequest {
 		p1 = 0x01
@@ -217,13 +262,17 @@ func NewCommandSendPhonons(data []byte, p2Length byte, extendedRequest bool)*Com
 			p2Length,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
+			SW_INCORRECT_P1P2:           "Incorrect parameters sent",
+			SW_WRONG_DATA:               "Incorrect phonon index",
+		},
 	}
 }
 
 //Receives a TLV encoded Phonon Transfer Packet Payload in encrypted form
 //and passes it on directly to a card
-func NewCommandReceivePhonons(phononTransferPacket []byte)*Command {
+func NewCommandReceivePhonons(phononTransferPacket []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaISO7816,
@@ -232,11 +281,15 @@ func NewCommandReceivePhonons(phononTransferPacket []byte)*Command {
 			0x00,
 			phononTransferPacket,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED: "Phonon recipt conditions not met",
+			SW_FILE_FULL:                "Maximum number of phonons reached",
+			SW_WRONG_DATA:               "Phonon received not valid",
+		},
 	}
 }
 
-func NewCommandSetReceiveList(data []byte)*Command {
+func NewCommandSetReceiveList(data []byte) *Command {
 
 	return &Command{
 		ApduCmd: apdu.NewCommand(
@@ -246,11 +299,15 @@ func NewCommandSetReceiveList(data []byte)*Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
+			SW_FILE_FULL:                "No phonon with index passed",
+			SW_WRONG_DATA:               "Phonon to be received not valid",
+		},
 	}
 }
 
-func NewCommandTransactionAck(data []byte)*Command {
+func NewCommandTransactionAck(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaISO7816,
@@ -263,7 +320,7 @@ func NewCommandTransactionAck(data []byte)*Command {
 	}
 }
 
-func NewCommandInitCardPairing()*Command {
+func NewCommandInitCardPairing() *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaGp,
@@ -276,7 +333,7 @@ func NewCommandInitCardPairing()*Command {
 	}
 }
 
-func NewCommandCardPair(data []byte)*Command {
+func NewCommandCardPair(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaGp,
@@ -285,11 +342,15 @@ func NewCommandCardPair(data []byte)*Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+
+			SW_CONDITIONS_NOT_SATISFIED: "Pairing already completed",
+			SW_INCORRECT_P1P2:           "Unable to determine pairing step",
+		},
 	}
 }
 
-func NewCommandCardPair2(data []byte)*Command {
+func NewCommandCardPair2(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaGp,
@@ -298,11 +359,12 @@ func NewCommandCardPair2(data []byte)*Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+		},
 	}
 }
 
-func NewCommandFinalizeCardPair(data []byte)*Command {
+func NewCommandFinalizeCardPair(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaGp,
@@ -315,7 +377,7 @@ func NewCommandFinalizeCardPair(data []byte)*Command {
 	}
 }
 
-func NewCommandInstallCert(data []byte)*Command {
+func NewCommandInstallCert(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaGp,
@@ -325,11 +387,12 @@ func NewCommandInstallCert(data []byte)*Command {
 			data,
 		),
 		PossibleErrs: map[int]string{
-			0x6985: "Secure Channel is already Open",
-			0x6A86: "Invalid P1 Parameter(Wrong instruction step)",
-			0x6A80: "Invalid Data Length",
-			0x6882: "Certificate Not Loaded",
-			0x6982: "Unable to generate secret or Challenge failed. Unable to verify cryptogram",
+			SW_CONDITIONS_NOT_SATISFIED:       "Secure Channel is already Open",
+			SW_INCORRECT_P1P2:                 "Invalid P1 Parameter(Wrong instruction step)",
+			SW_WRONG_LENGTH:                   "Invalid Data Length",
+			SW_WRONG_DATA:                     "Invalid data",
+			SW_SECURE_MESSAGING_NOT_SUPPORTED: "Certificate Not Loaded",
+			SW_SECURITY_STATUS_NOT_SATISFIED:  "Unable to generate secret or Challenge failed. Unable to verify cryptogram",
 		},
 	}
 }

@@ -277,8 +277,11 @@ func (cs *PhononCommandSet) OpenSecureChannel() error {
 	}
 
 	cmd := &Command{
-		ApduCmd:      keycard.NewCommandOpenSecureChannel(uint8(cs.PairingInfo.Index), cs.sc.RawPublicKey()),
-		PossibleErrs: map[int]string{},
+		ApduCmd: keycard.NewCommandOpenSecureChannel(uint8(cs.PairingInfo.Index), cs.sc.RawPublicKey()),
+		PossibleErrs: map[int]string{
+			SW_INCORRECT_P1P2:                "Incorrect parameters",
+			SW_SECURITY_STATUS_NOT_SATISFIED: "Unable to generate secret",
+		},
 	}
 	resp, err := cs.Send(cmd)
 	if err = cs.checkOK(resp, err); err != nil {
@@ -304,8 +307,12 @@ func (cs *PhononCommandSet) mutualAuthenticate() error {
 	}
 
 	cmd := &Command{
-		ApduCmd:      keycard.NewCommandMutuallyAuthenticate(data),
-		PossibleErrs: map[int]string{},
+		ApduCmd: keycard.NewCommandMutuallyAuthenticate(data),
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED:      "Authentication key not initialized",
+			SW_LOGICAL_CHANNEL_NOT_SUPPORTED: "Already Mutually Authenticated",
+			SW_SECURITY_STATUS_NOT_SATISFIED: "Secret length invalid",
+		},
 	}
 	resp, err := cs.sc.Send(cmd)
 

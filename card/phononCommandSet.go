@@ -683,8 +683,6 @@ func (cs *PhononCommandSet) InitCardPairing() (initPairingData []byte, err error
 		return nil, err
 	}
 	return resp.Data, nil
-	//parse response
-	//return parsed data
 }
 
 //CardPair takes the response from initCardPairing and passes it to the counterparty card

@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/spf13/cobra"
@@ -30,15 +29,6 @@ var pairCardToCardCmd = &cobra.Command{
 	Long: `Establish a local pairing between 2 phonon cards connected via
 	2 different card readers attached to the the same phonon-client terminal`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-		senderReaderIndex, err = strconv.Atoi(args[0])
-		if err != nil {
-			fmt.Println(err)
-		}
-		receiverReaderIndex, err = strconv.Atoi(args[1])
-		if err != nil {
-			fmt.Println(err)
-		}
 		PairCardToCard()
 	},
 }
@@ -53,8 +43,11 @@ var (
 func init() {
 	rootCmd.AddCommand(pairCardToCardCmd)
 
-	pairCardToCardCmd.Flags().BoolVarP(&useMockReceiver, "mock-receiver", "r", false, "Use the mock card implementation as the receiver")
-	pairCardToCardCmd.Flags().BoolVarP(&useMockSender, "mock-sender", "s", false, "Use the mock card implementation as the sender")
+	pairCardToCardCmd.Flags().BoolVarP(&useMockReceiver, "mock-receiver", "m", false, "Use the mock card implementation as the receiver")
+	pairCardToCardCmd.Flags().BoolVarP(&useMockSender, "mock-sender", "n", false, "Use the mock card implementation as the sender")
+
+	pairCardToCardCmd.Flags().IntVarP(&receiverReaderIndex, "receiver-reader-index", "r", 0, "pass the reader index to use for the receiver card")
+	pairCardToCardCmd.Flags().IntVarP(&senderReaderIndex, "sender-reader-index", "s", 0, "pass the reader index to use for the sender card")
 
 	// Here you will define your flags and configuration settings.
 
@@ -67,7 +60,6 @@ func init() {
 	// pairCardToCardCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-//TODO: Make flags to intelligently specify reader indices
 func PairCardToCard() {
 	fmt.Println("opening session with sender Card")
 	var senderCard card.PhononCard
@@ -78,8 +70,9 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
+		senderCard.InstallCertificate(card.SignWithDemoKey)
 	} else {
-		senderCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)
+		senderCard, _, err = card.OpenBestConnectionWithReaderIndex(senderReaderIndex)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -94,6 +87,7 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
+		receiverCard.InstallCertificate(card.SignWithDemoKey)
 	} else {
 		receiverCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)
 		if err != nil {
@@ -113,4 +107,5 @@ func PairCardToCard() {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println("cards paired succesfully!")
 }

@@ -141,7 +141,11 @@ func SignWithYubikeyFunc(slot int, password string) func([]byte) ([]byte, error)
 }
 
 func ParseRawCardCertificate(cardCertificateRaw []byte) (CardCertificate, error) {
+	if len(cardCertificateRaw) == 0 {
+		return CardCertificate{}, errors.New("cardCertificate was zero length")
+	}
 	certLength := int(cardCertificateRaw[1])
+
 	if len(cardCertificateRaw) < certLength {
 		return CardCertificate{}, errors.New("certificate was incorrect length")
 	}

@@ -25,6 +25,13 @@ type MockCard struct {
 	identityKey    *ecdsa.PrivateKey
 	IdentityPubKey *ecdsa.PublicKey
 	IdentityCert   []byte
+	scPairData     SecureChannelPairingDetails
+}
+
+type SecureChannelPairingDetails struct {
+	cardToCardSalt     []byte
+	counterpartyPubKey *ecdsa.PublicKey
+	cryptogram         []byte
 }
 
 func NewMockCard() (*MockCard, error) {
@@ -122,6 +129,7 @@ func (c *MockCard) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) 
 }
 
 func (c *MockCard) InitCardPairing() (initPairingData []byte, err error) {
+	log.Debug("sending mock INIT_CARD_PAIRING command")
 	cardCertTLV, err := NewTLV(TagCardCertificate, c.IdentityCert)
 	if err != nil {
 		return nil, err
@@ -130,12 +138,15 @@ func (c *MockCard) InitCardPairing() (initPairingData []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
+	//Store salt for use in session key generation in CARD_PAIR_2
+	c.scPairData.cardToCardSalt = salt.value
 	initPairingData = EncodeTLVList(cardCertTLV, salt)
 
 	return initPairingData, nil
 }
 
 func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte, err error) {
+	log.Debug("sending mock CARD_PAIR command")
 	//Initialize pairing salt
 	receiverSalt := util.RandomKey(32)
 
@@ -161,6 +172,9 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	if err != nil {
 		return nil, err
 	}
+	//Store sender's public key for signature validation in FINALIZE_CARD_PAIR
+	c.scPairData.counterpartyPubKey = senderPubKey
+
 	log.Debug("certificate length: ", len(senderCardCertRaw))
 	log.Debugf("% X", senderCardCertRaw)
 	log.Debug("length of Permissions: ", len(senderCardCert.Permissions))
@@ -191,35 +205,133 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	sessionKey := sha512.Sum512(sessionKeyMaterial)
 
 	//Derive secure channel info
-	//Needed for TODO
-	// encKey := sessionKey[:len(sessionKey)/2]
-	// mac := sessionKey[len(sessionKey)/2:]
+	encKey := sessionKey[:len(sessionKey)/2]
+	macKey := sessionKey[len(sessionKey)/2:]
 
 	aesIV := util.RandomKey(16)
 
-	//TODO: Establish Secure Channel with encKey, mac, and aesIV
+	//Directly initialize instead of using NewSecureChannel() to create secure channel without card channel
+	c.sc = SecureChannel{}
+	c.sc.Init(aesIV, encKey, macKey)
 
 	//Combine shared derived session key with randomly generated aesIV and sign to prove possession of the
 	//private key corresponding to the public key which established this channel's foundational ECDH secret
 	cryptogram := sha256.Sum256(append(sessionKey[0:], aesIV...))
+	c.scPairData.cryptogram = cryptogram[0:]
 	receiverSig, err := ecdsa.SignASN1(rand.Reader, c.identityKey, cryptogram[0:])
 	if err != nil {
 		return nil, err
 	}
-	cardPairingData = append(c.IdentityCert, util.SerializeECDSAPubKey(c.IdentityPubKey)...)
-	cardPairingData = append(cardPairingData, receiverSalt...)
-	cardPairingData = append(cardPairingData, aesIV...)
-	cardPairingData = append(cardPairingData, receiverSig...)
+
+	receiverCertTLV, _ := NewTLV(TagCardCertificate, c.IdentityCert)
+	receiverSaltTLV, _ := NewTLV(TagSalt, receiverSalt)
+	aesIVTLV, _ := NewTLV(TagAesIV, aesIV)
+	receiverSigTLV, _ := NewTLV(TagECDSASig, receiverSig)
+
+	cardPairingData = append(receiverCertTLV.Encode(), receiverSaltTLV.Encode()...)
+	cardPairingData = append(cardPairingData, aesIVTLV.Encode()...)
+	cardPairingData = append(cardPairingData, receiverSigTLV.Encode()...)
+
 	return cardPairingData, nil
 }
 
 func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
-	//TODO
-	return nil, nil
+	log.Debug("sending mock CARD_PAIR_2 command")
+	tlv, err := ParseTLVPacket(cardPairData)
+	if err != nil {
+		return nil, err
+	}
+	receiverCardCertRaw, err := tlv.FindTag(TagCardCertificate)
+	if err != nil {
+		return nil, err
+	}
+	receiverSalt, err := tlv.FindTag(TagSalt)
+	if err != nil {
+		return nil, err
+	}
+	aesIV, err := tlv.FindTag(TagAesIV)
+	if err != nil {
+		return nil, err
+	}
+	receiverSig, err := tlv.FindTag(TagECDSASig)
+	if err != nil {
+		return nil, err
+	}
+
+	//Mirror of other side's CARD_PAIR
+	receiverCardCert, err := ParseRawCardCertificate(receiverCardCertRaw)
+	if err != nil {
+		return nil, err
+	}
+	receiverPubKey, err := util.ParseECDSAPubKey(receiverCardCert.PubKey)
+	if err != nil {
+		return nil, err
+	}
+	//Validate counterparty certificate
+	valid := ValidateCardCertificate(receiverCardCert, gridplus.SafecardDevCAPubKey)
+	if !valid {
+		return nil, errors.New("counterparty certificate signature was invalid")
+	}
+
+	pubKeyValid := gridplus.ValidateECCPubKey(receiverPubKey)
+	if !pubKeyValid {
+		return nil, errors.New("counterparty public key is not valid ECC point")
+	}
+
+	//Compute shared secret
+	ecdhSecret := crypto.GenerateECDHSharedSecret(c.identityKey, receiverPubKey)
+
+	//Compute session key with salts from both parties and ECDH secret
+	sessionKeyMaterial := append(c.scPairData.cardToCardSalt, receiverSalt...)
+	sessionKeyMaterial = append(sessionKeyMaterial, ecdhSecret...)
+
+	sessionKey := sha512.Sum512(sessionKeyMaterial)
+
+	//Derive secure channel info
+	encKey := sessionKey[:len(sessionKey)/2]
+	macKey := sessionKey[len(sessionKey)/2:]
+
+	//Directly initialize instead of using NewSecureChannel() to create secure channel without card channel
+	c.sc = SecureChannel{}
+	c.sc.Init(aesIV, encKey, macKey)
+
+	//Combine shared derived session key with randomly generated aesIV and sign to prove possession of the
+	//private key corresponding to the public key which established this channel's foundational ECDH secret
+	cryptogram := sha256.Sum256(append(sessionKey[0:], aesIV...))
+
+	//Validate ReceiverSig
+	valid = ecdsa.VerifyASN1(receiverPubKey, cryptogram[0:], receiverSig)
+	if !valid {
+		return nil, errors.New("counterparty cryptogram signature invalid")
+	}
+	senderSig, err := ecdsa.SignASN1(rand.Reader, c.identityKey, cryptogram[0:])
+	if err != nil {
+		return nil, err
+	}
+
+	senderSigTLV, err := NewTLV(TagECDSASig, senderSig)
+	if err != nil {
+		return nil, err
+	}
+
+	return senderSigTLV.Encode(), nil
 }
 
 func (c *MockCard) FinalizeCardPair(cardPair2Data []byte) (err error) {
-	//TODO
+	log.Debug("sending mock FINALIZE_CARD_PAIR command")
+	tlv, err := ParseTLVPacket(cardPair2Data)
+	if err != nil {
+		return err
+	}
+	senderSig, err := tlv.FindTag(TagECDSASig)
+	if err != nil {
+		return err
+	}
+	//Validate SenderSig
+	valid := ecdsa.VerifyASN1(c.scPairData.counterpartyPubKey, c.scPairData.cryptogram, senderSig)
+	if !valid {
+		return errors.New("counterparty cryptogram signature invalid")
+	}
 	return nil
 }
 

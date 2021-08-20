@@ -159,11 +159,78 @@ func (sc *SecureChannel) updateIV(meta, data []byte) error {
 	return nil
 }
 
-//TODO: Make sure I can delete this
-// func (sc *SecureChannel) OneShotEncrypt(secrets *Secrets) ([]byte, error) {
-// 	pubKeyData := ethcrypto.FromECDSAPub(sc.publicKey)
-// 	data := append([]byte(secrets.Pin()), []byte(secrets.Puk())...)
-// 	data = append(data, secrets.PairingToken()...)
+//Encrypt data and return ciphertext directly
+func (sc *SecureChannel) Encrypt(data []byte) (ciphertext []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("recovered from panic: ", r)
+			err = errors.New("recovered from panic in secure channel send")
+		}
+	}()
+	encData, err := crypto.EncryptData(data, sc.encKey, sc.iv)
+	if err != nil {
+		return nil, err
+	}
+	//Not sure if the format of meta matters, seems to me it is just arbitrary data of length 16
+	//Not even sure what the point of meta is, seems like it could be removed with no consequences, but I might
+	//be missing something
+	// meta := []byte{0, 0, 0, 0, byte(len(encData) + 16), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	// meta := util.RandomKey(16)
+	meta := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	if err = sc.updateIV(meta, encData); err != nil {
+		return nil, err
+	}
+	ciphertext = append(sc.iv, encData...)
 
-// 	return crypto.OneShotEncrypt(pubKeyData, sc.secret, data)
-// }
+	return ciphertext, nil
+}
+
+//DecryptDirect decrypts a message but does not track iv updates or authenticate the decryption with the MAC
+//Useful for decrypting a message that was just encrypted by the same channel, rather than by a counterparty channel
+//which is keeping the IV in sync. Could also be used to decrypt a message which provides the IV
+func (sc *SecureChannel) DecryptDirect(ciphertext []byte, iv []byte) (data []byte, err error) {
+	log.Debugf("ciphertext: % X", ciphertext)
+	// meta := []byte{byte(len(ciphertext)), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	// mac := ciphertext[:len(sc.iv)]
+	// iv := ciphertext[:len(sc.iv)]
+	encData := ciphertext[len(sc.iv):]
+	//Use sc.iv if a counteparty has encrypted a response to the last encrypted message
+	data, err = crypto.DecryptData(encData, sc.encKey, iv)
+	if err != nil {
+		return nil, err
+	}
+	// if err = sc.updateIV(meta, encData); err != nil {
+	// 	return nil, err
+	// }
+	// if !bytes.Equal(sc.iv, mac) {
+	// 	return nil, ErrInvalidResponseMAC
+	// }
+	return data, nil
+}
+
+//Decrypts the response to the last message Encrypted in this channel
+//The init vector is automatically updated to match the iv the response should use after
+//a Decrypt -> Encrypt cycle
+func (sc *SecureChannel) Decrypt(ciphertext []byte) (data []byte, err error) {
+	//MAC is prepended, should be equal to last seen init vector
+	mac := ciphertext[:len(sc.iv)]
+	//encrypted data follows MAC
+	encData := ciphertext[len(sc.iv):]
+	data, err = crypto.DecryptData(encData, sc.encKey, sc.iv)
+	if err != nil {
+		return nil, err
+	}
+	//Meta is predetermined 16 byte value to provide initial cipher block for mac calculation
+	meta := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	log.Debugf("meta: % X", meta)
+	log.Debugf("data: % X", data)
+	if err = sc.updateIV(meta, encData); err != nil {
+		return nil, err
+	}
+	//Matching MAC confirms that the ciphertext was decrypted correctly
+	//and that the channel iv's are in sync
+	if !bytes.Equal(sc.iv, mac) {
+		return nil, ErrInvalidResponseMAC
+	}
+	return data, nil
+}

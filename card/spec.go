@@ -1,0 +1,31 @@
+package card
+
+import (
+	"crypto/ecdsa"
+	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/util"
+)
+
+type PhononCard interface {
+	Select() (instanceUID []byte, cardPubKey []byte, cardInitialized bool, err error)
+	Pair() error
+	OpenSecureChannel() error
+	Init(pin string) error
+	IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error)
+	VerifyPIN(pin string) error
+	ChangePIN(pin string) error
+	CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error)
+	SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error
+	ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error)
+	GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error)
+	DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error)
+	SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets [][]byte, err error)
+	ReceivePhonons(phononTransfer []byte) error
+	SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error
+	TransactionAck(keyIndices []uint16) error
+	InitCardPairing() (initPairingData []byte, err error)
+	CardPair(initPairingData []byte) (cardPairData []byte, err error)
+	CardPair2(cardPairData []byte) (cardPair2Data []byte, err error)
+	FinalizeCardPair(cardPair2Data []byte) (err error)
+	InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) (err error)
+}

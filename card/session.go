@@ -6,7 +6,7 @@ import (
 )
 
 type Session struct {
-	cs          *PhononCommandSet
+	cs          PhononCard
 	active      bool
 	initialized bool
 }
@@ -14,16 +14,12 @@ type Session struct {
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
 var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
 
-func NewSession() (*Session, error) {
-	cs, initialized, err := OpenBestConnection()
-	if err != nil {
-		return nil, err
-	}
+func NewSession(storage PhononCard, initialized bool) *Session {
 	return &Session{
-		cs:          cs,
+		cs:          storage,
 		active:      true,
 		initialized: initialized,
-	}, nil
+	}
 }
 
 func NewSessionWithReaderIndex(index int) (*Session, error) {
@@ -59,37 +55,40 @@ func (s *Session) Init(pin string) error {
 		return err
 	}
 	//Open new secure connection now that card is initialized
-	var initialized bool
-	s.cs, initialized, err = OpenBestConnection()
+
+	err = s.cs.Pair()
 	if err != nil {
 		return err
 	}
-	if !initialized {
-		return ErrInitFailed
+	err = s.cs.OpenSecureChannel()
+	if err != nil {
+		return err
 	}
+
 	return nil
 }
 
-func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
-	if !s.active {
-		var err error
-		if s, err = NewSession(); err != nil {
-			return nil, err
-		}
-	}
-	phonons, err := s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
-	if err != nil {
-		return nil, err
-	}
-	//TODO: additional filtering options if necessary
-	for _, phonon := range phonons {
-		phonon.PubKey, err = s.cs.GetPhononPubKey(phonon.KeyIndex)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return phonons, nil
-}
+//TODO: Rewrite to decouple from card connection details
+// func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
+// 	if !s.active {
+// 		var err error
+// 		if s, err = NewSession(); err != nil {
+// 			return nil, err
+// 		}
+// 	}
+// 	phonons, err := s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	//TODO: additional filtering options if necessary
+// 	for _, phonon := range phonons {
+// 		phonon.PubKey, err = s.cs.GetPhononPubKey(phonon.KeyIndex)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+// 	return phonons, nil
+// }
 
 //TODO: Genericize for generic KV Pairs
 // func (s *Session) DepositPhonon(currencyType model.CurrencyType, value float32) (phonon model.Phonon, err error) {

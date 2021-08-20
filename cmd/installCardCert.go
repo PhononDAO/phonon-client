@@ -17,22 +17,15 @@ package cmd
 
 import (
 	"bufio"
-	"crypto/ecdsa"
-	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/GridPlus/phonon-client/card"
-	yubihsm "github.com/certusone/yubihsm-go"
-	"github.com/certusone/yubihsm-go/commands"
-	"github.com/certusone/yubihsm-go/connector"
+
 	"github.com/ebfe/scard"
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -76,7 +69,7 @@ func InstallCardCert() {
 	// Determine Signing Key
 	if useDemoKey {
 		fmt.Println("Using Demo Key!")
-		signKeyFunc = SignWithDemoKey
+		signKeyFunc = card.SignWithDemoKey
 	} else {
 		//gather information for ubikey signing
 		var yubikeySlotInt int
@@ -100,7 +93,7 @@ func InstallCardCert() {
 			yubikeyPass = string(passBytes)
 		}
 
-		signKeyFunc = SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
+		signKeyFunc = card.SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
 	}
 
 	// Select Card if multiple. Otherwise go with first one or error out
@@ -113,53 +106,6 @@ func InstallCardCert() {
 	if err != nil {
 		log.Fatalf("Unable to Install Certificate: %s", err.Error())
 	}
-}
-
-func SignWithYubikeyFunc(slot int, password string) func([]byte) ([]byte, error) {
-	return func(cert []byte) ([]byte, error) {
-
-		c := connector.NewHTTPConnector("localhost:1234")
-		sm, err := yubihsm.NewSessionManager(c, 1, "password")
-		if err != nil {
-			panic(err)
-		}
-
-		digest := sha256.Sum256(cert)
-		uint16slot := uint16(slot)
-		cmd, err := commands.CreateSignDataEcdsaCommand(uint16slot, digest[:])
-		if err != nil {
-			return []byte{}, err
-		}
-		res, err := sm.SendEncryptedCommand(cmd)
-		if err != nil {
-			return []byte{}, err
-		}
-
-		return res.(*commands.SignDataEddsaResponse).Signature, nil
-	}
-}
-
-func SignWithDemoKey(cert []byte) ([]byte, error) {
-	demoKey := []byte{
-		0x03, 0x8D, 0x01, 0x08, 0x90, 0x00, 0x00, 0x00,
-		0x10, 0xAA, 0x82, 0x07, 0x09, 0x80, 0x00, 0x00,
-		0x01, 0xBB, 0x03, 0x06, 0x90, 0x08, 0x35, 0xF9,
-		0x10, 0xCC, 0x04, 0x85, 0x09, 0x00, 0x00, 0x91,
-	}
-	var key ecdsa.PrivateKey
-
-	// print("signing with demo key")
-	key.D = new(big.Int).SetBytes(demoKey)
-	key.PublicKey.Curve = secp256k1.S256()
-	key.PublicKey.X, key.PublicKey.Y = key.PublicKey.Curve.ScalarBaseMult(key.D.Bytes())
-	digest := sha256.Sum256(cert)
-	ret, err := key.Sign(rand.Reader, digest[:], nil)
-	if err != nil {
-		return []byte{}, err
-	}
-	print("finished signing")
-	return ret, nil
-
 }
 
 func scConnectInteractive() (*card.PhononCommandSet, error) {

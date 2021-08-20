@@ -196,7 +196,7 @@ func (cs *PhononCommandSet) Pair() error {
 	log.Debugf("derived pairing key: % X", pairingKey)
 
 	//Store pairing info for use in OpenSecureChannel
-	cs.SetPairingInfo(pairingKey[0:], pairStep2Resp.PairingIdx)
+	cs.setPairingInfo(pairingKey[0:], pairStep2Resp.PairingIdx)
 
 	log.Debug("pairing succeeded")
 	return nil
@@ -234,7 +234,7 @@ func checkPairingErrors(pairingStep int, status uint16) (err error) {
 	return err
 }
 
-func (cs *PhononCommandSet) SetPairingInfo(key []byte, index int) {
+func (cs *PhononCommandSet) setPairingInfo(key []byte, index int) {
 	cs.PairingInfo = &types.PairingInfo{
 		Key:   key,
 		Index: index,
@@ -321,7 +321,7 @@ func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedRespo
 	return apdu.NewErrBadResponse(resp.Sw, "unexpected response")
 }
 
-func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardSig []byte, err error) {
+func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error) {
 	cmd := NewCommandIdentifyCard(nonce)
 	resp, err := cs.c.Send(cmd)
 	if err != nil {
@@ -334,6 +334,11 @@ func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey []byte, cardS
 	if err != nil {
 		log.Error("could not parse identify card response: ", err)
 		return nil, nil, err
+	}
+
+	valid := ecdsa.Verify(cardPubKey, nonce, cardSig.R, cardSig.S)
+	if !valid {
+		return cardPubKey, cardSig, errors.New("card signature over challenge salt is invalid")
 	}
 
 	return cardPubKey, cardSig, nil
@@ -667,6 +672,7 @@ func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
 //InitCardPairing tells a card to initialized a pairing with another phonon card
 //Data is passed transparently from card to card since no client processing is necessary
 func (cs *PhononCommandSet) InitCardPairing() (initPairingData []byte, err error) {
+	log.Debug("sending INIT_CARD_PAIRING command")
 	cmd := NewCommandInitCardPairing()
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
@@ -677,13 +683,12 @@ func (cs *PhononCommandSet) InitCardPairing() (initPairingData []byte, err error
 		return nil, err
 	}
 	return resp.Data, nil
-	//parse response
-	//return parsed data
 }
 
 //CardPair takes the response from initCardPairing and passes it to the counterparty card
 //for the next step of pairing
 func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
+	log.Debug("sending CARD_PAIR command")
 	cmd := NewCommandCardPair(initPairingData)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
@@ -697,6 +702,7 @@ func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byt
 }
 
 func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
+	log.Debug("sending CARD_PAIR_2 command")
 	cmd := NewCommandCardPair2(cardPairData)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
@@ -711,6 +717,7 @@ func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte
 }
 
 func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
+	log.Debug("sending FINALIZE_CARD_PAIR command")
 	cmd := NewCommandFinalizeCardPair(cardPair2Data)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil {
@@ -725,37 +732,26 @@ func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 }
 
 func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) (err error) {
+	log.Debug("sending INSTALL_CERTIFICATE command")
 	nonce := make([]byte, 32)
 	n, err := io.ReadFull(rand.Reader, nonce)
 	if err != nil {
-		return fmt.Errorf("Unable to retrieve random challenge for card: %s", err.Error())
+		return fmt.Errorf("unable to retrieve random challenge for card: %s", err.Error())
 	}
 	if n != 32 {
-		return fmt.Errorf("Unable to read 32 bytes for challenge to card")
+		return fmt.Errorf("unable to read 32 bytes for challenge to card")
 	}
 
 	// Send Challenge to card
 	cardPubKey, _, err := cs.IdentifyCard(nonce)
 	if err != nil {
-		return fmt.Errorf("Unable to Identify card %s", err.Error())
+		return fmt.Errorf("unable to identify card %s", err.Error())
 	}
 
-	// make Card Certificate
-	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
-	cardCertificate := append(perms, cardPubKey...)
-
-	// sign The Certificate
-	preImage := cardCertificate[2:]
-	sig, err := signKeyFunc(preImage)
+	signedCert, err := createCardCertificate(cardPubKey, signKeyFunc)
 	if err != nil {
-		return fmt.Errorf("Unable to sign Cert: %s", err.Error())
+		return err
 	}
-
-	// Append CA Signature to certificate
-	signedCert := append(cardCertificate, sig...)
-
-	//Substitute actual certificate length in certificate header
-	signedCert[1] = byte(len(signedCert))
 
 	cmd := NewCommandInstallCert(signedCert)
 	resp, err := cs.c.Send(cmd)

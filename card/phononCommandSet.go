@@ -14,7 +14,6 @@ import (
 	"github.com/GridPlus/keycard-go"
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/crypto"
-	"github.com/GridPlus/keycard-go/globalplatform"
 	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/keycard-go/types"
 	"github.com/GridPlus/phonon-client/model"
@@ -39,8 +38,6 @@ var (
 	ErrPINNotEntered     = errors.New("valid PIN required")
 	ErrUnknown           = errors.New("unknown error")
 )
-
-var phononAID = []byte{0xA0, 0x00, 0x00, 0x08, 0x20, 0x00, 0x03, 0x01}
 
 type PhononCommandSet struct {
 	c               types.Channel
@@ -70,10 +67,7 @@ func (cs PhononCommandSet) Send(cmd *Command) (*apdu.Response, error) {
 //TODO: determine if I should return these values or have the secure channel handle it internally
 //Selects the phonon applet for further usage
 func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, cardInitialized bool, err error) {
-	cmd := &Command{
-		ApduCmd:      globalplatform.NewCommandSelect(phononAID),
-		PossibleErrs: map[int]string{},
-	}
+	cmd := NewCommandSelectPhononApplet()
 	cmd.ApduCmd.SetLe(0)
 
 	log.Debug("sending SELECT apdu")
@@ -122,10 +116,8 @@ func (cs *PhononCommandSet) Pair() error {
 	pairingPubKey := pairingPrivKey.PublicKey
 
 	//Exchange pairing key info with card
-	cmd := &Command{
-		ApduCmd:      gridplus.NewAPDUPairStep1(clientSalt, &pairingPubKey),
-		PossibleErrs: map[int]string{},
-	}
+	cmd := NewCommandPairStep1(clientSalt, &pairingPubKey)
+
 	resp, err := cs.Send(cmd)
 	if err != nil {
 		log.Error("unable to send Pair Step 1 command. err: ", err)
@@ -190,10 +182,7 @@ func (cs *PhononCommandSet) Pair() error {
 	cryptogram := sha256.Sum256(append(pairStep1Resp.SafecardSalt, secretHash...))
 
 	log.Debug("sending pair step 2 cmd")
-	cmd = &Command{
-		ApduCmd:      gridplus.NewAPDUPairStep2(cryptogram[0:]),
-		PossibleErrs: map[int]string{},
-	}
+	cmd = NewCommandPairStep2(cryptogram)
 	resp, err = cs.Send(cmd)
 	if err != nil {
 		log.Error("error sending pair step 2 command. err: ", err)
@@ -262,10 +251,7 @@ func (cs *PhononCommandSet) SetPairingInfo(key []byte, index int) {
 
 func (cs *PhononCommandSet) Unpair(index uint8) error {
 	log.Debug("sending UNPAIR command")
-	cmd := &Command{
-		ApduCmd:      keycard.NewCommandUnpair(index),
-		PossibleErrs: map[int]string{},
-	}
+	cmd := NewCommandUnpair(index)
 	resp, err := cs.sc.Send(cmd)
 	return cs.checkOK(resp, err)
 }
@@ -276,13 +262,7 @@ func (cs *PhononCommandSet) OpenSecureChannel() error {
 		return errors.New("cannot open secure channel without setting PairingInfo")
 	}
 
-	cmd := &Command{
-		ApduCmd: keycard.NewCommandOpenSecureChannel(uint8(cs.PairingInfo.Index), cs.sc.RawPublicKey()),
-		PossibleErrs: map[int]string{
-			SW_INCORRECT_P1P2:                "Incorrect parameters",
-			SW_SECURITY_STATUS_NOT_SATISFIED: "Unable to generate secret",
-		},
-	}
+	cmd := NewCommandOpenSecureChannel(uint8(cs.PairingInfo.Index), cs.sc.RawPublicKey())
 	resp, err := cs.Send(cmd)
 	if err = cs.checkOK(resp, err); err != nil {
 		return err
@@ -306,14 +286,8 @@ func (cs *PhononCommandSet) mutualAuthenticate() error {
 		return err
 	}
 
-	cmd := &Command{
-		ApduCmd: keycard.NewCommandMutuallyAuthenticate(data),
-		PossibleErrs: map[int]string{
-			SW_CONDITIONS_NOT_SATISFIED:      "Authentication key not initialized",
-			SW_LOGICAL_CHANNEL_NOT_SUPPORTED: "Already Mutually Authenticated",
-			SW_SECURITY_STATUS_NOT_SATISFIED: "Secret length invalid",
-		},
-	}
+	cmd := NewCommandMutualAuthenticate(data)
+
 	resp, err := cs.sc.Send(cmd)
 
 	return cs.checkOK(resp, err)
@@ -332,9 +306,7 @@ func (cs *PhononCommandSet) Init(pin string) error {
 		return err
 	}
 	log.Debug("len of data: ", len(data))
-	init := &Command{
-		ApduCmd: keycard.NewCommandInit(data),
-	}
+	init := NewCommandInit(data)
 	resp, err := cs.Send(init)
 
 	return cs.checkOK(resp, err)

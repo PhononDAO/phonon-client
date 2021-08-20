@@ -1,10 +1,13 @@
 package card
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 
+	"github.com/GridPlus/keycard-go"
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/globalplatform"
+	"github.com/GridPlus/keycard-go/gridplus"
 )
 
 const (
@@ -359,8 +362,7 @@ func NewCommandCardPair2(data []byte) *Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{
-		},
+		PossibleErrs: map[int]string{},
 	}
 }
 
@@ -395,4 +397,69 @@ func NewCommandInstallCert(data []byte) *Command {
 			SW_SECURITY_STATUS_NOT_SATISFIED:  "Unable to generate secret or Challenge failed. Unable to verify cryptogram",
 		},
 	}
+}
+
+// put here to be next to the select applet command function
+var phononAID = []byte{0xA0, 0x00, 0x00, 0x08, 0x20, 0x00, 0x03, 0x01}
+
+func NewCommandSelectPhononApplet() *Command {
+	return &Command{
+		ApduCmd:      globalplatform.NewCommandSelect(phononAID),
+		PossibleErrs: map[int]string{},
+	}
+}
+
+func NewCommandPairStep1(salt []byte, pairingPubKey *ecdsa.PublicKey) *Command {
+	return &Command{
+		ApduCmd:      gridplus.NewAPDUPairStep1(salt, pairingPubKey),
+		PossibleErrs: map[int]string{},
+	}
+
+}
+
+func NewCommandPairStep2(cryptogram [32]byte) *Command {
+	return &Command{
+		ApduCmd:      gridplus.NewAPDUPairStep2(cryptogram[0:]),
+		PossibleErrs: map[int]string{},
+	}
+
+}
+
+func NewCommandUnpair(index uint8) *Command {
+	return &Command{
+		ApduCmd:      keycard.NewCommandUnpair(index),
+		PossibleErrs: map[int]string{},
+	}
+
+}
+
+func NewCommandOpenSecureChannel(index uint8, publicKey []byte) *Command {
+	return &Command{
+		ApduCmd: keycard.NewCommandOpenSecureChannel(index, publicKey),
+		PossibleErrs: map[int]string{
+			SW_INCORRECT_P1P2:                "Incorrect parameters",
+			SW_SECURITY_STATUS_NOT_SATISFIED: "Unable to generate secret",
+		},
+	}
+
+}
+
+func NewCommandMutualAuthenticate(data []byte) *Command {
+	return &Command{
+		ApduCmd: keycard.NewCommandMutuallyAuthenticate(data),
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED:      "Authentication key not initialized",
+			SW_LOGICAL_CHANNEL_NOT_SUPPORTED: "Already Mutually Authenticated",
+			SW_SECURITY_STATUS_NOT_SATISFIED: "Secret length invalid",
+		},
+	}
+
+}
+
+func NewCommandInit(data []byte) *Command {
+	return &Command{
+		ApduCmd:      keycard.NewCommandInit(data),
+		PossibleErrs: map[int]string{},
+	}
+
 }

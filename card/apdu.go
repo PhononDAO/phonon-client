@@ -319,7 +319,9 @@ func NewCommandTransactionAck(data []byte) *Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED: "Pin Not Validated",
+			SW_WRONG_DATA:               "Wrong data supplied"},
 	}
 }
 
@@ -405,29 +407,38 @@ var phononAID = []byte{0xA0, 0x00, 0x00, 0x08, 0x20, 0x00, 0x03, 0x01}
 func NewCommandSelectPhononApplet() *Command {
 	return &Command{
 		ApduCmd:      globalplatform.NewCommandSelect(phononAID),
+		// no errors known
 		PossibleErrs: map[int]string{},
 	}
 }
 
 func NewCommandPairStep1(salt []byte, pairingPubKey *ecdsa.PublicKey) *Command {
 	return &Command{
-		ApduCmd:      gridplus.NewAPDUPairStep1(salt, pairingPubKey),
-		PossibleErrs: map[int]string{},
+		ApduCmd: gridplus.NewAPDUPairStep1(salt, pairingPubKey),
+		PossibleErrs: map[int]string{
+			SW_WRONG_DATA:                     "Data incorrect size",
+			SW_SECURE_MESSAGING_NOT_SUPPORTED: "No certificate loaded",
+			SW_SECURITY_STATUS_NOT_SATISFIED:  "Unable to compute ECDH secrets",
+		},
 	}
 
 }
 
 func NewCommandPairStep2(cryptogram [32]byte) *Command {
 	return &Command{
-		ApduCmd:      gridplus.NewAPDUPairStep2(cryptogram[0:]),
-		PossibleErrs: map[int]string{},
+		ApduCmd: gridplus.NewAPDUPairStep2(cryptogram[0:]),
+		PossibleErrs: map[int]string{
+			SW_WRONG_DATA:                    "Wrong secret length",
+			SW_SECURITY_STATUS_NOT_SATISFIED: "Client cryptogram differs from expected",
+		},
 	}
 
 }
 
 func NewCommandUnpair(index uint8) *Command {
 	return &Command{
-		ApduCmd:      keycard.NewCommandUnpair(index),
+		ApduCmd: keycard.NewCommandUnpair(index),
+		// No errors known
 		PossibleErrs: map[int]string{},
 	}
 
@@ -459,6 +470,7 @@ func NewCommandMutualAuthenticate(data []byte) *Command {
 func NewCommandInit(data []byte) *Command {
 	return &Command{
 		ApduCmd:      keycard.NewCommandInit(data),
+		// No errors known
 		PossibleErrs: map[int]string{},
 	}
 

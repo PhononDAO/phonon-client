@@ -47,7 +47,6 @@ func ConnectWithContext(ctx *scard.Context, index int)(*PhononCommandSet, error)
 		return cs, err
 	}
 	return nil, ErrReaderNotFound
-	
 }
 
 func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {

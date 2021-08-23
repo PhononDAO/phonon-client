@@ -31,6 +31,8 @@ const (
 	InsCardPair         = 0x51
 	InsCardPair2        = 0x52
 	InsFinalizeCardPair = 0x53
+	InsGenerateInvoice  = 0x54
+	InsReceiveInvoice   = 0x55
 	InsLoadCert         = 0x15
 
 	// tags
@@ -67,6 +69,7 @@ const (
 	TagAesIV           = 0x92
 	TagECDSASig        = 0x93
 	TagPairingIndex    = 0x94
+	TagAESKey          = 0x95
 
 	//ISO7816 Standard Responses
 	SW_APPLET_SELECT_FAILED           = 0x6999
@@ -406,7 +409,7 @@ var phononAID = []byte{0xA0, 0x00, 0x00, 0x08, 0x20, 0x00, 0x03, 0x01}
 
 func NewCommandSelectPhononApplet() *Command {
 	return &Command{
-		ApduCmd:      globalplatform.NewCommandSelect(phononAID),
+		ApduCmd: globalplatform.NewCommandSelect(phononAID),
 		// no errors known
 		PossibleErrs: map[int]string{},
 	}
@@ -469,9 +472,37 @@ func NewCommandMutualAuthenticate(data []byte) *Command {
 
 func NewCommandInit(data []byte) *Command {
 	return &Command{
-		ApduCmd:      keycard.NewCommandInit(data),
+		ApduCmd: keycard.NewCommandInit(data),
 		// No errors known
 		PossibleErrs: map[int]string{},
 	}
 
+}
+
+func NewCommandGenerateInvoice() *Command {
+	return &Command{
+		ApduCmd: apdu.NewCommand(
+			globalplatform.ClaGp,
+			InsGenerateInvoice,
+			0x00,
+			0x00,
+			nil,
+		),
+		//TODO: Errors
+		PossibleErrs: map[int]string{},
+	}
+}
+
+func NewCommandReceiveInvoice() *Command {
+	return &Command{
+		ApduCmd: apdu.NewCommand(
+			globalplatform.ClaGp,
+			InsReceiveInvoice,
+			0x00,
+			0x00,
+			nil,
+		),
+		//TODO: Errors
+		PossibleErrs: map[int]string{},
+	}
 }

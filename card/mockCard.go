@@ -31,6 +31,8 @@ type MockCard struct {
 	IdentityPubKey *ecdsa.PublicKey
 	IdentityCert   []byte
 	scPairData     SecureChannelPairingDetails
+	invoices        map[string][]byte
+	outgoingInvoice Invoice
 }
 
 type MockPhonon struct {
@@ -43,6 +45,11 @@ type SecureChannelPairingDetails struct {
 	cardToCardSalt     []byte
 	counterpartyPubKey *ecdsa.PublicKey
 	cryptogram         []byte
+}
+
+type Invoice struct {
+	ID  string //32 length
+	Key []byte //32 length
 }
 
 func NewMockCard() (*MockCard, error) {
@@ -436,4 +443,54 @@ func (c *MockCard) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, er
 	c.deletedPhonons = append(c.deletedPhonons, index)
 	c.Phonons[index].deleted = true
 	return c.Phonons[index].PrivateKey, nil
+}
+
+func (c *MockCard) GenerateInvoice() (invoiceData []byte, err error) {
+	invoiceID := string(util.RandomKey(32))
+	invoiceKey := util.RandomKey(32)
+
+	c.invoices[invoiceID] = invoiceKey
+
+	keyTLV, err := NewTLV(TagAESKey, invoiceKey)
+	if err != nil {
+		return nil, err
+	}
+	idTLV, err := NewTLV(TagAesIV, []byte(invoiceID))
+	if err != nil {
+		return nil, err
+	}
+	data := append(keyTLV.Encode(), idTLV.Encode()...)
+
+	encData, err := c.sc.Encrypt(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return encData, nil
+}
+
+func (c *MockCard) ReceiveInvoice(invoiceData []byte) (err error) {
+	data, err := c.sc.Decrypt(invoiceData)
+	if err != nil {
+		return err
+	}
+	collection, err := ParseTLVPacket(data)
+	if err != nil {
+		return err
+	}
+	invoiceKey, err := collection.FindTag(TagAESKey)
+	if err != nil {
+		return err
+	}
+	invoiceID, err := collection.FindTag(TagAesIV)
+	if err != nil {
+		return err
+	}
+	//One invoice active at a time
+	c.outgoingInvoice = Invoice{
+		ID:  string(invoiceID),
+		Key: invoiceKey,
+	}
+
+	return nil
 }

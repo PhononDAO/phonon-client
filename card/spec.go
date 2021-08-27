@@ -28,4 +28,6 @@ type PhononCard interface {
 	CardPair2(cardPairData []byte) (cardPair2Data []byte, err error)
 	FinalizeCardPair(cardPair2Data []byte) (err error)
 	InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) (err error)
+	GenerateInvoice() (invoiceData []byte, err error)
+	ReceiveInvoice(invoiceData []byte) (err error)
 }

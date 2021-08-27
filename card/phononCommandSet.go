@@ -771,6 +771,7 @@ func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte,
 	if err != nil {
 		return err
 	}
+
 	return nil
 
 }
@@ -786,4 +787,26 @@ func checkInstallCertError(status uint16) error {
 	default:
 		return errors.New("unknown error")
 	}
+}
+
+func (cs *PhononCommandSet) GenerateInvoice() (invoiceData []byte, err error) {
+	log.Debug("sending GENERATE_INVOICE command")
+	cmd := NewCommandGenerateInvoice()
+	res, err := cs.sc.Send(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Data, nil
+}
+
+func (cs *PhononCommandSet) ReceiveInvoice(invoiceData []byte) (err error) {
+	log.Debug("sending RECEIVE_INVOICE command")
+	cmd := NewCommandReceiveInvoice()
+	_, err = cs.sc.Send(cmd)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

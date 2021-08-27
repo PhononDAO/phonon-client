@@ -768,8 +768,11 @@ func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte,
 		return err
 	}
 	err = checkInstallCertError(resp.Sw)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 
 }
 

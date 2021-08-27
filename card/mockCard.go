@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"errors"
+	"fmt"
 	"unicode"
 
 	"github.com/GridPlus/keycard-go/crypto"
@@ -18,14 +19,24 @@ import (
 )
 
 type MockCard struct {
-	Phonons        []model.Phonon
+	Phonons []MockPhonon
+
+	// This is a slice of indeces of deleted phonons. This is to match the insert logic of the card implementation
+	deletedPhonons []int
 	pin            string
 	pinVerified    bool
 	sc             SecureChannel
+	receiveList    []*ecdsa.PublicKey
 	identityKey    *ecdsa.PrivateKey
 	IdentityPubKey *ecdsa.PublicKey
 	IdentityCert   []byte
 	scPairData     SecureChannelPairingDetails
+}
+
+type MockPhonon struct {
+	model.Phonon
+	PrivateKey *ecdsa.PrivateKey
+	deleted    bool
 }
 
 type SecureChannelPairingDetails struct {
@@ -340,15 +351,40 @@ func (c *MockCard) Pair() error {
 }
 
 //Phonon Management Functions
-//TODO
+
 func (c *MockCard) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
-	//TODO
-	return 0, &ecdsa.PublicKey{}, nil
+	// initialize empty phonon
+	newp := MockPhonon{
+		deleted: false,
+	}
+	// generate key
+	private, err := ecdsa.GenerateKey(ethcrypto.S256(), rand.Reader)
+	if err != nil {
+		return 0, &ecdsa.PublicKey{}, err
+	}
+	newp.PubKey = &private.PublicKey
+	newp.PrivateKey = private
+	var index int16
+	//add it in the correct place
+	if len(c.deletedPhonons) > 0 {
+		index := c.deletedPhonons[len(c.deletedPhonons)-1]
+		c.Phonons[index] = newp
+		c.deletedPhonons = c.deletedPhonons[:len(c.deletedPhonons)-1]
+	} else {
+		c.Phonons = append(c.Phonons, newp)
+		index = int16(len(c.Phonons) - 1)
+	}
+
+	return uint16(index), newp.PubKey, nil
 }
 
-//TODO
 func (c *MockCard) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
-	//TODO
+	index := int(keyIndex)
+	if index > len(c.Phonons) || c.Phonons[index].deleted {
+		return fmt.Errorf("No phonon at index %d", index)
+	}
+	c.Phonons[index].CurrencyType = currencyType
+	c.Phonons[index].Value = value
 	return nil
 }
 
@@ -357,19 +393,26 @@ func (c *MockCard) OpenSecureChannel() error {
 	return nil
 }
 
-//TODO
 func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
-	//TODO
-	return nil, nil
+	var ret []model.Phonon
+	for _, phonon := range c.Phonons {
+		if phonon.CurrencyType == currencyType && phonon.Value > greaterThanValue && phonon.Value < lessThanValue {
+			ret = append(ret, phonon.Phonon)
+		}
+	}
+	return ret, nil
 }
 
 func (c *MockCard) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
-	//TODO
-	return &ecdsa.PublicKey{}, nil
+	index := int(keyIndex)
+	if index > len(c.Phonons) || c.Phonons[index].deleted {
+		return &ecdsa.PublicKey{}, fmt.Errorf("No phonon at index %d", index)
+	}
+	return c.Phonons[index].PubKey, nil
 }
 
 func (c *MockCard) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
-	//TODO
+	c.receiveList = phononPubKeys
 	return nil
 }
 
@@ -380,7 +423,7 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 
 //TODO
 func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
-	//not implemented
+
 	return nil
 }
 
@@ -388,7 +431,9 @@ func (c *MockCard) TransactionAck(keyIndices []uint16) error {
 	return nil
 }
 
-//TODO
 func (c *MockCard) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
-	return &ecdsa.PrivateKey{}, nil
+	index := int(keyIndex)
+	c.deletedPhonons = append(c.deletedPhonons, index)
+	c.Phonons[index].deleted = true
+	return c.Phonons[index].PrivateKey, nil
 }

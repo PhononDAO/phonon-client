@@ -79,7 +79,11 @@ func PairCardToCard() {
 		}
 	}
 	sender := card.NewSession(senderCard, true)
-
+	err = sender.VerifyPIN("111111")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	var receiverCard card.PhononCard
 	if useMockReceiver {
 		receiverCard, err = card.NewMockCard()
@@ -92,11 +96,17 @@ func PairCardToCard() {
 		receiverCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 	}
 
 	fmt.Println("opening receiver session")
 	receiverSession := card.NewSession(receiverCard, true)
+	err = receiverSession.VerifyPIN("111111")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	receiver := card.NewLocalCounterParty(receiverSession)
 

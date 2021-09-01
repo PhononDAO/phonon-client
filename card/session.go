@@ -68,6 +68,14 @@ func (s *Session) Init(pin string) error {
 	return nil
 }
 
+func (s *Session) VerifyPIN(pin string) error {
+	err := s.cs.VerifyPIN(pin)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 //TODO: Rewrite to decouple from card connection details
 // func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
 // 	if !s.active {

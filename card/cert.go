@@ -172,12 +172,10 @@ func ParseRawCardCertificate(cardCertificateRaw []byte) (cert CardCertificate, e
 		return CardCertificate{}, errors.New("certificate was incorrect length")
 	}
 
-	cardCertificate := CardCertificate{
-		PubKey: cardCertificateRaw[6+int(cert.Permissions.permLen) : 6+permsLen+pubKeyLen],
-		Sig:    cardCertificateRaw[6+permsLen+pubKeyLen : certLength],
-	}
+	cert.PubKey = cardCertificateRaw[6+int(cert.Permissions.permLen) : 6+permsLen+pubKeyLen]
+	cert.Sig = cardCertificateRaw[6+permsLen+pubKeyLen : certLength]
 
-	return cardCertificate, nil
+	return cert, nil
 }
 
 //Serialize the certificate data, permissions and pubkey into bytes

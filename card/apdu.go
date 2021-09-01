@@ -335,7 +335,7 @@ func NewCommandInitCardPairing() *Command {
 			InsInitCardPairing,
 			0x00,
 			0x00,
-			nil,
+			[]byte{0x00},
 		),
 		PossibleErrs: map[int]string{},
 	}
@@ -486,7 +486,7 @@ func NewCommandGenerateInvoice() *Command {
 			InsGenerateInvoice,
 			0x00,
 			0x00,
-			nil,
+			[]byte{0x00},
 		),
 		//TODO: Errors
 		PossibleErrs: map[int]string{},
@@ -500,7 +500,7 @@ func NewCommandReceiveInvoice() *Command {
 			InsReceiveInvoice,
 			0x00,
 			0x00,
-			nil,
+			[]byte{0x00},
 		),
 		//TODO: Errors
 		PossibleErrs: map[int]string{},

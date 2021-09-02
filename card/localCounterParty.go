@@ -5,29 +5,32 @@ import (
 )
 
 type localCounterParty struct {
-	s *Session
+	*Session
 }
 
 func NewLocalCounterParty(session *Session) *localCounterParty {
 	return &localCounterParty{
-		s: session,
+		session,
 	}
 }
 
 func (lcp *localCounterParty) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
-	return lcp.s.cs.CardPair(initPairingData)
+	return lcp.cs.CardPair(initPairingData)
 }
 
 func (lcp *localCounterParty) CardPair2(cardPairData []byte) (cardPairData2 []byte, err error) {
-	return lcp.s.cs.CardPair2(cardPairData)
+	return lcp.cs.CardPair2(cardPairData)
 }
 
 func (lcp *localCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
-	return lcp.s.cs.FinalizeCardPair(cardPair2Data)
+	return lcp.cs.FinalizeCardPair(cardPair2Data)
 }
 
-func (lcp *localCounterParty) SendPhonons(phononTransfer []byte) error {
-	//TODO implement
+func (lcp *localCounterParty) ReceivePhonons(phononTransfer []byte) error {
+	err := lcp.ReceivePhonons(phononTransfer)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -19,7 +19,7 @@ type PhononCard interface {
 	ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error)
 	GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error)
 	DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error)
-	SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets [][]byte, err error)
+	SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error)
 	ReceivePhonons(phononTransfer []byte) error
 	SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error
 	TransactionAck(keyIndices []uint16) error

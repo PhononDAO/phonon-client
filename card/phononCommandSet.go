@@ -87,7 +87,6 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, car
 		return nil, nil, false, err
 	}
 
-	//TODO: Use random version GenerateSecret in production
 	//Generate secure channel secrets using card's public key
 	secretsErr := cs.sc.GenerateSecret(cardPubKey)
 	if secretsErr != nil {
@@ -97,7 +96,7 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, car
 	log.Debugf("Pairing generated key: % X\n", cs.sc.RawPublicKey())
 	//return ErrCardUninitialized if ParseSelectResponse returns that error code
 	if err == ErrCardUninitialized {
-		return instanceUID, cardPubKey, false, nil
+		return instanceUID, cardPubKey, false, err
 	}
 	return instanceUID, cardPubKey, true, nil
 }
@@ -574,7 +573,7 @@ func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.Priva
 	return privKey, nil
 }
 
-func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets [][]byte, err error) {
+func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error) {
 	log.Debug("sending SEND_PHONONS command")
 	//Save this for extended requests
 	// tlvLength := 2
@@ -602,10 +601,10 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 		return nil, err
 	}
 
-	transferPhononPackets = append(transferPhononPackets, resp.Data)
+	transferPhononPackets = append(transferPhononPackets, resp.Data...)
 
 	//Recursively call the extended list and append the result packets to
-	var remainingPhononPackets [][]byte
+	var remainingPhononPackets []byte
 	if continues {
 		remainingPhononPackets, err = cs.SendPhonons(nil, true)
 		if err != nil {

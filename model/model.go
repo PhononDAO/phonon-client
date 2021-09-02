@@ -33,6 +33,6 @@ type CounterpartyPhononCard interface {
 	CardPair(initPairingData []byte) (cardPairData []byte, err error)
 	CardPair2(cardPairData []byte) (cardPairData2 []byte, err error)
 	FinalizeCardPair(cardPair2Data []byte) error
-	SendPhonons(phononTransfer []byte) error
+	ReceivePhonons(phononTransfer []byte) error
 	RequestPhonons(phonons []Phonon) (phononTransfer []byte, err error)
 }

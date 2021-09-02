@@ -71,6 +71,7 @@ func PairCardToCard() {
 			return
 		}
 		senderCard.InstallCertificate(card.SignWithDemoKey)
+		senderCard.Init("111111")
 	} else {
 		senderCard, _, err = card.OpenBestConnectionWithReaderIndex(senderReaderIndex)
 		if err != nil {
@@ -92,6 +93,7 @@ func PairCardToCard() {
 			return
 		}
 		receiverCard.InstallCertificate(card.SignWithDemoKey)
+		receiverCard.Init("111111")
 	} else {
 		receiverCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)
 		if err != nil {

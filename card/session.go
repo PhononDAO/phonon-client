@@ -21,6 +21,7 @@ func NewSession(storage PhononCard, initialized bool) *Session {
 		cs:          storage,
 		active:      true,
 		initialized: initialized,
+		cardPaired:  false,
 	}
 }
 
@@ -111,22 +112,18 @@ func (s *Session) VerifyPIN(pin string) error {
 func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) error {
 	initPairingData, err := s.cs.InitCardPairing()
 	if err != nil {
-		s.cardPaired = false
 		return err
 	}
 	cardPairData, err := remoteCard.CardPair(initPairingData)
 	if err != nil {
-		s.cardPaired = false
 		return err
 	}
 	cardPair2Data, err := s.cs.CardPair2(cardPairData)
 	if err != nil {
-		s.cardPaired = false
 		return err
 	}
 	err = remoteCard.FinalizeCardPair(cardPair2Data)
 	if err != nil {
-		s.cardPaired = false
 		return err
 	}
 	s.cardPaired = true

@@ -22,15 +22,15 @@ type MockCard struct {
 	Phonons []MockPhonon
 
 	// This is a slice of indeces of deleted phonons. This is to match the insert logic of the card implementation
-	deletedPhonons []int
-	pin            string
-	pinVerified    bool
-	sc             SecureChannel
-	receiveList    []*ecdsa.PublicKey
-	identityKey    *ecdsa.PrivateKey
-	IdentityPubKey *ecdsa.PublicKey
-	IdentityCert   []byte
-	scPairData     SecureChannelPairingDetails
+	deletedPhonons  []int
+	pin             string
+	pinVerified     bool
+	sc              SecureChannel
+	receiveList     []*ecdsa.PublicKey
+	identityKey     *ecdsa.PrivateKey
+	IdentityPubKey  *ecdsa.PublicKey
+	IdentityCert    []byte
+	scPairData      SecureChannelPairingDetails
 	invoices        map[string][]byte
 	outgoingInvoice Invoice
 }
@@ -403,7 +403,10 @@ func (c *MockCard) OpenSecureChannel() error {
 func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
 	var ret []model.Phonon
 	for _, phonon := range c.Phonons {
-		if phonon.CurrencyType == currencyType && phonon.Value > greaterThanValue && phonon.Value < lessThanValue {
+		if !phonon.deleted &&
+			(currencyType == 0x00 || phonon.CurrencyType == currencyType) &&
+			phonon.Value > greaterThanValue &&
+			(lessThanValue == 0 || phonon.Value < lessThanValue) {
 			ret = append(ret, phonon.Phonon)
 		}
 	}

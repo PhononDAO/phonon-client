@@ -381,7 +381,7 @@ func (c *MockCard) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 }
 
 //TODO
-func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets [][]byte, err error) {
+func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error) {
 	return nil, nil
 }
 

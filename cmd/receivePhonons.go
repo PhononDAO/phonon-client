@@ -61,12 +61,18 @@ func receivePhonons() {
 	} else {
 		fmt.Printf("received SEND_PHONONS transfer packet: % X\n", transferPackets)
 	}
-	for i, packet := range transferPackets {
-		err = cs.ReceivePhonons(packet)
-		if err != nil {
-			fmt.Println("error receiving phonons: ", err)
-		} else {
-			fmt.Printf("card received phonon packet number %v\n", i)
-		}
+	err = cs.ReceivePhonons(transferPackets)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
+	fmt.Println("received phonon packets")
+	// for i, packet := range transferPackets {
+	// 	err = cs.ReceivePhonons(transferPackets)
+	// 	if err != nil {
+	// 		fmt.Println("error receiving phonons: ", err)
+	// 	} else {
+	// 		fmt.Printf("card received phonon packet number %v\n", i)
+	// 	}
+	// }
 }

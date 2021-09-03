@@ -96,7 +96,7 @@ func setListAndReceive() {
 		return
 	}
 	//bad request
-	err = cs.ReceivePhonons(phononTransfer[0])
+	err = cs.ReceivePhonons(phononTransfer)
 	//good request
 	// err = cs.ReceivePhonons(transferPackets[0])
 	if err != nil {

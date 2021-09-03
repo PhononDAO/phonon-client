@@ -9,10 +9,12 @@ type Session struct {
 	cs          PhononCard
 	active      bool
 	initialized bool
+	cardPaired  bool
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
 var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
+var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 
 func NewSession(storage PhononCard, initialized bool) *Session {
 	return &Session{
@@ -109,28 +111,50 @@ func (s *Session) VerifyPIN(pin string) error {
 func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) error {
 	initPairingData, err := s.cs.InitCardPairing()
 	if err != nil {
+		s.cardPaired = false
 		return err
 	}
 	cardPairData, err := remoteCard.CardPair(initPairingData)
 	if err != nil {
+		s.cardPaired = false
 		return err
 	}
 	cardPair2Data, err := s.cs.CardPair2(cardPairData)
 	if err != nil {
+		s.cardPaired = false
 		return err
 	}
 	err = remoteCard.FinalizeCardPair(cardPair2Data)
+	if err != nil {
+		s.cardPaired = false
+		return err
+	}
+	s.cardPaired = true
+	return nil
+}
+
+func (s *Session) SendPhonons(remoteCard model.CounterpartyPhononCard, keyIndices []uint16) error {
+	if !s.cardPaired {
+		return ErrCardNotPairedToCard
+	}
+	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
+	if err != nil {
+		return err
+	}
+	err = remoteCard.ReceivePhonons(phononTransferPacket)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Session) SendPhonons(remoteCard model.CounterpartyPhononCard) {
-
-}
-
-func ReceivePhonons() {
-	//TODO implement
-	return
+func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
+	if !s.cardPaired {
+		return ErrCardNotPairedToCard
+	}
+	err := s.cs.ReceivePhonons(phononTransferPacket)
+	if err != nil {
+		return err
+	}
+	return nil
 }

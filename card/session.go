@@ -1,6 +1,7 @@
 package card
 
 import (
+	"crypto/ecdsa"
 	"errors"
 	"github.com/GridPlus/phonon-client/model"
 )
@@ -10,6 +11,7 @@ type Session struct {
 	active      bool
 	initialized bool
 	cardPaired  bool
+	remoteCard  model.CounterpartyPhononCard
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
@@ -79,6 +81,20 @@ func (s *Session) VerifyPIN(pin string) error {
 	return nil
 }
 
+//TODO: figure out if this is the right API for this
+func (s *Session) CreatePhonon() (keyIndex uint16, pubkey *ecdsa.PublicKey, err error) {
+	return s.cs.CreatePhonon()
+}
+
+//TODO: possibly pass through session to embedded commandSet
+func (s *Session) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
+	return s.cs.SetDescriptor(keyIndex, currencyType, value)
+}
+
+func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
+	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
+}
+
 //TODO: Rewrite to decouple from card connection details
 // func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
 // 	if !s.active {
@@ -127,10 +143,12 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 		return err
 	}
 	s.cardPaired = true
+	s.remoteCard = remoteCard
+
 	return nil
 }
 
-func (s *Session) SendPhonons(remoteCard model.CounterpartyPhononCard, keyIndices []uint16) error {
+func (s *Session) SendPhonons(keyIndices []uint16) error {
 	if !s.cardPaired {
 		return ErrCardNotPairedToCard
 	}
@@ -138,7 +156,7 @@ func (s *Session) SendPhonons(remoteCard model.CounterpartyPhononCard, keyIndice
 	if err != nil {
 		return err
 	}
-	err = remoteCard.ReceivePhonons(phononTransferPacket)
+	err = s.remoteCard.ReceivePhonons(phononTransferPacket)
 	if err != nil {
 		return err
 	}
@@ -150,6 +168,33 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 		return ErrCardNotPairedToCard
 	}
 	err := s.cs.ReceivePhonons(phononTransferPacket)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Session) ReceiveInvoice(invoiceData []byte) error {
+	if !s.cardPaired {
+		return ErrCardNotPairedToCard
+	}
+	err := s.cs.ReceiveInvoice(invoiceData)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//Retrieve invoice data from a remote paired card
+func (s *Session) RetrieveInvoice() error {
+	if !s.cardPaired {
+		return ErrCardNotPairedToCard
+	}
+	invoiceData, err := s.remoteCard.GenerateInvoice()
+	if err != nil {
+		return err
+	}
+	err = s.ReceiveInvoice(invoiceData)
 	if err != nil {
 		return err
 	}

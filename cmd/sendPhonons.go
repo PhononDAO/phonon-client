@@ -20,6 +20,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/terminal"
 	"github.com/spf13/cobra"
 )
 
@@ -129,8 +130,10 @@ func sendPhonons() {
 
 	receiver := card.NewLocalCounterParty(receiverSession)
 
+	p := terminal.NewPairing(sender)
+
 	fmt.Println("starting card to card pairing")
-	err = sender.PairWithRemoteCard(receiver)
+	err = p.PairWithRemoteCard(receiver)
 	if err != nil {
 		fmt.Println("error during pairing with counterparty")
 		fmt.Println(err)
@@ -138,14 +141,14 @@ func sendPhonons() {
 	}
 	fmt.Println("cards paired succesfully!")
 
-	err = sender.RetrieveInvoice()
+	err = p.RetrieveInvoice()
 	if err != nil {
 		fmt.Println("error during invoice retrieval")
 		fmt.Println(err)
 		return
 	}
 
-	err = sender.SendPhonons([]uint16{keyIndex})
+	err = p.SendPhonons([]uint16{keyIndex})
 	if err != nil {
 		fmt.Println("error sending phonons")
 		fmt.Println(err)

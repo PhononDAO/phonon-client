@@ -2,6 +2,7 @@ package card
 
 import (
 	"errors"
+
 	"github.com/GridPlus/phonon-client/model"
 )
 

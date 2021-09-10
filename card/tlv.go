@@ -42,7 +42,7 @@ func (tlv *TLV) Encode() []byte {
 
 /*Parses a TLV encoded response structure
 Returning a flattened map where the keys are tags
-and the value is a slice of raw bytes, one entry for each tag instance found
+and the value is a slice of raw bytes, one entry for each tag instance found.
 For any "constructedTags" passed, the parser will recurse into the value of that
 tag to find internal TLV's and append them to the collection as flattened entries */
 func ParseTLVPacket(data []byte, constructedTags ...byte) (TLVCollection, error) {

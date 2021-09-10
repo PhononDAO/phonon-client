@@ -40,6 +40,15 @@ func Float32ToBytes(f float32) ([]byte, error) {
 	return result.Bytes(), nil
 }
 
+func BytesToFloat32(b []byte) (float32, error) {
+	var value float32
+	err := binary.Read(bytes.NewReader(b), binary.BigEndian, &value)
+	if err != nil {
+		return 0, err
+	}
+	return value, nil
+}
+
 func Uint16ToBytes(i uint16) []byte {
 	bytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(bytes, i)

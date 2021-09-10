@@ -574,7 +574,6 @@ func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
 	//Parse all received phonons
 	var phonons []MockPhonon
 	for _, tlv := range phononTLVs {
-		//TODO decode phonon tlv
 		phonon, err := decodePhononTLV(tlv)
 		if err != nil {
 			return err

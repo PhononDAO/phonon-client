@@ -24,8 +24,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//TODO: Add args to specify indices as flag
-
 // sendPhononsCmd represents the sendPhonons command
 var sendPhononsCmd = &cobra.Command{
 	Use:   "sendPhonons",

@@ -15,7 +15,6 @@ type Session struct {
 	active      bool
 	initialized bool
 	cardPaired  bool
-	remoteCard  model.CounterpartyPhononCard
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
@@ -42,18 +41,6 @@ func NewSessionWithReaderIndex(index int) (*Session, error) {
 		initialized: initialized,
 	}, nil
 }
-
-//TODO: fix this paradigm
-// func (s *Session) checkActive() (*Session, error) {
-// 	if !s.active {
-// 		var err error
-// 		if s, err = NewSession(); err != nil {
-// 			return nil, err
-// 		}
-// 		return s, nil
-// 	}
-// 	return s, nil
-// }
 
 func (s *Session) Init(pin string) error {
 	if s.initialized {
@@ -89,71 +76,12 @@ func (s *Session) CreatePhonon() (keyIndex uint16, pubkey *ecdsa.PublicKey, err 
 	return s.cs.CreatePhonon()
 }
 
-//TODO: possibly pass through session to embedded commandSet
 func (s *Session) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
 	return s.cs.SetDescriptor(keyIndex, currencyType, value)
 }
 
 func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
 	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
-}
-
-//TODO: Rewrite to decouple from card connection details
-// func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
-// 	if !s.active {
-// 		var err error
-// 		if s, err = NewSession(); err != nil {
-// 			return nil, err
-// 		}
-// 	}
-// 	phonons, err := s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	//TODO: additional filtering options if necessary
-// 	for _, phonon := range phonons {
-// 		phonon.PubKey, err = s.cs.GetPhononPubKey(phonon.KeyIndex)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 	}
-// 	return phonons, nil
-// }
-
-//TODO: Genericize for generic KV Pairs
-// func (s *Session) DepositPhonon(currencyType model.CurrencyType, value float32) (phonon model.Phonon, err error) {
-// 	phonon.KeyIndex, phonon.PubKey, err = s.cs.CreatePhonon()
-// 	if err != nil {
-// 		return
-// 	}
-// }
-
-// func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) error {
-// 	initPairingData, err := s.cs.InitCardPairing()
-// 	if err != nil {
-// 		return err
-// 	}
-// 	cardPairData, err := remoteCard.CardPair(initPairingData)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	cardPair2Data, err := s.cs.CardPair2(cardPairData)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	err = remoteCard.FinalizeCardPair(cardPair2Data)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	s.cardPaired = true
-// 	s.remoteCard = remoteCard
-
-// 	return nil
-// }
-
-//IDK maybe?
-func (s *Session) SetPairing(paired bool) {
-	s.cardPaired = paired
 }
 
 func (s *Session) InitCardPairing() ([]byte, error) {
@@ -169,6 +97,7 @@ func (s *Session) CardPair2(cardPairData []byte) (cardPair2Data []byte, err erro
 	if err != nil {
 		return nil, err
 	}
+	s.cardPaired = true
 	return cardPair2Data, nil
 }
 
@@ -177,9 +106,10 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 	if err != nil {
 		return err
 	}
-	s.SetPairing(true)
+	s.cardPaired = true
 	return nil
 }
+
 func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
 	if !s.cardPaired {
 		return nil, ErrCardNotPairedToCard

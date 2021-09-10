@@ -35,7 +35,7 @@ var installCardCert = &cobra.Command{
 	Use:   "installCardCert",
 	Short: "This is to sign and install an identity certificate to the card",
 	Run: func(cmd *cobra.Command, args []string) {
-		InstallCardCert() //todo rename this
+		InstallCardCert()
 	},
 }
 

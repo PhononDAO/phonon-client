@@ -24,7 +24,6 @@ func (lcp *localCounterParty) CardPair2(cardPairData []byte) (cardPairData2 []by
 
 //TODO: figure out how this state should actually be tracked
 func (lcp *localCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
-	lcp.s.cardPaired = true
 	return lcp.s.cs.FinalizeCardPair(cardPair2Data)
 }
 

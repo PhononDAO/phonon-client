@@ -1,4 +1,4 @@
-package terminal
+package orchestrator
 
 import (
 	"github.com/GridPlus/phonon-client/card"

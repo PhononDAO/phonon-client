@@ -20,7 +20,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/terminal"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -126,9 +126,9 @@ func sendPhonons() {
 		return
 	}
 
-	receiver := card.NewLocalCounterParty(receiverSession)
+	receiver := orchestrator.NewLocalCounterParty(receiverSession)
 
-	p := terminal.NewPairing(sender)
+	p := orchestrator.NewPairing(sender)
 
 	fmt.Println("starting card to card pairing")
 	err = p.PairWithRemoteCard(receiver)

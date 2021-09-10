@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/GridPlus/phonon-client/model"
+	log "github.com/sirupsen/logrus"
 )
 
 /*The session struct handles a local connection with a card
@@ -98,6 +99,7 @@ func (s *Session) CardPair2(cardPairData []byte) (cardPair2Data []byte, err erro
 		return nil, err
 	}
 	s.cardPaired = true
+	log.Debug("set card session paired")
 	return cardPair2Data, nil
 }
 
@@ -107,6 +109,7 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 		return err
 	}
 	s.cardPaired = true
+	log.Debug("set card session paired")
 	return nil
 }
 
@@ -131,6 +134,13 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 		return err
 	}
 	return nil
+}
+
+func (s *Session) GenerateInvoice() ([]byte, error) {
+	if !s.cardPaired {
+		return nil, ErrCardNotPairedToCard
+	}
+	return s.cs.GenerateInvoice()
 }
 
 func (s *Session) ReceiveInvoice(invoiceData []byte) error {

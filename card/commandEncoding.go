@@ -174,12 +174,11 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 		if err != nil {
 			return phonons, err
 		}
-
-		var value float32
-		err = binary.Read(bytes.NewReader(valueBytes), binary.BigEndian, &value)
+		value, err := util.BytesToFloat32(valueBytes)
 		if err != nil {
 			return phonons, err
 		}
+
 		phonon := model.Phonon{
 			KeyIndex:     binary.BigEndian.Uint16(keyIndexBytes),
 			CurrencyType: model.CurrencyType(currencyType),

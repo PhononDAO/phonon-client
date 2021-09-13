@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -110,10 +111,13 @@ func PairCardToCard() {
 		return
 	}
 
-	receiver := card.NewLocalCounterParty(receiverSession)
+	receiver := orchestrator.NewLocalCounterParty(receiverSession)
+
+	p := orchestrator.NewPairing(sender)
 
 	fmt.Println("starting card to card pairing")
-	err = sender.PairWithRemoteCard(receiver)
+	err = p.PairWithRemoteCard(receiver)
+	// err = sender.PairWithRemoteCard(receiver)
 	if err != nil {
 		fmt.Println("error during pairing with counterparty")
 		fmt.Println(err)

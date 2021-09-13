@@ -55,7 +55,7 @@ const (
 	TagPhononCollection = 0x52
 	TagPhononDescriptor = 0x50
 	TagPhononValue      = 0x83
-	TagCurrencyType     = 0x81
+	TagCurrencyType     = 0x82
 
 	TagPhononKeyIndexList       = 0x42
 	TagTransferPhononPacket     = 0x43
@@ -70,6 +70,8 @@ const (
 	TagECDSASig        = 0x93
 	TagPairingIndex    = 0x94
 	TagAESKey          = 0x95
+
+	TagInvoiceID = 0x96
 
 	//ISO7816 Standard Responses
 	SW_APPLET_SELECT_FAILED           = 0x6999

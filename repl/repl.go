@@ -1,7 +1,6 @@
 package repl
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -42,29 +41,30 @@ func Start() {
 		Help:    "List available phonon cards for usage",
 	})
 	shell.AddCmd(&ishell.Cmd{
-		Name: "unlock",
-		Func: unlock,
-		Help: "Unlock card with pin",
+		Name:    "unlock",
+		Aliases: []string{},
+		Func:    unlock,
+		Help:    "Unlock card with pin entered in password prompt. Optional argument for card index",
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "listPhonons",
 		Func: listPhonons,
-		Help: "List phonons on card at index",
+		Help: "List phonons on card. Optional argument for card index",
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "create",
 		Func: createPhonon,
-		Help: "Create a phonon on card at index",
+		Help: "Create a phonon on selected phonon card. Optional argument for card index",
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "set",
 		Func: setDescriptor,
-		Help: "Set the type and value of phonon on card at index with value at index",
+		Help: "Set the type and value of phonon. If card is unselected, first argument is index of card containing the phonon. If card is selected, leave it out. Second argument is index of phonon to be descriptor set, third argument is the type of asset to be associated with the phonon, fourth argument is the value of the asset.",
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "balance",
 		Func: getBalance,
-		Help: "Retrieve the type and balance of a phonon on card at index with value at index",
+		Help: "Retrieve the type and balance of a phonon on card. First argument is index of the card containing the phonon, and not needed if a card is selected. Second argument is the index of the phonon you wish to see the balance of",
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "connect",
@@ -106,11 +106,13 @@ func listCards(c *ishell.Context) {
 func selectCard(c *ishell.Context) {
 	cardIndex, err := getSession(c, 0)
 	if err != nil {
-		c.Err(fmt.Errorf("no card selected for operation"))
+		c.Err(fmt.Errorf("no card selected for operation: %s", err.Error()))
+		return
 	}
 	cardShell(c, cardIndex)
 }
 
+// getSessionStateAware returns the session if there is a card selected, and otherwise determines the card in use by calling the getSession function
 func getSessionStateAware(c *ishell.Context, numArgsNoSession int) (int, error) {
 	if selectedCard != -1 {
 		return selectedCard, nil
@@ -124,7 +126,7 @@ func getSession(c *ishell.Context, numArgsNoSession int) (int, error) {
 	// error declared here because I don't want to double declare cardIndex in the else clause
 	var err error
 	if len(listedSessions) == 0 {
-		c.Err(errors.New("No cards detected"))
+		return -1, fmt.Errorf("No cards detected on machine. Possibly try refreshing your session")
 	} else if len(listedSessions) == 1 {
 		cardIndex = 0
 	} else if len(c.Args) == numArgsNoSession {
@@ -135,11 +137,14 @@ func getSession(c *ishell.Context, numArgsNoSession int) (int, error) {
 		}
 		cardIndex = c.MultiChoice(availableCards, "Please select card from list")
 
-	} else {
+	} else if len(c.Args) == numArgsNoSession+1 {
 		cardIndex, err = strconv.Atoi(c.Args[0])
 		if err != nil {
 			return -1, err
 		}
+
+	} else {
+		return -1, fmt.Errorf("Wrong number of arguments in command line expression")
 	}
 	return cardIndex, nil
 }
@@ -150,7 +155,7 @@ func unselectCard(c *ishell.Context) {
 }
 
 func cardShell(c *ishell.Context, index int) {
-	if len(listedSessions) < index {
+	if len(listedSessions) < index || index == 0 {
 		c.Err(fmt.Errorf("No card found at index %d", index))
 		return
 	}

@@ -1,15 +1,15 @@
 package repl
 
 import (
-	"github.com/GridPlus/phonon-client/terminal"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	ishell "github.com/abiosoft/ishell/v2"
 )
 
-var t terminal.PhononTerminal
+var t orchestrator.PhononTerminal
 
 func Start() {
 	shell := ishell.New()
-	t = terminal.PhononTerminal{}
+	t = orchestrator.PhononTerminal{}
 
 	shell.Println("Welcome to the phonon command interface")
 

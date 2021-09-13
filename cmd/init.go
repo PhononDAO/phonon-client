@@ -55,6 +55,7 @@ func init() {
 
 //TODO: reimplement with new Session
 func initializeCard(pin string) {
+	fmt.Println("running initializeCard!!!")
 	// cs, err := card.Connect()
 	// if err != nil {
 	// 	return
@@ -75,18 +76,19 @@ func initializeCard(pin string) {
 	// 	fmt.Println("unable to initialize card:", err)
 	// 	return
 	// }
-	cs, err := card.Connect()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	cs, _ := card.Connect()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	fmt.Println("cmdline is going to select")
 	// s := card.NewSession(cs, false)
-	_, _, _, err = cs.Select()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	err = cs.Init(pin)
+	_, _, _, _ = cs.Select()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	err := cs.Init(pin)
 	if err != nil {
 		fmt.Println(err)
 		return

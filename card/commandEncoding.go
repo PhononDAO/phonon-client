@@ -249,9 +249,9 @@ func parseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKey *ecdsa.Publ
 	return keyIndex, pubKey, nil
 }
 
-func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, err error) {
+func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, cardInitialized bool, err error) {
 	if len(resp) == 0 {
-		return nil, nil, errors.New("received nil response")
+		return nil, nil, false, errors.New("received nil response")
 	}
 	log.Debug("length of select response data: ", len(resp))
 	switch resp[0] {
@@ -261,10 +261,11 @@ func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, er
 		//If length of length is set this is a long format TLV response
 		if len(resp) < 88 {
 			log.Error("response should have been at least length 86 bytes, was length: ", len(resp))
-			return nil, nil, errors.New("invalid response length")
+			return nil, nil, false, errors.New("invalid response length")
 		}
 		instanceUID = resp[4:20]
 		cardPubKey = resp[22:87]
+		cardInitialized = true
 		//Think this response pattern only existed when a safecard wallet was initialized
 		// if resp[3] == 0x81 {
 		// 	instanceUID = resp[6:22]
@@ -275,10 +276,11 @@ func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey []byte, er
 		log.Debug("pin uninitialized")
 		length := int(resp[1])
 		cardPubKey = resp[2 : 2+length]
-		return nil, cardPubKey, ErrCardUninitialized
+		cardInitialized = false
+		return nil, cardPubKey, false, nil
 	}
 
-	return instanceUID, cardPubKey, nil
+	return instanceUID, cardPubKey, cardInitialized, nil
 }
 
 func parseIdentifyCardResponse(resp []byte) (cardPubKey *ecdsa.PublicKey, sig *util.ECDSASignature, err error) {

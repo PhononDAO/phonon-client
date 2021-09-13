@@ -81,8 +81,8 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, car
 	if err != nil {
 		return nil, nil, false, err
 	}
-	instanceUID, cardPubKey, err = parseSelectResponse(resp.Data)
-	if err != nil && err != ErrCardUninitialized {
+	instanceUID, cardPubKey, cardInitialized, err = parseSelectResponse(resp.Data)
+	if err != nil {
 		log.Error("error parsing select response. err: ", err)
 		return nil, nil, false, err
 	}
@@ -94,11 +94,8 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, car
 		return nil, nil, true, secretsErr
 	}
 	log.Debugf("Pairing generated key: % X\n", cs.sc.RawPublicKey())
-	//return ErrCardUninitialized if ParseSelectResponse returns that error code
-	if err == ErrCardUninitialized {
-		return instanceUID, cardPubKey, false, err
-	}
-	return instanceUID, cardPubKey, true, nil
+
+	return instanceUID, cardPubKey, cardInitialized, nil
 }
 
 func (cs *PhononCommandSet) Pair() error {

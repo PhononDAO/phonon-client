@@ -235,7 +235,7 @@ func getBalance(c *ishell.Context) {
 		c.Err(fmt.Errorf("Unable to parse phonon index %s", err.Error()))
 		return
 	}
-	c.Printf("balance of card %d is %v", sessionIndex, t.GetBalance(sessionIndex, phononIndex))
+	c.Printf("Balance of card %d is %v", sessionIndex, t.GetBalance(sessionIndex, phononIndex))
 }
 
 // todo: this

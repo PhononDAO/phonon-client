@@ -1,18 +1,40 @@
 package repl
 
 import (
+	"errors"
+	"fmt"
+	"strconv"
+
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	ishell "github.com/abiosoft/ishell/v2"
 )
 
+// variables global to package. possibly to be moved to a struct, but not truly necessary as this package is mostly self contained and un-exported.
 var t orchestrator.PhononTerminal
+
+// -1 indicates no card selected. otherwise, selected card is card at the index of selectedCard
+var (
+	selectedCard int = -1
+	// listedSessions holds the sessions from the last time the sessions were listed. this is not automatically updated if a card is plugged in in case the new card is given an index between two existing cards. this assumes each session will keep track of which card it is attached to using a unique identifier for the card.
+	listedSessions []*card.Session
+)
+
+const standardPrompt string = "Phonon Cmd>"
 
 func Start() {
 	shell := ishell.New()
 	t = orchestrator.PhononTerminal{}
-
+	// get initial state of orchestrator
+	t.RefreshSessions()
 	shell.Println("Welcome to the phonon command interface")
+	shell.SetPrompt(standardPrompt)
 
+	shell.AddCmd(&ishell.Cmd{
+		Name: "refresh",
+		Func: refresh,
+		Help: "refresh the current state of attached cards",
+	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:    "list",
 		Aliases: []string{},
@@ -59,51 +81,181 @@ func Start() {
 		Func: redeemPhonon,
 		Help: "Destroy the phonon at index on card at index and retrieve the priate key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
 	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "card",
+		Func: selectCard,
+		Help: "Select a card and enter the prompt for the specific card",
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "unselect",
+		Func: unselectCard,
+		Help: "Deselect a card if one is selected",
+	})
 	shell.Run()
 }
 
+func refresh(c *ishell.Context) {
+	t.RefreshSessions()
+	c.Printf("Sessions Refreshed")
+}
+
 func listCards(c *ishell.Context) {
-	t.ListSessions()
+	c.Printf("Sessions: %%v", t.ListSessions())
+}
+
+func selectCard(c *ishell.Context) {
+	cardIndex, err := getSession(c, 0)
+	if err != nil {
+		c.Err(fmt.Errorf("no card selected for operation"))
+	}
+	cardShell(c, cardIndex)
+}
+
+func getSessionStateAware(c *ishell.Context, numArgsNoSession int) (int, error) {
+	if selectedCard != -1 {
+		return selectedCard, nil
+	} else {
+		return (getSession(c, numArgsNoSession))
+	}
+}
+
+func getSession(c *ishell.Context, numArgsNoSession int) (int, error) {
+	var cardIndex int
+	// error declared here because I don't want to double declare cardIndex in the else clause
+	var err error
+	if len(listedSessions) == 0 {
+		c.Err(errors.New("No cards detected"))
+	} else if len(listedSessions) == 1 {
+		cardIndex = 0
+	} else if len(c.Args) == numArgsNoSession {
+		var availableCards []string
+		for i := range listedSessions {
+			// todo: add some sort of naming for cards to tell the difference between them
+			availableCards = append(availableCards, strconv.Itoa(i))
+		}
+		cardIndex = c.MultiChoice(availableCards, "Please select card from list")
+
+	} else {
+		cardIndex, err = strconv.Atoi(c.Args[0])
+		if err != nil {
+			return -1, err
+		}
+	}
+	return cardIndex, nil
+}
+
+func unselectCard(c *ishell.Context) {
+	c.SetPrompt(standardPrompt)
+	selectedCard = -1
+}
+
+func cardShell(c *ishell.Context, index int) {
+	if len(listedSessions) < index {
+		c.Err(fmt.Errorf("No card found at index %d", index))
+		return
+	}
+	selectedCard = index
+	c.SetPrompt(fmt.Sprintf("Card %d >", index))
 }
 
 func unlock(c *ishell.Context) {
-	var sessionIndex int
 	var pin string
-	t.UnlockCard(sessionIndex, pin)
+	// err declared to avoid double declaration of session index in if block
+	var err error
+	sessionIndex, err := getSessionStateAware(c, 0)
+	if err != nil {
+		c.Err(err)
+		return
+	}
+	c.Printf("Please enter pin for card: %d", sessionIndex)
+	pin = c.ReadPassword()
+	err = t.UnlockCard(sessionIndex, pin)
+	if err != nil {
+		c.Err(fmt.Errorf("Unable to unlock card %d: %s", sessionIndex, err.Error()))
+		return
+	}
 }
 
 func listPhonons(c *ishell.Context) {
-	var sessionIndex int
-	t.ListPhonons(sessionIndex)
+	sessionIndex, err := getSession(c, 0)
+	if err != nil {
+		c.Err(err)
+	}
+	phonons, err := t.ListPhonons(sessionIndex)
+	if err != nil {
+		c.Err(fmt.Errorf("Unable to list phonons on card %d: %s", sessionIndex, err.Error()))
+		return
+	}
+	c.Printf("Phonons on card %d: %+v", phonons)
 }
 
 func createPhonon(c *ishell.Context) {
-	var sessionIndex int
-	t.CreatePhonon(sessionIndex)
+	sessionIndex, err := getSession(c, 0)
+	if err != nil {
+		c.Err(err)
+		return
+	}
+	phononIndex, err := t.CreatePhonon(sessionIndex)
+	if err != nil {
+		c.Err(fmt.Errorf("Unable to create phonon on card %d: %s", sessionIndex, err.Error()))
+		return
+	}
+	c.Printf("Phonon created on card %d at index %d", sessionIndex, phononIndex)
 }
 
 func setDescriptor(c *ishell.Context) {
-	var sessionIndex int
-	var phononIndex int
+	sessionIndex, err := getSession(c, 1)
+	if err != nil {
+		c.Err(err)
+		return
+	}
+	// last argument is index of phonon to use
+	phononIndex, err := strconv.Atoi(c.Args[len(c.Args)-1])
+	if err != nil {
+		c.Err(fmt.Errorf("Unable to parse phonon index %s", err.Error()))
+		return
+	}
 	t.SetDescriptor(sessionIndex, phononIndex, struct{}{})
 }
 
 func getBalance(c *ishell.Context) {
-	var cardIndex, phononIndex int
-	t.GetBalance(cardIndex, phononIndex)
+	sessionIndex, err := getSession(c, 1)
+	if err != nil {
+		c.Err(err)
+		return
+	}
+	// last argument is index of phonon to use
+	phononIndex, err := strconv.Atoi(c.Args[len(c.Args)-1])
+	if err != nil {
+		c.Err(fmt.Errorf("Unable to parse phonon index %s", err.Error()))
+		return
+	}
+	c.Printf("balance of card %d is %v", sessionIndex, t.GetBalance(sessionIndex, phononIndex))
 }
 
+// todo: this
 func connectRemoteSession(c *ishell.Context) {
 	var sessionIndex int
 	t.ConnectRemoteSession(sessionIndex, struct{}{})
 }
 
+// todo: this
 func setReceiveMode(c *ishell.Context) {
 	var sessionIndex int
 	t.SetReceiveMode(sessionIndex)
 }
 
 func redeemPhonon(c *ishell.Context) {
-	var sessionIndex, phononIndex int
-	t.RedeemPhonon(sessionIndex, phononIndex)
+	sessionIndex, err := getSession(c, 1)
+	if err != nil {
+		c.Err(err)
+		return
+	}
+	// last argument is index of phonon to use
+	phononIndex, err := strconv.Atoi(c.Args[len(c.Args)-1])
+	if err != nil {
+		c.Err(fmt.Errorf("Unable to parse phonon index %s", err.Error()))
+		return
+	}
+	c.Printf("Phonon %d on card %d deleted. PublicKey: %v", phononIndex, sessionIndex, t.RedeemPhonon(sessionIndex, phononIndex))
 }

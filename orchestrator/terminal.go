@@ -53,16 +53,19 @@ func (t *PhononTerminal) ListSessions() []*card.Session {
 	return sessionList
 }
 
-func (t *PhononTerminal) UnlockCard(sessionIndex int, pin string) {
+func (t *PhononTerminal) UnlockCard(sessionIndex int, pin string) error {
 	// send the pin to the backing card. ezpz
+	return nil
 }
 
-func (t *PhononTerminal) ListPhonons(cardIndex int) {
+func (t *PhononTerminal) ListPhonons(cardIndex int) (interface{}, error) {
 	// t.pairings[cardIndex].s.ListPhonons()
+	return struct{}{}, nil
 }
 
-func (t *PhononTerminal) CreatePhonon(cardIndex int) {
+func (t *PhononTerminal) CreatePhonon(cardIndex int) (int, error) {
 	// t.pairings[cardIndex].s.cs.CreatePhonon()
+	return 0, nil
 }
 
 func (t *PhononTerminal) SetDescriptor(cardIndex int, phononIndex int, descriptor interface{}) {
@@ -70,9 +73,9 @@ func (t *PhononTerminal) SetDescriptor(cardIndex int, phononIndex int, descripto
 	// t.pairings[cardIndex].s.cs.SetDescriptor(phononIndex
 }
 
-func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) {
+func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} {
 	// It's called GetBalance, but really, it's more of a get filtered phonons from card
-
+	return struct{}{}
 }
 
 func (t *PhononTerminal) ConnectRemoteSession(sessionIndex int, someRemoteInterface interface{}) {
@@ -97,6 +100,7 @@ func (t *termianl) ApproveInvoice() {
 	//todo
 }*/
 
-func (t *PhononTerminal) RedeemPhonon(cardIndex int, phononIndex int) {
-	// t.pairings[i].s.cs.DestroyPhonon()
+func (t *PhononTerminal) RedeemPhonon(cardIndex int, phononIndex int) interface{} {
+	// t.pairings[cardIndex].s.cs.DestroyPhonon()
+	return struct{}{}
 }

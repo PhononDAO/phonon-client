@@ -96,7 +96,7 @@ func (t *PhononTerminal) GenerateMock() error {
 	return nil
 }
 
-func (t *PhononTerminal) RefreshSessions(){
+func (t *PhononTerminal) RefreshSessions() {
 	// list all cards
 	// start a session for each one of them
 }
@@ -107,10 +107,10 @@ func (t *PhononTerminal) InitializePin(sessionIndex int, pin string) error {
 
 }
 
-func (t *PhononTerminal) ListSessions()[]*card.Session {
+func (t *PhononTerminal) ListSessions() []*card.Session {
 	var sessionList []*card.Session
-	for _, pairings := range(t.pairings){
-		sessionList = append(sessionList,pairings.s)
+	for _, pairings := range t.pairings {
+		sessionList = append(sessionList, pairings.s)
 	}
 	return sessionList
 }
@@ -127,19 +127,19 @@ func (t *PhononTerminal) CreatePhonon(cardIndex int) {
 	// t.pairings[cardIndex].s.cs.CreatePhonon()
 }
 
-func (t *PhononTerminal) Setdescriptor(cardIndex int, phononIndex int, descriptor interface{}) {
+func (t *PhononTerminal) SetDescriptor(cardIndex int, phononIndex int, descriptor interface{}) {
 	// todo: replace descriptor with the actual type used for descriptor
 	// t.pairings[cardIndex].s.cs.SetDescriptor(phononIndex
 }
 
-func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex  int) {
+func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) {
 	// It's called GetBalance, but really, it's more of a get filtered phonons from card
 
 }
 
 func (t *PhononTerminal) ConnectRemoteSession(sessionIndex int, someRemoteInterface interface{}) {
 	// todo: this whole thing
-		t.pairings[sessionIndex].remote = &remoteSession{}
+	t.pairings[sessionIndex].remote = &remoteSession{}
 }
 
 func (t *PhononTerminal) ProposeTransaction() {
@@ -150,9 +150,10 @@ func (t *PhononTerminal) ListReceivedProposedTransactions() {
 	// implementation details to be determined at a later date
 }
 
-func (t *PhononTerminal) SetReceivemode(sessionIndex int) {
+func (t *PhononTerminal) SetReceiveMode(sessionIndex int) {
 	// set this session to accept incoming secureConnections
 }
+
 /* not sure how we should handle invoice requests
 func (t *termianl) ApproveInvoice() {
 	//todo
@@ -161,5 +162,3 @@ func (t *termianl) ApproveInvoice() {
 func (t *PhononTerminal) RedeemPhonon(cardIndex int, phononIndex int) {
 	// t.pairings[i].s.cs.DestroyPhonon()
 }
-
-

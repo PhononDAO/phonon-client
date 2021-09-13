@@ -20,11 +20,9 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/terminal"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
-
-//TODO: Add args to specify indices as flag
 
 // sendPhononsCmd represents the sendPhonons command
 var sendPhononsCmd = &cobra.Command{
@@ -128,9 +126,9 @@ func sendPhonons() {
 		return
 	}
 
-	receiver := card.NewLocalCounterParty(receiverSession)
+	receiver := orchestrator.NewLocalCounterParty(receiverSession)
 
-	p := terminal.NewPairing(sender)
+	p := orchestrator.NewPairing(sender)
 
 	fmt.Println("starting card to card pairing")
 	err = p.PairWithRemoteCard(receiver)

@@ -121,10 +121,7 @@ func getSessionStateAware(c *ishell.Context, numArgsNoSession int) (int, error) 
 	}
 }
 
-func getSession(c *ishell.Context, numArgsNoSession int) (int, error) {
-	var cardIndex int
-	// error declared here because I don't want to double declare cardIndex in the else clause
-	var err error
+func getSession(c *ishell.Context, numArgsNoSession int) (cardIndex int, err error) {
 	if len(listedSessions) == 0 {
 		return -1, fmt.Errorf("No cards detected on machine. Possibly try refreshing your session")
 	} else if len(listedSessions) == 1 {

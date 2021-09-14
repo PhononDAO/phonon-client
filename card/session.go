@@ -12,36 +12,66 @@ import (
 Keeps a client side cache of the card state to make interaction
 with the card through this API more convenient*/
 type Session struct {
-	cs          PhononCard
-	active      bool
-	initialized bool
-	cardPaired  bool
+	cs             PhononCard
+	pubKey         *ecdsa.PublicKey
+	active         bool
+	initialized    bool
+	terminalPaired bool
+	cardPaired     bool
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
 var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
 var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 
-func NewSession(storage PhononCard, initialized bool) *Session {
-	return &Session{
-		cs:          storage,
-		active:      true,
-		initialized: initialized,
-		cardPaired:  false,
+func NewSession(storage PhononCard) (s *Session, err error) {
+	s = &Session{
+		cs:             storage,
+		active:         true,
+		terminalPaired: false,
+		cardPaired:     false,
 	}
-}
-
-func NewSessionWithReaderIndex(index int) (*Session, error) {
-	cs, initialized, err := OpenBestConnectionWithReaderIndex(index)
+	_, s.pubKey, s.initialized, err = s.cs.Select()
 	if err != nil {
 		return nil, err
 	}
-	return &Session{
-		cs:          cs,
-		active:      true,
-		initialized: initialized,
-	}, nil
+	if !s.initialized {
+		return s, nil
+	}
+	//If card is already initialized, go ahead and open terminal to card secure channel
+	err = s.Connect()
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
+
+func (s *Session) Connect() error {
+	err := s.cs.Pair()
+	if err != nil {
+		return err
+	}
+	err = s.cs.OpenSecureChannel()
+	if err != nil {
+		return err
+	}
+	s.terminalPaired = true
+	return nil
+}
+
+//TODO: probably remove in favor of construction with PhononCard class
+// func NewSessionWithReaderIndex(index int) (*Session, error) {
+// 	cs, initialized, err := OpenBestConnectionWithReaderIndex(index)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &Session{
+// 		cs:          cs,
+// 		active:      true,
+// 		initialized: initialized,
+// 	}, nil
+// }
 
 func (s *Session) Init(pin string) error {
 	if s.initialized {

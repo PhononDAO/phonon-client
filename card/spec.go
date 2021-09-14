@@ -7,7 +7,7 @@ import (
 )
 
 type PhononCard interface {
-	Select() (instanceUID []byte, cardPubKey []byte, cardInitialized bool, err error)
+	Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error)
 	Pair() error
 	OpenSecureChannel() error
 	Init(pin string) error

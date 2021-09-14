@@ -15,8 +15,9 @@ type Session struct {
 	cs             PhononCard
 	pubKey         *ecdsa.PublicKey
 	active         bool
-	initialized    bool
+	pinInitialized bool
 	terminalPaired bool
+	pinVerified    bool
 	cardPaired     bool
 }
 
@@ -24,18 +25,21 @@ var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
 var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
 var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 
+//Creates a new card session, automatically connecting if the card is already initialized with a PIN
+//The next step is to run VerifyPIN to gain access to the secure commands on the card
 func NewSession(storage PhononCard) (s *Session, err error) {
 	s = &Session{
 		cs:             storage,
 		active:         true,
 		terminalPaired: false,
 		cardPaired:     false,
+		pinVerified:    false,
 	}
-	_, s.pubKey, s.initialized, err = s.cs.Select()
+	_, s.pubKey, s.pinInitialized, err = s.cs.Select()
 	if err != nil {
 		return nil, err
 	}
-	if !s.initialized {
+	if !s.pinInitialized {
 		return s, nil
 	}
 	//If card is already initialized, go ahead and open terminal to card secure channel
@@ -47,6 +51,7 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
+//Connect opens a secure channel with a card.
 func (s *Session) Connect() error {
 	err := s.cs.Pair()
 	if err != nil {
@@ -60,38 +65,27 @@ func (s *Session) Connect() error {
 	return nil
 }
 
-//TODO: probably remove in favor of construction with PhononCard class
-// func NewSessionWithReaderIndex(index int) (*Session, error) {
-// 	cs, initialized, err := OpenBestConnectionWithReaderIndex(index)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &Session{
-// 		cs:          cs,
-// 		active:      true,
-// 		initialized: initialized,
-// 	}, nil
-// }
-
+//Initializes the card with a PIN
+//Also creates a secure channel and verifies the PIN that was just set
 func (s *Session) Init(pin string) error {
-	if s.initialized {
+	if s.pinInitialized {
 		return ErrAlreadyInitialized
 	}
 	err := s.cs.Init(pin)
 	if err != nil {
 		return err
 	}
+	s.pinInitialized = true
 	//Open new secure connection now that card is initialized
-
-	err = s.cs.Pair()
-	if err != nil {
-		return err
-	}
-	err = s.cs.OpenSecureChannel()
+	err = s.Connect()
 	if err != nil {
 		return err
 	}
 
+	err = s.VerifyPIN(pin)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -100,30 +94,56 @@ func (s *Session) VerifyPIN(pin string) error {
 	if err != nil {
 		return err
 	}
+	s.pinVerified = true
 	return nil
 }
 
+func (s *Session) verified() bool {
+	if s.pinVerified && s.terminalPaired {
+		return true
+	}
+	return false
+}
+
 func (s *Session) CreatePhonon() (keyIndex uint16, pubkey *ecdsa.PublicKey, err error) {
+	if !s.verified() {
+		return 0, nil, ErrPINNotEntered
+	}
 	return s.cs.CreatePhonon()
 }
 
 func (s *Session) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
+	if !s.verified() {
+		return ErrPINNotEntered
+	}
 	return s.cs.SetDescriptor(keyIndex, currencyType, value)
 }
 
 func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
+	if !s.verified() {
+		return nil, ErrPINNotEntered
+	}
 	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
 }
 
 func (s *Session) InitCardPairing() ([]byte, error) {
+	if !s.verified() {
+		return nil, ErrPINNotEntered
+	}
 	return s.cs.InitCardPairing()
 }
 
 func (s *Session) CardPair(initPairingData []byte) ([]byte, error) {
+	if !s.verified() {
+		return nil, ErrPINNotEntered
+	}
 	return s.cs.CardPair(initPairingData)
 }
 
 func (s *Session) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
+	if !s.verified() {
+		return nil, ErrPINNotEntered
+	}
 	cardPair2Data, err = s.cs.CardPair2(cardPairData)
 	if err != nil {
 		return nil, err
@@ -134,6 +154,9 @@ func (s *Session) CardPair2(cardPairData []byte) (cardPair2Data []byte, err erro
 }
 
 func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
+	if !s.verified() {
+		return ErrPINNotEntered
+	}
 	err := s.cs.FinalizeCardPair(cardPair2Data)
 	if err != nil {
 		return err
@@ -144,7 +167,7 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 }
 
 func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
-	if !s.cardPaired {
+	if !s.verified() && !s.cardPaired {
 		return nil, ErrCardNotPairedToCard
 	}
 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
@@ -156,7 +179,7 @@ func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
 }
 
 func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
-	if !s.cardPaired {
+	if !s.verified() && !s.cardPaired {
 		return ErrCardNotPairedToCard
 	}
 	err := s.cs.ReceivePhonons(phononTransferPacket)
@@ -167,14 +190,14 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 }
 
 func (s *Session) GenerateInvoice() ([]byte, error) {
-	if !s.cardPaired {
+	if !s.verified() && !s.cardPaired {
 		return nil, ErrCardNotPairedToCard
 	}
 	return s.cs.GenerateInvoice()
 }
 
 func (s *Session) ReceiveInvoice(invoiceData []byte) error {
-	if !s.cardPaired {
+	if !s.verified() && !s.cardPaired {
 		return ErrCardNotPairedToCard
 	}
 	err := s.cs.ReceiveInvoice(invoiceData)

@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
 
@@ -288,6 +289,7 @@ func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey *ecdsa.Pub
 		return nil, cardPubKey, false, nil
 	}
 
+	log.Debugf("raw cardpubKey: % X, len: %v", resp[22:87], len(resp[22:87]))
 	return instanceUID, cardPubKey, cardInitialized, nil
 }
 
@@ -307,4 +309,38 @@ func parseIdentifyCardResponse(resp []byte) (cardPubKey *ecdsa.PublicKey, sig *u
 		return nil, nil, errors.New("could not parse card signature")
 	}
 	return cardPubKey, sig, nil
+}
+
+//Replacement for original parsing logic which did not retrieve full certificate
+func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertificate, pairingSig []byte, err error) {
+	if len(resp) < 34 {
+		return nil, cardCert, nil, errors.New("pairing response was invalid length")
+	}
+	salt = resp[0:32]
+	certLength := int(resp[33])
+
+	if len(resp) < 43+certLength {
+		return nil, cardCert, nil, errors.New("pairing response was invalid length")
+	}
+	cardCert, err = cert.ParseRawCardCertificate(resp[32 : 34+certLength])
+	if err != nil {
+		return nil, cardCert, nil, err
+	}
+	// //Parse with cert.go tools instead
+	// apduResp.SafecardCert = SafecardCert{
+	// 	Permissions: resp[34:38],                   //skip 2 byte TLV header, include 2 byte TLV field description
+	// 	PubKey:      resp[38 : 38+2+65],            //2 byte TLV, 65 byte pubkey
+	// 	Sig:         resp[38+65+2 : 34+certLength], //sig can be 72 to 74 bytes
+	// }
+
+	log.Debugf("end of resp len(%v): % X", len(resp[34+certLength:]), resp[34+certLength:])
+	pairingSig = resp[34+certLength:]
+
+	// log.Debugf("card salt length(%v):\n% X", len(apduResp.SafecardSalt), apduResp.SafecardSalt)
+	// log.Debugf("card cert permissions length(%v):\n% X", len(apduResp.SafecardCert.Permissions), apduResp.SafecardCert.Permissions)
+	// log.Debugf("card cert pubKey length(%v):\n% X", len(apduResp.SafecardCert.PubKey), apduResp.SafecardCert.PubKey)
+	// log.Debugf("card cert sig length(%v):\n% X", len(apduResp.SafecardCert.Sig), apduResp.SafecardCert.Sig)
+
+	// log.Debugf("card sig length(%v): % X", len(apduResp.SafecardSig), apduResp.SafecardSig)
+	return salt, cardCert, pairingSig, nil
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/GridPlus/keycard-go/crypto"
 	"github.com/GridPlus/keycard-go/gridplus"
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
 
@@ -30,7 +31,7 @@ type MockCard struct {
 	receiveList     []*ecdsa.PublicKey
 	identityKey     *ecdsa.PrivateKey
 	IdentityPubKey  *ecdsa.PublicKey
-	IdentityCert    []byte
+	IdentityCert    cert.CardCertificate
 	scPairData      SecureChannelPairingDetails
 	invoices        map[string][]byte
 	outgoingInvoice Invoice
@@ -116,6 +117,7 @@ type SecureChannelPairingDetails struct {
 	cardToCardSalt     []byte
 	counterpartyPubKey *ecdsa.PublicKey
 	cryptogram         []byte
+	counterPartyCert   cert.CardCertificate
 }
 
 type Invoice struct {
@@ -211,16 +213,20 @@ func (c *MockCard) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, card
 
 func (c *MockCard) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) error {
 	var err error
-	c.IdentityCert, err = createCardCertificate(c.IdentityPubKey, signKeyFunc)
+	rawCardCert, err := cert.CreateCardCertificate(c.IdentityPubKey, signKeyFunc)
+	c.IdentityCert, err = cert.ParseRawCardCertificate(rawCardCert)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *MockCard) InitCardPairing() (initPairingData []byte, err error) {
+func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairingData []byte, err error) {
 	log.Debug("sending mock INIT_CARD_PAIRING command")
-	cardCertTLV, err := NewTLV(TagCardCertificate, c.IdentityCert)
+	//Ingest coutnerparty cert and save it for use in CARD_PAIR_2
+	c.scPairData.counterPartyCert = receiverCert
+
+	cardCertTLV, err := NewTLV(TagCardCertificate, c.IdentityCert.Serialize())
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +260,7 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 		return nil, errors.New("could not find sender salt tlv tag")
 	}
 
-	senderCardCert, err := ParseRawCardCertificate(senderCardCertRaw)
+	senderCardCert, err := cert.ParseRawCardCertificate(senderCardCertRaw)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +280,7 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	log.Debugf("Sig: % X", senderCardCert.Sig)
 
 	//Validate counterparty certificate
-	valid := ValidateCardCertificate(senderCardCert, gridplus.SafecardDevCAPubKey)
+	valid := cert.ValidateCardCertificate(senderCardCert, gridplus.SafecardDevCAPubKey)
 	if !valid {
 		return nil, errors.New("counterparty certificate signature was invalid")
 	}
@@ -312,7 +318,7 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 		return nil, err
 	}
 
-	receiverCertTLV, _ := NewTLV(TagCardCertificate, c.IdentityCert)
+	receiverCertTLV, _ := NewTLV(TagCardCertificate, c.IdentityCert.Serialize())
 	receiverSaltTLV, _ := NewTLV(TagSalt, receiverSalt)
 	aesIVTLV, _ := NewTLV(TagAesIV, aesIV)
 	receiverSigTLV, _ := NewTLV(TagECDSASig, receiverSig)
@@ -330,10 +336,10 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	if err != nil {
 		return nil, err
 	}
-	receiverCardCertRaw, err := tlv.FindTag(TagCardCertificate)
-	if err != nil {
-		return nil, err
-	}
+	// receiverCardCertRaw, err := tlv.FindTag(Tagcert.CardCertificate)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	receiverSalt, err := tlv.FindTag(TagSalt)
 	if err != nil {
 		return nil, err
@@ -347,17 +353,18 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 		return nil, err
 	}
 
-	//Mirror of other side's CARD_PAIR
-	receiverCardCert, err := ParseRawCardCertificate(receiverCardCertRaw)
-	if err != nil {
-		return nil, err
-	}
-	receiverPubKey, err := util.ParseECDSAPubKey(receiverCardCert.PubKey)
+	// //Mirror of other side's CARD_PAIR
+	// receiverCardCert, err := ParseRawcert.CardCertificate(receiverCardCertRaw)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	receiverPubKey, err := util.ParseECDSAPubKey(c.scPairData.counterPartyCert.PubKey)
 	if err != nil {
 		return nil, err
 	}
 	//Validate counterparty certificate
-	valid := ValidateCardCertificate(receiverCardCert, gridplus.SafecardDevCAPubKey)
+	valid := cert.ValidateCardCertificate(c.scPairData.counterPartyCert, gridplus.SafecardDevCAPubKey)
 	if !valid {
 		return nil, errors.New("counterparty certificate signature was invalid")
 	}
@@ -424,9 +431,9 @@ func (c *MockCard) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	return nil
 }
 
-func (c *MockCard) Pair() error {
+func (c *MockCard) Pair() (cert.CardCertificate, error) {
 	//TODO
-	return nil
+	return c.IdentityCert, nil
 }
 
 //Phonon Management Functions

@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
@@ -71,7 +72,7 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
-		senderCard.InstallCertificate(card.SignWithDemoKey)
+		senderCard.InstallCertificate(cert.SignWithDemoKey)
 		senderCard.Init("111111")
 	} else {
 		senderCard, _, err = card.OpenBestConnectionWithReaderIndex(senderReaderIndex)
@@ -93,7 +94,7 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
-		receiverCard.InstallCertificate(card.SignWithDemoKey)
+		receiverCard.InstallCertificate(cert.SignWithDemoKey)
 		receiverCard.Init("111111")
 	} else {
 		receiverCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)

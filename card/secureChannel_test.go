@@ -1,6 +1,7 @@
 package card
 
 import (
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/util"
 	"testing"
 
@@ -98,15 +99,15 @@ func TestMockCardPairing(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	senderCard.InstallCertificate(SignWithDemoKey)
+	senderCard.InstallCertificate(cert.SignWithDemoKey)
 	receiverCard, err := NewMockCard()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	receiverCard.InstallCertificate(SignWithDemoKey)
+	receiverCard.InstallCertificate(cert.SignWithDemoKey)
 
-	initCardPairingData, err := senderCard.InitCardPairing()
+	initCardPairingData, err := senderCard.InitCardPairing(receiverCard.IdentityCert)
 	if err != nil {
 		t.Error("error in initCardPairing: ", err)
 		return

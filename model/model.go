@@ -2,7 +2,10 @@
 
 package model
 
-import "crypto/ecdsa"
+import (
+	"crypto/ecdsa"
+	"github.com/GridPlus/phonon-client/cert"
+)
 
 type Phonon struct {
 	KeyIndex     uint16
@@ -30,6 +33,7 @@ const (
 type CoinList map[int]int
 
 type CounterpartyPhononCard interface {
+	GetCertificate() (cert.CardCertificate, error)
 	CardPair(initPairingData []byte) (cardPairData []byte, err error)
 	CardPair2(cardPairData []byte) (cardPairData2 []byte, err error)
 	FinalizeCardPair(cardPair2Data []byte) error

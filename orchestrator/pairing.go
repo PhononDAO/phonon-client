@@ -44,7 +44,11 @@ func (p *Pairing) RetrieveInvoice() error {
 }
 
 func (p *Pairing) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) error {
-	initPairingData, err := p.s.InitCardPairing()
+	remoteCert, err := remoteCard.GetCertificate()
+	if err != nil {
+		return err
+	}
+	initPairingData, err := p.s.InitCardPairing(remoteCert)
 	if err != nil {
 		return err
 	}

@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/cert"
 
 	"github.com/ebfe/scard"
 	"github.com/spf13/cobra"
@@ -69,7 +70,7 @@ func InstallCardCert() {
 	// Determine Signing Key
 	if useDemoKey {
 		fmt.Println("Using Demo Key!")
-		signKeyFunc = card.SignWithDemoKey
+		signKeyFunc = cert.SignWithDemoKey
 	} else {
 		//gather information for ubikey signing
 		var yubikeySlotInt int
@@ -93,7 +94,7 @@ func InstallCardCert() {
 			yubikeyPass = string(passBytes)
 		}
 
-		signKeyFunc = card.SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
+		signKeyFunc = cert.SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
 	}
 
 	// Select Card if multiple. Otherwise go with first one or error out

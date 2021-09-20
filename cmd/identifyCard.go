@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/util"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -61,7 +61,7 @@ func identifyCard() {
 		fmt.Println("could not select applet during initialization:", err)
 		return
 	}
-	fmt.Println("received pubkey from select:\n", hex.Dump(util.SerializeECDSAPubKey(selectCardPubKey)))
+	fmt.Println("received pubkey from select:\n", hex.Dump(ethcrypto.FromECDSAPub(selectCardPubKey)))
 
 	nonce := make([]byte, 32)
 	rand.Read(nonce)

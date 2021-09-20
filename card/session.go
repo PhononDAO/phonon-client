@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,6 +20,7 @@ type Session struct {
 	terminalPaired bool
 	pinVerified    bool
 	cardPaired     bool
+	Cert           cert.CardCertificate
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
@@ -53,10 +55,11 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 
 //Connect opens a secure channel with a card.
 func (s *Session) Connect() error {
-	err := s.cs.Pair()
+	cert, err := s.cs.Pair()
 	if err != nil {
 		return err
 	}
+	s.Cert = cert
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
 		return err
@@ -126,11 +129,11 @@ func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue flo
 	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
 }
 
-func (s *Session) InitCardPairing() ([]byte, error) {
+func (s *Session) InitCardPairing(receiverCert cert.CardCertificate) ([]byte, error) {
 	if !s.verified() {
 		return nil, ErrPINNotEntered
 	}
-	return s.cs.InitCardPairing()
+	return s.cs.InitCardPairing(receiverCert)
 }
 
 func (s *Session) CardPair(initPairingData []byte) ([]byte, error) {

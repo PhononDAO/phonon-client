@@ -70,7 +70,7 @@ func OpenSecureConnection() (*PhononCommandSet, error) {
 		log.Error("could not select phonon applet: ", err)
 		return nil, err
 	}
-	err = cs.Pair()
+	_, err = cs.Pair()
 	if err != nil {
 		log.Error("could not pair: ", err)
 		return nil, err
@@ -103,7 +103,7 @@ func OpenBestConnectionWithReaderIndex(index int) (cs *PhononCommandSet, initali
 	if !initialized {
 		return cs, false, err
 	}
-	err = cs.Pair()
+	_, err = cs.Pair()
 	if err != nil {
 		return nil, false, err
 	}

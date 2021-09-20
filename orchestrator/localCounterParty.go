@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 )
 
@@ -11,8 +12,12 @@ type localCounterParty struct {
 
 func NewLocalCounterParty(session *card.Session) *localCounterParty {
 	return &localCounterParty{
-		session,
+		s: session,
 	}
+}
+
+func (lcp *localCounterParty) GetCertificate() (cert.CardCertificate, error) {
+	return lcp.s.Cert, nil
 }
 
 func (lcp *localCounterParty) CardPair(initPairingData []byte) (cardPairData []byte, err error) {

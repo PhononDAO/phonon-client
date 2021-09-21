@@ -66,7 +66,7 @@ func (cs PhononCommandSet) Send(cmd *Command) (*apdu.Response, error) {
 
 //TODO: determine if I should return these values or have the secure channel handle it internally
 //Selects the phonon applet for further usage
-func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, cardInitialized bool, err error) {
+func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error) {
 	cmd := NewCommandSelectPhononApplet()
 	cmd.ApduCmd.SetLe(0)
 
@@ -88,7 +88,7 @@ func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey []byte, car
 	}
 
 	//Generate secure channel secrets using card's public key
-	secretsErr := cs.sc.GenerateSecret(cardPubKey)
+	secretsErr := cs.sc.GenerateSecret(util.SerializeECDSAPubKey(cardPubKey))
 	if secretsErr != nil {
 		log.Error("could not generate secure channel secrets. err: ", secretsErr)
 		return nil, nil, true, secretsErr

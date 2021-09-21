@@ -28,7 +28,7 @@ func (t *PhononTerminal) GenerateMock() error {
 	if err != nil {
 		return err
 	}
-	sess := card.NewSession(c, true)
+	sess, _ := card.NewSession(c)
 	t.pairings = append(t.pairings, &Pairing{
 		s: sess,
 	})

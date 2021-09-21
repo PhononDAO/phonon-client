@@ -72,7 +72,7 @@ func sendPhonons() {
 			return
 		}
 	}
-	sender := card.NewSession(senderCard, true)
+	sender, _ := card.NewSession(senderCard)
 	err = sender.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)
@@ -119,7 +119,7 @@ func sendPhonons() {
 	}
 
 	fmt.Println("opening receiver session")
-	receiverSession := card.NewSession(receiverCard, true)
+	receiverSession, _ := card.NewSession(receiverCard)
 	err = receiverSession.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)

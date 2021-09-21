@@ -135,11 +135,11 @@ func NewMockCard() (*MockCard, error) {
 	}, nil
 }
 
-func (c *MockCard) Select() (instanceUID []byte, cardPubKey []byte, cardInitialized bool, err error) {
+func (c *MockCard) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error) {
 	instanceUID = util.RandomKey(16)
 
 	privKey, _ := ethcrypto.GenerateKey()
-	cardPubKey = ethcrypto.FromECDSAPub(&privKey.PublicKey)
+	cardPubKey = &privKey.PublicKey
 
 	if c.pin == "" {
 		cardInitialized = true

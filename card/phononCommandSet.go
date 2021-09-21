@@ -122,17 +122,19 @@ func (cs *PhononCommandSet) Pair() (cert.CardCertificate, error) {
 	if err != nil {
 		return cert.CardCertificate{}, err
 	}
+	//salt
 	salt, cardCert, signature, err := ParsePairStep1Response(resp.Data)
 	if err != nil {
 		log.Error("could not parse pair step 1 response. err: ", err)
 		return cert.CardCertificate{}, err
 	}
 
+	log.Debugf("cert in PAIR: % X", cardCert)
 	cardCertPubKey, err := util.ParseECDSAPubKey(cardCert.PubKey)
 	if err != nil {
 		return cert.CardCertificate{}, err
 	}
-
+	log.Debugf("after pubkey parsing: % X", cardCert)
 	//Validate card's certificate has valid GridPlus signature
 	certValid := cert.ValidateCardCertificate(cardCert, gridplus.SafecardDevCAPubKey)
 	log.Debug("certificate signature valid: ", certValid)
@@ -140,8 +142,8 @@ func (cs *PhononCommandSet) Pair() (cert.CardCertificate, error) {
 		log.Error("unable to verify card certificate.")
 		return cert.CardCertificate{}, err
 	}
-	log.Debug("pair step 2 safecard cert:\n", hex.Dump(cardCert.PubKey))
-
+	log.Debug("pair step 2 safecard cert pubkey:\n", hex.Dump(cardCert.PubKey))
+	log.Debugf("after cert validation: % X", cardCert)
 	// cardCertPubKey, err := gridplus.ParseCertPubkeyToECDSA(pairStep1Resp.SafecardCert.PubKey)
 	// if err != nil {
 	// 	log.Error("unable to parse certificate public key. err: ", err)
@@ -161,15 +163,6 @@ func (cs *PhononCommandSet) Pair() (cert.CardCertificate, error) {
 	secretHashArray := sha256.Sum256(append(clientSalt, ecdhSecret...))
 	secretHash := secretHashArray[0:]
 
-	// type ECDSASignature struct {
-	// 	R, S *big.Int
-	// }
-	// signature := &ECDSASignature{}
-	// _, err = asn1.Unmarshal(pairStep1Resp.SafecardSig, signature)
-	// if err != nil {
-	// 	log.Error("could not unmarshal certificate signature.", err)
-	// 	return cert.CardCertificate{}, err
-	// }
 	//validate that card created valid signature over same salted and hashed ecdh secret
 	valid := ecdsa.VerifyASN1(cardCertPubKey, secretHash, signature)
 	if !valid {
@@ -178,7 +171,13 @@ func (cs *PhononCommandSet) Pair() (cert.CardCertificate, error) {
 	}
 	log.Debug("card signature on challenge message valid: ", valid)
 
+	log.Debugf("before cryptogram: % X", cardCert)
+	// salt := util.RandomKey(32)
 	cryptogram := sha256.Sum256(append(salt, secretHash...))
+	// var cryptogram [32]byte
+	// cryptogram = [32]byte{0x00}
+
+	log.Debugf("after cryptogram: % X", cardCert)
 
 	log.Debug("sending pair step 2 cmd")
 	cmd = NewCommandPairStep2(cryptogram)
@@ -206,6 +205,7 @@ func (cs *PhononCommandSet) Pair() (cert.CardCertificate, error) {
 	cs.setPairingInfo(pairingKey[0:], pairStep2Resp.PairingIdx)
 
 	log.Debug("pairing succeeded")
+	log.Debugf("cardCert before PAIR returns it: % X", cardCert.Serialize())
 	return cardCert, nil
 }
 

@@ -53,6 +53,17 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
+func (s *Session) GetCertificate() (cert.CardCertificate, error) {
+	//If s.Cert is already populated, return it
+	if s.Cert.PubKey != nil {
+		log.Debugf("GetCertificate returning cert: % X", s.Cert)
+		return s.Cert, nil
+	}
+
+	//TODO, fetch this if it's not there yet
+	return cert.CardCertificate{}, errors.New("certificate not cached by session yet")
+}
+
 //Connect opens a secure channel with a card.
 func (s *Session) Connect() error {
 	cert, err := s.cs.Pair()

@@ -316,16 +316,22 @@ func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertifi
 	if len(resp) < 34 {
 		return nil, cardCert, nil, errors.New("pairing response was invalid length")
 	}
-	salt = resp[0:32]
+	salt = make([]byte, 32)
+	copy(salt, resp[0:32])
+
 	certLength := int(resp[33])
 
 	if len(resp) < 43+certLength {
 		return nil, cardCert, nil, errors.New("pairing response was invalid length")
 	}
-	cardCert, err = cert.ParseRawCardCertificate(resp[32 : 34+certLength])
+	rawCert := make([]byte, 34+certLength-32)
+	copy(rawCert, resp[32:34+certLength])
+	cardCert, err = cert.ParseRawCardCertificate(rawCert)
 	if err != nil {
 		return nil, cardCert, nil, err
 	}
+	log.Debugf("raw cert: % X, len: %v", resp[32:34+certLength], len(resp[32:34+certLength]))
+	log.Debugf("cert after parsing: % X", cardCert)
 	// //Parse with cert.go tools instead
 	// apduResp.SafecardCert = SafecardCert{
 	// 	Permissions: resp[34:38],                   //skip 2 byte TLV header, include 2 byte TLV field description
@@ -334,7 +340,8 @@ func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertifi
 	// }
 
 	log.Debugf("end of resp len(%v): % X", len(resp[34+certLength:]), resp[34+certLength:])
-	pairingSig = resp[34+certLength:]
+	pairingSig = make([]byte, len(resp[34+certLength:]))
+	copy(pairingSig, resp[34+certLength:])
 
 	// log.Debugf("card salt length(%v):\n% X", len(apduResp.SafecardSalt), apduResp.SafecardSalt)
 	// log.Debugf("card cert permissions length(%v):\n% X", len(apduResp.SafecardCert.Permissions), apduResp.SafecardCert.Permissions)
@@ -342,5 +349,6 @@ func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertifi
 	// log.Debugf("card cert sig length(%v):\n% X", len(apduResp.SafecardCert.Sig), apduResp.SafecardCert.Sig)
 
 	// log.Debugf("card sig length(%v): % X", len(apduResp.SafecardSig), apduResp.SafecardSig)
+	log.Debugf("salt: % X", salt)
 	return salt, cardCert, pairingSig, nil
 }

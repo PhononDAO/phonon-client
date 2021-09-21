@@ -89,7 +89,7 @@ func PairCardToCard() {
 			return
 		}
 	} else {
-		senderCard, _, err = card.OpenBestConnectionWithReaderIndex(senderReaderIndex)
+		senderCard, err = card.ConnectWithReaderIndex(senderReaderIndex)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -120,10 +120,19 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
-		receiverCard.InstallCertificate(cert.SignWithDemoKey)
-		receiverSession.Init("111111")
+		err = receiverCard.InstallCertificate(cert.SignWithDemoKey)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = receiverSession.Init("111111")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	} else {
-		receiverCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)
+		fmt.Println("opening physical connection with receiver card")
+		receiverCard, err = card.ConnectWithReaderIndex(receiverReaderIndex)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -135,6 +144,7 @@ func PairCardToCard() {
 		}
 	}
 
+	fmt.Println("verifying receiver PIN")
 	err = receiverSession.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)

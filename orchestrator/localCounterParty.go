@@ -17,7 +17,7 @@ func NewLocalCounterParty(session *card.Session) *localCounterParty {
 }
 
 func (lcp *localCounterParty) GetCertificate() (cert.CardCertificate, error) {
-	return lcp.s.Cert, nil
+	return lcp.s.GetCertificate()
 }
 
 func (lcp *localCounterParty) CardPair(initPairingData []byte) (cardPairData []byte, err error) {

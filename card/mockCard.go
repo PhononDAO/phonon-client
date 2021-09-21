@@ -217,6 +217,7 @@ func (c *MockCard) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) 
 	if err != nil {
 		return err
 	}
+	log.Debugf("installed cert: % X, len: %v", rawCardCert, len(rawCardCert))
 	c.IdentityCert, err = cert.ParseRawCardCertificate(rawCardCert)
 	if err != nil {
 		return err
@@ -227,7 +228,12 @@ func (c *MockCard) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) 
 func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairingData []byte, err error) {
 	log.Debug("sending mock INIT_CARD_PAIRING command")
 	//Ingest coutnerparty cert and save it for use in CARD_PAIR_2
+	log.Debugf("received receiverCert: % X, len: %v", receiverCert.Serialize(), len(receiverCert.Serialize()))
 	c.scPairData.counterPartyCert = receiverCert
+	_, err = util.ParseECDSAPubKey(receiverCert.PubKey)
+	if err != nil {
+		return nil, err
+	}
 
 	cardCertTLV, err := NewTLV(TagCardCertificate, c.IdentityCert.Serialize())
 	if err != nil {

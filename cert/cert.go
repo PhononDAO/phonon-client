@@ -202,5 +202,6 @@ func (cert CardCertificate) Serialize() []byte {
 		cert.Permissions.certLen,
 	}
 	bytes = append(bytes, cert.Digest()...)
+	bytes = append(bytes, cert.Sig...)
 	return bytes
 }

@@ -144,11 +144,11 @@ func (c *MockCard) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, ca
 	cardPubKey = &privKey.PublicKey
 
 	if c.pin == "" {
-		cardInitialized = true
-	} else {
 		cardInitialized = false
+	} else {
+		cardInitialized = true
 	}
-	return instanceUID, cardPubKey, true, nil
+	return instanceUID, cardPubKey, cardInitialized, nil
 }
 
 //PIN functions
@@ -214,6 +214,9 @@ func (c *MockCard) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, card
 func (c *MockCard) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) error {
 	var err error
 	rawCardCert, err := cert.CreateCardCertificate(c.IdentityPubKey, signKeyFunc)
+	if err != nil {
+		return err
+	}
 	c.IdentityCert, err = cert.ParseRawCardCertificate(rawCardCert)
 	if err != nil {
 		return err
@@ -238,6 +241,7 @@ func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairi
 	c.scPairData.cardToCardSalt = salt.value
 	initPairingData = EncodeTLVList(cardCertTLV, salt)
 
+	log.Debugf("returning initPairingData: % X", initPairingData)
 	return initPairingData, nil
 }
 
@@ -260,6 +264,8 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 		return nil, errors.New("could not find sender salt tlv tag")
 	}
 
+	log.Debugf("mock CARD_PAIR received raw cert: % X", senderCardCertRaw)
+	log.Debug("raw cert length: ", len(senderCardCertRaw))
 	senderCardCert, err := cert.ParseRawCardCertificate(senderCardCertRaw)
 	if err != nil {
 		return nil, err

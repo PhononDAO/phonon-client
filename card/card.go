@@ -10,6 +10,8 @@ import (
 
 var ErrReaderNotFound = errors.New("card reader not found")
 
+//TODO: Remove most of these functions
+
 //Connects to the first card reader listed by default
 func Connect() (*PhononCommandSet, error) {
 	return ConnectWithReaderIndex(0)

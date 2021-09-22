@@ -330,25 +330,10 @@ func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertifi
 	if err != nil {
 		return nil, cardCert, nil, err
 	}
-	log.Debugf("raw cert: % X, len: %v", resp[32:34+certLength], len(resp[32:34+certLength]))
-	log.Debugf("cert after parsing: % X", cardCert)
-	// //Parse with cert.go tools instead
-	// apduResp.SafecardCert = SafecardCert{
-	// 	Permissions: resp[34:38],                   //skip 2 byte TLV header, include 2 byte TLV field description
-	// 	PubKey:      resp[38 : 38+2+65],            //2 byte TLV, 65 byte pubkey
-	// 	Sig:         resp[38+65+2 : 34+certLength], //sig can be 72 to 74 bytes
-	// }
 
 	log.Debugf("end of resp len(%v): % X", len(resp[34+certLength:]), resp[34+certLength:])
 	pairingSig = make([]byte, len(resp[34+certLength:]))
 	copy(pairingSig, resp[34+certLength:])
 
-	// log.Debugf("card salt length(%v):\n% X", len(apduResp.SafecardSalt), apduResp.SafecardSalt)
-	// log.Debugf("card cert permissions length(%v):\n% X", len(apduResp.SafecardCert.Permissions), apduResp.SafecardCert.Permissions)
-	// log.Debugf("card cert pubKey length(%v):\n% X", len(apduResp.SafecardCert.PubKey), apduResp.SafecardCert.PubKey)
-	// log.Debugf("card cert sig length(%v):\n% X", len(apduResp.SafecardCert.Sig), apduResp.SafecardCert.Sig)
-
-	// log.Debugf("card sig length(%v): % X", len(apduResp.SafecardSig), apduResp.SafecardSig)
-	log.Debugf("salt: % X", salt)
 	return salt, cardCert, pairingSig, nil
 }

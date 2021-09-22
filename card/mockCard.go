@@ -270,8 +270,6 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 		return nil, errors.New("could not find sender salt tlv tag")
 	}
 
-	log.Debugf("mock CARD_PAIR received raw cert: % X", senderCardCertRaw)
-	log.Debug("raw cert length: ", len(senderCardCertRaw))
 	senderCardCert, err := cert.ParseRawCardCertificate(senderCardCertRaw)
 	if err != nil {
 		return nil, err
@@ -348,10 +346,6 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	if err != nil {
 		return nil, err
 	}
-	// receiverCardCertRaw, err := tlv.FindTag(Tagcert.CardCertificate)
-	// if err != nil {
-	// 	return nil, err
-	// }
 	receiverSalt, err := tlv.FindTag(TagSalt)
 	if err != nil {
 		return nil, err
@@ -364,12 +358,6 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	if err != nil {
 		return nil, err
 	}
-
-	// //Mirror of other side's CARD_PAIR
-	// receiverCardCert, err := ParseRawcert.CardCertificate(receiverCardCertRaw)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	receiverPubKey, err := util.ParseECDSAPubKey(c.scPairData.counterPartyCert.PubKey)
 	if err != nil {

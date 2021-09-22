@@ -289,7 +289,6 @@ func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey *ecdsa.Pub
 		return nil, cardPubKey, false, nil
 	}
 
-	log.Debugf("raw cardpubKey: % X, len: %v", resp[22:87], len(resp[22:87]))
 	return instanceUID, cardPubKey, cardInitialized, nil
 }
 
@@ -324,7 +323,7 @@ func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertifi
 	if len(resp) < 43+certLength {
 		return nil, cardCert, nil, errors.New("pairing response was invalid length")
 	}
-	rawCert := make([]byte, 34+certLength-32)
+	rawCert := make([]byte, len(resp[32:34+certLength]))
 	copy(rawCert, resp[32:34+certLength])
 	cardCert, err = cert.ParseRawCardCertificate(rawCert)
 	if err != nil {

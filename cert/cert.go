@@ -1,4 +1,4 @@
-package card
+package cert
 
 import (
 	"crypto/ecdsa"
@@ -12,6 +12,7 @@ import (
 	yubihsm "github.com/certusone/yubihsm-go"
 	"github.com/certusone/yubihsm-go/commands"
 	"github.com/certusone/yubihsm-go/connector"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	log "github.com/sirupsen/logrus"
 )
@@ -62,7 +63,7 @@ var SafecardProdCAPubKey = []byte{
 //Safecard CA's provided by SafecardProdCAPubKey or SafecardDevCAPubKey for the respective environments
 func ValidateCardCertificate(cert CardCertificate, CAPubKey []byte) bool {
 	//Hash of cert excepting signature, certType, and certLen
-	certBytes := cert.Serialize()
+	certBytes := cert.Digest()
 	certHash := sha256.Sum256(certBytes)
 
 	CApubKey, err := util.ParseECDSAPubKey(CAPubKey)
@@ -82,8 +83,8 @@ func ValidateCardCertificate(cert CardCertificate, CAPubKey []byte) bool {
 }
 
 //Create a card certificate, signing with the key supplied in the signKeyFunc
-func createCardCertificate(cardPubKey *ecdsa.PublicKey, signKeyFunc func([]byte) ([]byte, error)) ([]byte, error) {
-	cardPubKeyBytes := util.SerializeECDSAPubKey(cardPubKey)
+func CreateCardCertificate(cardPubKey *ecdsa.PublicKey, signKeyFunc func([]byte) ([]byte, error)) ([]byte, error) {
+	cardPubKeyBytes := ethcrypto.FromECDSAPub(cardPubKey)
 
 	// Create Card Certificate
 	perms := []byte{0x30, 0x00, 0x02, 0x02, 0x00, 0x00, 0x80, 0x41}
@@ -178,10 +179,10 @@ func ParseRawCardCertificate(cardCertificateRaw []byte) (cert CardCertificate, e
 	return cert, nil
 }
 
-//Serialize the certificate data, permissions and pubkey into bytes
+//Digest the certificate data, permissions and pubkey into bytes
 //This is the set of bytes used to sign and validate the certificate
 //(skips the first two bytes for cert type and length)
-func (cert CardCertificate) Serialize() []byte {
+func (cert CardCertificate) Digest() []byte {
 	bytes := []byte{
 		cert.Permissions.permType,
 		cert.Permissions.permLen,
@@ -190,5 +191,17 @@ func (cert CardCertificate) Serialize() []byte {
 	bytes = append(bytes, cert.Permissions.pubKeyType)
 	bytes = append(bytes, cert.Permissions.pubKeyLen)
 	bytes = append(bytes, cert.PubKey...)
+	return bytes
+}
+
+//Serialize the full certificate, including the cert type and length
+//which are unused in the certificate signature
+func (cert CardCertificate) Serialize() []byte {
+	bytes := []byte{
+		cert.Permissions.certType,
+		cert.Permissions.certLen,
+	}
+	bytes = append(bytes, cert.Digest()...)
+	bytes = append(bytes, cert.Sig...)
 	return bytes
 }

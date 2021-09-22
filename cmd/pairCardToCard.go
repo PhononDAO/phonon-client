@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
@@ -64,6 +65,7 @@ func init() {
 func PairCardToCard() {
 	fmt.Println("opening session with sender Card")
 	var senderCard card.PhononCard
+	var sender *card.Session
 	var err error
 	if useMockSender {
 		senderCard, err = card.NewMockCard()
@@ -71,40 +73,78 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
-		senderCard.InstallCertificate(card.SignWithDemoKey)
-		senderCard.Init("111111")
+		sender, err = card.NewSession(senderCard)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = senderCard.InstallCertificate(cert.SignWithDemoKey)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = sender.Init("111111")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	} else {
-		senderCard, _, err = card.OpenBestConnectionWithReaderIndex(senderReaderIndex)
+		senderCard, err = card.ConnectWithReaderIndex(senderReaderIndex)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		sender, err = card.NewSession(senderCard)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
-	sender, _ := card.NewSession(senderCard)
+	fmt.Println("sender verify PIN")
 	err = sender.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	var receiverCard card.PhononCard
+	var receiverSession *card.Session
 	if useMockReceiver {
 		receiverCard, err = card.NewMockCard()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		receiverCard.InstallCertificate(card.SignWithDemoKey)
-		receiverCard.Init("111111")
+		fmt.Println("opening receiver session")
+		receiverSession, err = card.NewSession(receiverCard)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = receiverCard.InstallCertificate(cert.SignWithDemoKey)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = receiverSession.Init("111111")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	} else {
-		receiverCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)
+		fmt.Println("opening physical connection with receiver card")
+		receiverCard, err = card.ConnectWithReaderIndex(receiverReaderIndex)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		receiverSession, err = card.NewSession(receiverCard)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
 
-	fmt.Println("opening receiver session")
-	receiverSession, _ := card.NewSession(receiverCard)
+	fmt.Println("verifying receiver PIN")
 	err = receiverSession.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)

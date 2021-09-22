@@ -330,14 +330,14 @@ func NewCommandTransactionAck(data []byte) *Command {
 	}
 }
 
-func NewCommandInitCardPairing() *Command {
+func NewCommandInitCardPairing(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaGp,
 			InsInitCardPairing,
 			0x00,
 			0x00,
-			[]byte{0x00},
+			data,
 		),
 		PossibleErrs: map[int]string{},
 	}

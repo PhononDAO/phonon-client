@@ -56,7 +56,7 @@ func openSecureChannel() {
 		fmt.Println("could not select phonon applet: ", err)
 		return
 	}
-	err = cs.Pair()
+	_, err = cs.Pair()
 	if err != nil {
 		fmt.Println("could not pair: ", err)
 		return

@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
 
@@ -307,4 +308,31 @@ func parseIdentifyCardResponse(resp []byte) (cardPubKey *ecdsa.PublicKey, sig *u
 		return nil, nil, errors.New("could not parse card signature")
 	}
 	return cardPubKey, sig, nil
+}
+
+//Replacement for original parsing logic which did not retrieve full certificate
+func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertificate, pairingSig []byte, err error) {
+	if len(resp) < 34 {
+		return nil, cardCert, nil, errors.New("pairing response was invalid length")
+	}
+	salt = make([]byte, 32)
+	copy(salt, resp[0:32])
+
+	certLength := int(resp[33])
+
+	if len(resp) < 43+certLength {
+		return nil, cardCert, nil, errors.New("pairing response was invalid length")
+	}
+	rawCert := make([]byte, len(resp[32:34+certLength]))
+	copy(rawCert, resp[32:34+certLength])
+	cardCert, err = cert.ParseRawCardCertificate(rawCert)
+	if err != nil {
+		return nil, cardCert, nil, err
+	}
+
+	log.Debugf("end of resp len(%v): % X", len(resp[34+certLength:]), resp[34+certLength:])
+	pairingSig = make([]byte, len(resp[34+certLength:]))
+	copy(pairingSig, resp[34+certLength:])
+
+	return salt, cardCert, pairingSig, nil
 }

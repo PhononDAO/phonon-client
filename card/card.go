@@ -10,6 +10,8 @@ import (
 
 var ErrReaderNotFound = errors.New("card reader not found")
 
+//TODO: Remove most of these functions
+
 //Connects to the first card reader listed by default
 func Connect() (*PhononCommandSet, error) {
 	return ConnectWithReaderIndex(0)
@@ -70,7 +72,7 @@ func OpenSecureConnection() (*PhononCommandSet, error) {
 		log.Error("could not select phonon applet: ", err)
 		return nil, err
 	}
-	err = cs.Pair()
+	_, err = cs.Pair()
 	if err != nil {
 		log.Error("could not pair: ", err)
 		return nil, err
@@ -103,7 +105,7 @@ func OpenBestConnectionWithReaderIndex(index int) (cs *PhononCommandSet, initali
 	if !initialized {
 		return cs, false, err
 	}
-	err = cs.Pair()
+	_, err = cs.Pair()
 	if err != nil {
 		return nil, false, err
 	}

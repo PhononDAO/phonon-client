@@ -20,7 +20,7 @@ type Session struct {
 	terminalPaired bool
 	pinVerified    bool
 	cardPaired     bool
-	Cert           cert.CardCertificate
+	cert           cert.CardCertificate
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
@@ -55,9 +55,9 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 
 func (s *Session) GetCertificate() (cert.CardCertificate, error) {
 	//If s.Cert is already populated, return it
-	if s.Cert.PubKey != nil {
-		log.Debugf("GetCertificate returning cert: % X", s.Cert)
-		return s.Cert, nil
+	if s.cert.PubKey != nil {
+		log.Debugf("GetCertificate returning cert: % X", s.cert)
+		return s.cert, nil
 	}
 
 	//TODO, fetch this if it's not there yet
@@ -70,7 +70,7 @@ func (s *Session) Connect() error {
 	if err != nil {
 		return err
 	}
-	s.Cert = cert
+	s.cert = cert
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
 		return err

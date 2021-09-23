@@ -382,6 +382,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	sessionKeyMaterial = append(sessionKeyMaterial, ecdhSecret...)
 
 	sessionKey := sha512.Sum512(sessionKeyMaterial)
+	log.Debugf("session key: % X", sessionKey)
 
 	//Derive secure channel info
 	encKey := sessionKey[:len(sessionKey)/2]
@@ -394,7 +395,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	//Combine shared derived session key with randomly generated aesIV and sign to prove possession of the
 	//private key corresponding to the public key which established this channel's foundational ECDH secret
 	cryptogram := sha256.Sum256(append(sessionKey[0:], aesIV...))
-	log.Debugf("CARD_PAIR_2 calculated cryptogram: % X", cryptogram)
+	log.Debugf("cryptogram: % X", cryptogram)
 
 	//Validate ReceiverSig
 	valid = ecdsa.VerifyASN1(receiverPubKey, cryptogram[0:], receiverSig)

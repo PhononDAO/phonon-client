@@ -130,7 +130,8 @@ func NewCommandIdentifyCard(nonce []byte) *Command {
 			nonce,
 		),
 		PossibleErrs: map[int]string{
-			SW_DATA_INVALID: "Invalid Data Received",
+			SW_DATA_INVALID:      "Invalid Data Received",
+			SW_INS_NOT_SUPPORTED: "Invalid INS",
 		},
 	}
 }

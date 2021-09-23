@@ -395,12 +395,9 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	c.sc = SecureChannel{}
 	c.sc.Init(aesIV, encKey, macKey)
 
-	log.Debugf("aesIV: % X", aesIV)
-	log.Debugf("sessionkey before cryptogram: % X", sessionKey)
 	//Combine shared derived session key with randomly generated aesIV and sign to prove possession of the
 	//private key corresponding to the public key which established this channel's foundational ECDH secret
 	cryptogram := sha256.Sum256(append(sessionKey[0:], aesIV...))
-	log.Debugf("cryptogram: % X", cryptogram)
 
 	//Validate ReceiverSig
 	valid = ecdsa.VerifyASN1(receiverPubKey, cryptogram[0:], receiverSig)
@@ -411,8 +408,6 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	if err != nil {
 		return nil, err
 	}
-
-	log.Debugf("receiverSig: % X", receiverSig)
 
 	senderSigTLV, err := NewTLV(TagECDSASig, senderSig)
 	if err != nil {

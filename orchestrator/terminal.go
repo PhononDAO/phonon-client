@@ -11,12 +11,6 @@ type PhononTerminal struct {
 	pairings []*Pairing
 }
 
-type Pairing struct {
-	s      *card.Session
-	remote *remoteSession
-	name   string
-}
-
 type remoteSession struct {
 	counterParty model.CounterpartyPhononCard
 }
@@ -35,9 +29,21 @@ func (t *PhononTerminal) GenerateMock() error {
 	return nil
 }
 
-func (t *PhononTerminal) RefreshSessions() {
-	// list all cards
-	// start a session for each one of them
+func (t *PhononTerminal) RefreshSessions() error {
+	sessions, err := card.ConnectAll()
+	if err != nil {
+		return err
+	}
+	if len(sessions) == 0 {
+		return errors.New("no cards detected")
+	}
+	//TODO: maybe handle if refresh is called in the middle of a terminal usage
+	//Or rename this function to something like InitSessions
+	for _, session := range sessions {
+		//TODO: Get friendly name here if possible
+		t.pairings = append(t.pairings, &Pairing{s: session})
+	}
+	return nil
 }
 
 func (t *PhononTerminal) InitializePin(sessionIndex int, pin string) error {

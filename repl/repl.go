@@ -10,20 +10,22 @@ import (
 )
 
 // variables global to package. possibly to be moved to a struct, but not truly necessary as this package is mostly self contained and un-exported.
-var t orchestrator.PhononTerminal
+var t *orchestrator.PhononTerminal
 
 // -1 indicates no card selected. otherwise, selected card is card at the index of selectedCard
 var (
 	selectedCard int = -1
-	// listedSessions holds the sessions from the last time the sessions were listed. this is not automatically updated if a card is plugged in in case the new card is given an index between two existing cards. this assumes each session will keep track of which card it is attached to using a unique identifier for the card.
+	//listedSessions holds the sessions from the last time the sessions were listed.
+	//this is not automatically updated if a card is plugged in in case the new card is given an index between two existing cards.
+	//this assumes each session will keep track of which card it is attached to using a unique identifier for the card.
 	listedSessions []*card.Session
 )
 
-const standardPrompt string = "Phonon Cmd>"
+const standardPrompt string = "Phonon>"
 
 func Start() {
 	shell := ishell.New()
-	t = orchestrator.PhononTerminal{}
+	t = &orchestrator.PhononTerminal{}
 	// get initial state of orchestrator
 	t.RefreshSessions()
 	shell.Println("Welcome to the phonon command interface")
@@ -82,7 +84,7 @@ func Start() {
 		Help: "Destroy the phonon at index on card at index and retrieve the priate key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
 	})
 	shell.AddCmd(&ishell.Cmd{
-		Name: "card",
+		Name: "select",
 		Func: selectCard,
 		Help: "Select a card and enter the prompt for the specific card",
 	})
@@ -104,12 +106,19 @@ func listCards(c *ishell.Context) {
 }
 
 func selectCard(c *ishell.Context) {
-	cardIndex, err := getSession(c, 0)
-	if err != nil {
-		c.Err(fmt.Errorf("no card selected for operation: %s", err.Error()))
-		return
+	sessions := t.ListSessions()
+	var sessionNames []string
+	for _, session := range sessions {
+		sessionNames = append(sessionNames, session.f)
 	}
-	cardShell(c, cardIndex)
+	sessionNames :=
+		c.MultiChoice()
+	// cardIndex, err := getSession(c, 0)
+	// if err != nil {
+	// 	c.Err(fmt.Errorf("no card selected for operation: %s", err.Error()))
+	// 	return
+	// }
+	// cardShell(c, cardIndex)
 }
 
 // getSessionStateAware returns the session if there is a card selected, and otherwise determines the card in use by calling the getSession function

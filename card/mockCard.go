@@ -328,13 +328,11 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 		return nil, err
 	}
 
-	receiverCertTLV, _ := NewTLV(TagCardCertificate, c.IdentityCert.Serialize())
 	receiverSaltTLV, _ := NewTLV(TagSalt, receiverSalt)
 	aesIVTLV, _ := NewTLV(TagAesIV, aesIV)
 	receiverSigTLV, _ := NewTLV(TagECDSASig, receiverSig)
 
-	cardPairingData = append(receiverCertTLV.Encode(), receiverSaltTLV.Encode()...)
-	cardPairingData = append(cardPairingData, aesIVTLV.Encode()...)
+	cardPairingData = append(receiverSaltTLV.Encode(), aesIVTLV.Encode()...)
 	cardPairingData = append(cardPairingData, receiverSigTLV.Encode()...)
 
 	return cardPairingData, nil
@@ -377,6 +375,9 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	//Compute shared secret
 	ecdhSecret := crypto.GenerateECDHSharedSecret(c.identityKey, receiverPubKey)
 
+	log.Debugf("ecdh secret: % X", ecdhSecret)
+	log.Debugf("sender/cardToCardSalt: % X", c.scPairData.cardToCardSalt)
+	log.Debugf("receiverSalt: % X", receiverSalt)
 	//Compute session key with salts from both parties and ECDH secret
 	sessionKeyMaterial := append(c.scPairData.cardToCardSalt, receiverSalt...)
 	sessionKeyMaterial = append(sessionKeyMaterial, ecdhSecret...)
@@ -385,13 +386,17 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	log.Debugf("session key: % X", sessionKey)
 
 	//Derive secure channel info
-	encKey := sessionKey[:len(sessionKey)/2]
-	macKey := sessionKey[len(sessionKey)/2:]
+	encKey := make([]byte, len(sessionKey)/2)
+	macKey := make([]byte, len(sessionKey)/2)
+	copy(encKey, sessionKey[:len(sessionKey)/2])
+	copy(macKey, sessionKey[len(sessionKey)/2:])
 
 	//Directly initialize instead of using NewSecureChannel() to create secure channel without card channel
 	c.sc = SecureChannel{}
 	c.sc.Init(aesIV, encKey, macKey)
 
+	log.Debugf("aesIV: % X", aesIV)
+	log.Debugf("sessionkey before cryptogram: % X", sessionKey)
 	//Combine shared derived session key with randomly generated aesIV and sign to prove possession of the
 	//private key corresponding to the public key which established this channel's foundational ECDH secret
 	cryptogram := sha256.Sum256(append(sessionKey[0:], aesIV...))

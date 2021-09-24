@@ -312,6 +312,7 @@ func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedRespo
 }
 
 func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error) {
+	log.Debug("sending IDENTIFY_CARD command")
 	cmd := NewCommandIdentifyCard(nonce)
 	resp, err := cs.Send(cmd)
 	if err != nil {
@@ -726,7 +727,6 @@ func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 }
 
 func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) (err error) {
-	log.Debug("sending INSTALL_CERTIFICATE command")
 	nonce := make([]byte, 32)
 	n, err := io.ReadFull(rand.Reader, nonce)
 	if err != nil {
@@ -737,9 +737,14 @@ func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte,
 	}
 
 	// Send Challenge to card
-	cardPubKey, _, err := cs.IdentifyCard(nonce)
+	cardPubKey, sig, err := cs.IdentifyCard(nonce)
 	if err != nil {
 		return fmt.Errorf("unable to identify card %s", err.Error())
+	}
+
+	sigValid := ecdsa.Verify(cardPubKey, nonce, sig.R, sig.S)
+	if !sigValid {
+		return errors.New("invalid signature over nonce")
 	}
 
 	signedCert, err := cert.CreateCardCertificate(cardPubKey, signKeyFunc)
@@ -747,6 +752,7 @@ func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte,
 		return err
 	}
 
+	log.Debug("sending INSTALL_CERTIFICATE command")
 	cmd := NewCommandInstallCert(signedCert)
 	resp, err := cs.Send(cmd)
 	if err != nil {

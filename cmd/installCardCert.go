@@ -97,12 +97,18 @@ func InstallCardCert() {
 		signKeyFunc = cert.SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
 	}
 
+	//TODO: Replace this connection method with a standardized NewSession initialization
 	// Select Card if multiple. Otherwise go with first one or error out
 	cs, err := scConnectInteractive()
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
 	}
 
+	_, _, _, err = cs.Select()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	err = cs.InstallCertificate(signKeyFunc)
 	if err != nil {
 		log.Fatalf("Unable to Install Certificate: %s", err.Error())

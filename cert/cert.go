@@ -77,8 +77,6 @@ func ValidateCardCertificate(cert CardCertificate, CAPubKey []byte) bool {
 		return false
 	}
 
-	log.Debugf("certHash: % X", certHash)
-
 	return ecdsa.Verify(CApubKey, certHash[0:], signature.R, signature.S)
 }
 

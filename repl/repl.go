@@ -98,7 +98,7 @@ func Start() {
 
 func refresh(c *ishell.Context) {
 	t.RefreshSessions()
-	c.Printf("Sessions Refreshed")
+	c.Println("Sessions Refreshed")
 }
 
 func listCards(c *ishell.Context) {
@@ -109,10 +109,10 @@ func selectCard(c *ishell.Context) {
 	sessions := t.ListSessions()
 	var sessionNames []string
 	for _, session := range sessions {
-		sessionNames = append(sessionNames, session.f)
+		sessionNames = append(sessionNames, session.GetName())
 	}
-	sessionNames :=
-		c.MultiChoice()
+
+	c.MultiChoice(sessionNames, "please select an available card")
 	// cardIndex, err := getSession(c, 0)
 	// if err != nil {
 	// 	c.Err(fmt.Errorf("no card selected for operation: %s", err.Error()))

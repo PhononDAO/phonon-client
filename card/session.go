@@ -6,6 +6,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,13 +15,14 @@ Keeps a client side cache of the card state to make interaction
 with the card through this API more convenient*/
 type Session struct {
 	cs             PhononCard
-	pubKey         *ecdsa.PublicKey
+	identityPubKey *ecdsa.PublicKey
 	active         bool
 	pinInitialized bool
 	terminalPaired bool
 	pinVerified    bool
 	cardPaired     bool
 	cert           cert.CardCertificate
+	name           string
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
@@ -37,7 +39,7 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 		cardPaired:     false,
 		pinVerified:    false,
 	}
-	_, s.pubKey, s.pinInitialized, err = s.cs.Select()
+	_, _, s.pinInitialized, err = s.cs.Select()
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +53,14 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	}
 
 	return s, nil
+}
+
+func (s *Session) GetName() string {
+	//TODO: Use future card GET_NAME
+	if s.cert.PubKey != nil {
+		return util.ECDSAPubKeyToHexString(s.identityPubKey)
+	}
+	return "unknown"
 }
 
 func (s *Session) GetCertificate() (cert.CardCertificate, error) {
@@ -71,6 +81,7 @@ func (s *Session) Connect() error {
 		return err
 	}
 	s.cert = cert
+	s.identityPubKey, _ = util.ParseECDSAPubKey(s.cert.PubKey)
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
 		return err

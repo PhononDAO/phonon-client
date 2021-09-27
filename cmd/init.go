@@ -44,7 +44,7 @@ var readerIndex int
 func init() {
 	rootCmd.AddCommand(initCmd)
 
-	pairCardToCardCmd.Flags().IntVarP(&readerIndex, "reader-index", "i", 0, "pass the reader index for the card")
+	initCmd.Flags().IntVarP(&readerIndex, "reader-index", "i", 0, "pass the reader index for the card")
 
 	// Here you will define your flags and configuration settings.
 
@@ -61,22 +61,41 @@ func init() {
 func initializeCard(pin string) {
 	fmt.Println("running initializeCard!!!")
 
-	cs, _ := card.ConnectWithReaderIndex(readerIndex)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-	fmt.Println("cmdline is going to select")
-	// s := card.NewSession(cs, false)
-	_, _, _, _ = cs.Select()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-	err := cs.Init(pin)
+	cs, err := card.ConnectWithReaderIndex(readerIndex)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	_, _, _, err = cs.Select()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = cs.Init(pin)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// session, err := card.NewSession(cs)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// err = session.Init(pin)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// _, _, _, _ = cs.Select()
+	// // if err != nil {
+	// // 	fmt.Println(err)
+	// // 	return
+	// // }
+	// err := cs.Init(pin)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
 	fmt.Println("successfully set PIN")
 }

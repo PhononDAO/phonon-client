@@ -81,6 +81,7 @@ func (s *Session) Connect() error {
 
 //Initializes the card with a PIN
 //Also creates a secure channel and verifies the PIN that was just set
+//TODO: Fix MUTUAL_AUTH Error returned when called this way
 func (s *Session) Init(pin string) error {
 	if s.pinInitialized {
 		return ErrAlreadyInitialized
@@ -96,10 +97,10 @@ func (s *Session) Init(pin string) error {
 		return err
 	}
 
-	err = s.VerifyPIN(pin)
-	if err != nil {
-		return err
-	}
+	// err = s.VerifyPIN(pin)
+	// if err != nil {
+	// 	return err
+	// }
 	return nil
 }
 

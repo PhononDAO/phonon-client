@@ -39,8 +39,12 @@ var initCmd = &cobra.Command{
 	Args: cobra.MaximumNArgs(1),
 }
 
+var readerIndex int
+
 func init() {
 	rootCmd.AddCommand(initCmd)
+
+	pairCardToCardCmd.Flags().IntVarP(&readerIndex, "reader-index", "i", 0, "pass the reader index for the card")
 
 	// Here you will define your flags and configuration settings.
 
@@ -56,27 +60,8 @@ func init() {
 //TODO: reimplement with new Session
 func initializeCard(pin string) {
 	fmt.Println("running initializeCard!!!")
-	// cs, err := card.Connect()
-	// if err != nil {
-	// 	return
-	// }
-	// _, _, initialized, err := cs.Select()
-	// if err != nil && err != card.ErrCardUninitialized {
-	// 	fmt.Println("could not select applet during initialization:", err)
-	// 	return
-	// }
-	// if initialized {
-	// 	fmt.Println("card pin has already been initialized")
-	// 	return
-	// }
-	// testPin := "111111"
 
-	// err = cs.Init(testPin)
-	// if err != nil {
-	// 	fmt.Println("unable to initialize card:", err)
-	// 	return
-	// }
-	cs, _ := card.Connect()
+	cs, _ := card.ConnectWithReaderIndex(readerIndex)
 	// if err != nil {
 	// 	fmt.Println(err)
 	// 	return

@@ -75,4 +75,10 @@ swap() //atomically swapping different asset types
 autopay() //regularly send a specified amount on an interval
 makeChange() //Send in two directions based on change calculation
 ```
-
+# Building
+## Requirements:
+- a go compiler
+- a c compiler for whatever architecture you are compiling for
+## Process
+Run make build
+note: for windows compilation from mac or linux, you will need to install mingw-64 from your favorite package manager 

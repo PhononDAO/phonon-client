@@ -102,7 +102,10 @@ func refresh(c *ishell.Context) {
 }
 
 func listCards(c *ishell.Context) {
-	c.Printf("Sessions: %%v", t.ListSessions())
+	sessions := t.ListSessions()
+	for _, s := range sessions {
+		c.Println(s.GetName())
+	}
 }
 
 func selectCard(c *ishell.Context) {

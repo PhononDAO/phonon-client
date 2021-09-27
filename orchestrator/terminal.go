@@ -30,6 +30,7 @@ func (t *PhononTerminal) GenerateMock() error {
 }
 
 func (t *PhononTerminal) RefreshSessions() error {
+	t.pairings = nil
 	sessions, err := card.ConnectAll()
 	if err != nil {
 		return err

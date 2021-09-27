@@ -58,7 +58,10 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 func (s *Session) GetName() string {
 	//TODO: Use future card GET_NAME
 	if s.cert.PubKey != nil {
-		return util.ECDSAPubKeyToHexString(s.identityPubKey)
+		hexString := util.ECDSAPubKeyToHexString(s.identityPubKey)
+		if len(hexString) >= 16 {
+			return hexString[:16]
+		}
 	}
 	return "unknown"
 }

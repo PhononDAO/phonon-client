@@ -15,6 +15,7 @@ Keeps a client side cache of the card state to make interaction
 with the card through this API more convenient*/
 type Session struct {
 	cs             PhononCard
+	remoteCard     model.CounterpartyPhononCard
 	identityPubKey *ecdsa.PublicKey
 	active         bool
 	pinInitialized bool
@@ -77,6 +78,14 @@ func (s *Session) GetCertificate() (cert.CardCertificate, error) {
 	return cert.CardCertificate{}, errors.New("certificate not cached by session yet")
 }
 
+func (s *Session) IsUnlocked() bool {
+	return s.pinVerified
+}
+
+func (s *Session) IsInitialized() bool {
+	return s.pinInitialized
+}
+
 //Connect opens a secure channel with a card.
 func (s *Session) Connect() error {
 	cert, err := s.cs.Pair()
@@ -106,10 +115,12 @@ func (s *Session) Init(pin string) error {
 	}
 	s.pinInitialized = true
 	//Open new secure connection now that card is initialized
+	//TODO: Find out why MUTUAL_AUTH fails immediately after initialization but works normally
 	err = s.Connect()
 	if err != nil {
 		return err
 	}
+	s.pinVerified = true
 
 	return nil
 }
@@ -121,6 +132,13 @@ func (s *Session) VerifyPIN(pin string) error {
 	}
 	s.pinVerified = true
 	return nil
+}
+
+func (s *Session) ChangePIN(pin string) error {
+	if !s.pinVerified {
+		return errors.New("card locked, cannot change pin")
+	}
+	return s.cs.ChangePIN(pin)
 }
 
 func (s *Session) verified() bool {
@@ -229,5 +247,31 @@ func (s *Session) ReceiveInvoice(invoiceData []byte) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) error {
+	remoteCert, err := remoteCard.GetCertificate()
+	if err != nil {
+		return err
+	}
+	initPairingData, err := s.InitCardPairing(remoteCert)
+	if err != nil {
+		return err
+	}
+	cardPairData, err := remoteCard.CardPair(initPairingData)
+	if err != nil {
+		return err
+	}
+	cardPair2Data, err := s.CardPair2(cardPairData)
+	if err != nil {
+		return err
+	}
+	err = remoteCard.FinalizeCardPair(cardPair2Data)
+	if err != nil {
+		return err
+	}
+	s.remoteCard = remoteCard
+	s.cardPaired = true
 	return nil
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type PhononTerminal struct {
-	pairings []*Pairing
+	sessions []*card.Session
 }
 
 type remoteSession struct {
@@ -23,41 +23,33 @@ func (t *PhononTerminal) GenerateMock() error {
 		return err
 	}
 	sess, _ := card.NewSession(c)
-	t.pairings = append(t.pairings, &Pairing{
-		s: sess,
-	})
+	t.sessions = append(t.sessions, sess)
+
 	return nil
 }
 
-func (t *PhononTerminal) RefreshSessions() error {
-	t.pairings = nil
+func (t *PhononTerminal) RefreshSessions() ([]*card.Session, error) {
+	t.sessions = nil
 	sessions, err := card.ConnectAll()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(sessions) == 0 {
-		return errors.New("no cards detected")
+		return nil, errors.New("no cards detected")
 	}
 	//TODO: maybe handle if refresh is called in the middle of a terminal usage
 	//Or rename this function to something like InitSessions
-	for _, session := range sessions {
-		//TODO: Get friendly name here if possible
-		t.pairings = append(t.pairings, &Pairing{s: session})
-	}
-	return nil
+	t.sessions = append(t.sessions, sessions...)
+	return t.sessions, nil
 }
 
-func (t *PhononTerminal) InitializePin(sessionIndex int, pin string) error {
-	err := t.pairings[sessionIndex].s.Init(pin)
-	return err
-}
+// func (t *PhononTerminal) InitializePin(sessionIndex int, pin string) error {
+// 	err := t.sessions[sessionIndex].Init(pin)
+// 	return err
+// }
 
 func (t *PhononTerminal) ListSessions() []*card.Session {
-	var sessionList []*card.Session
-	for _, pairings := range t.pairings {
-		sessionList = append(sessionList, pairings.s)
-	}
-	return sessionList
+	return t.sessions
 }
 
 func (t *PhononTerminal) UnlockCard(sessionIndex int, pin string) error {
@@ -66,18 +58,18 @@ func (t *PhononTerminal) UnlockCard(sessionIndex int, pin string) error {
 }
 
 func (t *PhononTerminal) ListPhonons(cardIndex int) (interface{}, error) {
-	// t.pairings[cardIndex].s.ListPhonons()
+	// t.sessions[cardIndex].s.ListPhonons()
 	return struct{}{}, nil
 }
 
 func (t *PhononTerminal) CreatePhonon(cardIndex int) (int, error) {
-	// t.pairings[cardIndex].s.cs.CreatePhonon()
+	// t.sessions[cardIndex].s.cs.CreatePhonon()
 	return 0, nil
 }
 
 func (t *PhononTerminal) SetDescriptor(cardIndex int, phononIndex int, descriptor interface{}) {
 	// todo: replace descriptor with the actual type used for descriptor
-	// t.pairings[cardIndex].s.cs.SetDescriptor(phononIndex
+	// t.sessions[cardIndex].s.cs.SetDescriptor(phononIndex
 }
 
 func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} {
@@ -87,7 +79,8 @@ func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} 
 
 func (t *PhononTerminal) ConnectRemoteSession(sessionIndex int, someRemoteInterface interface{}) {
 	// todo: this whole thing
-	t.pairings[sessionIndex].remote = &remoteSession{}
+	// t.sessions[sessionIndex].remote = &remoteSession{}
+	return
 }
 
 func (t *PhononTerminal) ProposeTransaction() {
@@ -108,6 +101,6 @@ func (t *termianl) ApproveInvoice() {
 }*/
 
 func (t *PhononTerminal) RedeemPhonon(cardIndex int, phononIndex int) interface{} {
-	// t.pairings[cardIndex].s.cs.DestroyPhonon()
+	// t.sessions[cardIndex].s.cs.DestroyPhonon()
 	return struct{}{}
 }

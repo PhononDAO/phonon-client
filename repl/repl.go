@@ -27,7 +27,7 @@ func Start() {
 	shell.AddCmd(&ishell.Cmd{
 		Name: "refresh",
 		Func: refresh,
-		Help: "refresh the current state of attached cards",
+		Help: "Check for attached phonon cards. Restarts all phonon card sessions.",
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:    "list",
@@ -38,28 +38,28 @@ func Start() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:    "unlock",
 		Aliases: []string{},
-		Func:    unlock,
-		Help:    "Unlock card with pin entered in password prompt. Optional argument for card index",
+		Func:    unlockCard,
+		Help:    "Unlock card by entering PIN in password prompt.",
 	})
 	shell.AddCmd(&ishell.Cmd{
-		Name: "select",
+		Name: "activate",
 		Func: selectCard,
-		Help: "Select a card and enter the prompt for the specific card",
+		Help: "Activate a specific card",
 	})
 	shell.AddCmd(&ishell.Cmd{
-		Name: "unselect",
+		Name: "deactivate",
 		Func: unselectCard,
 		Help: "Deselect a card if one is selected",
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "init",
 		Func: initCard,
-		Help: "Initialize a card with a PIN",
+		Help: "Initialize the active card with a PIN",
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "changePin",
 		Func: changeCardPIN,
-		Help: "Change a phonon card's PIN",
+		Help: "Change the active card's PIN",
 	})
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "listPhonons",
@@ -69,7 +69,7 @@ func Start() {
 	shell.AddCmd(&ishell.Cmd{
 		Name: "create",
 		Func: createPhonon,
-		Help: "Create a phonon on selected phonon card. Optional argument for card index",
+		Help: "Create a new phonon key on active card",
 	})
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "set",
@@ -180,32 +180,6 @@ func unselectCard(c *ishell.Context) {
 	activeCard = nil
 }
 
-func initCard(c *ishell.Context) {
-	if ready := checkActiveCard(c); !ready {
-		return
-	}
-	c.Println("plase enter new numeric 6 digit PIN")
-	pin := c.ReadPassword()
-	err := activeCard.Init(pin)
-	if err != nil {
-		c.Println("unable to initialize card with PIN: ", err)
-		return
-	}
-	updatePrompt()
-}
-
-func changeCardPIN(c *ishell.Context) {
-	if ready := checkActiveCard(c); !ready {
-		return
-	}
-	c.Println("please enter new numeric 6 digit PIN")
-	pin := c.ReadPassword()
-	err := activeCard.ChangePIN(pin)
-	if err != nil {
-		c.Println()
-	}
-}
-
 // func cardShell(c *ishell.Context, index int) {
 // 	if len(listedSessions) < index || index == 0 {
 // 		c.Err(fmt.Errorf("No card found at index %d", index))
@@ -214,70 +188,6 @@ func changeCardPIN(c *ishell.Context) {
 // 	activeCard = index
 // 	c.SetPrompt(fmt.Sprintf("Card %d >", index))
 // }
-
-func unlock(c *ishell.Context) {
-	if ready := checkActiveCard(c); !ready {
-		return
-	}
-	var pin string
-	// err declared to avoid double declaration of session index in if block
-	var err error
-
-	c.Println("Please enter pin")
-	pin = c.ReadPassword()
-	//TODO: update chain of functions to return triesRemaining to callers
-	err = activeCard.VerifyPIN(pin)
-	if err != nil {
-		c.Err(fmt.Errorf("Unable to unlock card %s", err.Error()))
-		return
-	}
-	c.Println("card successfully unlocked")
-	//TODO: maybe build a little helper class for keeping this updated
-	updatePrompt()
-}
-
-func listPhonons(c *ishell.Context) {
-	//TODO:
-	// sessionIndex, err := getSession(c, 0)
-	// if err != nil {
-	// 	c.Err(err)
-	// }
-	// phonons, err := activeCard.ListPhonons()
-	// phonons, err := t.ListPhonons(sessionIndex)
-	// if err != nil {
-	// 	c.Err(fmt.Errorf("Unable to list phonons on card %d: %s", sessionIndex, err.Error()))
-	// 	return
-	// }
-	// c.Printf("Phonons on card %d: %+v", phonons)
-}
-
-func createPhonon(c *ishell.Context) {
-	if ready := checkActiveCard(c); !ready {
-		return
-	}
-	keyIndex, pubKey, err := activeCard.CreatePhonon()
-	if err != nil {
-		c.Println("error creating phonon: ", err)
-		return
-	}
-	c.Println("created phonon")
-	c.Printf("keyIndex: %v, public Key: % X\n", keyIndex, append(pubKey.X.Bytes(), pubKey.Y.Bytes()...))
-}
-
-func setDescriptor(c *ishell.Context) {
-	// sessionIndex, err := getSession(c, 1)
-	// if err != nil {
-	// 	c.Err(err)
-	// 	return
-	// }
-	// // last argument is index of phonon to use
-	// phononIndex, err := strconv.Atoi(c.Args[len(c.Args)-1])
-	// if err != nil {
-	// 	c.Err(fmt.Errorf("Unable to parse phonon index %s", err.Error()))
-	// 	return
-	// }
-	// t.SetDescriptor(sessionIndex, phononIndex, struct{}{})
-}
 
 func getBalance(c *ishell.Context) {
 	// sessionIndex, err := getSession(c, 1)

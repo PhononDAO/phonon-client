@@ -37,7 +37,7 @@ func ParseECDSAPubKey(pubKey []byte) (*ecdsa.PublicKey, error) {
 }
 
 func ECDSAPubKeyToHexString(pubKey *ecdsa.PublicKey) string {
-	return fmt.Sprintf("%x", append(pubKey.X.Bytes(), pubKey.Y.Bytes()...))
+	return fmt.Sprintf("%x", ethcrypto.FromECDSAPub(pubKey))
 }
 
 func ParseECCPrivKey(privKey []byte) (*ecdsa.PrivateKey, error) {

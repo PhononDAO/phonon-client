@@ -235,6 +235,7 @@ func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairi
 		return nil, err
 	}
 
+	log.Debugf("receiver pubKey: % X", receiverCert.PubKey)
 	cardCertTLV, err := NewTLV(TagCardCertificate, c.IdentityCert.Serialize())
 	if err != nil {
 		return nil, err
@@ -302,13 +303,17 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 
 	//Compute shared secret
 	ecdhSecret := crypto.GenerateECDHSharedSecret(c.identityKey, senderPubKey)
-
+	log.Debugf("sender pubKey: % X", c.IdentityCert.PubKey)
+	log.Debugf("ECDH Secret: % X", ecdhSecret)
+	log.Debugf("sender salt: % X", senderSalt)
+	log.Debugf("receiver salt: % X", receiverSalt)
 	//Compute session key with salts from both parties and ECDH secret
 	sessionKeyMaterial := append(senderSalt, receiverSalt...)
 	sessionKeyMaterial = append(sessionKeyMaterial, ecdhSecret...)
 
 	sessionKey := sha512.Sum512(sessionKeyMaterial)
 
+	log.Debugf("sessionKey: % X", sessionKey)
 	//Derive secure channel info
 	encKey := sessionKey[:len(sessionKey)/2]
 	macKey := sessionKey[len(sessionKey)/2:]
@@ -328,6 +333,8 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 		return nil, err
 	}
 
+	log.Debugf("cryptogram: % X", cryptogram)
+	log.Debugf("receiverSig: % X", receiverSig)
 	receiverSaltTLV, _ := NewTLV(TagSalt, receiverSalt)
 	aesIVTLV, _ := NewTLV(TagAesIV, aesIV)
 	receiverSigTLV, _ := NewTLV(TagECDSASig, receiverSig)
@@ -399,6 +406,10 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	//private key corresponding to the public key which established this channel's foundational ECDH secret
 	cryptogram := sha256.Sum256(append(sessionKey[0:], aesIV...))
 
+	log.Debugf("receiverSig: % X", receiverSig)
+	log.Debugf("receiverSig length: %v hex: % X", len(receiverSig), len(receiverSig))
+
+	log.Debugf("receiverPubKey: % X", receiverPubKey)
 	//Validate ReceiverSig
 	valid = ecdsa.VerifyASN1(receiverPubKey, cryptogram[0:], receiverSig)
 	if !valid {

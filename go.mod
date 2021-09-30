@@ -12,6 +12,7 @@ require (
 	github.com/ebfe/scard v0.0.0-20190212122703-c3d1b1916a95
 	github.com/ethereum/go-ethereum v1.10.4
 	github.com/google/go-cmp v0.5.4
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sirupsen/logrus v1.7.0

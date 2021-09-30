@@ -97,10 +97,6 @@ func (s *Session) Init(pin string) error {
 		return err
 	}
 
-	// err = s.VerifyPIN(pin)
-	// if err != nil {
-	// 	return err
-	// }
 	return nil
 }
 

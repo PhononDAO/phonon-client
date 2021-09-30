@@ -708,7 +708,7 @@ func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte
 		return nil, err
 	}
 
-	return cardPair2Data, nil
+	return resp.Data, nil
 }
 
 func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {

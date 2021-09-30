@@ -77,25 +77,5 @@ func initializeCard(pin string) {
 		fmt.Println(err)
 		return
 	}
-	// session, err := card.NewSession(cs)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-	// err = session.Init(pin)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-	// _, _, _, _ = cs.Select()
-	// // if err != nil {
-	// // 	fmt.Println(err)
-	// // 	return
-	// // }
-	// err := cs.Init(pin)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
 	fmt.Println("successfully set PIN")
 }

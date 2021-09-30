@@ -71,11 +71,12 @@ func Start() {
 		Func: createPhonon,
 		Help: "Create a new phonon key on active card",
 	})
-	// shell.AddCmd(&ishell.Cmd{
-	// 	Name: "set",
-	// 	Func: setDescriptor,
-	// 	Help: "Set the type and value of phonon. If card is unselected, first argument is index of card containing the phonon. If card is selected, leave it out. Second argument is index of phonon to be descriptor set, third argument is the type of asset to be associated with the phonon, fourth argument is the value of the asset.",
-	// })
+	shell.AddCmd(&ishell.Cmd{
+		Name: "setDescriptor",
+		Func: setDescriptor,
+		Help: `Set the metadata associated with this phonon.
+		       Args: [KeyIndex] [CurrencyType] [Value]`,
+	})
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "balance",
 	// 	Func: getBalance,

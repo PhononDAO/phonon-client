@@ -162,11 +162,18 @@ func (s *Session) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType
 	return s.cs.SetDescriptor(keyIndex, currencyType, value)
 }
 
-func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
+func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error) {
 	if !s.verified() {
 		return nil, ErrPINNotEntered
 	}
 	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
+}
+
+func (s *Session) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
+	if !s.verified() {
+		return nil, ErrPINNotEntered
+	}
+	return s.cs.GetPhononPubKey(keyIndex)
 }
 
 func (s *Session) InitCardPairing(receiverCert cert.CardCertificate) ([]byte, error) {

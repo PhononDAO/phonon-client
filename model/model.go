@@ -4,7 +4,10 @@ package model
 
 import (
 	"crypto/ecdsa"
+	"fmt"
+
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/util"
 )
 
 type Phonon struct {
@@ -12,6 +15,10 @@ type Phonon struct {
 	PubKey       *ecdsa.PublicKey
 	Value        float32
 	CurrencyType CurrencyType
+}
+
+func (p *Phonon) String() string {
+	return fmt.Sprintf("KeyIndex: %v, Value: %v, currencyType: %v, PubKey: %v\n", p.KeyIndex, p.Value, p.CurrencyType, util.ECDSAPubKeyToHexString(p.PubKey))
 }
 
 type CurrencyType uint16

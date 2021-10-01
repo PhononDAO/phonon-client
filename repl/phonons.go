@@ -23,18 +23,52 @@ func createPhonon(c *ishell.Context) {
 }
 
 func listPhonons(c *ishell.Context) {
-	//TODO:
-	// sessionIndex, err := getSession(c, 0)
-	// if err != nil {
-	// 	c.Err(err)
-	// }
-	// phonons, err := activeCard.ListPhonons()
-	// phonons, err := t.ListPhonons(sessionIndex)
-	// if err != nil {
-	// 	c.Err(fmt.Errorf("Unable to list phonons on card %d: %s", sessionIndex, err.Error()))
-	// 	return
-	// }
-	// c.Printf("Phonons on card %d: %+v", phonons)
+	if ready := checkActiveCard(c); !ready {
+		return
+	}
+	var currencyType model.CurrencyType = 0
+	var lessThanValue float32 = 0
+	var greaterThanValue float32 = 0
+	var numCorrectArgs = 3
+
+	if len(c.Args) == numCorrectArgs {
+		currencyTypeInt, err := strconv.ParseInt(c.Args[0], 10, 0)
+		if err != nil {
+			c.Println("error parsing currencyType: ", err)
+			return
+		}
+		currencyType = model.CurrencyType(currencyTypeInt)
+
+		lessThanValueRaw, err := strconv.ParseFloat(c.Args[1], 32)
+		if err != nil {
+			c.Println("error parsing lessThanValue: ", err)
+			return
+		}
+		lessThanValue = float32(lessThanValueRaw)
+
+		greaterThanValueRaw, err := strconv.ParseFloat(c.Args[2], 32)
+		if err != nil {
+			c.Println("error parsing greaterThanValue: ", err)
+			return
+		}
+		greaterThanValue = float32(greaterThanValueRaw)
+	}
+	phonons, err := activeCard.ListPhonons(currencyType, lessThanValue, greaterThanValue)
+	if err != nil {
+		c.Println("error listing phonons: ", err)
+		return
+	}
+	for _, p := range phonons {
+		p.PubKey, err = activeCard.GetPhononPubKey(p.KeyIndex)
+		c.Println("retrieved pubKey: ", p.PubKey)
+		if err != nil {
+			c.Printf("error retrieving phonon pubKey at keyIndex %v. err: %v\n", p.KeyIndex, err)
+		}
+	}
+	c.Println("phonons: ")
+	for _, p := range phonons {
+		c.Printf("%v\n", p)
+	}
 }
 
 func setDescriptor(c *ishell.Context) {

@@ -30,7 +30,7 @@ func Start() {
 		Help: "Check for attached phonon cards. Restarts all phonon card sessions.",
 	})
 	shell.AddCmd(&ishell.Cmd{
-		Name:    "list",
+		Name:    "listCards",
 		Aliases: []string{},
 		Func:    listCards,
 		Help:    "List available phonon cards for usage",
@@ -61,11 +61,12 @@ func Start() {
 		Func: changeCardPIN,
 		Help: "Change the active card's PIN",
 	})
-	// shell.AddCmd(&ishell.Cmd{
-	// 	Name: "listPhonons",
-	// 	Func: listPhonons,
-	// 	Help: "List phonons on card. Optional argument for card index",
-	// })
+	shell.AddCmd(&ishell.Cmd{
+		Name: "list",
+		Func: listPhonons,
+		Help: `List phonons on card. Optionally takes arguments to filter by.
+		       Args: [CurrencyType] [lessThanValue] [greaterThanValue]`,
+	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "create",
 		Func: createPhonon,
@@ -155,6 +156,7 @@ func listCards(c *ishell.Context) {
 	if len(sessions) == 0 {
 		c.Println("no cards found")
 	}
+	c.Println("available cards: ")
 	for _, s := range sessions {
 		c.Println(s.GetName())
 	}

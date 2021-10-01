@@ -3,13 +3,14 @@ ifeq ($(OS),Windows_NT)
 else
 	Win-CC = x86_64-w64-mingw32-gcc
 endif
-run:
+
+run: generate
 	go run main/phonon.go
 
-build:
+build: generate
 	go build main/phonon.go
 
-windows-build:
+windows-build: generate
 	GOOS=windows CGO_ENABLED=1 CC=$(Win-CC) go build main/phonon.go
 
 test:
@@ -17,3 +18,6 @@ test:
 
 short-test:
 	go test -v -count=1 ./... -short
+
+generate:
+	go generate ./...

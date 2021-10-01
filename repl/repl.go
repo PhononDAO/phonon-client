@@ -19,7 +19,6 @@ const standardPrompt string = "Phonon>"
 func Start() {
 	shell = ishell.New()
 	t = &orchestrator.PhononTerminal{}
-	t.RefreshSessions()
 	// get initial state of orchestrator
 	shell.Println("Welcome to the phonon command interface")
 	shell.SetPrompt(standardPrompt)
@@ -98,6 +97,9 @@ func Start() {
 	// 	Func: redeemPhonon,
 	// 	Help: "Destroy the phonon at index on card at index and retrieve the priate key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
 	// })
+
+	//Automatically refresh connections as the user is dropped into the shell
+	shell.Process("refresh")
 	shell.Run()
 }
 

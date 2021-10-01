@@ -21,7 +21,7 @@ func ConnectAll() (sessions []*Session, err error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("readers: %v", readers)
+	log.Debugf("readers: %v", readers)
 	if len(readers) == 0 {
 		return nil, ErrReaderNotFound
 	}

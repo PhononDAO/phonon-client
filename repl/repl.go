@@ -77,6 +77,11 @@ func Start() {
 		Help: `Set the metadata associated with this phonon.
 		       Args: [KeyIndex] [CurrencyType] [Value]`,
 	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "redeem",
+		Func: redeemPhonon,
+		Help: "Destroy the phonon at index on card at index and retrieve the priate key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
+	})
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "balance",
 	// 	Func: getBalance,
@@ -91,11 +96,6 @@ func Start() {
 	// 	Name: "receive",
 	// 	Func: setReceiveMode,
 	// 	Help: "set card at index to receive phonons",
-	// })
-	// shell.AddCmd(&ishell.Cmd{
-	// 	Name: "redeem",
-	// 	Func: redeemPhonon,
-	// 	Help: "Destroy the phonon at index on card at index and retrieve the priate key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
 	// })
 
 	//Automatically refresh connections as the user is dropped into the shell
@@ -219,19 +219,4 @@ func connectRemoteSession(c *ishell.Context) {
 func setReceiveMode(c *ishell.Context) {
 	var sessionIndex int
 	t.SetReceiveMode(sessionIndex)
-}
-
-func redeemPhonon(c *ishell.Context) {
-	// sessionIndex, err := getSession(c, 1)
-	// if err != nil {
-	// 	c.Err(err)
-	// 	return
-	// }
-	// // last argument is index of phonon to use
-	// phononIndex, err := strconv.Atoi(c.Args[len(c.Args)-1])
-	// if err != nil {
-	// 	c.Err(fmt.Errorf("Unable to parse phonon index %s", err.Error()))
-	// 	return
-	// }
-	// c.Printf("Phonon %d on card %d deleted. PublicKey: %v", phononIndex, sessionIndex, t.RedeemPhonon(sessionIndex, phononIndex))
 }

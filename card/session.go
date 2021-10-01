@@ -176,6 +176,13 @@ func (s *Session) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err
 	return s.cs.GetPhononPubKey(keyIndex)
 }
 
+func (s *Session) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
+	if !s.verified() {
+		return nil, ErrPINNotEntered
+	}
+	return s.cs.DestroyPhonon(keyIndex)
+}
+
 func (s *Session) InitCardPairing(receiverCert cert.CardCertificate) ([]byte, error) {
 	if !s.verified() {
 		return nil, ErrPINNotEntered

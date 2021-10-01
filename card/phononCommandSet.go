@@ -424,7 +424,7 @@ func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.Cu
 //ListPhonons takes a currency type and range bounds and returns a listing of the phonons currently stored on the card
 //Set lessThanValue or greaterThanValue to 0 to ignore the parameter. Returned phonons omit the public key to reduce data transmission
 //After processing, the list client should send GET_PHONON_PUB_KEY to retrieve the corresponding pubkeys if necessary.
-func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
+func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error) {
 	log.Debug("sending list phonons command")
 	p2, cmdData, err := encodeListPhononsData(currencyType, lessThanValue, greaterThanValue)
 	if err != nil {
@@ -468,7 +468,7 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 //Makes an additional list phonons command with p1 set to 0x01, indicating the card should return the remainder
 //of the last requested list. listPhononsExtended will run recursively until the card indicates there are no additional
 //phonons in the list
-func (cs *PhononCommandSet) listPhononsExtended() (phonons []model.Phonon, err error) {
+func (cs *PhononCommandSet) listPhononsExtended() (phonons []*model.Phonon, err error) {
 	log.Debug("sending LIST_PHONONS extended request")
 	cmd := NewCommandListPhonons(0x01, 0x00, nil)
 	resp, err := cs.sc.Send(cmd)

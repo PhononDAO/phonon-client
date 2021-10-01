@@ -12,6 +12,33 @@ var ErrReaderNotFound = errors.New("card reader not found")
 
 //TODO: Remove most of these functions
 
+func ConnectAll() (sessions []*Session, err error) {
+	ctx, err := scard.EstablishContext()
+	if err != nil {
+		return nil, err
+	}
+	readers, err := ctx.ListReaders()
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("readers: %v", readers)
+	if len(readers) == 0 {
+		return nil, ErrReaderNotFound
+	}
+	for _, reader := range readers {
+		card, err := ctx.Connect(reader, scard.ShareShared, scard.ProtocolAny)
+		if err != nil {
+			return nil, err
+		}
+		session, err := NewSession(NewPhononCommandSet(io.NewNormalChannel(card)))
+		if err != nil {
+			return nil, err
+		}
+		sessions = append(sessions, session)
+	}
+	return sessions, nil
+}
+
 //Connects to the first card reader listed by default
 func Connect() (*PhononCommandSet, error) {
 	return ConnectWithReaderIndex(0)

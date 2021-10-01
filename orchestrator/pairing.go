@@ -5,6 +5,12 @@ import (
 	"github.com/GridPlus/phonon-client/model"
 )
 
+type Pairing struct {
+	s      *card.Session
+	remote *remoteSession
+	name   string
+}
+
 func NewPairing(s *card.Session) *Pairing {
 	return &Pairing{
 		s: s,

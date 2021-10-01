@@ -490,14 +490,14 @@ func (c *MockCard) OpenSecureChannel() error {
 	return nil
 }
 
-func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
-	var ret []model.Phonon
+func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error) {
+	var ret []*model.Phonon
 	for _, phonon := range c.Phonons {
 		if !phonon.deleted &&
 			(currencyType == 0x00 || phonon.CurrencyType == currencyType) &&
 			phonon.Value > greaterThanValue &&
 			(lessThanValue == 0 || phonon.Value < lessThanValue) {
-			ret = append(ret, phonon.Phonon)
+			ret = append(ret, &phonon.Phonon)
 		}
 	}
 	return ret, nil

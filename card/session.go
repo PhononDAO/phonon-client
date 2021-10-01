@@ -6,6 +6,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,13 +15,15 @@ Keeps a client side cache of the card state to make interaction
 with the card through this API more convenient*/
 type Session struct {
 	cs             PhononCard
-	pubKey         *ecdsa.PublicKey
+	remoteCard     model.CounterpartyPhononCard
+	identityPubKey *ecdsa.PublicKey
 	active         bool
 	pinInitialized bool
 	terminalPaired bool
 	pinVerified    bool
 	cardPaired     bool
 	cert           cert.CardCertificate
+	name           string
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
@@ -37,7 +40,7 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 		cardPaired:     false,
 		pinVerified:    false,
 	}
-	_, s.pubKey, s.pinInitialized, err = s.cs.Select()
+	_, _, s.pinInitialized, err = s.cs.Select()
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +56,17 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
+func (s *Session) GetName() string {
+	//TODO: Use future card GET_NAME
+	if s.cert.PubKey != nil {
+		hexString := util.ECDSAPubKeyToHexString(s.identityPubKey)
+		if len(hexString) >= 16 {
+			return hexString[:16]
+		}
+	}
+	return "unknown"
+}
+
 func (s *Session) GetCertificate() (cert.CardCertificate, error) {
 	//If s.Cert is already populated, return it
 	if s.cert.PubKey != nil {
@@ -64,6 +78,14 @@ func (s *Session) GetCertificate() (cert.CardCertificate, error) {
 	return cert.CardCertificate{}, errors.New("certificate not cached by session yet")
 }
 
+func (s *Session) IsUnlocked() bool {
+	return s.pinVerified
+}
+
+func (s *Session) IsInitialized() bool {
+	return s.pinInitialized
+}
+
 //Connect opens a secure channel with a card.
 func (s *Session) Connect() error {
 	cert, err := s.cs.Pair()
@@ -71,6 +93,7 @@ func (s *Session) Connect() error {
 		return err
 	}
 	s.cert = cert
+	s.identityPubKey, _ = util.ParseECDSAPubKey(s.cert.PubKey)
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
 		return err
@@ -92,10 +115,12 @@ func (s *Session) Init(pin string) error {
 	}
 	s.pinInitialized = true
 	//Open new secure connection now that card is initialized
+	//TODO: Find out why MUTUAL_AUTH fails immediately after initialization but works normally
 	err = s.Connect()
 	if err != nil {
 		return err
 	}
+	s.pinVerified = true
 
 	return nil
 }
@@ -107,6 +132,13 @@ func (s *Session) VerifyPIN(pin string) error {
 	}
 	s.pinVerified = true
 	return nil
+}
+
+func (s *Session) ChangePIN(pin string) error {
+	if !s.pinVerified {
+		return errors.New("card locked, cannot change pin")
+	}
+	return s.cs.ChangePIN(pin)
 }
 
 func (s *Session) verified() bool {
@@ -130,11 +162,18 @@ func (s *Session) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType
 	return s.cs.SetDescriptor(keyIndex, currencyType, value)
 }
 
-func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error) {
+func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error) {
 	if !s.verified() {
 		return nil, ErrPINNotEntered
 	}
 	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
+}
+
+func (s *Session) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
+	if !s.verified() {
+		return nil, ErrPINNotEntered
+	}
+	return s.cs.GetPhononPubKey(keyIndex)
 }
 
 func (s *Session) InitCardPairing(receiverCert cert.CardCertificate) ([]byte, error) {
@@ -215,5 +254,31 @@ func (s *Session) ReceiveInvoice(invoiceData []byte) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) error {
+	remoteCert, err := remoteCard.GetCertificate()
+	if err != nil {
+		return err
+	}
+	initPairingData, err := s.InitCardPairing(remoteCert)
+	if err != nil {
+		return err
+	}
+	cardPairData, err := remoteCard.CardPair(initPairingData)
+	if err != nil {
+		return err
+	}
+	cardPair2Data, err := s.CardPair2(cardPairData)
+	if err != nil {
+		return err
+	}
+	err = remoteCard.FinalizeCardPair(cardPair2Data)
+	if err != nil {
+		return err
+	}
+	s.remoteCard = remoteCard
+	s.cardPaired = true
 	return nil
 }

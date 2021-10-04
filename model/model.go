@@ -18,7 +18,7 @@ type Phonon struct {
 }
 
 func (p *Phonon) String() string {
-	return fmt.Sprintf("KeyIndex: %v, Value: %v, currencyType: %v, PubKey: %v\n", p.KeyIndex, p.Value, p.CurrencyType, util.ECDSAPubKeyToHexString(p.PubKey))
+	return fmt.Sprintf("KeyIndex: %v, Value: %f, currencyType: %v, PubKey: %v\n", p.KeyIndex, p.Value, p.CurrencyType, util.ECDSAPubKeyToHexString(p.PubKey))
 }
 
 type CurrencyType uint16

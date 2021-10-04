@@ -87,7 +87,7 @@ func setDescriptor(c *ishell.Context) {
 		return
 	}
 	//TODO: Present these options better
-	currencyTypeInt, err := strconv.ParseInt(c.Args[1], 10, 0)
+	currencyTypeInt, err := strconv.Atoi(c.Args[1])
 	if err != nil {
 		c.Println("currencyType could not be parse: ", err)
 		return
@@ -108,4 +108,38 @@ func setDescriptor(c *ishell.Context) {
 	c.Println("descriptor set successfully")
 	//TODO: wizard?
 	//TODO: Resolve SetDescriptor issue on card
+}
+
+func redeemPhonon(c *ishell.Context) {
+	if ready := checkActiveCard(c); !ready {
+		return
+	}
+	numCorrectArgs := 1
+	if len(c.Args) != numCorrectArgs {
+		c.Println("incorrect number of args")
+		return
+	}
+
+	keyIndex, err := strconv.ParseUint(c.Args[0], 10, 16)
+	if err != nil {
+		c.Println("could not parse keyIndex arg: ", err)
+		return
+	}
+	selection := c.MultiChoice([]string{"no", "yes"},
+		"Are you sure you wish to redeem this phonon?\n"+
+			"Performing this action will permanently delete the phonon from the card and present you "+
+			`with it's private key. After this, preserving this private key is your responsibility `+
+			`and there will be no other way to retrieve it.`)
+	if selection == 0 {
+		c.Println("phonon redemption canceled")
+		return
+	}
+	privKey, err := activeCard.DestroyPhonon(uint16(keyIndex))
+	if err != nil {
+		c.Printf("unable to redeem and destroy phonon at keyIndex %v, err: %v\n", keyIndex, err)
+	}
+	c.Println("redeemed phonon at keyIndex: ", keyIndex)
+	c.Println("private key: ")
+	//TODO: Find a better encoding format
+	c.Printf("%x\n", privKey.D)
 }

@@ -42,6 +42,7 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	}
 	_, _, s.pinInitialized, err = s.cs.Select()
 	if err != nil {
+		log.Error("cannot select card for new session: ", err)
 		return nil, err
 	}
 	if !s.pinInitialized {
@@ -50,6 +51,7 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	//If card is already initialized, go ahead and open terminal to card secure channel
 	err = s.Connect()
 	if err != nil {
+		log.Error("could not run session connect: ", err)
 		return nil, err
 	}
 

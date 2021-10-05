@@ -30,16 +30,16 @@ func (t *PhononTerminal) GenerateMock() error {
 
 func (t *PhononTerminal) RefreshSessions() ([]*card.Session, error) {
 	t.sessions = nil
-	sessions, err := card.ConnectAll()
+	var err error
+	t.sessions, err = card.ConnectAll()
 	if err != nil {
 		return nil, err
 	}
-	if len(sessions) == 0 {
+	if len(t.sessions) == 0 {
 		return nil, errors.New("no cards detected")
 	}
 	//TODO: maybe handle if refresh is called in the middle of a terminal usage
 	//Or rename this function to something like InitSessions
-	t.sessions = append(t.sessions, sessions...)
 	return t.sessions, nil
 }
 

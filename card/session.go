@@ -15,7 +15,7 @@ Keeps a client side cache of the card state to make interaction
 with the card through this API more convenient*/
 type Session struct {
 	cs             PhononCard
-	remoteCard     model.CounterpartyPhononCard
+	RemoteCard     model.CounterpartyPhononCard
 	identityPubKey *ecdsa.PublicKey
 	active         bool
 	pinInitialized bool
@@ -308,7 +308,7 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 	if err != nil {
 		return err
 	}
-	s.remoteCard = remoteCard
+	s.RemoteCard = remoteCard
 	s.cardPaired = true
 	return nil
 }

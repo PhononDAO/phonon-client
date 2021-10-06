@@ -97,11 +97,11 @@ func Start() {
 	// 	Func: getBalance,
 	// 	Help: "Retrieve the type and balance of a phonon on card. First argument is index of the card containing the phonon, and not needed if a card is selected. Second argument is the index of the phonon you wish to see the balance of",
 	// })
-	// shell.AddCmd(&ishell.Cmd{
-	// 	Name: "connect",
-	// 	Func: connectRemoteSession,
-	// 	Help: "Connect to a remote session",
-	// })
+	 shell.AddCmd(&ishell.Cmd{
+	 	Name: "connect",
+	 	Func: connectRemoteSession,
+	 	Help: "Connect to a remote session",
+	 })
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "receive",
 	// 	Func: setReceiveMode,
@@ -232,7 +232,10 @@ func getBalance(c *ishell.Context) {
 // todo: this
 func connectRemoteSession(c *ishell.Context) {
 	var sessionIndex int
-	t.ConnectRemoteSession(sessionIndex, struct{}{})
+	err := t.ConnectRemoteSession(sessionIndex, struct{}{})
+	if err != nil{
+		c.Err(err)
+	}
 }
 
 // todo: this

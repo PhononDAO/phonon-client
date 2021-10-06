@@ -2,9 +2,11 @@ package orchestrator
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/remote"
 )
 
 type PhononTerminal struct {
@@ -77,10 +79,15 @@ func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} 
 	return struct{}{}
 }
 
-func (t *PhononTerminal) ConnectRemoteSession(sessionIndex int, someRemoteInterface interface{}) {
-	// todo: this whole thing
-	// t.sessions[sessionIndex].remote = &remoteSession{}
-	return
+func (t *PhononTerminal) ConnectRemoteSession(sessionIndex int, someRemoteInterface interface{}) error {
+	fmt.Println("connecting")
+	counterparty, err := remote.Connect("https://localhost:8080", true)
+	if err != nil {
+		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
+	}
+	fmt.Println("successfully connected")
+	t.sessions[sessionIndex].RemoteCard = counterparty
+	return nil
 }
 
 func (t *PhononTerminal) ProposeTransaction() {

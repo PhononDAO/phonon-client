@@ -129,10 +129,10 @@ package cmd
 
 // 	receiver := orchestrator.NewLocalCounterParty(receiverSession)
 
-// 	p := orchestrator.NewPairing(sender)
+// 	// p := orchestrator.NewPairing(sender)
 
 // 	fmt.Println("starting card to card pairing")
-// 	err = p.PairWithRemoteCard(receiver)
+// 	err = sender.PairWithRemoteCard(receiver)
 // 	if err != nil {
 // 		fmt.Println("error during pairing with counterparty")
 // 		fmt.Println(err)
@@ -140,7 +140,7 @@ package cmd
 // 	}
 // 	fmt.Println("cards paired succesfully!")
 
-// 	err = p.RetrieveInvoice()
+// 	err = .RetrieveInvoice()
 // 	if err != nil {
 // 		fmt.Println("error during invoice retrieval")
 // 		fmt.Println(err)

@@ -88,6 +88,13 @@ func (s *Session) IsInitialized() bool {
 	return s.pinInitialized
 }
 
+func (s *Session) IsPairedToCard() bool {
+	if s.remoteCard != nil {
+		return true
+	}
+	return false
+}
+
 //Connect opens a secure channel with a card.
 func (s *Session) Connect() error {
 	cert, err := s.cs.Pair()
@@ -225,16 +232,32 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 	return nil
 }
 
-func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
+// func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
+// 	if !s.verified() && !s.cardPaired {
+// 		return nil, ErrCardNotPairedToCard
+// 	}
+// 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return phononTransferPacket, nil
+// }
+
+func (s *Session) SendPhonons(keyIndices []uint16) error {
 	if !s.verified() && !s.cardPaired {
-		return nil, ErrCardNotPairedToCard
+		return ErrCardNotPairedToCard
 	}
 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	return phononTransferPacket, nil
+	err = s.remoteCard.ReceivePhonons(phononTransferPacket)
+	if err != nil {
+		log.Debug("error receiving phonons on remote")
+		return err
+	}
+	return nil
 }
 
 func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {

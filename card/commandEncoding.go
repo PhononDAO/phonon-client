@@ -141,7 +141,7 @@ func encodeSendPhononsData(keyIndices []uint16) (data []byte, p2Length byte) {
 	return data, p2Length
 }
 
-func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
+func parseListPhononsResponse(resp []byte) ([]*model.Phonon, error) {
 	phononCollection, err := ParseTLVPacket(resp, TagPhononCollection)
 	if err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 	if len(phononCollection) <= 1 {
 		return nil, nil
 	}
-	phonons := make([]model.Phonon, 0)
+	phonons := make([]*model.Phonon, 0)
 	phononDescriptions, err := phononCollection.FindTags(TagPhononDescriptor)
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func parseListPhononsResponse(resp []byte) ([]model.Phonon, error) {
 			CurrencyType: model.CurrencyType(currencyType),
 			Value:        value,
 		}
-		phonons = append(phonons, phonon)
+		phonons = append(phonons, &phonon)
 	}
 	return phonons, nil
 }

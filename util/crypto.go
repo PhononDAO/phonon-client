@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/asn1"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -33,6 +34,10 @@ func ParseECDSAPubKey(pubKey []byte) (*ecdsa.PublicKey, error) {
 		return nil, err
 	}
 	return ecdsaPubKey, nil
+}
+
+func ECDSAPubKeyToHexString(pubKey *ecdsa.PublicKey) string {
+	return fmt.Sprintf("%x", ethcrypto.FromECDSAPub(pubKey))
 }
 
 func ParseECCPrivKey(privKey []byte) (*ecdsa.PrivateKey, error) {

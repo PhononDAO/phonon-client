@@ -18,7 +18,7 @@ type PhononCard interface {
 	ChangePIN(pin string) error
 	CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error)
 	SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error
-	ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]model.Phonon, error)
+	ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error)
 	GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error)
 	DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error)
 	SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error)

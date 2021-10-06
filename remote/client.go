@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/GridPlus/phonon-client/cert"
@@ -25,12 +24,12 @@ func Connect(url string, ignoreTLS bool) (*remoteCounterParty, error) {
 			Transport: &http2.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: ignoreTLS}},
 		},
 	}
-
-	conn, resp, err := d.Connect(context.TODO(), url)
+	fmt.Println("line 27")
+	conn, _, err := d.Connect(context.Background(), "https://localhost:8080/phonon") //url)
 	if err != nil {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return &remoteCounterParty{}, fmt.Errorf("Unable to connect to remote server %e, %s", err, string(body))
+		return &remoteCounterParty{}, fmt.Errorf("Unable to connect to remote server %e,", err)
 	}
+	fmt.Println("line32")
 	counterParty := &remoteCounterParty{
 		conn: conn,
 	}
@@ -57,13 +56,13 @@ func (c *remoteCounterParty) HandleIncoming() {
 			msgchan <- message
 		}
 	}(messageChan)
-	
+
 	for message := range messageChan {
 		c.process(message)
 	}
 }
 
-func(c *remoteCounterParty)process(Request){
+func (c *remoteCounterParty) process(Request) {
 	//todo
 }
 

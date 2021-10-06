@@ -12,6 +12,8 @@ import (
 
 func StartServer(port string, certfile string, keyfile string) {
 	http.HandleFunc("/phonon", handle)
+	http.HandleFunc("/connectec", listConnected)
+	http.HandleFunc("/", index)
 	err := http.ListenAndServeTLS("localhost:"+port, certfile, keyfile, nil)
 	if err != nil {
 		fmt.Printf("Error with web server:, %s", err.Error())
@@ -26,6 +28,15 @@ type clientSession struct {
 }
 
 var clientSessions map[string]clientSession
+
+func index (w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("hello there"))
+}
+
+func listConnected(w http.ResponseWriter, r *http.Request) {
+	connected := fmt.Sprintf("%+v", clientSessions)
+	w.Write([]byte(connected))
+}
 
 func handle(w http.ResponseWriter, r *http.Request) {
 	conn, err := h2conn.Accept(w, r)

@@ -89,10 +89,7 @@ func (s *Session) IsInitialized() bool {
 }
 
 func (s *Session) IsPairedToCard() bool {
-	if s.remoteCard != nil {
-		return true
-	}
-	return false
+	return s.remoteCard != nil
 }
 
 //Connect opens a secure channel with a card.
@@ -232,6 +229,7 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 	return nil
 }
 
+//Keeping this around for now in case we need a version that does not interact with remote
 // func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
 // 	if !s.verified() && !s.cardPaired {
 // 		return nil, ErrCardNotPairedToCard

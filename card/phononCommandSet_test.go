@@ -10,32 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//Card must be initialized with this pin before integration test suite can run
 var testPin string = "111111"
-
-// func TestMain(m *testing.M) {
-// 	runtime.GOMAXPROCS(1)
-// 	log.SetLevel(log.DebugLevel)
-// 	log.SetFormatter(&log.TextFormatter{})
-
-// 	cs, err := Connect()
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return
-// 	}
-// 	_, _, initialized, err := cs.Select()
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return
-// 	}
-// 	if !initialized {
-// 		err = cs.Init(testPin)
-// 		if err != nil {
-// 			fmt.Println(err)
-// 			return
-// 		}
-// 	}
-// 	os.Exit(m.Run())
-// }
 
 //SELECT
 func TestSelect(t *testing.T) {

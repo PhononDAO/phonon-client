@@ -153,11 +153,8 @@ func PairCardToCard() {
 
 	receiver := orchestrator.NewLocalCounterParty(receiverSession)
 
-	// p := orchestrator.NewPairing(sender)
-
 	fmt.Println("starting card to card pairing")
 	err = sender.PairWithRemoteCard(receiver)
-	// err = sender.PairWithRemoteCard(receiver)
 	if err != nil {
 		fmt.Println("error during pairing with counterparty")
 		fmt.Println(err)

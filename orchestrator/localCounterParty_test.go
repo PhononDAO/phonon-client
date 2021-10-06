@@ -6,12 +6,7 @@ import (
 )
 
 func TestCardToCardPair(t *testing.T) {
-	// //Test with real sender and mock receiver card
-	// sessions, err := card.ConnectAll()
-	// if err != nil {
-	// 	t.Error("could not connect any phonon cards: ", err)
-	// 	return
-	// }
+	//Test with real sender and mock receiver card
 	cs, err := card.Connect()
 	if err != nil {
 		t.Error("could not connect to card", err)
@@ -51,7 +46,7 @@ func TestCardToCardPair(t *testing.T) {
 	}
 	t.Log("paired local actual card with remote mock")
 
-	//Test with real receiver and mock card
+	//Test with real receiver and mock sender card
 
 	cardAsRemote := NewLocalCounterParty(session)
 	err = mockSession.PairWithRemoteCard(cardAsRemote)

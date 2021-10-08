@@ -24,12 +24,10 @@ func Connect(url string, ignoreTLS bool) (*remoteCounterParty, error) {
 			Transport: &http2.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: ignoreTLS}},
 		},
 	}
-	fmt.Println("line 27")
-	conn, _, err := d.Connect(context.Background(), "https://localhost:8080/phonon") //url)
+	conn, _, err := d.Connect(context.Background(), url) //url)
 	if err != nil {
 		return &remoteCounterParty{}, fmt.Errorf("Unable to connect to remote server %e,", err)
 	}
-	fmt.Println("line32")
 	counterParty := &remoteCounterParty{
 		conn: conn,
 	}
@@ -41,16 +39,16 @@ func Connect(url string, ignoreTLS bool) (*remoteCounterParty, error) {
 // memory leak ohh boy!
 func (c *remoteCounterParty) HandleIncoming() {
 	cmdDecoder := json.NewDecoder(c.conn)
-
 	messageChan := make(chan (Request))
 
 	go func(msgchan chan Request) {
 		defer close(msgchan)
 		for {
 			message := Request{}
+			//todo read raw and decode separately to avoid killing the whole thing on a malformed message
 			err := cmdDecoder.Decode(&message)
 			if err != nil {
-				log.Info("Error receiving message from connected client")
+				log.Info("Error receiving message from connected server")
 				return
 			}
 			msgchan <- message
@@ -62,8 +60,8 @@ func (c *remoteCounterParty) HandleIncoming() {
 	}
 }
 
-func (c *remoteCounterParty) process(Request) {
-	//todo
+func (c *remoteCounterParty) process(req Request) {
+	fmt.Printf("%+v", req)
 }
 
 func (c *remoteCounterParty) GetCertificate() (cert.CardCertificate, error) {

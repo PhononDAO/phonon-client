@@ -573,7 +573,7 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 	//TODO: protect the caller from passing too many keyIndices for an APDU
 	data, p2Length := encodeSendPhononsData(keyIndices)
 	cmd := NewCommandSendPhonons(data, p2Length, extendedRequest)
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		log.Error("error in send phonons command: ", err)
 		return nil, err
@@ -613,7 +613,7 @@ func (cs *PhononCommandSet) ReceivePhonons(phononTransfer []byte) error {
 	log.Debug("sending RECV_PHONONS command")
 
 	cmd := NewCommandReceivePhonons(phononTransfer)
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return err
 	}

@@ -3,10 +3,12 @@ package remote
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/posener/h2conn"
@@ -14,11 +16,14 @@ import (
 	"golang.org/x/net/http2"
 )
 
-type remoteCounterParty struct {
-	conn *h2conn.Conn
+type remoteConnection struct {
+	conn              *h2conn.Conn
+	encoder           *gob.Encoder
+	remoteCertificate *cert.CardCertificate
+	session           *card.Session
 }
 
-func Connect(url string, ignoreTLS bool) (*remoteCounterParty, error) {
+func Connect(url string, ignoreTLS bool) (*remoteConnection, error) {
 	d := &h2conn.Client{
 		Client: &http.Client{
 			Transport: &http2.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: ignoreTLS}},
@@ -26,19 +31,19 @@ func Connect(url string, ignoreTLS bool) (*remoteCounterParty, error) {
 	}
 	conn, _, err := d.Connect(context.Background(), url) //url)
 	if err != nil {
-		return &remoteCounterParty{}, fmt.Errorf("Unable to connect to remote server %e,", err)
+		return &remoteConnection{}, fmt.Errorf("Unable to connect to remote server %e,", err)
 	}
-	counterParty := &remoteCounterParty{
+	remoteConn := &remoteConnection{
 		conn: conn,
 	}
-	go counterParty.HandleIncoming()
+	go remoteConn.HandleIncoming()
 
-	return counterParty, nil
+	return remoteConn, nil
 }
 
 // memory leak ohh boy!
-func (c *remoteCounterParty) HandleIncoming() {
-	cmdDecoder := json.NewDecoder(c.conn)
+func (c *remoteConnection) HandleIncoming() {
+	cmdDecoder := gob.NewDecoder(c.conn)
 	messageChan := make(chan (Message))
 
 	go func(msgchan chan Message) {
@@ -60,52 +65,84 @@ func (c *remoteCounterParty) HandleIncoming() {
 	}
 }
 
-func (c *remoteCounterParty) process(req Message) {
-	fmt.Printf("%+v", req)
+func (c *remoteConnection) process(msg Message) {
+	switch msg.Name {
+	case RequestProvideCertifcate:
+		c.sendCertificate(msg)
+	case ResponseProvideCertificate:
+		c.ProcessProvideCertificate(msg)
+	}
 }
 
-func (c *remoteCounterParty) GetCertificate() (cert.CardCertificate, error) {
-	// generate Request to server
-	return cert.CardCertificate{}, nil
+// Below are the request processing methods
+func (c *remoteConnection) sendCertificate(msg Message) {
+	certbytes := c.session.Cert.Serialize()
+	resp := Message{
+		Name:    ResponseProvideCertificate,
+		Payload: certbytes,
+	}
+	c.encoder.Encode(resp)
 }
 
-func (c *remoteCounterParty) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
+// ProcessProvideCertificate is for adding a remote card's certificate to the remote portion of the struct
+func (c *remoteConnection) ProcessProvideCertificate(msg Message) {
+	remoteCert, err := cert.ParseRawCardCertificate(msg.Payload)
+	if err != nil {
+		//handle this
+	}
+	c.remoteCertificate = &remoteCert
+}
+
+// Below are the methods that satisfy the interface for remote counterparty
+
+func (c *remoteConnection) GetCertificate() (cert.CardCertificate, error) {
+	toSend := Message{
+		Name: RequestProvideCertifcate,
+	}
+	c.encoder.Encode(toSend)
+	for c.remoteCertificate == nil {
+		time.Sleep(time.Second * 5)
+	}
+	return *c.remoteCertificate, nil
+}
+
+func (c *remoteConnection) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
 	// generate request
 	// add initPairingData to request
 	// send it off
 	return
 }
 
-func (c *remoteCounterParty) CardPair2(cardPairData []byte) (cardPairData2 []byte, err error) {
+func (c *remoteConnection) CardPair2(cardPairData []byte) (cardPairData2 []byte, err error) {
 	// generate request
 	// add cardPairData to request
 	// send it off
 	return
 }
 
-func (c *remoteCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
+func (c *remoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 	// generate request
 	// add cardPair2Data to request
 	// send it off
 	return nil
 }
 
-func (c *remoteCounterParty) ReceivePhonons(PhononTransfer []byte) error {
+func (c *remoteConnection) ReceivePhonons(PhononTransfer []byte) error {
 
 	return nil
 }
 
-func (c *remoteCounterParty) RequestPhonons(phonons []model.Phonon) (phononTransfer []byte, err error) {
+func (c *remoteConnection) RequestPhonons(phonons []model.Phonon) (phononTransfer []byte, err error) {
 	// todo: figure this one out
 	return
 }
 
-func (c *remoteCounterParty) GenerateInvoice() (invoiceData []byte, err error) {
+func (c *remoteConnection) GenerateInvoice() (invoiceData []byte, err error) {
 	// todo: uhhhhhhh
 	return
 }
 
-func (c *remoteCounterParty) ReceiveInvoice(invoiceData []byte) error {
+func (c *remoteConnection) ReceiveInvoice(invoiceData []byte) error {
 	// todo: oh boy
 	return nil
 }

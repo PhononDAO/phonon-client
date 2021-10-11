@@ -22,7 +22,7 @@ type Session struct {
 	terminalPaired bool
 	pinVerified    bool
 	cardPaired     bool
-	cert           cert.CardCertificate
+	Cert           cert.CardCertificate
 	name           string
 }
 
@@ -60,7 +60,7 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 
 func (s *Session) GetName() string {
 	//TODO: Use future card GET_NAME
-	if s.cert.PubKey != nil {
+	if s.Cert.PubKey != nil {
 		hexString := util.ECDSAPubKeyToHexString(s.identityPubKey)
 		if len(hexString) >= 16 {
 			return hexString[:16]
@@ -71,9 +71,9 @@ func (s *Session) GetName() string {
 
 func (s *Session) GetCertificate() (cert.CardCertificate, error) {
 	//If s.Cert is already populated, return it
-	if s.cert.PubKey != nil {
-		log.Debugf("GetCertificate returning cert: % X", s.cert)
-		return s.cert, nil
+	if s.Cert.PubKey != nil {
+		log.Debugf("GetCertificate returning cert: % X", s.Cert)
+		return s.Cert, nil
 	}
 
 	//TODO, fetch this if it's not there yet
@@ -98,8 +98,8 @@ func (s *Session) Connect() error {
 	if err != nil {
 		return err
 	}
-	s.cert = cert
-	s.identityPubKey, _ = util.ParseECDSAPubKey(s.cert.PubKey)
+	s.Cert = cert
+	s.identityPubKey, _ = util.ParseECDSAPubKey(s.Cert.PubKey)
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
 		return err

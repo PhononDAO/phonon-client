@@ -1,12 +1,17 @@
 package remote
 
 // haha ask me what the difference between a payload and parameters is
-type Request struct {
+type Message struct {
 	Name    string
-	Payload string
+	Payload []byte
 }
 
 var (
+	// Server to client messages
+	MessageConnected      = "Connected"
+	MessageDisconnected   = "Disconnected"
+	MessageError          = "Error"
+	MessagePassthruFailed = "PassthruFailed"
 	// Client to terminal commands
 	RequestProvideCertifcate   = "ProvideCert"
 	ResponseProvideCertificate = "ProvideCertResponse"

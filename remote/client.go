@@ -39,12 +39,12 @@ func Connect(url string, ignoreTLS bool) (*remoteCounterParty, error) {
 // memory leak ohh boy!
 func (c *remoteCounterParty) HandleIncoming() {
 	cmdDecoder := json.NewDecoder(c.conn)
-	messageChan := make(chan (Request))
+	messageChan := make(chan (Message))
 
-	go func(msgchan chan Request) {
+	go func(msgchan chan Message) {
 		defer close(msgchan)
 		for {
-			message := Request{}
+			message := Message{}
 			//todo read raw and decode separately to avoid killing the whole thing on a malformed message
 			err := cmdDecoder.Decode(&message)
 			if err != nil {
@@ -60,7 +60,7 @@ func (c *remoteCounterParty) HandleIncoming() {
 	}
 }
 
-func (c *remoteCounterParty) process(req Request) {
+func (c *remoteCounterParty) process(req Message) {
 	fmt.Printf("%+v", req)
 }
 

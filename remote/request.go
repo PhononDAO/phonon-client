@@ -24,12 +24,9 @@ var (
 	RequestPhononAck           = "AckPhonon"
 
 	// Client to client commands
-	RequestCardPair1          = "CardPair1"
-	ResponseCardPair1Response = "CardPair1Response"
-	RequestCardPair2          = "CardPair2"
-	ResponseRequestCardPair2  = "CardPair2Response"
-	RequestFinalizeCardPair   = "FinalizeCardPair"
-	ResponseCardPair1         = "FinalizeCardPairResponse"
+	RequestCardPair1        = "CardPair1"
+	RequestCardPair2        = "CardPair2"
+	RequestFinalizeCardPair = "FinalizeCardPair"
 	// this one is weird because the server will cache this one
 	RequestSendPhonon = "SendPhonon"
 )

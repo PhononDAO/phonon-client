@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -17,11 +18,18 @@ import (
 )
 
 type remoteConnection struct {
-	conn              *h2conn.Conn
-	encoder           *gob.Encoder
-	remoteCertificate *cert.CardCertificate
-	session           *card.Session
+	conn                      *h2conn.Conn
+	encoder                   *gob.Encoder
+	remoteCertificate         *cert.CardCertificate
+	session                   *card.Session
+	remoteCertificateChan     chan cert.CardCertificate
+	cardPairDataChan          chan []byte
+	cardPairData2Chan         chan []byte
+	finalizeCardPairErrorChan chan error
 }
+
+// this will go someplace, I swear
+var ErrTimeout = errors.New("Timeout")
 
 func Connect(url string, ignoreTLS bool) (*remoteConnection, error) {
 	d := &h2conn.Client{
@@ -71,17 +79,53 @@ func (c *remoteConnection) process(msg Message) {
 		c.sendCertificate(msg)
 	case ResponseProvideCertificate:
 		c.ProcessProvideCertificate(msg)
+	case RequestCardChallenge:
+		c.ProcessChallenge(msg)
+	case RequestCardPair1:
+		c.ProcessCardPair1(msg)
+	case RequestCardPair2:
+		c.ProcessCardPair2(msg)
+	case RequestFinalizeCardPair:
+		c.ProcessFinalizeCardPair(msg)
 	}
 }
 
+/////
 // Below are the request processing methods
+/////
+func (c *remoteConnection) ProcessChallenge(msg Message) {
+	// see if the card can decrypt the message, send back the challenge response.
+	// same as init card pair?
+}
+
+func (c *remoteConnection) ProcessCardPair1(msg Message) {
+	cardPairData, err := c.session.CardPair(msg.Payload)
+	if err != nil {
+		log.Error("error with card pair 1", err.Error())
+	}
+	c.sendMessage(RequestCardPair2, cardPairData)
+
+}
+
+func (c *remoteConnection) ProcessCardPair2(msg Message) {
+	// handle this error
+	cardPair2Data, err := c.session.CardPair2(msg.Payload)
+	if err != nil {
+		log.Error("Error with Card pair 2", err.Error())
+	}
+	c.sendMessage(RequestFinalizeCardPair, cardPair2Data)
+}
+
+func (c *remoteConnection) ProcessFinalizeCardPair(msg Message) {
+	err := c.session.FinalizeCardPair(msg.Payload)
+	if err != nil {
+		log.Error("Error finalizing Card Pair", err.Error())
+	}
+}
+
 func (c *remoteConnection) sendCertificate(msg Message) {
 	certbytes := c.session.Cert.Serialize()
-	resp := Message{
-		Name:    ResponseProvideCertificate,
-		Payload: certbytes,
-	}
-	c.encoder.Encode(resp)
+	c.sendMessage(ResponseProvideCertificate, certbytes)
 }
 
 // ProcessProvideCertificate is for adding a remote card's certificate to the remote portion of the struct
@@ -93,42 +137,53 @@ func (c *remoteConnection) ProcessProvideCertificate(msg Message) {
 	c.remoteCertificate = &remoteCert
 }
 
+/////
 // Below are the methods that satisfy the interface for remote counterparty
-
+/////
 func (c *remoteConnection) GetCertificate() (cert.CardCertificate, error) {
-	toSend := Message{
-		Name: RequestProvideCertifcate,
+	c.sendMessage(RequestProvideCertifcate, []byte{})
+	select {
+	case remoteCert := <-c.remoteCertificateChan:
+		return remoteCert, nil
+	case <-time.After(10 * time.Second):
+		return cert.CardCertificate{}, ErrTimeout
+
 	}
-	c.encoder.Encode(toSend)
-	for c.remoteCertificate == nil {
-		time.Sleep(time.Second * 5)
-	}
-	return *c.remoteCertificate, nil
 }
 
 func (c *remoteConnection) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
-	// generate request
-	// add initPairingData to request
-	// send it off
-	return
+	c.sendMessage(RequestCardPair1, initPairingData)
+	select {
+	case cardPairData := <-c.cardPairDataChan:
+		return cardPairData, nil
+	case <-time.After(10 * time.Second):
+		return []byte{}, ErrTimeout
+
+	}
 }
 
 func (c *remoteConnection) CardPair2(cardPairData []byte) (cardPairData2 []byte, err error) {
-	// generate request
-	// add cardPairData to request
-	// send it off
-	return
+	c.sendMessage(RequestCardPair2, cardPairData)
+	select {
+	case cardPairData2 := <-c.cardPairData2Chan:
+		return cardPairData2, nil
+	case <-time.After(10 * time.Second):
+		return []byte{}, ErrTimeout
+	}
 }
 
 func (c *remoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
-	// generate request
-	// add cardPair2Data to request
-	// send it off
-	return nil
+	c.sendMessage(RequestFinalizeCardPair, cardPair2Data)
+	select {
+	case <-c.finalizeCardPairErrorChan:
+		return nil
+	case <-time.After(10 * time.Second):
+		return ErrTimeout
+	}
 }
 
 func (c *remoteConnection) ReceivePhonons(PhononTransfer []byte) error {
-
+	//	PhononTransfer <- c.receivePhononChan
 	return nil
 }
 
@@ -145,4 +200,13 @@ func (c *remoteConnection) GenerateInvoice() (invoiceData []byte, err error) {
 func (c *remoteConnection) ReceiveInvoice(invoiceData []byte) error {
 	// todo: oh boy
 	return nil
+}
+
+// Utility functions
+func (c *remoteConnection) sendMessage(messageName string, messagePayload []byte) {
+	tosend := Message{
+		Name:    messageName,
+		Payload: messagePayload,
+	}
+	c.encoder.Encode(tosend)
 }

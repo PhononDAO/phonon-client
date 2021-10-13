@@ -183,6 +183,10 @@ func (s *Session) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err
 	return s.cs.DestroyPhonon(keyIndex)
 }
 
+func (s *Session) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error) {
+	return s.cs.IdentifyCard(nonce)
+}
+
 func (s *Session) InitCardPairing(receiverCert cert.CardCertificate) ([]byte, error) {
 	if !s.verified() {
 		return nil, ErrPINNotEntered

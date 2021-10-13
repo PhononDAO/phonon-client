@@ -13,15 +13,13 @@ var (
 	MessageError          = "Error"
 	MessagePassthruFailed = "PassthruFailed"
 	// Client to terminal commands
-	RequestProvideCertifcate   = "ProvideCert"
-	ResponseProvideCertificate = "ProvideCertResponse"
-	RequestCardChallenge       = "CardChallenge"
-	ResponseCardChallenge      = "ChallengeResponse"
-	RequestNoOp                = "NoOp"
-	RequestConnectCard2Card    = "Connect2Card"
-	RequestDisconnectFromCard  = "DisconnectFromCard"
-	RequestEndSession          = "EndSession"
-	RequestPhononAck           = "AckPhonon"
+	RequestIdentify           = "Identify"
+	ResponseIdentify          = "IdentifyResponse"
+	RequestNoOp               = "NoOp"
+	RequestConnectCard2Card   = "Connect2Card"
+	RequestDisconnectFromCard = "DisconnectFromCard"
+	RequestEndSession         = "EndSession"
+	RequestPhononAck          = "AckPhonon"
 
 	// Client to client commands
 	RequestCardPair1        = "CardPair1"

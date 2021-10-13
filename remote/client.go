@@ -2,6 +2,8 @@ package remote
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/tls"
 	"encoding/gob"
 	"errors"
@@ -25,7 +27,10 @@ type remoteConnection struct {
 	remoteCertificateChan     chan cert.CardCertificate
 	cardPairDataChan          chan []byte
 	cardPairData2Chan         chan []byte
+	remoteIdentityChan        chan []byte
 	finalizeCardPairErrorChan chan error
+	counterpartyNonce         [32]byte
+	verified                  bool
 }
 
 // this will go someplace, I swear
@@ -75,12 +80,10 @@ func (c *remoteConnection) HandleIncoming() {
 
 func (c *remoteConnection) process(msg Message) {
 	switch msg.Name {
-	case RequestProvideCertifcate:
-		c.sendCertificate(msg)
-	case ResponseProvideCertificate:
-		c.ProcessProvideCertificate(msg)
-	case RequestCardChallenge:
-		c.ProcessChallenge(msg)
+	case RequestIdentify:
+		c.sendIdentify(msg)
+	case ResponseIdentify:
+		c.ProcessIdentify(msg)
 	case RequestCardPair1:
 		c.ProcessCardPair1(msg)
 	case RequestCardPair2:
@@ -93,9 +96,28 @@ func (c *remoteConnection) process(msg Message) {
 /////
 // Below are the request processing methods
 /////
-func (c *remoteConnection) ProcessChallenge(msg Message) {
-	// see if the card can decrypt the message, send back the challenge response.
-	// same as init card pair?
+func (c *remoteConnection) sendIdentify(msg Message) {
+	key, sig, err := c.session.IdentifyCard(msg.Payload)
+	if err != nil {
+		log.Error("Issue identifying local card", err.Error())
+		return
+	}
+	//todo: wrap key and sig into an idenitfyCardResponse to be parsed using ParseIdentifyCard in the below function
+}
+
+func (c *remoteConnection) ProcessIdentify(msg Message) {
+	key, sig, err := card.ParseIdentifyCardResponse(msg.Payload)
+	if err != nil {
+		log.Error("Issue parsing identify card response", err.Error())
+		return
+	}
+	if !ecdsa.Verify(key, c.counterpartyNonce[:], sig.R, sig.S) {
+		log.Error("Unable to verify card challenge")
+		return
+	} else {
+		c.verified = true
+		return
+	}
 }
 
 func (c *remoteConnection) ProcessCardPair1(msg Message) {
@@ -123,11 +145,6 @@ func (c *remoteConnection) ProcessFinalizeCardPair(msg Message) {
 	}
 }
 
-func (c *remoteConnection) sendCertificate(msg Message) {
-	certbytes := c.session.Cert.Serialize()
-	c.sendMessage(ResponseProvideCertificate, certbytes)
-}
-
 // ProcessProvideCertificate is for adding a remote card's certificate to the remote portion of the struct
 func (c *remoteConnection) ProcessProvideCertificate(msg Message) {
 	remoteCert, err := cert.ParseRawCardCertificate(msg.Payload)
@@ -140,13 +157,16 @@ func (c *remoteConnection) ProcessProvideCertificate(msg Message) {
 /////
 // Below are the methods that satisfy the interface for remote counterparty
 /////
-func (c *remoteConnection) GetCertificate() (cert.CardCertificate, error) {
-	c.sendMessage(RequestProvideCertifcate, []byte{})
+func (c *remoteConnection) Identify() error {
+	var nonce [32]byte
+	rand.Read(nonce[:])
+	c.counterpartyNonce = nonce
+	c.sendMessage(RequestIdentify, nonce[:])
 	select {
-	case remoteCert := <-c.remoteCertificateChan:
-		return remoteCert, nil
+	case <-c.remoteIdentityChan:
+		return nil
 	case <-time.After(10 * time.Second):
-		return cert.CardCertificate{}, ErrTimeout
+		return ErrTimeout
 
 	}
 }

@@ -573,7 +573,7 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 	//TODO: protect the caller from passing too many keyIndices for an APDU
 	data, p2Length := encodeSendPhononsData(keyIndices)
 	cmd := NewCommandSendPhonons(data, p2Length, extendedRequest)
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		log.Error("error in send phonons command: ", err)
 		return nil, err
@@ -613,7 +613,7 @@ func (cs *PhononCommandSet) ReceivePhonons(phononTransfer []byte) error {
 	log.Debug("sending RECV_PHONONS command")
 
 	cmd := NewCommandReceivePhonons(phononTransfer)
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return err
 	}
@@ -669,7 +669,7 @@ func (cs *PhononCommandSet) InitCardPairing(receiverCert cert.CardCertificate) (
 		return nil, err
 	}
 	cmd := NewCommandInitCardPairing(certTLV.Encode())
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -685,7 +685,7 @@ func (cs *PhononCommandSet) InitCardPairing(receiverCert cert.CardCertificate) (
 func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
 	log.Debug("sending CARD_PAIR command")
 	cmd := NewCommandCardPair(initPairingData)
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -699,7 +699,7 @@ func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byt
 func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
 	log.Debug("sending CARD_PAIR_2 command")
 	cmd := NewCommandCardPair2(cardPairData)
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -714,7 +714,7 @@ func (cs *PhononCommandSet) CardPair2(cardPairData []byte) (cardPair2Data []byte
 func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	log.Debug("sending FINALIZE_CARD_PAIR command")
 	cmd := NewCommandFinalizeCardPair(cardPair2Data)
-	resp, err := cs.c.Send(cmd.ApduCmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return err
 	}

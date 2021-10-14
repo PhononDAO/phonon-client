@@ -1,10 +1,12 @@
 package remote
 
 import (
+	"crypto/ecdsa"
 	"encoding/gob"
 	"fmt"
 	"net/http"
 
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/posener/h2conn"
 	log "github.com/sirupsen/logrus"
@@ -22,7 +24,7 @@ func StartServer(port string, certfile string, keyfile string) {
 
 type clientSession struct {
 	certificate    *cert.CardCertificate
-	challengeText  string
+	challengeNonce [32]byte
 	underlyingConn *h2conn.Conn
 	sender         *gob.Encoder
 	receiver       *gob.Decoder
@@ -33,7 +35,7 @@ type clientSession struct {
 	name string
 }
 
-var clientSessions map[string]clientSession
+var clientSessions map[string]*clientSession
 
 func index(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("hello there"))
@@ -76,7 +78,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	}(messageChan)
 
 	newMessage := Message{
-		Name: RequestCardChallenge,
+		Name: RequestCertificate,
 	}
 
 	cmdEncoder.Encode(newMessage)
@@ -93,9 +95,10 @@ func handle(w http.ResponseWriter, r *http.Request) {
 
 func (c *clientSession) process(msg Message) {
 	// if the client hasn't identified itself with the server, ignore what they are doing until they provide the certificate, and keep asking for it.
+	fmt.Println("processing")
 	if c.certificate == nil {
 		// if they are providing the certificate, accept it, and then generate a challenge, add it to the challenge test, and continue executing
-		if msg.Name == ResponseProvideCertificate {
+		if msg.Name == ResponseCertificate {
 			certParsed, err := cert.ParseRawCardCertificate(msg.Payload)
 			if err != nil {
 				log.Info("failed to parse certificate from client %s", err.Error())
@@ -105,21 +108,28 @@ func (c *clientSession) process(msg Message) {
 		} else {
 			//ask for the certificate again
 			c.sender.Encode(Message{
-				Name: ResponseProvideCertificate,
+				Name: RequestCertificate,
 			})
 			return
 		}
 	}
 	if !c.validated {
-		if msg.Name == ResponseCardChallenge {
-			// parse challenge response
-			// check if response is the same as the challenge
-			// add card to list of active cards
-			// set validated == true
+		if msg.Name == ResponseIdentify {
+			key, sig, err := card.ParseIdentifyCardResponse(msg.Payload)
+			if err != nil {
+				log.Error("Unable to parse IdentifyCardResponse", err.Error())
+				return
+			}
+			if !ecdsa.Verify(key, c.challengeNonce[:], sig.R, sig.S) {
+				log.Error("unable to verify card challenge")
+				return
+			}
+			c.validated = true
+			clientSessions[string(c.certificate.Sig)] = c
 			return
 			//if challenge text wasn't set, set it, and send the challenge to the card
 		} else {
-			if c.challengeText == "" {
+			if c.challengeNonce == [32]byte{} {
 				//generate challengeText
 			}
 			// generate challenge
@@ -128,7 +138,6 @@ func (c *clientSession) process(msg Message) {
 		}
 		// if the challenge text has been set, ignore what they want and send it again
 	}
-
 	switch msg.Name {
 	case RequestConnectCard2Card:
 		c.ConnectCard2Card(msg)
@@ -147,7 +156,7 @@ func (c *clientSession) process(msg Message) {
 		c.noop(msg)
 		//noop
 		// do nothing, but reset the last communication counter
-	case RequestCardPair1, RequestCardPair2, RequestFinalizeCardPair:
+	case ResponseIdentify, RequestCardPair1, RequestCardPair2, RequestFinalizeCardPair:
 		c.passthrough(msg)
 		//passthru msg
 		// send to the opposing card
@@ -169,7 +178,7 @@ func (c *clientSession) process(msg Message) {
 
 func (c *clientSession) ProvideCertificate() {
 	msg := Message{
-		Name:    ResponseProvideCertificate,
+		Name:    ResponseCertificate,
 		Payload: c.counterparty.certificate.Serialize(),
 	}
 	err := c.sender.Encode(msg)
@@ -191,7 +200,7 @@ func (c *clientSession) ConnectCard2Card(msg Message) {
 		return
 	} else if counterparty.counterparty == nil && c.counterparty == nil {
 		counterparty.counterparty = c
-		c.counterparty = &counterparty
+		c.counterparty = counterparty
 		c.sender.Encode(Message{
 			Name: MessageConnected,
 			// Send back the name of the person you've connected to

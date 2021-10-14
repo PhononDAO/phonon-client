@@ -16,7 +16,7 @@ func NewLocalCounterParty(session *card.Session) *localCounterParty {
 	}
 }
 
-func (lcp *localCounterParty) GetCertificate() (cert.CardCertificate, error) {
+func (lcp *localCounterParty) GetCertificate() (*cert.CardCertificate, error) {
 	return lcp.s.GetCertificate()
 }
 

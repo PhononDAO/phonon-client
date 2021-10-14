@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/remote"
 )
@@ -25,8 +26,17 @@ func (t *PhononTerminal) GenerateMock() error {
 		return err
 	}
 	sess, _ := card.NewSession(c)
+	// sign with demo key. there's no reason a mock card would not be signed with demo key
+	err = c.InstallCertificate(cert.SignWithDemoKey)
+	if err != nil {
+		return err
+	}
+	err = sess.Init("111111")
+	if err != nil{
+		return err
+	}
+	fmt.Println(sess.Cert)
 	t.sessions = append(t.sessions, sess)
-
 	return nil
 }
 
@@ -79,14 +89,15 @@ func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} 
 	return struct{}{}
 }
 
-func (t *PhononTerminal) ConnectRemoteSession(sessionIndex int, someRemoteInterface interface{}) error {
+func (t *PhononTerminal) ConnectRemoteSession(session *card.Session, someRemoteInterface interface{}) error {
 	fmt.Println("connecting")
-	counterparty, err := remote.Connect("https://localhost:8080/phonon", true)
+	counterparty, err := remote.Connect(session, "https://localhost:8080/phonon", true)
 	if err != nil {
 		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
 	}
 	fmt.Println("successfully connected")
-	t.sessions[sessionIndex].RemoteCard = counterparty
+	fmt.Println(counterparty)
+	session.RemoteCard = counterparty
 	return nil
 }
 

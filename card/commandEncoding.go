@@ -298,7 +298,6 @@ func ParseIdentifyCardResponse(resp []byte) (cardPubKey *ecdsa.PublicKey, sig *u
 		log.Errorf("identify card response invalid length %v should be %v ", len(resp), correctLength)
 		return nil, nil, err
 	}
-
 	cardPubKey, err = util.ParseECDSAPubKey(resp[2:67])
 	if err != nil {
 		return nil, nil, errors.New("could not parse card public key")

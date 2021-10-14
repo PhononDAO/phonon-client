@@ -36,7 +36,7 @@ type remoteConnection struct {
 // this will go someplace, I swear
 var ErrTimeout = errors.New("Timeout")
 
-func Connect(url string, ignoreTLS bool) (*remoteConnection, error) {
+func Connect(s *card.Session, url string, ignoreTLS bool) (*remoteConnection, error) {
 	d := &h2conn.Client{
 		Client: &http.Client{
 			Transport: &http2.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: ignoreTLS}},
@@ -50,7 +50,8 @@ func Connect(url string, ignoreTLS bool) (*remoteConnection, error) {
 		conn: conn,
 	}
 	go remoteConn.HandleIncoming()
-
+	remoteConn.encoder = gob.NewEncoder(conn)
+	remoteConn.session = s
 	return remoteConn, nil
 }
 
@@ -103,22 +104,29 @@ func (c *remoteConnection) process(msg Message) {
 
 func (c *remoteConnection) sendCertificate(msg Message) {
 	fmt.Println(c.session.Cert)
-	c.sendMessage(ResponseCertificate, c.session.Cert.Serialize())
+	cert, err := c.session.GetCertificate()
+	if err != nil {
+		log.Error("Cert doesn't exist")
+	}
+	c.sendMessage(ResponseCertificate, cert.Serialize())
 }
 
 func (c *remoteConnection) sendIdentify(msg Message) {
 	fmt.Println(msg.Payload)
 	key, sig, err := c.session.IdentifyCard(msg.Payload)
+	fmt.Printf("sig: %s\nKey:%s\n", sig, key)
 	if err != nil {
 		log.Error("Issue identifying local card", err.Error())
 		return
 	}
+
 	ret := []byte{}
-	ret = append(ret,0x80)
-	ret = append(ret,byte(len(key.X.Bytes())))
-	ret = append(ret,key.X.Bytes()...)
-	ret = append(sig.R.Bytes())
-	c.sendMessage(ResponseIdentify,ret)
+	ret = append(ret, 0x80)
+	ret = append(ret, byte(len(key.X.Bytes())))
+	ret = append(ret, key.X.Bytes()...)
+	ret = append(ret, byte(len(sig.S.Bytes())))
+	ret = append(ret, sig.S.Bytes()...)
+	c.sendMessage(ResponseIdentify, ret)
 	//todo: wrap key and sig into an idenitfyCardResponse to be parsed using ParseIdentifyCard in the below function
 }
 
@@ -219,8 +227,9 @@ func (c *remoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 	}
 }
 
-func (c *remoteConnection) GetCertificate()(cert.CardCertificate, error){
-	return cert.CardCertificate{}, nil
+func (c *remoteConnection) GetCertificate() (*cert.CardCertificate, error) {
+	fmt.Println("haha")
+	return &cert.CardCertificate{}, nil
 }
 
 func (c *remoteConnection) ReceivePhonons(PhononTransfer []byte) error {
@@ -245,9 +254,12 @@ func (c *remoteConnection) ReceiveInvoice(invoiceData []byte) error {
 
 // Utility functions
 func (c *remoteConnection) sendMessage(messageName string, messagePayload []byte) {
-	tosend := Message{
+	fmt.Println(messageName, string(messagePayload))
+
+	tosend := &Message{
 		Name:    messageName,
 		Payload: messagePayload,
 	}
+
 	c.encoder.Encode(tosend)
 }

@@ -468,9 +468,9 @@ func (c *MockCard) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	return nil
 }
 
-func (c *MockCard) Pair() (cert.CardCertificate, error) {
+func (c *MockCard) Pair() (*cert.CardCertificate, error) {
 	//TODO
-	return c.IdentityCert, nil
+	return &c.IdentityCert, nil
 }
 
 //Phonon Management Functions

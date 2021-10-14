@@ -50,6 +50,7 @@ func Start() {
 		Func: deactivateCard,
 		Help: "Deselect a card if one is selected",
 	})
+
 	shell.AddCmd(&ishell.Cmd{
 		Name: "init",
 		Func: initCard,
@@ -102,6 +103,12 @@ func Start() {
 	 	Func: connectRemoteSession,
 	 	Help: "Connect to a remote session",
 	 })
+	 shell.AddCmd(&ishell.Cmd{
+	 	Name:     "mock",
+	 	Func:     addMock,
+	 	Help:     "make a mock card and add it to the session",
+	 })
+
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "receive",
 	// 	Func: setReceiveMode,
@@ -231,8 +238,7 @@ func getBalance(c *ishell.Context) {
 
 // todo: this
 func connectRemoteSession(c *ishell.Context) {
-	var sessionIndex int
-	err := t.ConnectRemoteSession(sessionIndex, struct{}{})
+	err := t.ConnectRemoteSession(activeCard, struct{}{})
 	if err != nil{
 		c.Err(err)
 	}

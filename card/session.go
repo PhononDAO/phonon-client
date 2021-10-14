@@ -3,6 +3,7 @@ package card
 import (
 	"crypto/ecdsa"
 	"errors"
+	"fmt"
 
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
@@ -22,7 +23,7 @@ type Session struct {
 	terminalPaired bool
 	pinVerified    bool
 	cardPaired     bool
-	Cert           cert.CardCertificate
+	Cert           *cert.CardCertificate
 	name           string
 }
 
@@ -69,15 +70,14 @@ func (s *Session) GetName() string {
 	return "unknown"
 }
 
-func (s *Session) GetCertificate() (cert.CardCertificate, error) {
-	//If s.Cert is already populated, return it
-	if s.Cert.PubKey != nil {
+func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
+	if s.Cert != nil{
 		log.Debugf("GetCertificate returning cert: % X", s.Cert)
 		return s.Cert, nil
 	}
 
 	//TODO, fetch this if it's not there yet
-	return cert.CardCertificate{}, errors.New("certificate not cached by session yet")
+	return &cert.CardCertificate{}, errors.New("certificate not cached by session yet")
 }
 
 func (s *Session) IsUnlocked() bool {
@@ -89,7 +89,7 @@ func (s *Session) IsInitialized() bool {
 }
 
 func (s *Session) IsPairedToCard() bool {
-	return s.remoteCard != nil
+	return s.RemoteCard != nil
 }
 
 //Connect opens a secure channel with a card.
@@ -99,6 +99,9 @@ func (s *Session) Connect() error {
 		return err
 	}
 	s.Cert = cert
+	//todo: remove this
+	fmt.Println(cert)
+	fmt.Println(s.Cert)
 	s.identityPubKey, _ = util.ParseECDSAPubKey(s.Cert.PubKey)
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
@@ -126,6 +129,7 @@ func (s *Session) Init(pin string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(s.Cert)
 	s.pinVerified = true
 
 	return nil
@@ -254,7 +258,7 @@ func (s *Session) SendPhonons(keyIndices []uint16) error {
 	if err != nil {
 		return err
 	}
-	err = s.remoteCard.ReceivePhonons(phononTransferPacket)
+	err = s.RemoteCard.ReceivePhonons(phononTransferPacket)
 	if err != nil {
 		log.Debug("error receiving phonons on remote")
 		return err
@@ -296,7 +300,7 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 	if err != nil {
 		return err
 	}
-	initPairingData, err := s.InitCardPairing(remoteCert)
+	initPairingData, err := s.InitCardPairing(*remoteCert)
 	if err != nil {
 		return err
 	}

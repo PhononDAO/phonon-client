@@ -99,6 +99,7 @@ func (c *clientSession) process(msg Message) {
 	if c.certificate == nil {
 		// if they are providing the certificate, accept it, and then generate a challenge, add it to the challenge test, and continue executing
 		if msg.Name == ResponseCertificate {
+			fmt.Println("gettingCertificate")
 			certParsed, err := cert.ParseRawCardCertificate(msg.Payload)
 			if err != nil {
 				log.Info("failed to parse certificate from client %s", err.Error())
@@ -115,7 +116,9 @@ func (c *clientSession) process(msg Message) {
 	}
 	if !c.validated {
 		if msg.Name == ResponseIdentify {
+			fmt.Println("processing identify command")
 			key, sig, err := card.ParseIdentifyCardResponse(msg.Payload)
+			fmt.Println("getting IdentifyCard")
 			if err != nil {
 				log.Error("Unable to parse IdentifyCardResponse", err.Error())
 				return
@@ -129,11 +132,11 @@ func (c *clientSession) process(msg Message) {
 			return
 			//if challenge text wasn't set, set it, and send the challenge to the card
 		} else {
+			fmt.Println("generating card challenge")
 			if c.challengeNonce == [32]byte{} {
 				//generate challengeText
 			}
-			// generate challenge
-			// send it off
+			c.RequestIdentify()
 			return
 		}
 		// if the challenge text has been set, ignore what they want and send it again
@@ -174,6 +177,13 @@ func (c *clientSession) process(msg Message) {
 
 	}
 	fmt.Printf("%+v", msg)
+}
+
+func (c *clientSession) RequestIdentify(){
+	c.sender.Encode(Message{
+		Name: RequestIdentify,
+		Payload: c.challengeNonce[:],
+	})
 }
 
 func (c *clientSession) ProvideCertificate() {

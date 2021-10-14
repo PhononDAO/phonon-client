@@ -15,6 +15,8 @@ var (
 	// Client to terminal commands
 	RequestIdentify           = "Identify"
 	ResponseIdentify          = "IdentifyResponse"
+	RequestCertificate        = "RequestCert"
+	ResponseCertificate       = "ResponseCert"
 	RequestNoOp               = "NoOp"
 	RequestConnectCard2Card   = "Connect2Card"
 	RequestDisconnectFromCard = "DisconnectFromCard"

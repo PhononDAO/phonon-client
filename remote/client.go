@@ -80,6 +80,10 @@ func (c *remoteConnection) HandleIncoming() {
 
 func (c *remoteConnection) process(msg Message) {
 	switch msg.Name {
+	case RequestCertificate:
+		c.sendCertificate(msg)
+	case ResponseCertificate:
+		c.receiveCertificate(msg)
 	case RequestIdentify:
 		c.sendIdentify(msg)
 	case ResponseIdentify:
@@ -96,12 +100,25 @@ func (c *remoteConnection) process(msg Message) {
 /////
 // Below are the request processing methods
 /////
+
+func (c *remoteConnection) sendCertificate(msg Message) {
+	fmt.Println(c.session.Cert)
+	c.sendMessage(ResponseCertificate, c.session.Cert.Serialize())
+}
+
 func (c *remoteConnection) sendIdentify(msg Message) {
+	fmt.Println(msg.Payload)
 	key, sig, err := c.session.IdentifyCard(msg.Payload)
 	if err != nil {
 		log.Error("Issue identifying local card", err.Error())
 		return
 	}
+	ret := []byte{}
+	ret = append(ret,0x80)
+	ret = append(ret,byte(len(key.X.Bytes())))
+	ret = append(ret,key.X.Bytes()...)
+	ret = append(sig.R.Bytes())
+	c.sendMessage(ResponseIdentify,ret)
 	//todo: wrap key and sig into an idenitfyCardResponse to be parsed using ParseIdentifyCard in the below function
 }
 
@@ -146,7 +163,7 @@ func (c *remoteConnection) ProcessFinalizeCardPair(msg Message) {
 }
 
 // ProcessProvideCertificate is for adding a remote card's certificate to the remote portion of the struct
-func (c *remoteConnection) ProcessProvideCertificate(msg Message) {
+func (c *remoteConnection) receiveCertificate(msg Message) {
 	remoteCert, err := cert.ParseRawCardCertificate(msg.Payload)
 	if err != nil {
 		//handle this
@@ -200,6 +217,10 @@ func (c *remoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 	case <-time.After(10 * time.Second):
 		return ErrTimeout
 	}
+}
+
+func (c *remoteConnection) GetCertificate()(cert.CardCertificate, error){
+	return cert.CardCertificate{}, nil
 }
 
 func (c *remoteConnection) ReceivePhonons(PhononTransfer []byte) error {

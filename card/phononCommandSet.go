@@ -321,7 +321,6 @@ func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.Public
 	}
 	log.Debug("identify card resp:\n", hex.Dump(resp.Data))
 
-	cardPubKey, cardSig, err = parseIdentifyCardResponse(resp.Data)
 	if err != nil {
 		log.Error("could not parse identify card response: ", err)
 		return nil, nil, err

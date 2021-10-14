@@ -2,8 +2,7 @@ package card
 
 import (
 	"fmt"
-	"os"
-	"runtime"
+
 	"testing"
 
 	"github.com/GridPlus/phonon-client/model"
@@ -11,32 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//Card must be initialized with this pin before integration test suite can run
 var testPin string = "111111"
-
-func TestMain(m *testing.M) {
-	runtime.GOMAXPROCS(1)
-	log.SetLevel(log.DebugLevel)
-	log.SetFormatter(&log.TextFormatter{})
-
-	cs, err := Connect()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	_, _, initialized, err := cs.Select()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if !initialized {
-		err = cs.Init(testPin)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-	}
-	os.Exit(m.Run())
-}
 
 //SELECT
 func TestSelect(t *testing.T) {
@@ -115,7 +90,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		expectedPhononCount int
 	}
 
-	var createdPhonons []model.Phonon
+	var createdPhonons []*model.Phonon
 	for _, description := range phononTable {
 		keyIndex, pubKey, err := cs.CreatePhonon()
 		if err != nil {
@@ -123,7 +98,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 			return
 		}
 		//track created to review after listing to check that we get out exactly what we put in
-		createdPhonons = append(createdPhonons, model.Phonon{
+		createdPhonons = append(createdPhonons, &model.Phonon{
 			KeyIndex:     keyIndex,
 			PubKey:       pubKey,
 			Value:        description.value,
@@ -135,7 +110,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 			return
 		}
 	}
-	fmt.Printf("createdPhonons: %+v", createdPhonons)
+	// fmt.Printf("createdPhonons: %+v", createdPhonons)
 
 	filters := []phononFilter{
 		{
@@ -159,14 +134,14 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 	}
 
 	for _, f := range filters {
-		fmt.Printf("listing phonons with filter: %+v\n", f)
+		// fmt.Printf("listing phonons with filter: %+v\n", f)
 		//TODO: wrap up as list function, and pass different lists
 		receivedPhonons, err := cs.ListPhonons(f.currencyType, f.lessThanValue, f.greaterThanValue)
 		if err != nil {
 			t.Error("err listing all phonons: ", err)
 			return
 		}
-		fmt.Println("len of the received phonons: ", len(receivedPhonons))
+		// fmt.Println("len of the received phonons: ", len(receivedPhonons))
 		// fmt.Print("received phonons: ", receivedPhonons)
 		var matchedPhononCount int
 
@@ -176,16 +151,14 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 				t.Errorf("could not get phonon pubkey at index %v: %v\n", received.KeyIndex, err)
 				return
 			}
-			fmt.Printf("%+v\n", received)
+			// fmt.Printf("%+v\n", received)
 			for _, created := range createdPhonons {
-				fmt.Printf("createdPubKey: % X\n", created.PubKey)
+				// fmt.Printf("createdPubKey: % X\n", created.PubKey)
 				//Todo figure out why this isn't matching
 				if received.PubKey.Equal(created.PubKey) {
 					matchedPhononCount += 1
-					fmt.Printf("received: %+v\n", received)
-					fmt.Printf("created: %+v\n", created)
 					if !cmp.Equal(received, created) {
-						t.Error("phonons with equal pubkeys had different values: ")
+						t.Error("error: phonons with equal pubkeys had different values: ")
 						t.Errorf("received: %+v\n", received)
 						t.Errorf("created: %+v\n", created)
 					}

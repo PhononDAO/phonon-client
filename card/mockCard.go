@@ -137,6 +137,17 @@ func NewMockCard() (*MockCard, error) {
 	}, nil
 }
 
+func NewInitializedMockCard() (*MockCard, error) {
+	mockCard, err := NewMockCard()
+	if err != nil {
+		return nil, err
+	}
+	testPin := "111111"
+	mockCard.InstallCertificate(cert.SignWithDemoKey)
+	mockCard.Init(testPin)
+	return mockCard, nil
+}
+
 func (c *MockCard) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error) {
 	instanceUID = util.RandomKey(16)
 

@@ -42,6 +42,7 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	}
 	_, _, s.pinInitialized, err = s.cs.Select()
 	if err != nil {
+		log.Error("cannot select card for new session: ", err)
 		return nil, err
 	}
 	if !s.pinInitialized {
@@ -50,6 +51,7 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	//If card is already initialized, go ahead and open terminal to card secure channel
 	err = s.Connect()
 	if err != nil {
+		log.Error("could not run session connect: ", err)
 		return nil, err
 	}
 
@@ -84,6 +86,10 @@ func (s *Session) IsUnlocked() bool {
 
 func (s *Session) IsInitialized() bool {
 	return s.pinInitialized
+}
+
+func (s *Session) IsPairedToCard() bool {
+	return s.remoteCard != nil
 }
 
 //Connect opens a secure channel with a card.
@@ -227,16 +233,33 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 	return nil
 }
 
-func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
+//Keeping this around for now in case we need a version that does not interact with remote
+// func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
+// 	if !s.verified() && !s.cardPaired {
+// 		return nil, ErrCardNotPairedToCard
+// 	}
+// 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return phononTransferPacket, nil
+// }
+
+func (s *Session) SendPhonons(keyIndices []uint16) error {
 	if !s.verified() && !s.cardPaired {
-		return nil, ErrCardNotPairedToCard
+		return ErrCardNotPairedToCard
 	}
 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	return phononTransferPacket, nil
+	err = s.remoteCard.ReceivePhonons(phononTransferPacket)
+	if err != nil {
+		log.Debug("error receiving phonons on remote")
+		return err
+	}
+	return nil
 }
 
 func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {

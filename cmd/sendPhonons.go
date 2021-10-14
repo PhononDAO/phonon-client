@@ -129,10 +129,8 @@ func sendPhonons() {
 
 	receiver := orchestrator.NewLocalCounterParty(receiverSession)
 
-	p := orchestrator.NewPairing(sender)
-
 	fmt.Println("starting card to card pairing")
-	err = p.PairWithRemoteCard(receiver)
+	err = sender.PairWithRemoteCard(receiver)
 	if err != nil {
 		fmt.Println("error during pairing with counterparty")
 		fmt.Println(err)
@@ -140,14 +138,7 @@ func sendPhonons() {
 	}
 	fmt.Println("cards paired succesfully!")
 
-	err = p.RetrieveInvoice()
-	if err != nil {
-		fmt.Println("error during invoice retrieval")
-		fmt.Println(err)
-		return
-	}
-
-	err = p.SendPhonons([]uint16{keyIndex})
+	err = sender.SendPhonons([]uint16{keyIndex})
 	if err != nil {
 		fmt.Println("error sending phonons")
 		fmt.Println(err)
@@ -164,22 +155,4 @@ func sendPhonons() {
 		fmt.Println("receiver has phonons: ")
 		fmt.Printf("%+v", p)
 	}
-	// cs, err := card.OpenSecureConnection()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-	// err = cs.VerifyPIN("111111")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// testKeyIndices := []uint16{2, 3, 4, 5, 6, 7, 8}
-	// transferPackets, err := cs.SendPhonons(testKeyIndices, false)
-	// if err != nil {
-	// 	fmt.Print("error in SEND_PHONONS command: ", err)
-	// } else {
-	// 	fmt.Printf("received SEND_PHONONS transfer packet: % X\n", transferPackets)
-	// }
 }

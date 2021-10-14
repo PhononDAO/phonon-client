@@ -42,12 +42,12 @@ func Start() {
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "activate",
-		Func: selectCard,
+		Func: activateCard,
 		Help: "Activate a specific card",
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "deactivate",
-		Func: unselectCard,
+		Func: deactivateCard,
 		Help: "Deselect a card if one is selected",
 	})
 	shell.AddCmd(&ishell.Cmd{
@@ -81,6 +81,16 @@ func Start() {
 		Name: "redeem",
 		Func: redeemPhonon,
 		Help: "Destroy the phonon at index on card at index and retrieve the priate key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "pairLocal",
+		Func: cardPairLocal,
+		Help: "Pair with another phonon card to establish a secure connection for the exchange of phonons.",
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "sendPhonons",
+		Func: sendPhonons,
+		Help: "Send phonons to paired card",
 	})
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "balance",
@@ -137,6 +147,16 @@ func checkActiveCard(c *ishell.Context) bool {
 	return true
 }
 
+//checkCardPaired provides a guard function for shell commands to check that a card is paired with a remote
+//before performing an operation where this is required, such as sending or receiving phonons
+func checkCardPaired(c *ishell.Context) bool {
+	if !activeCard.IsPairedToCard() {
+		c.Println("card must be paired with remote card to complete this operation")
+		return false
+	}
+	return true
+}
+
 func refresh(c *ishell.Context) {
 	c.Println("refreshing sessions")
 	sessions, err := t.RefreshSessions()
@@ -149,7 +169,7 @@ func refresh(c *ishell.Context) {
 		c.Println("one attached card detected, setting as active")
 		setActiveCard(c, sessions[0])
 	} else {
-		c.Println("multiple cards detected, please use select command to activate one")
+		c.Println("multiple cards detected, please use activate command to choose one")
 	}
 }
 
@@ -164,7 +184,7 @@ func listCards(c *ishell.Context) {
 	}
 }
 
-func selectCard(c *ishell.Context) {
+func activateCard(c *ishell.Context) {
 	sessions := t.ListSessions()
 	var sessionNames []string
 	for _, session := range sessions {
@@ -180,7 +200,7 @@ func selectCard(c *ishell.Context) {
 	}
 }
 
-func unselectCard(c *ishell.Context) {
+func deactivateCard(c *ishell.Context) {
 	c.SetPrompt(standardPrompt)
 	activeCard = nil
 }

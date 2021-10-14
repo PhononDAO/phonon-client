@@ -1,20 +1,25 @@
 package remote
 
 import (
+	"bytes"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/util"
 	"github.com/posener/h2conn"
 	log "github.com/sirupsen/logrus"
 )
 
 func StartServer(port string, certfile string, keyfile string) {
+	//init sessions global
+	clientSessions = make(map[string]*clientSession)
 	http.HandleFunc("/phonon", handle)
-	http.HandleFunc("/connectec", listConnected)
+	http.HandleFunc("/connected", listConnected)
 	http.HandleFunc("/", index)
 	err := http.ListenAndServeTLS("localhost:"+port, certfile, keyfile, nil)
 	if err != nil {
@@ -42,8 +47,8 @@ func index(w http.ResponseWriter, r *http.Request) {
 }
 
 func listConnected(w http.ResponseWriter, r *http.Request) {
-	connected := fmt.Sprintf("%+v", clientSessions)
-	w.Write([]byte(connected))
+	ret, _ := json.Marshal(clientSessions)
+	w.Write(ret)
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
@@ -114,27 +119,44 @@ func (c *clientSession) process(msg Message) {
 			return
 		}
 	}
+
 	if !c.validated {
 		if msg.Name == ResponseIdentify {
 			fmt.Println("processing identify command")
-			key, sig, err := card.ParseIdentifyCardResponse(msg.Payload)
 			fmt.Println("getting IdentifyCard")
+			buf := bytes.NewBuffer(msg.Payload)
+			decoder := gob.NewDecoder(buf)
+			var sig = &util.ECDSASignature{}
+			err := decoder.Decode(sig)
 			if err != nil {
 				log.Error("Unable to parse IdentifyCardResponse", err.Error())
 				return
 			}
+			key, err := util.ParseECDSAPubKey(c.certificate.PubKey)
+			if err != nil {
+				log.Error("Unable to parse pubkey from certificate", err.Error())
+				return
+			}
+			fmt.Println(sig.R, sig.S)
+			fmt.Println(c.challengeNonce[:])
+			fmt.Println(key)
 			if !ecdsa.Verify(key, c.challengeNonce[:], sig.R, sig.S) {
 				log.Error("unable to verify card challenge")
 				return
 			}
 			c.validated = true
+			//todo: get the short name the same way it works in the repl
 			clientSessions[string(c.certificate.Sig)] = c
 			return
 			//if challenge text wasn't set, set it, and send the challenge to the card
 		} else {
 			fmt.Println("generating card challenge")
 			if c.challengeNonce == [32]byte{} {
-				//generate challengeText
+				_, err := rand.Reader.Read(c.challengeNonce[:])
+				if err != nil {
+					fmt.Println("wtf")
+					return
+				}
 			}
 			c.RequestIdentify()
 			return
@@ -179,9 +201,9 @@ func (c *clientSession) process(msg Message) {
 	fmt.Printf("%+v", msg)
 }
 
-func (c *clientSession) RequestIdentify(){
+func (c *clientSession) RequestIdentify() {
 	c.sender.Encode(Message{
-		Name: RequestIdentify,
+		Name:    RequestIdentify,
 		Payload: c.challengeNonce[:],
 	})
 }

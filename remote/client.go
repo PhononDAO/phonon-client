@@ -1,6 +1,7 @@
 package remote
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
@@ -113,21 +114,16 @@ func (c *remoteConnection) sendCertificate(msg Message) {
 
 func (c *remoteConnection) sendIdentify(msg Message) {
 	fmt.Println(msg.Payload)
-	key, sig, err := c.session.IdentifyCard(msg.Payload)
-	fmt.Printf("sig: %s\nKey:%s\n", sig, key)
+	_, sig, err := c.session.IdentifyCard(msg.Payload)
 	if err != nil {
 		log.Error("Issue identifying local card", err.Error())
 		return
 	}
-
-	ret := []byte{}
-	ret = append(ret, 0x80)
-	ret = append(ret, byte(len(key.X.Bytes())))
-	ret = append(ret, key.X.Bytes()...)
-	ret = append(ret, byte(len(sig.S.Bytes())))
-	ret = append(ret, sig.S.Bytes()...)
-	c.sendMessage(ResponseIdentify, ret)
-	//todo: wrap key and sig into an idenitfyCardResponse to be parsed using ParseIdentifyCard in the below function
+	payload := []byte{}	
+	buf := bytes.NewBuffer(payload)
+	enc := gob.NewEncoder(buf)
+	enc.Encode(sig)
+	c.sendMessage(ResponseIdentify, buf.Bytes())	
 }
 
 func (c *remoteConnection) ProcessIdentify(msg Message) {

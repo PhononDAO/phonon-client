@@ -220,7 +220,7 @@ func (c *clientSession) ConnectCard2Card(msg Message) {
 		})
 		log.Error("No connected session:", string(msg.Payload))
 		return
-	} else if counterparty.Counterparty == nil && c.Counterparty == nil {
+	} else if (counterparty.Counterparty == nil && c.Counterparty == nil) {
 		counterparty.Counterparty = c
 		c.Counterparty = counterparty
 		c.sender.Encode(Message{
@@ -229,6 +229,8 @@ func (c *clientSession) ConnectCard2Card(msg Message) {
 		c.Counterparty.sender.Encode(Message{
 			Name:    MessageConnectedToCard,
 		})
+	} else if (c.Counterparty == counterparty && counterparty.Counterparty == c){
+		//do nothing
 	} else {
 		c.sender.Encode(Message{
 			Name:    MessageError,

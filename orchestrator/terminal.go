@@ -35,7 +35,6 @@ func (t *PhononTerminal) GenerateMock() error {
 	if err != nil{
 		return err
 	}
-	fmt.Println(sess.Cert)
 	t.sessions = append(t.sessions, sess)
 	return nil
 }
@@ -89,15 +88,13 @@ func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} 
 	return struct{}{}
 }
 
-func (t *PhononTerminal) ConnectRemoteSession(session *card.Session, someRemoteInterface interface{}) error {
+func (t *PhononTerminal) ConnectRemoteSession(session *card.Session,counterpartyID string) error {
 	fmt.Println("connecting")
-	counterparty, err := remote.Connect(session, "https://localhost:8080/phonon", true)
+	err := remote.Connect(session, "https://localhost:8080/phonon", true, counterpartyID)
 	if err != nil {
 		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
 	}
 	fmt.Println("successfully connected")
-	fmt.Println(counterparty)
-	session.RemoteCard = counterparty
 	return nil
 }
 

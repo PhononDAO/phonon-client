@@ -28,6 +28,7 @@ func StartServer(port string, certfile string, keyfile string) {
 }
 
 type clientSession struct {
+	Name           string
 	certificate    *cert.CardCertificate
 	challengeNonce [32]byte
 	underlyingConn *h2conn.Conn
@@ -35,7 +36,7 @@ type clientSession struct {
 	receiver       *gob.Decoder
 	validated      bool
 	end            chan bool
-	counterparty   *clientSession
+	Counterparty   *clientSession
 	// the same name that goes in the lookup value of the clientSession map
 	name string
 }
@@ -99,12 +100,11 @@ func handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *clientSession) process(msg Message) {
+	fmt.Printf("processing message: %s\nPayload: %+v\nPayloadString: %s\n",msg.Name,msg.Payload,string(msg.Payload))
 	// if the client hasn't identified itself with the server, ignore what they are doing until they provide the certificate, and keep asking for it.
-	fmt.Println("processing")
 	if c.certificate == nil {
 		// if they are providing the certificate, accept it, and then generate a challenge, add it to the challenge test, and continue executing
 		if msg.Name == ResponseCertificate {
-			fmt.Println("gettingCertificate")
 			certParsed, err := cert.ParseRawCardCertificate(msg.Payload)
 			if err != nil {
 				log.Info("failed to parse certificate from client %s", err.Error())
@@ -122,8 +122,6 @@ func (c *clientSession) process(msg Message) {
 
 	if !c.validated {
 		if msg.Name == ResponseIdentify {
-			fmt.Println("processing identify command")
-			fmt.Println("getting IdentifyCard")
 			buf := bytes.NewBuffer(msg.Payload)
 			decoder := gob.NewDecoder(buf)
 			var sig = &util.ECDSASignature{}
@@ -137,20 +135,22 @@ func (c *clientSession) process(msg Message) {
 				log.Error("Unable to parse pubkey from certificate", err.Error())
 				return
 			}
-			fmt.Println(sig.R, sig.S)
-			fmt.Println(c.challengeNonce[:])
-			fmt.Println(key)
 			if !ecdsa.Verify(key, c.challengeNonce[:], sig.R, sig.S) {
 				log.Error("unable to verify card challenge")
 				return
 			}
 			c.validated = true
 			//todo: get the short name the same way it works in the repl
-			clientSessions[string(c.certificate.Sig)] = c
+			hexString := util.ECDSAPubKeyToHexString(key)
+			name := hexString[:16]
+			c.Name = name
+			clientSessions[name] = c
+			c.sender.Encode(Message{
+				Name: MessageIdentifiedWithServer,
+				Payload: []byte(name),
+			})
 			return
-			//if challenge text wasn't set, set it, and send the challenge to the card
 		} else {
-			fmt.Println("generating card challenge")
 			if c.challengeNonce == [32]byte{} {
 				_, err := rand.Reader.Read(c.challengeNonce[:])
 				if err != nil {
@@ -166,39 +166,21 @@ func (c *clientSession) process(msg Message) {
 	switch msg.Name {
 	case RequestConnectCard2Card:
 		c.ConnectCard2Card(msg)
-		//connect2card
-		// check to see if a connected card has the ID
-		// associate passthru with the opposing card
 	case RequestDisconnectFromCard:
 		c.DisconnectFromCard(msg)
-		//disconnectFromCard
-		// unassociate the cards
 	case RequestEndSession:
 		c.EndSession(msg)
-		//endSession
-		// end session
 	case RequestNoOp:
 		c.noop(msg)
-		//noop
-		// do nothing, but reset the last communication counter
 	case ResponseIdentify, RequestCardPair1, RequestCardPair2, RequestFinalizeCardPair:
 		c.passthrough(msg)
-		//passthru msg
-		// send to the opposing card
 	case RequestSendPhonon:
 		c.sendPhonon(msg)
-		//passthru phonon packet
-		// generate uuid
-		// write packet to pending phonon table with card id and phonon uuid
-		// send packet to opposing card
 	case RequestPhononAck:
 		c.ack(msg)
-		//phonon ack
-		// read uuid
-		// delete from pending phonon table
-
+	case RequestCertificate:
+		c.ProvideCertificate()
 	}
-	fmt.Printf("%+v", msg)
 }
 
 func (c *clientSession) RequestIdentify() {
@@ -209,9 +191,16 @@ func (c *clientSession) RequestIdentify() {
 }
 
 func (c *clientSession) ProvideCertificate() {
+	if c.Counterparty == nil{
+		c.sender.Encode(Message{
+			Name:MessageError,
+			Payload: []byte("No counterparty connected. Cannot get certificate"),
+		})
+		return
+	}
 	msg := Message{
 		Name:    ResponseCertificate,
-		Payload: c.counterparty.certificate.Serialize(),
+		Payload: c.Counterparty.certificate.Serialize(),
 	}
 	err := c.sender.Encode(msg)
 	if err != nil {
@@ -222,7 +211,10 @@ func (c *clientSession) ProvideCertificate() {
 }
 
 func (c *clientSession) ConnectCard2Card(msg Message) {
+	fmt.Printf("attempting to connect card %s to card %s", c.Name, string(msg.Payload))
 	counterparty, ok := clientSessions[string(msg.Payload)]
+	fmt.Println("ConnectingCard2Card")
+	fmt.Println(counterparty.Counterparty)
 	if !ok {
 		c.sender.Encode(Message{
 			Name:    MessageError,
@@ -230,15 +222,15 @@ func (c *clientSession) ConnectCard2Card(msg Message) {
 		})
 		log.Error("No connected session:", string(msg.Payload))
 		return
-	} else if counterparty.counterparty == nil && c.counterparty == nil {
-		counterparty.counterparty = c
-		c.counterparty = counterparty
+	} else if counterparty.Counterparty == nil && c.Counterparty == nil {
+		counterparty.Counterparty = c
+		c.Counterparty = counterparty
 		c.sender.Encode(Message{
 			Name: MessageConnected,
 			// Send back the name of the person you've connected to
 			Payload: msg.Payload,
 		})
-		c.counterparty.sender.Encode(Message{
+		c.Counterparty.sender.Encode(Message{
 			Name:    MessageConnected,
 			Payload: []byte(c.name),
 		})
@@ -255,14 +247,14 @@ func (c *clientSession) DisconnectFromCard(msg Message) {
 		Name: MessageDisconnected,
 	}
 	// encode can fail, so it needs to be checked. Not sure how to handle that
-	c.counterparty.sender.Encode(out)
+	c.Counterparty.sender.Encode(out)
 	c.sender.Encode(out)
-	c.counterparty.counterparty = nil
-	c.counterparty = nil
+	c.Counterparty.Counterparty = nil
+	c.Counterparty = nil
 }
 
 func (c *clientSession) EndSession(msg Message) {
-	if c.counterparty != nil {
+	if c.Counterparty != nil {
 		c.DisconnectFromCard(msg)
 	}
 	c.underlyingConn.Close()
@@ -274,14 +266,14 @@ func (c *clientSession) noop(msg Message) {
 }
 
 func (c *clientSession) passthrough(msg Message) {
-	if c.counterparty == nil {
+	if c.Counterparty == nil {
 		ret := Message{
 			Name: MessagePassthruFailed,
 		}
 		c.sender.Encode(ret)
 		return
 	}
-	c.counterparty.sender.Encode(msg)
+	c.Counterparty.sender.Encode(msg)
 	// needs error handling on the encoding
 }
 

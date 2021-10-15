@@ -16,6 +16,11 @@ func NewLocalCounterParty(session *card.Session) *localCounterParty {
 	}
 }
 
+// this may not need to be here in the end
+func (lcp *localCounterParty) ConnectToCard(string) error{
+	return nil
+}
+
 func (lcp *localCounterParty) GetCertificate() (*cert.CardCertificate, error) {
 	return lcp.s.GetCertificate()
 }

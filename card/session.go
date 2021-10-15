@@ -3,11 +3,11 @@ package card
 import (
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
 
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -100,8 +100,6 @@ func (s *Session) Connect() error {
 	}
 	s.Cert = cert
 	//todo: remove this
-	fmt.Println(cert)
-	fmt.Println(s.Cert)
 	s.identityPubKey, _ = util.ParseECDSAPubKey(s.Cert.PubKey)
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
@@ -129,7 +127,6 @@ func (s *Session) Init(pin string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(s.Cert)
 	s.pinVerified = true
 
 	return nil

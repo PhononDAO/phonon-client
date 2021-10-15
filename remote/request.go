@@ -8,10 +8,11 @@ type Message struct {
 
 var (
 	// Server to client messages
-	MessageConnected      = "Connected"
-	MessageDisconnected   = "Disconnected"
-	MessageError          = "Error"
-	MessagePassthruFailed = "PassthruFailed"
+	MessageConnected            = "Connected"
+	MessageDisconnected         = "Disconnected"
+	MessageError                = "Error"
+	MessagePassthruFailed       = "PassthruFailed"
+	MessageIdentifiedWithServer = "IdentifiedWithServer"
 	// Client to terminal commands
 	RequestIdentify           = "Identify"
 	ResponseIdentify          = "IdentifyResponse"

@@ -99,6 +99,7 @@ func Start() {
 	// 	Func: getBalance,
 	// 	Help: "Retrieve the type and balance of a phonon on card. First argument is index of the card containing the phonon, and not needed if a card is selected. Second argument is the index of the phonon you wish to see the balance of",
 	// })
+
 	 shell.AddCmd(&ishell.Cmd{
 	 	Name: "PairRemote",
 	 	Func: connectRemoteSession,

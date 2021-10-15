@@ -30,17 +30,17 @@ type RemoteConnection struct {
 	cardPairData2Chan         chan []byte
 	remoteIdentityChan        chan []byte
 	identifiedWithServerChan  chan bool
-	identifiedWithServer      bool
 	finalizeCardPairErrorChan chan error
+	identifiedWithServer      bool
 	counterpartyNonce         [32]byte
 	verified                  bool
-	connectedToCardChan chan bool
+	connectedToCardChan       chan bool
 }
 
 // this will go someplace, I swear
 var ErrTimeout = errors.New("Timeout")
 
-func Connect(s *card.Session, url string, ignoreTLS bool) ( *RemoteConnection, error) {
+func Connect(s *card.Session, url string, ignoreTLS bool) (*RemoteConnection, error) {
 	d := &h2conn.Client{
 		Client: &http.Client{
 			Transport: &http2.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: ignoreTLS}},
@@ -52,7 +52,13 @@ func Connect(s *card.Session, url string, ignoreTLS bool) ( *RemoteConnection, e
 		return nil, fmt.Errorf("Unable to connect to remote server %e,", err)
 	}
 	remoteConn := &RemoteConnection{
-		conn: conn,
+		conn:                      conn,
+		remoteCertificateChan:     make(chan cert.CardCertificate, 1),
+		cardPairDataChan:          make(chan []byte, 1),
+		cardPairData2Chan:         make(chan []byte, 1),
+		remoteIdentityChan:        make(chan []byte, 1),
+		identifiedWithServerChan:  make(chan bool, 1),
+		finalizeCardPairErrorChan: make(chan error, 1),
 	}
 	go remoteConn.HandleIncoming()
 	remoteConn.encoder = gob.NewEncoder(conn)
@@ -251,20 +257,21 @@ func (c *RemoteConnection) GetCertificate() (*cert.CardCertificate, error) {
 
 func (c *RemoteConnection) ConnectToCard(cardID string) error {
 	if !c.identifiedWithServer {
-		select{
-		case <- time.After(10 * time.Second):
+		select {
+		case <-time.After(10 * time.Second):
 			return ErrTimeout
-		case <- c.identifiedWithServerChan:
+		case <-c.identifiedWithServerChan:
+			fmt.Println("received Identified with server")
 		}
 	}
 	fmt.Println("sending requestConnectCard2Card message")
 	c.sendMessage(RequestConnectCard2Card, []byte(cardID))
-	select{
-	case <- time.After(10 * time.Second):
+	select {
+	case <-time.After(10 * time.Second):
 		fmt.Println("Connection Timed out Waiting for peer")
 		c.conn.Close()
 		return ErrTimeout
-	case <- c.connectedToCardChan:
+	case <-c.connectedToCardChan:
 		return nil
 	}
 }

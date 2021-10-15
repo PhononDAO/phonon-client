@@ -88,6 +88,7 @@ func Start() {
 		Func: cardPairLocal,
 		Help: "Pair with another phonon card to establish a secure connection for the exchange of phonons.",
 	})
+	
 	shell.AddCmd(&ishell.Cmd{
 		Name: "sendPhonons",
 		Func: sendPhonons,
@@ -99,10 +100,11 @@ func Start() {
 	// 	Help: "Retrieve the type and balance of a phonon on card. First argument is index of the card containing the phonon, and not needed if a card is selected. Second argument is the index of the phonon you wish to see the balance of",
 	// })
 	 shell.AddCmd(&ishell.Cmd{
-	 	Name: "connect",
+	 	Name: "PairRemote",
 	 	Func: connectRemoteSession,
 	 	Help: "Connect to a remote server",
 	 })
+
 	 shell.AddCmd(&ishell.Cmd{
 	 	Name:     "mock",
 	 	Func:     addMock,
@@ -238,22 +240,13 @@ func getBalance(c *ishell.Context) {
 func connectRemoteSession(c *ishell.Context) {
 	fmt.Println("connecting to remote")
 	var card2Connect2 string
-	if len(c.Args) == 0{
-		card2Connect2 = c.Args[0]
+	if len(c.Args) != 1{
+		fmt.Println("wrong number of arguments given")
+		return
 	}
 	err := t.ConnectRemoteSession(activeCard,card2Connect2)
 	if err != nil{
 		c.Err(err)
-	}
-}
-
-//finalize a remote connection by connecting to another card
-func connect2card(c *ishell.Context){
-	if len(c.Args) == 0{
-		fmt.Println("No remote card specified")
-		return
-	}else{
-		activeCard.RemoteCard.ConnectToCard(c.Args[0])
 	}
 }
 

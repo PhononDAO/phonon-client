@@ -90,12 +90,18 @@ func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} 
 
 func (t *PhononTerminal) ConnectRemoteSession(session *card.Session,counterpartyID string) error {
 	fmt.Println("connecting")
-	err := remote.Connect(session, "https://localhost:8080/phonon", true, counterpartyID)
+	remConn, err := remote.Connect(session, "https://localhost:8080/phonon", true)
 	if err != nil {
 		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
 	}
-	fmt.Println("successfully connected")
-	return nil
+	fmt.Println("successfully connected to remote server.")
+	fmt.Println("Connecting to peer")
+	err = remConn.ConnectToCard(counterpartyID)
+	if err != nil{
+		return err
+	}
+	err = session.PairWithRemoteCard(remConn)
+	return err
 }
 
 func (t *PhononTerminal) ProposeTransaction() {

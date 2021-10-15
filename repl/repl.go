@@ -101,14 +101,13 @@ func Start() {
 	 shell.AddCmd(&ishell.Cmd{
 	 	Name: "connect",
 	 	Func: connectRemoteSession,
-	 	Help: "Connect to a remote session",
+	 	Help: "Connect to a remote server",
 	 })
 	 shell.AddCmd(&ishell.Cmd{
 	 	Name:     "mock",
 	 	Func:     addMock,
 	 	Help:     "make a mock card and add it to the session",
 	 })
-
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "receive",
 	// 	Func: setReceiveMode,
@@ -236,11 +235,25 @@ func getBalance(c *ishell.Context) {
 	// c.Printf("Balance of card %d is %v", sessionIndex, t.GetBalance(sessionIndex, phononIndex))
 }
 
-// todo: this
 func connectRemoteSession(c *ishell.Context) {
-	err := t.ConnectRemoteSession(activeCard, struct{}{})
+	fmt.Println("connecting to remote")
+	var card2Connect2 string
+	if len(c.Args) == 0{
+		card2Connect2 = c.Args[0]
+	}
+	err := t.ConnectRemoteSession(activeCard,card2Connect2)
 	if err != nil{
 		c.Err(err)
+	}
+}
+
+//finalize a remote connection by connecting to another card
+func connect2card(c *ishell.Context){
+	if len(c.Args) == 0{
+		fmt.Println("No remote card specified")
+		return
+	}else{
+		activeCard.RemoteCard.ConnectToCard(c.Args[0])
 	}
 }
 

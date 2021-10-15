@@ -256,6 +256,7 @@ func (c *RemoteConnection) GetCertificate() (*cert.CardCertificate, error) {
 }
 
 func (c *RemoteConnection) ConnectToCard(cardID string) error {
+	fmt.Println("CARDID:",cardID)
 	if !c.identifiedWithServer {
 		select {
 		case <-time.After(10 * time.Second):

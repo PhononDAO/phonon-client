@@ -240,11 +240,11 @@ func getBalance(c *ishell.Context) {
 
 func connectRemoteSession(c *ishell.Context) {
 	fmt.Println("connecting to remote")
-	var card2Connect2 string
 	if len(c.Args) != 1{
 		fmt.Println("wrong number of arguments given")
 		return
 	}
+	card2Connect2 := c.Args[0]
 	err := t.ConnectRemoteSession(activeCard,card2Connect2)
 	if err != nil{
 		c.Err(err)

@@ -34,12 +34,13 @@ type RemoteConnection struct {
 	finalizeCardPairErrorChan chan error
 	counterpartyNonce         [32]byte
 	verified                  bool
+	connectedToCardChan chan bool
 }
 
 // this will go someplace, I swear
 var ErrTimeout = errors.New("Timeout")
 
-func Connect(s *card.Session, url string, ignoreTLS bool, counterpartyID string) ( error) {
+func Connect(s *card.Session, url string, ignoreTLS bool) ( *RemoteConnection, error) {
 	d := &h2conn.Client{
 		Client: &http.Client{
 			Transport: &http2.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: ignoreTLS}},
@@ -48,7 +49,7 @@ func Connect(s *card.Session, url string, ignoreTLS bool, counterpartyID string)
 
 	conn, _, err := d.Connect(context.Background(), url) //url)
 	if err != nil {
-		return fmt.Errorf("Unable to connect to remote server %e,", err)
+		return nil, fmt.Errorf("Unable to connect to remote server %e,", err)
 	}
 	remoteConn := &RemoteConnection{
 		conn: conn,
@@ -56,13 +57,7 @@ func Connect(s *card.Session, url string, ignoreTLS bool, counterpartyID string)
 	go remoteConn.HandleIncoming()
 	remoteConn.encoder = gob.NewEncoder(conn)
 	remoteConn.session = s
-	if counterpartyID != ""{
-		err := remoteConn.ConnectToCard(counterpartyID)
-		if err != nil{
-			return fmt.Errorf("unable to connect to remote card %s, %s",counterpartyID, err.Error())
-		}
-	}
-	return nil
+	return remoteConn, nil
 }
 
 // memory leak ohh boy!
@@ -111,6 +106,8 @@ func (c *RemoteConnection) process(msg Message) {
 	case MessageIdentifiedWithServer:
 		c.identifiedWithServerChan <- true
 		c.identifiedWithServer = true
+	case MessageConnectedToCard:
+		c.connectedToCardChan <- true
 	}
 }
 
@@ -262,7 +259,14 @@ func (c *RemoteConnection) ConnectToCard(cardID string) error {
 	}
 	fmt.Println("sending requestConnectCard2Card message")
 	c.sendMessage(RequestConnectCard2Card, []byte(cardID))
-	return nil
+	select{
+	case <- time.After(10 * time.Second):
+		fmt.Println("Connection Timed out Waiting for peer")
+		c.conn.Close()
+		return ErrTimeout
+	case <- c.connectedToCardChan:
+		return nil
+	}
 }
 
 func (c *RemoteConnection) ReceivePhonons(PhononTransfer []byte) error {

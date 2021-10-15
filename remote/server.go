@@ -213,8 +213,6 @@ func (c *clientSession) ProvideCertificate() {
 func (c *clientSession) ConnectCard2Card(msg Message) {
 	fmt.Printf("attempting to connect card %s to card %s", c.Name, string(msg.Payload))
 	counterparty, ok := clientSessions[string(msg.Payload)]
-	fmt.Println("ConnectingCard2Card")
-	fmt.Println(counterparty.Counterparty)
 	if !ok {
 		c.sender.Encode(Message{
 			Name:    MessageError,
@@ -226,13 +224,10 @@ func (c *clientSession) ConnectCard2Card(msg Message) {
 		counterparty.Counterparty = c
 		c.Counterparty = counterparty
 		c.sender.Encode(Message{
-			Name: MessageConnected,
-			// Send back the name of the person you've connected to
-			Payload: msg.Payload,
+			Name: MessageConnectedToCard,
 		})
 		c.Counterparty.sender.Encode(Message{
-			Name:    MessageConnected,
-			Payload: []byte(c.name),
+			Name:    MessageConnectedToCard,
 		})
 	} else {
 		c.sender.Encode(Message{

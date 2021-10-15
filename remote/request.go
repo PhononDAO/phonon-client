@@ -13,6 +13,7 @@ var (
 	MessageError                = "Error"
 	MessagePassthruFailed       = "PassthruFailed"
 	MessageIdentifiedWithServer = "IdentifiedWithServer"
+	MessageConnectedToCard      = "connectedToCard"
 	// Client to terminal commands
 	RequestIdentify           = "Identify"
 	ResponseIdentify          = "IdentifyResponse"

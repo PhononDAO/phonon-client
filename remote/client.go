@@ -198,8 +198,8 @@ func (c *RemoteConnection) ProcessFinalizeCardPair(msg Message) {
 }
 
 func (c *RemoteConnection) ProcessReceivePhonons(msg Message) {
+	fmt.Println("asljfdklasjfjaskljflkdsajfkljdaskfjdlksjflkasdj")
 	err := c.session.ReceivePhonons(msg.Payload)
-	// need more stuff around how this works
 	if err != nil{
 		log.Error(err.Error())
 		return

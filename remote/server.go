@@ -100,7 +100,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *clientSession) process(msg Message) {
-	fmt.Printf("processing message: %s\nPayload: %+v\nPayloadString: %s\n",msg.Name,msg.Payload,string(msg.Payload))
+	fmt.Printf("processing message: %s\nPayload: %+v\nPayloadString: %s\n", msg.Name, msg.Payload, string(msg.Payload))
 	// if the client hasn't identified itself with the server, ignore what they are doing until they provide the certificate, and keep asking for it.
 	if c.certificate == nil {
 		// if they are providing the certificate, accept it, and then generate a challenge, add it to the challenge test, and continue executing
@@ -146,7 +146,7 @@ func (c *clientSession) process(msg Message) {
 			c.Name = name
 			clientSessions[name] = c
 			c.sender.Encode(Message{
-				Name: MessageIdentifiedWithServer,
+				Name:    MessageIdentifiedWithServer,
 				Payload: []byte(name),
 			})
 			return
@@ -172,10 +172,8 @@ func (c *clientSession) process(msg Message) {
 		c.EndSession(msg)
 	case RequestNoOp:
 		c.noop(msg)
-	case ResponseIdentify,RequestCardPair1,ResponseCardPair1, RequestCardPair2,ResponseCardPair2, RequestFinalizeCardPair,ResponseFinalizeCardPair,MessagePhononAck:
+	case ResponseIdentify, RequestCardPair1, ResponseCardPair1, RequestCardPair2, ResponseCardPair2, RequestFinalizeCardPair, ResponseFinalizeCardPair, RequestReceivePhonon, MessagePhononAck:
 		c.passthrough(msg)
-	case RequestReceivePhonon:
-		c.sendPhonon(msg)
 	case RequestCertificate:
 		c.ProvideCertificate()
 	}
@@ -189,9 +187,9 @@ func (c *clientSession) RequestIdentify() {
 }
 
 func (c *clientSession) ProvideCertificate() {
-	if c.Counterparty == nil{
+	if c.Counterparty == nil {
 		c.sender.Encode(Message{
-			Name:MessageError,
+			Name:    MessageError,
 			Payload: []byte("No counterparty connected. Cannot get certificate"),
 		})
 		return
@@ -218,16 +216,16 @@ func (c *clientSession) ConnectCard2Card(msg Message) {
 		})
 		log.Error("No connected session:", string(msg.Payload))
 		return
-	} else if (counterparty.Counterparty == nil && c.Counterparty == nil) {
+	} else if counterparty.Counterparty == nil && c.Counterparty == nil {
 		counterparty.Counterparty = c
 		c.Counterparty = counterparty
 		c.sender.Encode(Message{
 			Name: MessageConnectedToCard,
 		})
 		c.Counterparty.sender.Encode(Message{
-			Name:    MessageConnectedToCard,
+			Name: MessageConnectedToCard,
 		})
-	} else if (c.Counterparty == counterparty && counterparty.Counterparty == c){
+	} else if c.Counterparty == counterparty && counterparty.Counterparty == c {
 		//do nothing
 	} else {
 		c.sender.Encode(Message{

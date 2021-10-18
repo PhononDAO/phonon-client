@@ -189,6 +189,7 @@ func (sc *SecureChannel) Encrypt(data []byte) (ciphertext []byte, err error) {
 	}
 	ciphertext = append(sc.iv, encData...)
 
+	log.Debugf("encrypting this card to card: % X\n", ciphertext)
 	return ciphertext, nil
 }
 

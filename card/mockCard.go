@@ -43,7 +43,7 @@ type MockPhonon struct {
 	deleted    bool
 }
 
-func (c *MockCard) addPhonon(p MockPhonon)(index uint16){
+func (c *MockCard) addPhonon(p MockPhonon) (index uint16) {
 	if len(c.deletedPhonons) > 0 {
 		index := c.deletedPhonons[len(c.deletedPhonons)-1]
 		c.Phonons[index] = p
@@ -498,7 +498,7 @@ func (c *MockCard) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err
 
 func (c *MockCard) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
 	index := int(keyIndex)
-	if index > len(c.Phonons) || c.Phonons[index].deleted {
+	if index >= len(c.Phonons) || c.Phonons[index].deleted {
 		return fmt.Errorf("No phonon at index %d", index)
 	}
 	c.Phonons[index].CurrencyType = currencyType

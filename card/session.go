@@ -22,7 +22,6 @@ type Session struct {
 	pinInitialized bool
 	terminalPaired bool
 	pinVerified    bool
-	cardPaired     bool
 	Cert           *cert.CardCertificate
 	name           string
 }
@@ -38,7 +37,6 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 		cs:             storage,
 		active:         true,
 		terminalPaired: false,
-		cardPaired:     false,
 		pinVerified:    false,
 	}
 	_, _, s.pinInitialized, err = s.cs.Select()
@@ -60,7 +58,6 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 }
 
 func (s *Session) SetPaired(status bool){
-	s.cardPaired = status
 }
 
 func (s *Session) GetName() string {
@@ -220,7 +217,6 @@ func (s *Session) CardPair2(cardPairData []byte) (cardPair2Data []byte, err erro
 	if err != nil {
 		return nil, err
 	}
-	s.cardPaired = true
 	log.Debug("set card session paired")
 	return cardPair2Data, nil
 }
@@ -233,14 +229,12 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 	if err != nil {
 		return err
 	}
-	s.cardPaired = true
-	log.Debug("set card session paired")
 	return nil
 }
 
 //Keeping this around for now in case we need a version that does not interact with remote
 // func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
-// 	if !s.verified() && !s.cardPaired {
+// 	if !s.verified() && s.RemoteCard != nil {
 // 		return nil, ErrCardNotPairedToCard
 // 	}
 // 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
@@ -252,7 +246,7 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 // }
 
 func (s *Session) SendPhonons(keyIndices []uint16) error {
-	if !s.verified() && !s.cardPaired {
+	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
 	}
 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
@@ -268,7 +262,7 @@ func (s *Session) SendPhonons(keyIndices []uint16) error {
 }
 
 func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
-	if !s.verified() && !s.cardPaired {
+	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
 	}
 	err := s.cs.ReceivePhonons(phononTransferPacket)
@@ -279,14 +273,14 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 }
 
 func (s *Session) GenerateInvoice() ([]byte, error) {
-	if !s.verified() && !s.cardPaired {
+	if !s.verified() && s.RemoteCard != nil {
 		return nil, ErrCardNotPairedToCard
 	}
 	return s.cs.GenerateInvoice()
 }
 
 func (s *Session) ReceiveInvoice(invoiceData []byte) error {
-	if !s.verified() && !s.cardPaired {
+	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
 	}
 	err := s.cs.ReceiveInvoice(invoiceData)
@@ -318,6 +312,5 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 		return err
 	}
 	s.RemoteCard = remoteCard
-	s.cardPaired = true
 	return nil
 }

@@ -266,7 +266,7 @@ func (c *RemoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 		}
 	}
 	c.pairFinalized = true
-	c.session.SetPaired(true)
+	c.session.RemoteCard = c
 	return nil
 }
 

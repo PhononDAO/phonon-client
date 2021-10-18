@@ -37,6 +37,8 @@ type RemoteConnection struct {
 	remoteIdentityChan       chan []byte
 	cardPair1DataChan        chan []byte
 	finalizeCardPairDataChan chan []byte
+
+	phononAckChan chan bool
 }
 
 // this will go someplace, I swear
@@ -62,7 +64,9 @@ func Connect(s *card.Session, url string, ignoreTLS bool) (*RemoteConnection, er
 		remoteCertificateChan:    make(chan cert.CardCertificate, 1),
 		remoteIdentityChan:       make(chan []byte, 1),
 		cardPair1DataChan:        make(chan []byte, 1),
-		finalizeCardPairDataChan: make(chan []byte),
+		finalizeCardPairDataChan: make(chan []byte, 1),
+
+		phononAckChan : make(chan bool, 1),
 	}
 
 	go remoteConn.HandleIncoming()
@@ -122,7 +126,8 @@ func (c *RemoteConnection) process(msg Message) {
 		c.ProcessFinalizeCardPair(msg)
 	case ResponseFinalizeCardPair:
 		c.finalizeCardPairDataChan <- msg.Payload
-
+	case MessagePhononAck:
+		c.phononAckChan <- true
 	}
 }
 
@@ -288,22 +293,28 @@ func (c *RemoteConnection) ConnectToCard(cardID string) error {
 }
 
 func (c *RemoteConnection) ReceivePhonons(PhononTransfer []byte) error {
-	//	PhononTransfer <- c.receivePhononChan
-	return nil
+	c.sendMessage(RequestReceivePhonon, PhononTransfer)
+	select {
+	case <- time.After(10 * time.Second):
+		fmt.Println("unable to verify remote recipt of phonons")
+		return ErrTimeout
+	case <- c.phononAckChan:
+		return nil
+	}
 }
 
 func (c *RemoteConnection) RequestPhonons(phonons []model.Phonon) (phononTransfer []byte, err error) {
-	// todo: figure this one out
+	// IDK about this one buckaroo
 	return
 }
 
 func (c *RemoteConnection) GenerateInvoice() (invoiceData []byte, err error) {
-	// todo: uhhhhhhh
+	// todo: 
 	return
 }
 
 func (c *RemoteConnection) ReceiveInvoice(invoiceData []byte) error {
-	// todo: oh boy
+	// todo:
 	return nil
 }
 

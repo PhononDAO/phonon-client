@@ -14,7 +14,8 @@ var (
 	MessagePassthruFailed       = "PassthruFailed"
 	MessageIdentifiedWithServer = "IdentifiedWithServer"
 	MessageConnectedToCard      = "connectedToCard"
-	// Client to terminal commands
+
+	// Client to server commands
 	RequestIdentify           = "Identify"
 	ResponseIdentify          = "IdentifyResponse"
 	RequestCertificate        = "RequestCert"
@@ -23,7 +24,7 @@ var (
 	RequestConnectCard2Card   = "Connect2Card"
 	RequestDisconnectFromCard = "DisconnectFromCard"
 	RequestEndSession         = "EndSession"
-	RequestPhononAck          = "AckPhonon"
+	MessagePhononAck          = "AckPhonon"
 
 	// Client to client commands
 	RequestCardPair1         = "CardPair1"
@@ -33,5 +34,5 @@ var (
 	RequestFinalizeCardPair  = "FinalizeCardPair"
 	ResponseFinalizeCardPair = "FinalizeCardPairResponse"
 	// this one is weird because the server will cache this one
-	RequestSendPhonon = "SendPhonon"
+	RequestReceivePhonon = "SendPhonon"
 )

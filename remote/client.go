@@ -21,20 +21,22 @@ import (
 )
 
 type RemoteConnection struct {
-	conn                      *h2conn.Conn
-	encoder                   *gob.Encoder
-	remoteCertificate         *cert.CardCertificate
-	session                   *card.Session
-	remoteCertificateChan     chan cert.CardCertificate
-	cardPairDataChan          chan []byte
-	cardPairData2Chan         chan []byte
-	remoteIdentityChan        chan []byte
-	identifiedWithServerChan  chan bool
-	finalizeCardPairErrorChan chan error
-	identifiedWithServer      bool
-	counterpartyNonce         [32]byte
-	verified                  bool
-	connectedToCardChan       chan bool
+	conn                     *h2conn.Conn
+	encoder                  *gob.Encoder
+	remoteCertificate        *cert.CardCertificate
+	session                  *card.Session
+	identifiedWithServerChan chan bool
+	identifiedWithServer     bool
+	counterpartyNonce        [32]byte
+	verified                 bool
+	connectedToCardChan      chan bool
+	pairFinalized            bool
+
+	//card pairing message channels
+	remoteCertificateChan    chan cert.CardCertificate
+	remoteIdentityChan       chan []byte
+	cardPair1DataChan        chan []byte
+	finalizeCardPairDataChan chan []byte
 }
 
 // this will go someplace, I swear
@@ -52,14 +54,15 @@ func Connect(s *card.Session, url string, ignoreTLS bool) (*RemoteConnection, er
 		return nil, fmt.Errorf("Unable to connect to remote server %e,", err)
 	}
 	remoteConn := &RemoteConnection{
-		conn:                      conn,
-		remoteCertificateChan:     make(chan cert.CardCertificate, 1),
-		cardPairDataChan:          make(chan []byte, 1),
-		cardPairData2Chan:         make(chan []byte, 1),
-		remoteIdentityChan:        make(chan []byte, 1),
-		connectedToCardChan:       make(chan bool, 1),
-		identifiedWithServerChan:  make(chan bool, 1),
-		finalizeCardPairErrorChan: make(chan error, 1),
+		conn: conn,
+		//initialize connection channels
+		connectedToCardChan:      make(chan bool, 1),
+		identifiedWithServerChan: make(chan bool, 1),
+		//initialize card pairing channels
+		remoteCertificateChan:    make(chan cert.CardCertificate, 1),
+		remoteIdentityChan:       make(chan []byte, 1),
+		cardPair1DataChan:        make(chan []byte, 1),
+		finalizeCardPairDataChan: make(chan []byte),
 	}
 
 	go remoteConn.HandleIncoming()
@@ -103,12 +106,6 @@ func (c *RemoteConnection) process(msg Message) {
 		c.sendIdentify(msg)
 	case ResponseIdentify:
 		c.ProcessIdentify(msg)
-	case RequestCardPair1:
-		c.ProcessCardPair1(msg)
-	case RequestCardPair2:
-		c.ProcessCardPair2(msg)
-	case RequestFinalizeCardPair:
-		c.ProcessFinalizeCardPair(msg)
 	case MessageError:
 		fmt.Println(string(msg.Payload))
 	case MessageIdentifiedWithServer:
@@ -116,6 +113,16 @@ func (c *RemoteConnection) process(msg Message) {
 		c.identifiedWithServer = true
 	case MessageConnectedToCard:
 		c.connectedToCardChan <- true
+	// Card pairing requests and responses
+	case RequestCardPair1:
+		c.ProcessCardPair1(msg)
+	case ResponseCardPair1:
+		c.cardPair1DataChan <- msg.Payload
+	case RequestFinalizeCardPair:
+		c.ProcessFinalizeCardPair(msg)
+	case ResponseFinalizeCardPair:
+		c.finalizeCardPairDataChan <- msg.Payload
+
 	}
 }
 
@@ -166,25 +173,20 @@ func (c *RemoteConnection) ProcessCardPair1(msg Message) {
 	if err != nil {
 		log.Error("error with card pair 1", err.Error())
 	}
-	c.sendMessage(RequestCardPair2, cardPairData)
+	c.sendMessage(ResponseCardPair1, cardPairData)
 
-}
-
-func (c *RemoteConnection) ProcessCardPair2(msg Message) {
-	// handle this error
-	cardPair2Data, err := c.session.CardPair2(msg.Payload)
-	if err != nil {
-		log.Error("Error with Card pair 2", err.Error())
-	}
-	c.sendMessage(RequestFinalizeCardPair, cardPair2Data)
 }
 
 func (c *RemoteConnection) ProcessFinalizeCardPair(msg Message) {
 	err := c.session.FinalizeCardPair(msg.Payload)
 	if err != nil {
 		log.Error("Error finalizing Card Pair", err.Error())
+		c.sendMessage(ResponseFinalizeCardPair, []byte(err.Error()))
+		return
 	}
-	c.finalizeCardPairErrorChan<- err
+	c.sendMessage(ResponseFinalizeCardPair, []byte{})
+	c.pairFinalized = true
+	//c.finalizeCardPairErrorChan <- err
 }
 
 // ProcessProvideCertificate is for adding a remote card's certificate to the remote portion of the struct
@@ -218,32 +220,35 @@ func (c *RemoteConnection) Identify() error {
 func (c *RemoteConnection) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
 	c.sendMessage(RequestCardPair1, initPairingData)
 	select {
-	case cardPairData := <-c.cardPairDataChan:
+	case cardPairData := <-c.cardPair1DataChan:
 		return cardPairData, nil
 	case <-time.After(10 * time.Second):
 		return []byte{}, ErrTimeout
-
 	}
 }
 
 func (c *RemoteConnection) CardPair2(cardPairData []byte) (cardPairData2 []byte, err error) {
-	c.sendMessage(RequestCardPair2, cardPairData)
-	select {
-	case cardPairData2 := <-c.cardPairData2Chan:
-		return cardPairData2, nil
-	case <-time.After(10 * time.Second):
-		return []byte{}, ErrTimeout
-	}
+	//unneeded
+	return []byte{}, nil
 }
 
 func (c *RemoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 	c.sendMessage(RequestFinalizeCardPair, cardPair2Data)
-	select {
-	case err := <-c.finalizeCardPairErrorChan:
-		return err
-	case <-time.After(10 * time.Second):
-		return ErrTimeout
+	if !c.pairFinalized {
+		select {
+		case errorbytes := <-c.finalizeCardPairDataChan:
+			var err error
+			if len(errorbytes) > 0 {
+				return errors.New(string(errorbytes))
+			} else {
+				return err
+			}
+		case <-time.After(10 * time.Second):
+			return ErrTimeout
+		}
 	}
+	c.pairFinalized = true
+	return nil
 }
 
 func (c *RemoteConnection) GetCertificate() (*cert.CardCertificate, error) {

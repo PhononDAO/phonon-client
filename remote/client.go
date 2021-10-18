@@ -100,7 +100,6 @@ func (c *RemoteConnection) HandleIncoming() {
 }
 
 func (c *RemoteConnection) process(msg Message) {
-	fmt.Printf("processing message: %s\nPayload: %+v\nPayloadString: %s\n", msg.Name, msg.Payload, string(msg.Payload))
 	switch msg.Name {
 	case RequestCertificate:
 		c.sendCertificate(msg)
@@ -109,9 +108,9 @@ func (c *RemoteConnection) process(msg Message) {
 	case RequestIdentify:
 		c.sendIdentify(msg)
 	case ResponseIdentify:
-		c.ProcessIdentify(msg)
+		c.processIdentify(msg)
 	case MessageError:
-		fmt.Println(string(msg.Payload))
+		log.Error(string(msg.Payload))
 	case MessageIdentifiedWithServer:
 		c.identifiedWithServerChan <- true
 		c.identifiedWithServer = true
@@ -119,17 +118,17 @@ func (c *RemoteConnection) process(msg Message) {
 		c.connectedToCardChan <- true
 	// Card pairing requests and responses
 	case RequestCardPair1:
-		c.ProcessCardPair1(msg)
+		c.processCardPair1(msg)
 	case ResponseCardPair1:
 		c.cardPair1DataChan <- msg.Payload
 	case RequestFinalizeCardPair:
-		c.ProcessFinalizeCardPair(msg)
+		c.processFinalizeCardPair(msg)
 	case ResponseFinalizeCardPair:
 		c.finalizeCardPairDataChan <- msg.Payload
 	case MessagePhononAck:
 		c.phononAckChan <- true
 	case RequestReceivePhonon:
-		c.ProcessReceivePhonons(msg)
+		c.processReceivePhonons(msg)
 	}
 }
 
@@ -138,7 +137,6 @@ func (c *RemoteConnection) process(msg Message) {
 /////
 
 func (c *RemoteConnection) sendCertificate(msg Message) {
-	fmt.Println(c.session.Cert)
 	cert, err := c.session.GetCertificate()
 	if err != nil {
 		log.Error("Cert doesn't exist")
@@ -147,7 +145,6 @@ func (c *RemoteConnection) sendCertificate(msg Message) {
 }
 
 func (c *RemoteConnection) sendIdentify(msg Message) {
-	fmt.Println(msg.Payload)
 	_, sig, err := c.session.IdentifyCard(msg.Payload)
 	if err != nil {
 		log.Error("Issue identifying local card", err.Error())
@@ -160,7 +157,7 @@ func (c *RemoteConnection) sendIdentify(msg Message) {
 	c.sendMessage(ResponseIdentify, buf.Bytes())
 }
 
-func (c *RemoteConnection) ProcessIdentify(msg Message) {
+func (c *RemoteConnection) processIdentify(msg Message) {
 	key, sig, err := card.ParseIdentifyCardResponse(msg.Payload)
 	if err != nil {
 		log.Error("Issue parsing identify card response", err.Error())
@@ -175,7 +172,7 @@ func (c *RemoteConnection) ProcessIdentify(msg Message) {
 	}
 }
 
-func (c *RemoteConnection) ProcessCardPair1(msg Message) {
+func (c *RemoteConnection) processCardPair1(msg Message) {
 	cardPairData, err := c.session.CardPair(msg.Payload)
 	if err != nil {
 		log.Error("error with card pair 1", err.Error())
@@ -184,7 +181,7 @@ func (c *RemoteConnection) ProcessCardPair1(msg Message) {
 
 }
 
-func (c *RemoteConnection) ProcessFinalizeCardPair(msg Message) {
+func (c *RemoteConnection) processFinalizeCardPair(msg Message) {
 	err := c.session.FinalizeCardPair(msg.Payload)
 	if err != nil {
 		log.Error("Error finalizing Card Pair", err.Error())
@@ -197,8 +194,7 @@ func (c *RemoteConnection) ProcessFinalizeCardPair(msg Message) {
 	//c.finalizeCardPairErrorChan <- err
 }
 
-func (c *RemoteConnection) ProcessReceivePhonons(msg Message) {
-	fmt.Println("asljfdklasjfjaskljflkdsajfkljdaskfjdlksjflkasdj")
+func (c *RemoteConnection) processReceivePhonons(msg Message) {
 	err := c.session.ReceivePhonons(msg.Payload)
 	if err != nil{
 		log.Error(err.Error())
@@ -211,7 +207,7 @@ func (c *RemoteConnection) ProcessReceivePhonons(msg Message) {
 func (c *RemoteConnection) receiveCertificate(msg Message) {
 	remoteCert, err := cert.ParseRawCardCertificate(msg.Payload)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 	c.remoteCertificateChan <- remoteCert
@@ -285,20 +281,19 @@ func (c *RemoteConnection) GetCertificate() (*cert.CardCertificate, error) {
 }
 
 func (c *RemoteConnection) ConnectToCard(cardID string) error {
-	fmt.Println("CARDID:", cardID)
 	if !c.identifiedWithServer {
 		select {
 		case <-time.After(10 * time.Second):
 			return ErrTimeout
 		case <-c.identifiedWithServerChan:
-			fmt.Println("received Identified with server")
+			log.Info("received Identified with server")
 		}
 	}
-	fmt.Println("sending requestConnectCard2Card message")
+	log.Info("sending requestConnectCard2Card message")
 	c.sendMessage(RequestConnectCard2Card, []byte(cardID))
 	select {
 	case <-time.After(10 * time.Second):
-		fmt.Println("Connection Timed out Waiting for peer")
+		log.Error("Connection Timed out Waiting for peer")
 		c.conn.Close()
 		return ErrTimeout
 	case <-c.connectedToCardChan:
@@ -310,7 +305,7 @@ func (c *RemoteConnection) ReceivePhonons(PhononTransfer []byte) error {
 	c.sendMessage(RequestReceivePhonon, PhononTransfer)
 	select {
 	case <- time.After(10 * time.Second):
-		fmt.Println("unable to verify remote recipt of phonons")
+		log.Error("unable to verify remote recipt of phonons")
 		return ErrTimeout
 	case <- c.phononAckChan:
 		return nil
@@ -334,7 +329,7 @@ func (c *RemoteConnection) ReceiveInvoice(invoiceData []byte) error {
 
 // Utility functions
 func (c *RemoteConnection) sendMessage(messageName string, messagePayload []byte) {
-	fmt.Println(messageName, string(messagePayload))
+	log.Debug(messageName, string(messagePayload))
 
 	tosend := &Message{
 		Name:    messageName,

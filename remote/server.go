@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/gob"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/GridPlus/phonon-client/cert"
@@ -23,7 +22,7 @@ func StartServer(port string, certfile string, keyfile string) {
 	http.HandleFunc("/", index)
 	err := http.ListenAndServeTLS("localhost:"+port, certfile, keyfile, nil)
 	if err != nil {
-		fmt.Printf("Error with web server:, %s", err.Error())
+		log.Errorf("Error with web server:, %s", err.Error())
 	}
 }
 
@@ -100,7 +99,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *clientSession) process(msg Message) {
-	fmt.Printf("processing message: %s\nPayload: %+v\nPayloadString: %s\n", msg.Name, msg.Payload, string(msg.Payload))
+	log.Infof("processing message: %s\nPayload: %+v\nPayloadString: %s\n", msg.Name, msg.Payload, string(msg.Payload))
 	// if the client hasn't identified itself with the server, ignore what they are doing until they provide the certificate, and keep asking for it.
 	if c.certificate == nil {
 		// if they are providing the certificate, accept it, and then generate a challenge, add it to the challenge test, and continue executing
@@ -154,7 +153,7 @@ func (c *clientSession) process(msg Message) {
 			if c.challengeNonce == [32]byte{} {
 				_, err := rand.Reader.Read(c.challengeNonce[:])
 				if err != nil {
-					fmt.Println("wtf")
+					log.Errorf("Error generating challenge: %s",err.Error())
 					return
 				}
 			}
@@ -167,15 +166,15 @@ func (c *clientSession) process(msg Message) {
 	case RequestConnectCard2Card:
 		c.ConnectCard2Card(msg)
 	case RequestDisconnectFromCard:
-		c.DisconnectFromCard(msg)
+		c.disconnectFromCard(msg)
 	case RequestEndSession:
-		c.EndSession(msg)
+		c.endSession(msg)
 	case RequestNoOp:
 		c.noop(msg)
 	case ResponseIdentify, RequestCardPair1, ResponseCardPair1, RequestCardPair2, ResponseCardPair2, RequestFinalizeCardPair, ResponseFinalizeCardPair, RequestReceivePhonon, MessagePhononAck:
 		c.passthrough(msg)
 	case RequestCertificate:
-		c.ProvideCertificate()
+		c.provideCertificate()
 	}
 }
 
@@ -186,7 +185,7 @@ func (c *clientSession) RequestIdentify() {
 	})
 }
 
-func (c *clientSession) ProvideCertificate() {
+func (c *clientSession) provideCertificate() {
 	if c.Counterparty == nil {
 		c.sender.Encode(Message{
 			Name:    MessageError,
@@ -207,7 +206,7 @@ func (c *clientSession) ProvideCertificate() {
 }
 
 func (c *clientSession) ConnectCard2Card(msg Message) {
-	fmt.Printf("attempting to connect card %s to card %s", c.Name, string(msg.Payload))
+	log.Info("attempting to connect card %s to card %s", c.Name, string(msg.Payload))
 	counterparty, ok := clientSessions[string(msg.Payload)]
 	if !ok {
 		c.sender.Encode(Message{
@@ -235,7 +234,7 @@ func (c *clientSession) ConnectCard2Card(msg Message) {
 	}
 }
 
-func (c *clientSession) DisconnectFromCard(msg Message) {
+func (c *clientSession) disconnectFromCard(msg Message) {
 	out := Message{
 		Name: MessageDisconnected,
 	}
@@ -246,9 +245,9 @@ func (c *clientSession) DisconnectFromCard(msg Message) {
 	c.Counterparty = nil
 }
 
-func (c *clientSession) EndSession(msg Message) {
+func (c *clientSession) endSession(msg Message) {
 	if c.Counterparty != nil {
-		c.DisconnectFromCard(msg)
+		c.disconnectFromCard(msg)
 	}
 	c.underlyingConn.Close()
 }

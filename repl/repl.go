@@ -101,7 +101,7 @@ func Start() {
 	// })
 
 	 shell.AddCmd(&ishell.Cmd{
-	 	Name: "PairRemote",
+	 	Name: "pairRemote",
 	 	Func: connectRemoteSession,
 	 	Help: "Connect to a remote server",
 	 })

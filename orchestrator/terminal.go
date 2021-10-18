@@ -8,6 +8,7 @@ import (
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/remote"
+	log "github.com/sirupsen/logrus"
 )
 
 type PhononTerminal struct {
@@ -89,18 +90,16 @@ func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} 
 }
 
 func (t *PhononTerminal) ConnectRemoteSession(session *card.Session,counterpartyID string) error {
-	fmt.Println("connecting")
+	log.Info("connecting")
 	remConn, err := remote.Connect(session, "https://localhost:8080/phonon", true)
 	if err != nil {
 		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
 	}
-	fmt.Println("successfully connected to remote server.")
-	fmt.Println("Connecting to peer")
+	log.Info("successfully connected to remote server. Establishing connection to peer")
 	err = remConn.ConnectToCard(counterpartyID)
 	if err != nil{
 		return err
 	}
-	fmt.Printf("counterpartyID: %s, session Name: %s\n",counterpartyID, session.GetName())
 	if counterpartyID < session.GetName(){
 		return nil
 	}

@@ -128,6 +128,8 @@ func (c *RemoteConnection) process(msg Message) {
 		c.finalizeCardPairDataChan <- msg.Payload
 	case MessagePhononAck:
 		c.phononAckChan <- true
+	case RequestReceivePhonon:
+		c.ProcessReceivePhonons(msg)
 	}
 }
 
@@ -193,6 +195,16 @@ func (c *RemoteConnection) ProcessFinalizeCardPair(msg Message) {
 	c.pairFinalized = true
 	c.session.SetPaired(true)
 	//c.finalizeCardPairErrorChan <- err
+}
+
+func (c *RemoteConnection) ProcessReceivePhonons(msg Message) {
+	err := c.session.ReceivePhonons(msg.Payload)
+	// need more stuff around how this works
+	if err != nil{
+		log.Error(err.Error())
+		return
+	}
+	c.sendMessage(MessagePhononAck, []byte{})
 }
 
 // ProcessProvideCertificate is for adding a remote card's certificate to the remote portion of the struct

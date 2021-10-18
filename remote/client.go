@@ -193,7 +193,7 @@ func (c *RemoteConnection) ProcessFinalizeCardPair(msg Message) {
 	}
 	c.sendMessage(ResponseFinalizeCardPair, []byte{})
 	c.pairFinalized = true
-	c.session.SetPaired(true)
+	c.session.RemoteCard = c
 	//c.finalizeCardPairErrorChan <- err
 }
 

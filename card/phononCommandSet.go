@@ -322,11 +322,11 @@ func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.Public
 	}
 	log.Debug("identify card resp:\n", hex.Dump(resp.Data))
 
+	cardPubKey, cardSig, err = ParseIdentifyCardResponse(resp.Data)
 	if err != nil {
 		log.Error("could not parse identify card response: ", err)
 		return nil, nil, err
 	}
-
 	valid := ecdsa.Verify(cardPubKey, nonce, cardSig.R, cardSig.S)
 	if !valid {
 		return cardPubKey, cardSig, errors.New("card signature over challenge salt is invalid")

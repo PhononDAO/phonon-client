@@ -100,6 +100,10 @@ func (t *PhononTerminal) ConnectRemoteSession(session *card.Session,counterparty
 	if err != nil{
 		return err
 	}
+	fmt.Printf("counterpartyID: %s, session Name: %s\n",counterpartyID, session.GetName())
+	if counterpartyID < session.GetName(){
+		return nil
+	}
 	err = session.PairWithRemoteCard(remConn)
 	return err
 }

@@ -172,7 +172,7 @@ func (c *clientSession) process(msg Message) {
 		c.EndSession(msg)
 	case RequestNoOp:
 		c.noop(msg)
-	case ResponseIdentify, RequestCardPair1, RequestCardPair2, RequestFinalizeCardPair:
+	case ResponseIdentify, RequestCardPair1,ResponseCardPair1, RequestCardPair2,ResponseCardPair2, RequestFinalizeCardPair,ResponseFinalizeCardPair:
 		c.passthrough(msg)
 	case RequestSendPhonon:
 		c.sendPhonon(msg)

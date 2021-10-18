@@ -59,6 +59,10 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
+func (s *Session) SetPaired(status bool){
+	s.cardPaired = status
+}
+
 func (s *Session) GetName() string {
 	//TODO: Use future card GET_NAME
 	if s.Cert.PubKey != nil {

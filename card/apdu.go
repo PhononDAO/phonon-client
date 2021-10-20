@@ -55,7 +55,7 @@ const (
 	TagPhononCollection = 0x52
 	TagPhononDescriptor = 0x50
 	TagPhononValue      = 0x83
-	TagCurrencyType     = 0x81
+	TagCurrencyType     = 0x82
 
 	TagPhononKeyIndexList       = 0x42
 	TagTransferPhononPacket     = 0x43

@@ -220,6 +220,8 @@ func (sc *SecureChannel) DecryptDirect(ciphertext []byte, iv []byte) (data []byt
 //The init vector is automatically updated to match the iv the response should use after
 //a Decrypt -> Encrypt cycle
 func (sc *SecureChannel) Decrypt(ciphertext []byte) (data []byte, err error) {
+	log.Debug("decrypting ciphertext of length: ", len(ciphertext))
+	log.Debugf("% X", ciphertext)
 	//MAC is prepended, should be equal to last seen init vector
 	mac := ciphertext[:len(sc.iv)]
 	//encrypted data follows MAC

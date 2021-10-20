@@ -244,8 +244,8 @@ func connectRemoteSession(c *ishell.Context) {
 		fmt.Println("wrong number of arguments given")
 		return
 	}
-	card2Connect2 := c.Args[0]
-	err := t.ConnectRemoteSession(activeCard,card2Connect2)
+	CounterPartyConnInfo := c.Args[0]
+	err := t.ConnectRemoteSession(activeCard,CounterPartyConnInfo)
 	if err != nil{
 		c.Err(err)
 	}

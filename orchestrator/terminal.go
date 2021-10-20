@@ -3,6 +3,8 @@ package orchestrator
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
@@ -89,9 +91,15 @@ func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} 
 	return struct{}{}
 }
 
-func (t *PhononTerminal) ConnectRemoteSession(session *card.Session,counterpartyID string) error {
+func (t *PhononTerminal) ConnectRemoteSession(session *card.Session,cardURL string) error {
+	u, err := url.Parse(cardURL)
+	if err != nil{
+		return fmt.Errorf("Unable to parse url for card connection: %s", err.Error())
+	}
+	pathSeparated := strings.Split(u.Path,"/")
+	counterpartyID := pathSeparated[len(pathSeparated)-1]
 	log.Info("connecting")
-	remConn, err := remote.Connect(session, "https://localhost:8080/phonon", true)
+	remConn, err := remote.Connect(session, fmt.Sprintf("https://%s/phonon",u.Host), true)
 	if err != nil {
 		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
 	}

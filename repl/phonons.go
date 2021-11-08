@@ -27,8 +27,8 @@ func listPhonons(c *ishell.Context) {
 		return
 	}
 	var currencyType model.CurrencyType = 0
-	var lessThanValue float32 = 0
-	var greaterThanValue float32 = 0
+	var lessThanValue uint64
+	var greaterThanValue uint64
 	var numCorrectArgs = 3
 
 	if len(c.Args) == numCorrectArgs {
@@ -39,19 +39,30 @@ func listPhonons(c *ishell.Context) {
 		}
 		currencyType = model.CurrencyType(currencyTypeInt)
 
-		lessThanValueRaw, err := strconv.ParseFloat(c.Args[1], 32)
+		//TODO: Parse denomination correctly
+		// lessThanValue, success := lessThanValue.SetString(c.Args[1], 10)
+		// if success == false {
+		// 	c.Println("error parsing lessThanValue: ", err)
+		// 	return
+		// }
+
+		// greaterThanValueRaw, err := strconv.ParseFloat(c.Args[2], 32)
+		// if err != nil {
+		// 	c.Println("error parsing greaterThanValue: ", err)
+		// 	return
+		// }
+		// greaterThanValue = float32(greaterThanValueRaw)
+		lessThanValue, err = strconv.ParseUint(c.Args[1], 10, 0)
 		if err != nil {
 			c.Println("error parsing lessThanValue: ", err)
 			return
 		}
-		lessThanValue = float32(lessThanValueRaw)
-
-		greaterThanValueRaw, err := strconv.ParseFloat(c.Args[2], 32)
+		greaterThanValue, err = strconv.ParseUint(c.Args[1], 10, 0)
 		if err != nil {
 			c.Println("error parsing greaterThanValue: ", err)
 			return
 		}
-		greaterThanValue = float32(greaterThanValueRaw)
+
 	}
 	phonons, err := activeCard.ListPhonons(currencyType, lessThanValue, greaterThanValue)
 	if err != nil {
@@ -94,13 +105,20 @@ func setDescriptor(c *ishell.Context) {
 	}
 	currencyType := model.CurrencyType(currencyTypeInt)
 
-	value, err := strconv.ParseFloat(c.Args[2], 32)
+	// value, err := strconv.ParseFloat(c.Args[2], 32)
+	denomination, err := strconv.ParseUint(c.Args[2], 10, 0)
 	if err != nil {
 		c.Println("value could not be parse: ", err)
 		return
 	}
-	c.Println("setting descriptor with values: ", uint16(keyIndex), currencyType, float32(value))
-	err = activeCard.SetDescriptor(uint16(keyIndex), currencyType, float32(value))
+	c.Println("setting descriptor with values: ", uint16(keyIndex), currencyType, denomination)
+	p := &model.Phonon{
+		KeyIndex:     uint16(keyIndex),
+		CurrencyType: currencyType,
+		Denomination: denomination,
+	}
+
+	err = activeCard.SetDescriptor(p)
 	if err != nil {
 		c.Println("could not set descriptor: ", err)
 		return

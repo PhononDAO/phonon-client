@@ -1,4 +1,4 @@
-package card
+package tlv
 
 import (
 	"bytes"
@@ -7,9 +7,9 @@ import (
 )
 
 type TLV struct {
-	tag    byte
-	length int
-	value  []byte
+	Tag    byte
+	Length int
+	Value  []byte
 }
 
 type TLVCollection map[byte][][]byte
@@ -27,16 +27,16 @@ func NewTLV(tag byte, value []byte) (TLV, error) {
 		return TLV{}, ErrValueLengthExceedsMax
 	}
 	return TLV{
-		tag:    tag,
-		length: len(value),
-		value:  value,
+		Tag:    tag,
+		Length: len(value),
+		Value:  value,
 	}, nil
 }
 
 //Encode a TLV structure as serialized bytes
 func (tlv *TLV) Encode() []byte {
-	prefix := []byte{tlv.tag, byte(tlv.length)}
-	serializedBytes := append(prefix, tlv.value...)
+	prefix := []byte{tlv.Tag, byte(tlv.Length)}
+	serializedBytes := append(prefix, tlv.Value...)
 	return serializedBytes
 }
 
@@ -86,8 +86,8 @@ func ParseTLVPacket(data []byte, constructedTags ...byte) (TLVCollection, error)
 func mergeTLVCollections(collections ...TLVCollection) TLVCollection {
 	result := TLVCollection{}
 	for _, coll := range collections {
-		for tag, value := range coll {
-			for _, entry := range value {
+		for tag, entries := range coll {
+			for _, entry := range entries {
 				result[tag] = append(result[tag], entry)
 			}
 		}
@@ -123,4 +123,22 @@ func EncodeTLVList(tlvList ...TLV) []byte {
 		data = append(data, tlv.Encode()...)
 	}
 	return data
+}
+
+//Removes tags from a collection, returning the remaining TLV's
+//Useful for slicing out extended TLVs after the known ones are parsed
+func (coll TLVCollection) GetRemainingTLVs(tags []byte) (remaining []TLV) {
+	for _, tag := range tags {
+		delete(coll, tag)
+	}
+	for tag, entry := range coll {
+		/*Take the first entry
+		Does not handle duplicates, since individual entries stored in
+		a single phonon should only contain unique values
+		Error should never trigger as we are reassembling parsed values*/
+		remainingTLV, _ := NewTLV(tag, entry[0])
+
+		remaining = append(remaining, remainingTLV)
+	}
+	return
 }

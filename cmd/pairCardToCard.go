@@ -20,6 +20,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
@@ -64,7 +65,7 @@ func init() {
 
 func PairCardToCard() {
 	fmt.Println("opening session with sender Card")
-	var senderCard card.PhononCard
+	var senderCard model.PhononCard
 	var sender *card.Session
 	var err error
 	if useMockSender {
@@ -106,7 +107,7 @@ func PairCardToCard() {
 		fmt.Println(err)
 		return
 	}
-	var receiverCard card.PhononCard
+	var receiverCard model.PhononCard
 	var receiverSession *card.Session
 	if useMockReceiver {
 		receiverCard, err = card.NewMockCard()

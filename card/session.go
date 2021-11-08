@@ -15,7 +15,7 @@ import (
 Keeps a client side cache of the card state to make interaction
 with the card through this API more convenient*/
 type Session struct {
-	cs             PhononCard
+	cs             model.PhononCard
 	RemoteCard     model.CounterpartyPhononCard
 	identityPubKey *ecdsa.PublicKey
 	active         bool
@@ -32,7 +32,7 @@ var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 
 //Creates a new card session, automatically connecting if the card is already initialized with a PIN
 //The next step is to run VerifyPIN to gain access to the secure commands on the card
-func NewSession(storage PhononCard) (s *Session, err error) {
+func NewSession(storage model.PhononCard) (s *Session, err error) {
 	s = &Session{
 		cs:             storage,
 		active:         true,
@@ -57,7 +57,7 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
-func (s *Session) SetPaired(status bool){
+func (s *Session) SetPaired(status bool) {
 }
 
 func (s *Session) GetName() string {
@@ -72,7 +72,7 @@ func (s *Session) GetName() string {
 }
 
 func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
-	if s.Cert != nil{
+	if s.Cert != nil {
 		log.Debugf("GetCertificate returning cert: % X", s.Cert)
 		return s.Cert, nil
 	}
@@ -163,14 +163,14 @@ func (s *Session) CreatePhonon() (keyIndex uint16, pubkey *ecdsa.PublicKey, err 
 	return s.cs.CreatePhonon()
 }
 
-func (s *Session) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
+func (s *Session) SetDescriptor(p *model.Phonon) error {
 	if !s.verified() {
 		return ErrPINNotEntered
 	}
-	return s.cs.SetDescriptor(keyIndex, currencyType, value)
+	return s.cs.SetDescriptor(p)
 }
 
-func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error) {
+func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
 	if !s.verified() {
 		return nil, ErrPINNotEntered
 	}

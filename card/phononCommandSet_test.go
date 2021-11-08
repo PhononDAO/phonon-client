@@ -71,13 +71,13 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 	type phononDescription struct {
 		currencyType model.CurrencyType
-		value        float32
+		value        uint64
 	}
 	phononTable := []phononDescription{
 		{model.Bitcoin, 1},
-		{model.Bitcoin, 0.00000001},
+		{model.Bitcoin, 10000000},
 		{model.Bitcoin, 99999999},
-		{model.Ethereum, 0.000000000000000001},
+		{model.Ethereum, 1000000000000000001},
 		{model.Ethereum, 999999999999999999},
 		{model.Ethereum, 1},
 	}
@@ -85,8 +85,8 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 	//TODO: pass different filters into this function
 	type phononFilter struct {
 		currencyType        model.CurrencyType
-		lessThanValue       float32
-		greaterThanValue    float32
+		lessThanValue       uint64
+		greaterThanValue    uint64
 		expectedPhononCount int
 	}
 
@@ -97,14 +97,19 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 			t.Error("err creating test phonon: ", err)
 			return
 		}
+		p := &model.Phonon{
+			KeyIndex:     keyIndex,
+			CurrencyType: description.currencyType,
+			Denomination: description.value,
+		}
 		//track created to review after listing to check that we get out exactly what we put in
 		createdPhonons = append(createdPhonons, &model.Phonon{
 			KeyIndex:     keyIndex,
 			PubKey:       pubKey,
-			Value:        description.value,
+			Denomination: description.value,
 			CurrencyType: description.currencyType})
 
-		err = cs.SetDescriptor(keyIndex, description.currencyType, description.value)
+		err = cs.SetDescriptor(p)
 		if err != nil {
 			t.Error("err setting test phonon descriptor: ", err)
 			return
@@ -187,7 +192,12 @@ func TestDestroyPhonon(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = cs.SetDescriptor(keyIndex, model.Ethereum, .578)
+	p := &model.Phonon{
+		KeyIndex:     keyIndex,
+		CurrencyType: model.Ethereum,
+		Denomination: 578,
+	}
+	err = cs.SetDescriptor(p)
 	if err != nil {
 		t.Error(err)
 		return

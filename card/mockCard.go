@@ -14,11 +14,15 @@ import (
 	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/tlv"
 	"github.com/GridPlus/phonon-client/util"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
+
+//TODO: replace with config value
+const StandardSchemaSupportedVersions uint8 = 0
 
 type MockCard struct {
 	Phonons []MockPhonon
@@ -57,26 +61,75 @@ func (c *MockCard) addPhonon(p MockPhonon) (index uint16) {
 	return
 }
 
-func (phonon *MockPhonon) Encode() (TLV, error) {
-	privKeyTLV, _ := NewTLV(TagPhononPrivKey, phonon.PrivateKey.D.Bytes())
-	valueBytes, _ := util.Float32ToBytes(phonon.Value)
-	valueTLV, _ := NewTLV(TagPhononValue, valueBytes)
+func (phonon *MockPhonon) Encode() (tlv.TLV, error) {
+	privKeyTLV, err := tlv.NewTLV(TagPhononPrivKey, phonon.PrivateKey.D.Bytes())
+	if err != nil {
+		log.Error("could not encode mockPhonon privKey: ", err)
+		return tlv.TLV{}, err
+	}
 
-	currencyTypeBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(currencyTypeBytes, uint16(phonon.CurrencyType))
-
-	currencyTypeTLV, _ := NewTLV(TagCurrencyType, currencyTypeBytes)
-
-	phononDescriptionBytes := append(privKeyTLV.Encode(), valueTLV.Encode()...)
-	phononDescriptionBytes = append(phononDescriptionBytes, currencyTypeTLV.Encode()...)
-
-	phononDescriptionTLV, _ := NewTLV(TagPhononPrivateDescription, phononDescriptionBytes)
+	//Encode internal phonon
+	phononTLV, err := TLVEncodeStandardPhonon(&phonon.Phonon)
+	if err != nil {
+		log.Error("mock could not encode inner phonon: ", phonon.Phonon)
+		return tlv.TLV{}, err
+	}
+	phononDescriptionTLV, err := tlv.NewTLV(TagPhononPrivateDescription, append(privKeyTLV.Encode(), phononTLV...))
+	if err != nil {
+		log.Error("mock could not encode phonon description: ", err)
+		return tlv.TLV{}, err
+	}
 
 	return phononDescriptionTLV, nil
 }
 
+// //TLV Encodes a phonon for transmission to cards
+// func TLVEncodeOutgoingPhonon(p *model.Phonon) ([]byte, error) {
+// 	//KeyIndex omitted
+
+// 	//PubKey omitted
+
+// 	curveTypeTLV, err := tlv.NewTLV(TagCurveType, []byte{p.CurveType})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	schemaVersionTLV, err := tlv.NewTLV(TagSchemaVersion, []byte{p.SchemaVersion})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	extendedSchemaVersionTLV, err := tlv.NewTLV(TagExtendedSchemaVersion, []byte{p.SchemaVersion})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	var denominationBytes []byte
+// 	binary.BigEndian.PutUint64(denominationBytes, p.Denomination)
+
+// 	valueTLV, err := tlv.NewTLV(TagPhononValue, denominationBytes)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	currencyTypeBytes := make([]byte, 2)
+// 	binary.BigEndian.PutUint16(currencyTypeBytes, uint16(p.CurrencyType))
+// 	currencyTypeTLV, err := tlv.NewTLV(TagCurrencyType, currencyTypeBytes)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	phononTLV := append(curveTypeTLV.Encode(), schemaVersionTLV.Encode()...)
+// 	phononTLV = append(phononTLV, extendedSchemaVersionTLV.Encode()...)
+// 	phononTLV = append(phononTLV, valueTLV.Encode()...)
+// 	phononTLV = append(phononTLV, currencyTypeTLV.Encode()...)
+// 	for _, field := range p.ExtendedTLV {
+// 		phononTLV = append(phononTLV, field.Encode()...)
+// 	}
+
+// 	return phononTLV, nil
+// }
+
 func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
-	phononTLV, err := ParseTLVPacket(privatePhononTLV, TagPhononPrivateDescription)
+	phononTLV, err := tlv.ParseTLVPacket(privatePhononTLV, TagPhononPrivateDescription)
 	if err != nil {
 		return phonon, err
 	}
@@ -92,23 +145,62 @@ func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 	}
 	phonon.PubKey = &phonon.PrivateKey.PublicKey
 
-	//value
-	valueBytes, err := phononTLV.FindTag(TagPhononValue)
+	//CurveType
+	//TODO: inspect supported curve types
+	rawCurveType, err := phononTLV.FindTag(TagCurveType)
 	if err != nil {
 		return phonon, err
 	}
-	phonon.Value, err = util.BytesToFloat32(valueBytes)
+	if len(rawCurveType) != 1 {
+		return phonon, errors.New("curveType length incorrect")
+	}
+	phonon.CurveType = uint8(rawCurveType[0])
+
+	//SchemaVersion
+	rawSchemaVersion, err := phononTLV.FindTag(TagSchemaVersion)
 	if err != nil {
 		return phonon, err
+	}
+	log.Debug("value of rawSchemaVersion: ", rawSchemaVersion)
+	if len(rawSchemaVersion) != 1 {
+		return phonon, errors.New("schemaVersion length incorrect")
+	}
+	phonon.SchemaVersion = uint8(rawSchemaVersion[0])
+
+	if phonon.SchemaVersion != StandardSchemaSupportedVersions {
+		return phonon, errors.New("unsupported phonon standard schema version")
 	}
 
-	//currencyType
+	rawExtendedSchemaVersion, err := phononTLV.FindTag(TagExtendedSchemaVersion)
+	if err != nil {
+		return phonon, err
+	}
+	if len(rawExtendedSchemaVersion) != 1 {
+		return phonon, errors.New("extendedSchemaVersion length incorrect")
+	}
+	phonon.ExtendedSchemaVersion = uint8(rawExtendedSchemaVersion[0])
+
+	//Denomination
+	denominationBytes, err := phononTLV.FindTag(TagPhononValue)
+	if err != nil {
+		return phonon, err
+	}
+	phonon.Denomination = binary.BigEndian.Uint64(denominationBytes)
+
+	//CurrencyType
 	currencyTypeBytes, err := phononTLV.FindTag(TagCurrencyType)
 	if err != nil {
 		return phonon, err
 	}
 	log.Debugf("currencyTypeBytes: % X", currencyTypeBytes)
 	phonon.CurrencyType = model.CurrencyType(binary.BigEndian.Uint16(currencyTypeBytes))
+
+	//Extended Schema
+
+	//Standard Schema Tags
+	standardTags := []byte{TagPhononPrivKey, TagCurveType, TagSchemaVersion, TagExtendedSchemaVersion,
+		TagPhononValue, TagCurrencyType}
+	phonon.ExtendedTLV = phononTLV.GetRemainingTLVs(standardTags)
 
 	return phonon, nil
 }
@@ -250,17 +342,18 @@ func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairi
 	}
 
 	log.Debugf("receiver pubKey: % X", receiverCert.PubKey)
-	cardCertTLV, err := NewTLV(TagCardCertificate, c.IdentityCert.Serialize())
-	if err != nil {
-		return nil, err
-	}
-	salt, err := NewTLV(TagSalt, util.RandomKey(32))
+	cardCertTLV, err := tlv.NewTLV(TagCardCertificate, c.IdentityCert.Serialize())
 	if err != nil {
 		return nil, err
 	}
 	//Store salt for use in session key generation in CARD_PAIR_2
-	c.scPairData.cardToCardSalt = salt.value
-	initPairingData = EncodeTLVList(cardCertTLV, salt)
+	c.scPairData.cardToCardSalt = util.RandomKey(32)
+
+	saltTLV, err := tlv.NewTLV(TagSalt, c.scPairData.cardToCardSalt)
+	if err != nil {
+		return nil, err
+	}
+	initPairingData = tlv.EncodeTLVList(cardCertTLV, saltTLV)
 
 	log.Debugf("returning initPairingData: % X", initPairingData)
 	return initPairingData, nil
@@ -272,15 +365,15 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	receiverSalt := util.RandomKey(32)
 
 	//Parse Pairing Values from counterparty
-	tlv, err := ParseTLVPacket(initCardPairingData)
+	collection, err := tlv.ParseTLVPacket(initCardPairingData)
 	if err != nil {
 		return nil, errors.New("could not parse TLV packet")
 	}
-	senderCardCertRaw, err := tlv.FindTag(TagCardCertificate)
+	senderCardCertRaw, err := collection.FindTag(TagCardCertificate)
 	if err != nil {
 		return nil, errors.New("could not find certificate tlv tag")
 	}
-	senderSalt, err := tlv.FindTag(TagSalt)
+	senderSalt, err := collection.FindTag(TagSalt)
 	if err != nil {
 		return nil, errors.New("could not find sender salt tlv tag")
 	}
@@ -352,9 +445,9 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 
 	log.Debugf("cryptogram: % X", cryptogram)
 	log.Debugf("receiverSig: % X", receiverSig)
-	receiverSaltTLV, _ := NewTLV(TagSalt, receiverSalt)
-	aesIVTLV, _ := NewTLV(TagAesIV, aesIV)
-	receiverSigTLV, _ := NewTLV(TagECDSASig, receiverSig)
+	receiverSaltTLV, _ := tlv.NewTLV(TagSalt, receiverSalt)
+	aesIVTLV, _ := tlv.NewTLV(TagAesIV, aesIV)
+	receiverSigTLV, _ := tlv.NewTLV(TagECDSASig, receiverSig)
 
 	cardPairingData = append(receiverSaltTLV.Encode(), aesIVTLV.Encode()...)
 	cardPairingData = append(cardPairingData, receiverSigTLV.Encode()...)
@@ -364,19 +457,19 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 
 func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
 	log.Debug("sending mock CARD_PAIR_2 command")
-	tlv, err := ParseTLVPacket(cardPairData)
+	collection, err := tlv.ParseTLVPacket(cardPairData)
 	if err != nil {
 		return nil, err
 	}
-	receiverSalt, err := tlv.FindTag(TagSalt)
+	receiverSalt, err := collection.FindTag(TagSalt)
 	if err != nil {
 		return nil, err
 	}
-	aesIV, err := tlv.FindTag(TagAesIV)
+	aesIV, err := collection.FindTag(TagAesIV)
 	if err != nil {
 		return nil, err
 	}
-	receiverSig, err := tlv.FindTag(TagECDSASig)
+	receiverSig, err := collection.FindTag(TagECDSASig)
 	if err != nil {
 		return nil, err
 	}
@@ -437,7 +530,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 		return nil, err
 	}
 
-	senderSigTLV, err := NewTLV(TagECDSASig, senderSig)
+	senderSigTLV, err := tlv.NewTLV(TagECDSASig, senderSig)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +540,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 
 func (c *MockCard) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	log.Debug("sending mock FINALIZE_CARD_PAIR command")
-	tlv, err := ParseTLVPacket(cardPair2Data)
+	tlv, err := tlv.ParseTLVPacket(cardPair2Data)
 	if err != nil {
 		return err
 	}
@@ -496,13 +589,13 @@ func (c *MockCard) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err
 	return index, newp.PubKey, nil
 }
 
-func (c *MockCard) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
-	index := int(keyIndex)
-	if index >= len(c.Phonons) || c.Phonons[index].deleted {
-		return fmt.Errorf("No phonon at index %d", index)
+func (c *MockCard) SetDescriptor(phonon *model.Phonon) error {
+	if int(phonon.KeyIndex) >= len(c.Phonons) || c.Phonons[phonon.KeyIndex].deleted {
+		return fmt.Errorf("No phonon at index %d", phonon.KeyIndex)
 	}
-	c.Phonons[index].CurrencyType = currencyType
-	c.Phonons[index].Value = value
+
+	c.Phonons[phonon.KeyIndex].Phonon = *phonon
+
 	return nil
 }
 
@@ -511,13 +604,14 @@ func (c *MockCard) OpenSecureChannel() error {
 	return nil
 }
 
-func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error) {
+func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
 	var ret []*model.Phonon
 	for _, phonon := range c.Phonons {
+		//TODO: Do better than accepting loss of precision here
 		if !phonon.deleted &&
 			(currencyType == 0x00 || phonon.CurrencyType == currencyType) &&
-			phonon.Value > greaterThanValue &&
-			(lessThanValue == 0 || phonon.Value < lessThanValue) {
+			phonon.Denomination > greaterThanValue &&
+			(lessThanValue == 0 || phonon.Denomination < lessThanValue) {
 			ret = append(ret, &phonon.Phonon)
 		}
 	}
@@ -562,7 +656,7 @@ func (c *MockCard) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 // 	//TODO: divide enckey and MAC
 // 	invoiceSC.Init([]byte(c.outgoingInvoice.ID), c.outgoingInvoice.Key, c.outgoingInvoice.Key)
 
-// 	phononTransferTLV, err := NewTLV(TagTransferPhononPacket, outgoingPhonons)
+// 	phononTransferTLV, err := tlv.NewTLV(TagTransferPhononPacket, outgoingPhonons)
 // 	if err != nil {
 // 		return nil, errors.New("could not encode phonon transfer TLV")
 // 	}
@@ -572,7 +666,7 @@ func (c *MockCard) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 // 		return nil, errors.New("could not encrypt outgoing phonons")
 // 	}
 
-// 	invoiceIDTLV, err := NewTLV(TagInvoiceID, []byte(c.outgoingInvoice.ID))
+// 	invoiceIDTLV, err := tlv.NewTLV(TagInvoiceID, []byte(c.outgoingInvoice.ID))
 // 	if err != nil {
 // 		return nil, errors.New("could not encode invoice with TLV")
 // 	}
@@ -605,7 +699,7 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 	//TODO: divide enckey and MAC
 	// invoiceSC.Init([]byte(c.outgoingInvoice.ID), c.outgoingInvoice.Key, c.outgoingInvoice.Key)
 
-	phononTransferTLV, err := NewTLV(TagTransferPhononPacket, outgoingPhonons)
+	phononTransferTLV, err := tlv.NewTLV(TagTransferPhononPacket, outgoingPhonons)
 	if err != nil {
 		return nil, errors.New("could not encode phonon transfer TLV")
 	}
@@ -615,7 +709,7 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 		return nil, errors.New("could not encrypt outgoing phonons")
 	}
 
-	// invoiceIDTLV, err := NewTLV(TagInvoiceID, []byte(c.outgoingInvoice.ID))
+	// invoiceIDTLV, err := tlv.NewTLV(TagInvoiceID, []byte(c.outgoingInvoice.ID))
 	// if err != nil {
 	// 	return nil, errors.New("could not encode invoice with TLV")
 	// }
@@ -625,7 +719,7 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 
 //For invoiced receives
 // func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
-// 	data, err := ParseTLVPacket(transaction)
+// 	data, err := tlv.ParseTLVPacket(transaction)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -649,7 +743,7 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 // 		return err
 // 	}
 
-// 	phononTransferPacketTLV, err := ParseTLVPacket(phononTransferPacketData, TagTransferPhononPacket)
+// 	phononTransferPacketTLV, err := tlv.ParseTLVPacket(phononTransferPacketData, TagTransferPhononPacket)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -685,7 +779,7 @@ func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
 		return err
 	}
 
-	phononTransferPacketTLV, err := ParseTLVPacket(phononTransferPacketData, TagTransferPhononPacket)
+	phononTransferPacketTLV, err := tlv.ParseTLVPacket(phononTransferPacketData, TagTransferPhononPacket)
 	if err != nil {
 		return err
 	}
@@ -730,11 +824,11 @@ func (c *MockCard) GenerateInvoice() (invoiceData []byte, err error) {
 
 	c.invoices[invoiceID] = invoiceKey
 
-	keyTLV, err := NewTLV(TagAESKey, invoiceKey)
+	keyTLV, err := tlv.NewTLV(TagAESKey, invoiceKey)
 	if err != nil {
 		return nil, err
 	}
-	idTLV, err := NewTLV(TagAesIV, []byte(invoiceID))
+	idTLV, err := tlv.NewTLV(TagAesIV, []byte(invoiceID))
 	if err != nil {
 		return nil, err
 	}
@@ -753,7 +847,7 @@ func (c *MockCard) ReceiveInvoice(invoiceData []byte) (err error) {
 	if err != nil {
 		return err
 	}
-	collection, err := ParseTLVPacket(data)
+	collection, err := tlv.ParseTLVPacket(data)
 	if err != nil {
 		return err
 	}

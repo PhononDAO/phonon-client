@@ -52,10 +52,13 @@ const (
 	TagValueFilterLessThan = 0x84
 	TagValueFilterMoreThan = 0x85
 
-	TagPhononCollection = 0x52
-	TagPhononDescriptor = 0x50
-	TagPhononValue      = 0x83
-	TagCurrencyType     = 0x82
+	TagPhononCollection      = 0x52
+	TagPhononDescriptor      = 0x50
+	TagPhononValue           = 0x83
+	TagCurrencyType          = 0x82
+	TagCurveType             = 0x87
+	TagSchemaVersion         = 0x88
+	TagExtendedSchemaVersion = 0x89
 
 	TagPhononKeyIndexList       = 0x42
 	TagTransferPhononPacket     = 0x43

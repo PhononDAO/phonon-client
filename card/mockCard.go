@@ -82,51 +82,6 @@ func (phonon *MockPhonon) Encode() (tlv.TLV, error) {
 	return phononDescriptionTLV, nil
 }
 
-// //TLV Encodes a phonon for transmission to cards
-// func TLVEncodeOutgoingPhonon(p *model.Phonon) ([]byte, error) {
-// 	//KeyIndex omitted
-
-// 	//PubKey omitted
-
-// 	curveTypeTLV, err := tlv.NewTLV(TagCurveType, []byte{p.CurveType})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	schemaVersionTLV, err := tlv.NewTLV(TagSchemaVersion, []byte{p.SchemaVersion})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	extendedSchemaVersionTLV, err := tlv.NewTLV(TagExtendedSchemaVersion, []byte{p.SchemaVersion})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	var denominationBytes []byte
-// 	binary.BigEndian.PutUint64(denominationBytes, p.Denomination)
-
-// 	valueTLV, err := tlv.NewTLV(TagPhononValue, denominationBytes)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	currencyTypeBytes := make([]byte, 2)
-// 	binary.BigEndian.PutUint16(currencyTypeBytes, uint16(p.CurrencyType))
-// 	currencyTypeTLV, err := tlv.NewTLV(TagCurrencyType, currencyTypeBytes)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	phononTLV := append(curveTypeTLV.Encode(), schemaVersionTLV.Encode()...)
-// 	phononTLV = append(phononTLV, extendedSchemaVersionTLV.Encode()...)
-// 	phononTLV = append(phononTLV, valueTLV.Encode()...)
-// 	phononTLV = append(phononTLV, currencyTypeTLV.Encode()...)
-// 	for _, field := range p.ExtendedTLV {
-// 		phononTLV = append(phononTLV, field.Encode()...)
-// 	}
-
-// 	return phononTLV, nil
-// }
-
 func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 	phononTLV, err := tlv.ParseTLVPacket(privatePhononTLV, TagPhononPrivateDescription)
 	if err != nil {

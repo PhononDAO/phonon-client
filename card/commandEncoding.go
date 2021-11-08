@@ -139,34 +139,7 @@ func parseListPhononsResponse(resp []byte) ([]*model.Phonon, error) {
 		if err != nil {
 			log.Error("unable to parse phonon: ", err)
 		}
-		// descriptionTLV, err := tlv.ParseTLVPacket(description)
-		// if err != nil {
-		// 	return phonons, err
-		// }
-		// keyIndexBytes, err := descriptionTLV.FindTag(TagKeyIndex)
-		// if err != nil {
-		// 	return phonons, err
-		// }
-		// currencyTypeBytes, err := descriptionTLV.FindTag(TagCurrencyType)
-		// if err != nil {
-		// 	return phonons, err
-		// }
-		// currencyType := binary.BigEndian.Uint16(currencyTypeBytes)
 
-		// valueBytes, err := descriptionTLV.FindTag(TagPhononValue)
-		// if err != nil {
-		// 	return phonons, err
-		// }
-		// value, err := util.BytesToFloat32(valueBytes)
-		// if err != nil {
-		// 	return phonons, err
-		// }
-
-		// phonon := model.Phonon{
-		// 	KeyIndex:     binary.BigEndian.Uint16(keyIndexBytes),
-		// 	CurrencyType: model.CurrencyType(currencyType),
-		// 	Value:        value,
-		// }
 		phonons = append(phonons, phonon)
 	}
 	return phonons, nil

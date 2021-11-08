@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/sha512"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"unicode"
@@ -133,9 +132,11 @@ func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 	if err != nil {
 		return phonon, err
 	}
-	//privKey
+
+	//Parse private key and derive public key
 	rawPrivKey, err := phononTLV.FindTag(TagPhononPrivKey)
 	if err != nil {
+		log.Debug("could not parse phonon private key tlv")
 		return phonon, err
 	}
 	log.Debugf("rawPrivKeyBytes: % X", rawPrivKey)
@@ -145,62 +146,13 @@ func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 	}
 	phonon.PubKey = &phonon.PrivateKey.PublicKey
 
-	//CurveType
-	//TODO: inspect supported curve types
-	rawCurveType, err := phononTLV.FindTag(TagCurveType)
+	//Parse public fields and extended schema
+	publicPhonon, err := TLVDecodePublicPhononFields(phononTLV)
 	if err != nil {
 		return phonon, err
 	}
-	if len(rawCurveType) != 1 {
-		return phonon, errors.New("curveType length incorrect")
-	}
-	phonon.CurveType = uint8(rawCurveType[0])
 
-	//SchemaVersion
-	rawSchemaVersion, err := phononTLV.FindTag(TagSchemaVersion)
-	if err != nil {
-		return phonon, err
-	}
-	log.Debug("value of rawSchemaVersion: ", rawSchemaVersion)
-	if len(rawSchemaVersion) != 1 {
-		return phonon, errors.New("schemaVersion length incorrect")
-	}
-	phonon.SchemaVersion = uint8(rawSchemaVersion[0])
-
-	if phonon.SchemaVersion != StandardSchemaSupportedVersions {
-		return phonon, errors.New("unsupported phonon standard schema version")
-	}
-
-	rawExtendedSchemaVersion, err := phononTLV.FindTag(TagExtendedSchemaVersion)
-	if err != nil {
-		return phonon, err
-	}
-	if len(rawExtendedSchemaVersion) != 1 {
-		return phonon, errors.New("extendedSchemaVersion length incorrect")
-	}
-	phonon.ExtendedSchemaVersion = uint8(rawExtendedSchemaVersion[0])
-
-	//Denomination
-	denominationBytes, err := phononTLV.FindTag(TagPhononValue)
-	if err != nil {
-		return phonon, err
-	}
-	phonon.Denomination = binary.BigEndian.Uint64(denominationBytes)
-
-	//CurrencyType
-	currencyTypeBytes, err := phononTLV.FindTag(TagCurrencyType)
-	if err != nil {
-		return phonon, err
-	}
-	log.Debugf("currencyTypeBytes: % X", currencyTypeBytes)
-	phonon.CurrencyType = model.CurrencyType(binary.BigEndian.Uint16(currencyTypeBytes))
-
-	//Extended Schema
-
-	//Standard Schema Tags
-	standardTags := []byte{TagPhononPrivKey, TagCurveType, TagSchemaVersion, TagExtendedSchemaVersion,
-		TagPhononValue, TagCurrencyType}
-	phonon.ExtendedTLV = phononTLV.GetRemainingTLVs(standardTags)
+	phonon.Phonon = *publicPhonon
 
 	return phonon, nil
 }

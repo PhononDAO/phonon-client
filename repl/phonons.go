@@ -39,19 +39,7 @@ func listPhonons(c *ishell.Context) {
 		}
 		currencyType = model.CurrencyType(currencyTypeInt)
 
-		//TODO: Parse denomination correctly
-		// lessThanValue, success := lessThanValue.SetString(c.Args[1], 10)
-		// if success == false {
-		// 	c.Println("error parsing lessThanValue: ", err)
-		// 	return
-		// }
-
-		// greaterThanValueRaw, err := strconv.ParseFloat(c.Args[2], 32)
-		// if err != nil {
-		// 	c.Println("error parsing greaterThanValue: ", err)
-		// 	return
-		// }
-		// greaterThanValue = float32(greaterThanValueRaw)
+		//uint64 parsing
 		lessThanValue, err = strconv.ParseUint(c.Args[1], 10, 0)
 		if err != nil {
 			c.Println("error parsing lessThanValue: ", err)
@@ -105,7 +93,6 @@ func setDescriptor(c *ishell.Context) {
 	}
 	currencyType := model.CurrencyType(currencyTypeInt)
 
-	// value, err := strconv.ParseFloat(c.Args[2], 32)
 	denomination, err := strconv.ParseUint(c.Args[2], 10, 0)
 	if err != nil {
 		c.Println("value could not be parse: ", err)

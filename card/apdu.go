@@ -170,12 +170,12 @@ func NewCommandChangePIN(pin string) *Command {
 	}
 }
 
-func NewCommandCreatePhonon() *Command {
+func NewCommandCreatePhonon(curveType byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaISO7816,
 			InsCreatePhonon,
-			0x00,
+			curveType,
 			0x00,
 			[]byte{0x00},
 		),

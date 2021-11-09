@@ -160,7 +160,7 @@ func (s *Session) CreatePhonon() (keyIndex uint16, pubkey *ecdsa.PublicKey, err 
 	if !s.verified() {
 		return 0, nil, ErrPINNotEntered
 	}
-	return s.cs.CreatePhonon()
+	return s.cs.CreatePhonon(model.Secp256k1)
 }
 
 func (s *Session) SetDescriptor(p *model.Phonon) error {

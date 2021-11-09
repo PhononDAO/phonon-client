@@ -369,9 +369,10 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 	return cs.checkOK(resp, err)
 }
 
-func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
+func (cs *PhononCommandSet) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
 	log.Debug("sending CREATE_PHONON command")
-	cmd := NewCommandCreatePhonon()
+
+	cmd := NewCommandCreatePhonon(byte(curveType))
 	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
 	if err != nil {
 		log.Error("create phonon command failed: ", err)

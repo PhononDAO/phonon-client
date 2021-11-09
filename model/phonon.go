@@ -12,7 +12,7 @@ import (
 type Phonon struct {
 	KeyIndex              uint16
 	PubKey                *ecdsa.PublicKey
-	CurveType             uint8
+	CurveType             CurveType
 	SchemaVersion         uint8
 	ExtendedSchemaVersion uint8
 	Denomination          uint64

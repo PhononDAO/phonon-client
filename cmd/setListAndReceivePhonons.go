@@ -67,7 +67,7 @@ func setListAndReceive() {
 		fmt.Println(err)
 		return
 	}
-	keyIndex, phononPubKey, err := cs.CreatePhonon()
+	keyIndex, phononPubKey, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		fmt.Println(err)
 		return

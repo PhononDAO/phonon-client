@@ -17,9 +17,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/GridPlus/phonon-client/card"
-	"github.com/spf13/cobra"
 	"strconv"
+
+	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/model"
+	"github.com/spf13/cobra"
 )
 
 // createPhononCmd represents the createPhonon command
@@ -71,7 +73,7 @@ func createPhonon(n int) {
 		return
 	}
 	for i := 0; i < n; i++ {
-		keyIndex, pubKey, err := cs.CreatePhonon()
+		keyIndex, pubKey, err := cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			fmt.Println("error creating phonon")
 			fmt.Println(err)

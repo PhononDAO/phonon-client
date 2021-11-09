@@ -60,7 +60,7 @@ func transactionAck() {
 		fmt.Println(err)
 		return
 	}
-	keyIndex, _, err := cs.CreatePhonon()
+	keyIndex, _, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		fmt.Println(err)
 		return

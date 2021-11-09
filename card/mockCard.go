@@ -66,14 +66,20 @@ func (phonon *MockPhonon) Encode() (tlv.TLV, error) {
 		log.Error("could not encode mockPhonon privKey: ", err)
 		return tlv.TLV{}, err
 	}
-
+	//Also include CurveType
+	curveTypeTLV, err := tlv.NewTLV(TagCurveType, []byte{byte(phonon.CurveType)})
+	if err != nil {
+		return tlv.TLV{}, err
+	}
 	//Encode internal phonon
-	phononTLV, err := TLVEncodeStandardPhonon(&phonon.Phonon)
+	phononTLV, err := TLVEncodePhononDescriptor(&phonon.Phonon)
 	if err != nil {
 		log.Error("mock could not encode inner phonon: ", phonon.Phonon)
 		return tlv.TLV{}, err
 	}
-	phononDescriptionTLV, err := tlv.NewTLV(TagPhononPrivateDescription, append(privKeyTLV.Encode(), phononTLV...))
+	data := append(privKeyTLV.Encode(), curveTypeTLV.Encode()...)
+	data = append(data, phononTLV...)
+	phononDescriptionTLV, err := tlv.NewTLV(TagPhononPrivateDescription, data)
 	if err != nil {
 		log.Error("mock could not encode phonon description: ", err)
 		return tlv.TLV{}, err
@@ -475,7 +481,7 @@ func (c *MockCard) Pair() (*cert.CardCertificate, error) {
 
 //Phonon Management Functions
 
-func (c *MockCard) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
+func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
 	if !c.pinVerified {
 		return 0, nil, ErrPINNotEntered
 	}
@@ -490,6 +496,7 @@ func (c *MockCard) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err
 	}
 	newp.PubKey = &private.PublicKey
 	newp.PrivateKey = private
+	newp.CurveType = curveType
 	//add it in the correct place
 	index := c.addPhonon(newp)
 

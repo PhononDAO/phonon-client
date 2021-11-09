@@ -19,6 +19,7 @@ import (
 	"crypto/ecdsa"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/model"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -54,7 +55,7 @@ func setReceiveList() {
 	}
 
 	//Create a phonon, get it's pubKey, and then set it in the RECV_LIST for testing
-	_, pubKey, err := cs.CreatePhonon()
+	_, pubKey, err := cs.CreatePhonon(model.Secp256k1)
 	err = cs.SetReceiveList([]*ecdsa.PublicKey{pubKey})
 	if err != nil {
 		log.Error("error testing SetReceiveList: ", err)

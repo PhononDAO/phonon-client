@@ -60,7 +60,7 @@ func setDescriptor() {
 		return
 	}
 	for i := 0; i < phononCount; i++ {
-		keyIndex, _, err := cs.CreatePhonon()
+		keyIndex, _, err := cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			fmt.Println("error creating phonon: ", err)
 			return

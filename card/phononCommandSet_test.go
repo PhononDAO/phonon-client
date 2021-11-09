@@ -92,7 +92,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 	var createdPhonons []*model.Phonon
 	for _, description := range phononTable {
-		keyIndex, pubKey, err := cs.CreatePhonon()
+		keyIndex, pubKey, err := cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			t.Error("err creating test phonon: ", err)
 			return
@@ -187,7 +187,7 @@ func TestDestroyPhonon(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	keyIndex, createdPubKey, err := cs.CreatePhonon()
+	keyIndex, createdPubKey, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		t.Error(err)
 		return
@@ -244,7 +244,7 @@ func TestFillPhononTable(t *testing.T) {
 	maxPhononCount := 256
 	var createdIndices []uint16
 	for i := 0; i < maxPhononCount-initialCount; i++ {
-		keyIndex, _, err := cs.CreatePhonon()
+		keyIndex, _, err := cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			t.Error(err)
 			return
@@ -283,17 +283,17 @@ func TestReuseDestroyedIndex(t *testing.T) {
 		return
 	}
 	//Create three phonons so we can check reusing an index from the middle, beginning, and end of the list
-	keyIndex1, _, err := cs.CreatePhonon()
+	keyIndex1, _, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	keyIndex2, _, err := cs.CreatePhonon()
+	keyIndex2, _, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	keyIndex3, _, err := cs.CreatePhonon()
+	keyIndex3, _, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		t.Error(err)
 		return
@@ -308,7 +308,7 @@ func TestReuseDestroyedIndex(t *testing.T) {
 			return err
 		}
 		//Should be equivalent to index
-		reusedIndex, _, err := cs.CreatePhonon()
+		reusedIndex, _, err := cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			t.Error(err)
 			return err

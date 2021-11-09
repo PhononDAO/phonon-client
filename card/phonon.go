@@ -9,17 +9,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//TLV Encodes the phonon standard schema, excepting fields KeyIndex and PubKey
-func TLVEncodeStandardPhonon(p *model.Phonon) ([]byte, error) {
+//TLV Encodes the phonon standard schema used for setting it's descriptor. Must be extended with additional fields
+//to suit the various commands that deal with phonons.
+//Excludes fields KeyIndex, PubKey, and CurveType
+//Includes fields SchemaVersion, ExtendedSchemaVersion, CurrencyType, Denomination, and ExtendedTLVs
+func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 	//KeyIndex omitted
 
 	//PubKey omitted
 
+	//CurveType omitted
+
 	log.Debug("encoding phonon: ", p)
-	curveTypeTLV, err := tlv.NewTLV(TagCurveType, []byte{p.CurveType})
-	if err != nil {
-		return nil, err
-	}
 	schemaVersionTLV, err := tlv.NewTLV(TagSchemaVersion, []byte{p.SchemaVersion})
 	if err != nil {
 		return nil, err
@@ -44,8 +45,7 @@ func TLVEncodeStandardPhonon(p *model.Phonon) ([]byte, error) {
 		return nil, err
 	}
 
-	phononTLV := append(curveTypeTLV.Encode(), schemaVersionTLV.Encode()...)
-	phononTLV = append(phononTLV, extendedSchemaVersionTLV.Encode()...)
+	phononTLV := append(schemaVersionTLV.Encode(), extendedSchemaVersionTLV.Encode()...)
 	phononTLV = append(phononTLV, valueTLV.Encode()...)
 	phononTLV = append(phononTLV, currencyTypeTLV.Encode()...)
 	for _, field := range p.ExtendedTLV {
@@ -71,7 +71,7 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 	if len(rawCurveType) != 1 {
 		return nil, errors.New("curveType length incorrect")
 	}
-	phonon.CurveType = uint8(rawCurveType[0])
+	phonon.CurveType = model.CurveType(rawCurveType[0])
 
 	//SchemaVersion
 	rawSchemaVersion, err := phononTLV.FindTag(TagSchemaVersion)

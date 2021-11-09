@@ -34,7 +34,7 @@ func encodeSetDescriptorData(p *model.Phonon) ([]byte, error) {
 		return nil, err
 	}
 
-	phononTLV, err := TLVEncodeStandardPhonon(p)
+	phononTLV, err := TLVEncodePhononDescriptor(p)
 	if err != nil {
 		return nil, err
 	}

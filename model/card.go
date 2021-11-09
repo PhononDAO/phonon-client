@@ -15,7 +15,7 @@ type PhononCard interface {
 	IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error)
 	VerifyPIN(pin string) error
 	ChangePIN(pin string) error
-	CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error)
+	CreatePhonon(curveType CurveType) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error)
 	SetDescriptor(phonon *Phonon) error
 	ListPhonons(currencyType CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*Phonon, error)
 	GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error)

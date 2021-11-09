@@ -54,7 +54,8 @@ const (
 
 	TagPhononCollection      = 0x52
 	TagPhononDescriptor      = 0x50
-	TagPhononValue           = 0x83
+	TagPhononDenomBase       = 0x83
+	TagPhononDenomExp        = 0x86
 	TagCurrencyType          = 0x82
 	TagCurveType             = 0x87
 	TagSchemaVersion         = 0x88

@@ -71,15 +71,15 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 	type phononDescription struct {
 		currencyType model.CurrencyType
-		value        uint64
+		value        model.Denomination
 	}
 	phononTable := []phononDescription{
-		{model.Bitcoin, 1},
-		{model.Bitcoin, 10000000},
-		{model.Bitcoin, 99999999},
-		{model.Ethereum, 1000000000000000001},
-		{model.Ethereum, 999999999999999999},
-		{model.Ethereum, 1},
+		{model.Bitcoin, model.Denomination{1, 0}},
+		{model.Bitcoin, model.Denomination{1, 8}},
+		{model.Bitcoin, model.Denomination{99, 6}},
+		{model.Ethereum, model.Denomination{1, 18}},
+		{model.Ethereum, model.Denomination{9, 18}},
+		{model.Ethereum, model.Denomination{1, 0}},
 	}
 
 	//TODO: pass different filters into this function
@@ -195,7 +195,7 @@ func TestDestroyPhonon(t *testing.T) {
 	p := &model.Phonon{
 		KeyIndex:     keyIndex,
 		CurrencyType: model.Ethereum,
-		Denomination: 578,
+		Denomination: model.Denomination{57, 0},
 	}
 	err = cs.SetDescriptor(p)
 	if err != nil {

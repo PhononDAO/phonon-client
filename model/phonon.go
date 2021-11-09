@@ -3,7 +3,9 @@ package model
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
+	"math"
 
 	"github.com/GridPlus/phonon-client/tlv"
 	"github.com/GridPlus/phonon-client/util"
@@ -15,7 +17,7 @@ type Phonon struct {
 	CurveType             CurveType
 	SchemaVersion         uint8
 	ExtendedSchemaVersion uint8
-	Denomination          uint64
+	Denomination          Denomination
 	CurrencyType          CurrencyType
 	ExtendedTLV           []tlv.TLV
 }
@@ -38,3 +40,38 @@ type CurveType uint8
 const (
 	Secp256k1 CurveType = iota
 )
+
+type Denomination struct {
+	Base     uint8
+	Exponent uint8
+}
+
+//NewDenomination takes an integer input and attempts to store it as a compressible value representing currency base units
+//Precision is limited to significant digits no greater than the value 255, along with exponentiation up to 255 digits
+func NewDenomination(i int) (Denomination, error) {
+	var exponent uint8
+	//compress into exponent as much as possible
+	for i > math.MaxUint8 {
+		if i%10 == 0 {
+			exponent += 1
+			i = i / 10
+		}
+	}
+	//If remaining base cannot be stored in a uint8 return error since this value can't be represented
+	//Else return Denomination
+	if i > math.MaxUint8 {
+		return Denomination{}, errors.New("denomination exceeds representable precision")
+	}
+	return Denomination{
+		Base:     uint8(i),
+		Exponent: 0,
+	}, nil
+}
+
+func (d *Denomination) Value() int {
+	return int(d.Base * 10 * d.Exponent)
+}
+
+func (d *Denomination) String() string {
+	return fmt.Sprintf("%v", d.Value())
+}

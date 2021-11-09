@@ -30,10 +30,14 @@ func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 		return nil, err
 	}
 
-	denominationBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(denominationBytes, p.Denomination)
+	// denominationBytes := make([]byte, 8)
+	// binary.BigEndian.PutUint64(denominationBytes, p.Denomination)
 
-	valueTLV, err := tlv.NewTLV(TagPhononValue, denominationBytes)
+	denomBaseTLV, err := tlv.NewTLV(TagPhononDenomBase, []byte{byte(p.Denomination.Base)})
+	if err != nil {
+		return nil, err
+	}
+	denomExpTLV, err := tlv.NewTLV(TagPhononDenomExp, []byte{byte(p.Denomination.Exponent)})
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +50,8 @@ func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 	}
 
 	phononTLV := append(schemaVersionTLV.Encode(), extendedSchemaVersionTLV.Encode()...)
-	phononTLV = append(phononTLV, valueTLV.Encode()...)
+	phononTLV = append(phononTLV, denomBaseTLV.Encode()...)
+	phononTLV = append(phononTLV, denomExpTLV.Encode()...)
 	phononTLV = append(phononTLV, currencyTypeTLV.Encode()...)
 	for _, field := range p.ExtendedTLV {
 		phononTLV = append(phononTLV, field.Encode()...)
@@ -100,12 +105,25 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 	phonon.ExtendedSchemaVersion = uint8(rawExtendedSchemaVersion[0])
 
 	//Denomination
-	denominationBytes, err := phononTLV.FindTag(TagPhononValue)
+	denomBaseBytes, err := phononTLV.FindTag(TagPhononDenomBase)
 	if err != nil {
-		log.Debug("could not parse denomination tag")
+		log.Debug("could not parse denomination base: ", err)
 		return phonon, err
 	}
-	phonon.Denomination = binary.BigEndian.Uint64(denominationBytes)
+	if len(denomBaseBytes) != 1 {
+		return phonon, errors.New("denomBaseBytes length incorrect")
+	}
+	phonon.Denomination.Base = uint8(denomBaseBytes[0])
+
+	denomExpBytes, err := phononTLV.FindTag(TagPhononDenomExp)
+	if err != nil {
+		log.Debug("could not parse denomination exponent: ", err)
+		return phonon, err
+	}
+	if len(denomExpBytes) != 1 {
+		return phonon, errors.New("denomBaseExp length incorrect")
+	}
+	phonon.Denomination.Exponent = uint8(denomExpBytes[0])
 
 	//CurrencyType
 	currencyTypeBytes, err := phononTLV.FindTag(TagCurrencyType)
@@ -120,7 +138,7 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 
 	//Standard Schema Tags
 	standardTags := []byte{TagPhononPrivKey, TagCurveType, TagSchemaVersion, TagExtendedSchemaVersion,
-		TagPhononValue, TagCurrencyType}
+		TagPhononDenomBase, TagPhononDenomExp, TagCurrencyType}
 	phonon.ExtendedTLV = phononTLV.GetRemainingTLVs(standardTags)
 
 	return phonon, nil

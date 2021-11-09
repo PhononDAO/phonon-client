@@ -90,7 +90,7 @@ func sendPhonons() {
 	p := &model.Phonon{
 		KeyIndex:     keyIndex,
 		CurrencyType: model.Ethereum,
-		Denomination: 1,
+		Denomination: model.Denomination{1, 0},
 	}
 	err = sender.SetDescriptor(p)
 	if err != nil {

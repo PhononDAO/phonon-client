@@ -93,9 +93,14 @@ func setDescriptor(c *ishell.Context) {
 	}
 	currencyType := model.CurrencyType(currencyTypeInt)
 
-	denomination, err := strconv.ParseUint(c.Args[2], 10, 0)
+	value, err := strconv.ParseUint(c.Args[2], 10, 0)
 	if err != nil {
 		c.Println("value could not be parse: ", err)
+		return
+	}
+	denomination, err := model.NewDenomination(int(value))
+	if err != nil {
+		c.Println("cannot represent denomination: ", err)
 		return
 	}
 	c.Println("setting descriptor with values: ", uint16(keyIndex), currencyType, denomination)

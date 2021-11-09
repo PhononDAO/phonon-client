@@ -524,8 +524,8 @@ func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue ui
 		//TODO: Do better than accepting loss of precision here
 		if !phonon.deleted &&
 			(currencyType == 0x00 || phonon.CurrencyType == currencyType) &&
-			phonon.Denomination > greaterThanValue &&
-			(lessThanValue == 0 || phonon.Denomination < lessThanValue) {
+			phonon.Denomination.Value() > int(greaterThanValue) &&
+			(lessThanValue == 0 || phonon.Denomination.Value() < int(lessThanValue)) {
 			ret = append(ret, &phonon.Phonon)
 		}
 	}

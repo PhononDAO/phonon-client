@@ -73,7 +73,7 @@ func setListAndReceive() {
 		return
 	}
 
-	err = cs.SetDescriptor(&model.Phonon{KeyIndex: uint16(keyIndex), CurrencyType: model.Ethereum, Denomination: 5})
+	err = cs.SetDescriptor(&model.Phonon{KeyIndex: uint16(keyIndex), CurrencyType: model.Ethereum, Denomination: model.Denomination{5, 0}})
 	if err != nil {
 		fmt.Println(err)
 		return

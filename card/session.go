@@ -7,6 +7,7 @@ import (
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,14 +16,13 @@ Keeps a client side cache of the card state to make interaction
 with the card through this API more convenient*/
 type Session struct {
 	cs             PhononCard
-	remoteCard     model.CounterpartyPhononCard
+	RemoteCard     model.CounterpartyPhononCard
 	identityPubKey *ecdsa.PublicKey
 	active         bool
 	pinInitialized bool
 	terminalPaired bool
 	pinVerified    bool
-	cardPaired     bool
-	cert           cert.CardCertificate
+	Cert           *cert.CardCertificate
 	name           string
 }
 
@@ -37,7 +37,6 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 		cs:             storage,
 		active:         true,
 		terminalPaired: false,
-		cardPaired:     false,
 		pinVerified:    false,
 	}
 	_, _, s.pinInitialized, err = s.cs.Select()
@@ -58,9 +57,12 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
+func (s *Session) SetPaired(status bool){
+}
+
 func (s *Session) GetName() string {
 	//TODO: Use future card GET_NAME
-	if s.cert.PubKey != nil {
+	if s.Cert.PubKey != nil {
 		hexString := util.ECDSAPubKeyToHexString(s.identityPubKey)
 		if len(hexString) >= 16 {
 			return hexString[:16]
@@ -69,15 +71,14 @@ func (s *Session) GetName() string {
 	return "unknown"
 }
 
-func (s *Session) GetCertificate() (cert.CardCertificate, error) {
-	//If s.Cert is already populated, return it
-	if s.cert.PubKey != nil {
-		log.Debugf("GetCertificate returning cert: % X", s.cert)
-		return s.cert, nil
+func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
+	if s.Cert != nil{
+		log.Debugf("GetCertificate returning cert: % X", s.Cert)
+		return s.Cert, nil
 	}
 
 	//TODO, fetch this if it's not there yet
-	return cert.CardCertificate{}, errors.New("certificate not cached by session yet")
+	return &cert.CardCertificate{}, errors.New("certificate not cached by session yet")
 }
 
 func (s *Session) IsUnlocked() bool {
@@ -89,7 +90,7 @@ func (s *Session) IsInitialized() bool {
 }
 
 func (s *Session) IsPairedToCard() bool {
-	return s.remoteCard != nil
+	return s.RemoteCard != nil
 }
 
 //Connect opens a secure channel with a card.
@@ -98,8 +99,9 @@ func (s *Session) Connect() error {
 	if err != nil {
 		return err
 	}
-	s.cert = cert
-	s.identityPubKey, _ = util.ParseECDSAPubKey(s.cert.PubKey)
+	s.Cert = cert
+	//todo: remove this
+	s.identityPubKey, _ = util.ParseECDSAPubKey(s.Cert.PubKey)
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
 		return err
@@ -189,6 +191,10 @@ func (s *Session) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err
 	return s.cs.DestroyPhonon(keyIndex)
 }
 
+func (s *Session) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error) {
+	return s.cs.IdentifyCard(nonce)
+}
+
 func (s *Session) InitCardPairing(receiverCert cert.CardCertificate) ([]byte, error) {
 	if !s.verified() {
 		return nil, ErrPINNotEntered
@@ -211,7 +217,6 @@ func (s *Session) CardPair2(cardPairData []byte) (cardPair2Data []byte, err erro
 	if err != nil {
 		return nil, err
 	}
-	s.cardPaired = true
 	log.Debug("set card session paired")
 	return cardPair2Data, nil
 }
@@ -224,14 +229,12 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 	if err != nil {
 		return err
 	}
-	s.cardPaired = true
-	log.Debug("set card session paired")
 	return nil
 }
 
 //Keeping this around for now in case we need a version that does not interact with remote
 // func (s *Session) SendPhonons(keyIndices []uint16) ([]byte, error) {
-// 	if !s.verified() && !s.cardPaired {
+// 	if !s.verified() && s.RemoteCard != nil {
 // 		return nil, ErrCardNotPairedToCard
 // 	}
 // 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
@@ -243,14 +246,14 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 // }
 
 func (s *Session) SendPhonons(keyIndices []uint16) error {
-	if !s.verified() && !s.cardPaired {
+	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
 	}
 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
 	if err != nil {
 		return err
 	}
-	err = s.remoteCard.ReceivePhonons(phononTransferPacket)
+	err = s.RemoteCard.ReceivePhonons(phononTransferPacket)
 	if err != nil {
 		log.Debug("error receiving phonons on remote")
 		return err
@@ -259,7 +262,7 @@ func (s *Session) SendPhonons(keyIndices []uint16) error {
 }
 
 func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
-	if !s.verified() && !s.cardPaired {
+	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
 	}
 	err := s.cs.ReceivePhonons(phononTransferPacket)
@@ -270,14 +273,14 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 }
 
 func (s *Session) GenerateInvoice() ([]byte, error) {
-	if !s.verified() && !s.cardPaired {
+	if !s.verified() && s.RemoteCard != nil {
 		return nil, ErrCardNotPairedToCard
 	}
 	return s.cs.GenerateInvoice()
 }
 
 func (s *Session) ReceiveInvoice(invoiceData []byte) error {
-	if !s.verified() && !s.cardPaired {
+	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
 	}
 	err := s.cs.ReceiveInvoice(invoiceData)
@@ -292,7 +295,7 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 	if err != nil {
 		return err
 	}
-	initPairingData, err := s.InitCardPairing(remoteCert)
+	initPairingData, err := s.InitCardPairing(*remoteCert)
 	if err != nil {
 		return err
 	}
@@ -308,7 +311,6 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 	if err != nil {
 		return err
 	}
-	s.remoteCard = remoteCard
-	s.cardPaired = true
+	s.RemoteCard = remoteCard
 	return nil
 }

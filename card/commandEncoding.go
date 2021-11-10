@@ -292,13 +292,12 @@ func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey *ecdsa.Pub
 	return instanceUID, cardPubKey, cardInitialized, nil
 }
 
-func parseIdentifyCardResponse(resp []byte) (cardPubKey *ecdsa.PublicKey, sig *util.ECDSASignature, err error) {
+func ParseIdentifyCardResponse(resp []byte) (cardPubKey *ecdsa.PublicKey, sig *util.ECDSASignature, err error) {
 	correctLength := 67
 	if len(resp) < correctLength {
 		log.Errorf("identify card response invalid length %v should be %v ", len(resp), correctLength)
 		return nil, nil, err
 	}
-
 	cardPubKey, err = util.ParseECDSAPubKey(resp[2:67])
 	if err != nil {
 		return nil, nil, errors.New("could not parse card public key")

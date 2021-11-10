@@ -43,8 +43,7 @@ type MockPhonon struct {
 	deleted    bool
 }
 
-func (c *MockCard) addPhonon(p MockPhonon) {
-	var index uint16
+func (c *MockCard) addPhonon(p MockPhonon) (index uint16) {
 	if len(c.deletedPhonons) > 0 {
 		index := c.deletedPhonons[len(c.deletedPhonons)-1]
 		c.Phonons[index] = p
@@ -55,6 +54,7 @@ func (c *MockCard) addPhonon(p MockPhonon) {
 
 	}
 	p.KeyIndex = index
+	return
 }
 
 func (phonon *MockPhonon) Encode() (TLV, error) {
@@ -468,9 +468,9 @@ func (c *MockCard) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	return nil
 }
 
-func (c *MockCard) Pair() (cert.CardCertificate, error) {
+func (c *MockCard) Pair() (*cert.CardCertificate, error) {
 	//TODO
-	return c.IdentityCert, nil
+	return &c.IdentityCert, nil
 }
 
 //Phonon Management Functions
@@ -490,16 +490,15 @@ func (c *MockCard) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err
 	}
 	newp.PubKey = &private.PublicKey
 	newp.PrivateKey = private
-	var index int16
 	//add it in the correct place
-	c.addPhonon(newp)
+	index := c.addPhonon(newp)
 
-	return uint16(index), newp.PubKey, nil
+	return index, newp.PubKey, nil
 }
 
 func (c *MockCard) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
 	index := int(keyIndex)
-	if index > len(c.Phonons) || c.Phonons[index].deleted {
+	if index >= len(c.Phonons) || c.Phonons[index].deleted {
 		return fmt.Errorf("No phonon at index %d", index)
 	}
 	c.Phonons[index].CurrencyType = currencyType

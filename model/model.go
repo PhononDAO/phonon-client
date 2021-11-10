@@ -40,7 +40,7 @@ const (
 type CoinList map[int]int
 
 type CounterpartyPhononCard interface {
-	GetCertificate() (cert.CardCertificate, error)
+	GetCertificate() (*cert.CardCertificate, error)
 	CardPair(initPairingData []byte) (cardPairData []byte, err error)
 	CardPair2(cardPairData []byte) (cardPairData2 []byte, err error)
 	FinalizeCardPair(cardPair2Data []byte) error

@@ -50,6 +50,7 @@ func Start() {
 		Func: deactivateCard,
 		Help: "Deselect a card if one is selected",
 	})
+
 	shell.AddCmd(&ishell.Cmd{
 		Name: "init",
 		Func: initCard,
@@ -87,6 +88,7 @@ func Start() {
 		Func: cardPairLocal,
 		Help: "Pair with another phonon card to establish a secure connection for the exchange of phonons.",
 	})
+	
 	shell.AddCmd(&ishell.Cmd{
 		Name: "sendPhonons",
 		Func: sendPhonons,
@@ -97,11 +99,18 @@ func Start() {
 	// 	Func: getBalance,
 	// 	Help: "Retrieve the type and balance of a phonon on card. First argument is index of the card containing the phonon, and not needed if a card is selected. Second argument is the index of the phonon you wish to see the balance of",
 	// })
-	// shell.AddCmd(&ishell.Cmd{
-	// 	Name: "connect",
-	// 	Func: connectRemoteSession,
-	// 	Help: "Connect to a remote session",
-	// })
+
+	 shell.AddCmd(&ishell.Cmd{
+	 	Name: "pairRemote",
+	 	Func: connectRemoteSession,
+	 	Help: "Connect to a remote server",
+	 })
+
+	 shell.AddCmd(&ishell.Cmd{
+	 	Name:     "mock",
+	 	Func:     addMock,
+	 	Help:     "make a mock card and add it to the session",
+	 })
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "receive",
 	// 	Func: setReceiveMode,
@@ -229,10 +238,17 @@ func getBalance(c *ishell.Context) {
 	// c.Printf("Balance of card %d is %v", sessionIndex, t.GetBalance(sessionIndex, phononIndex))
 }
 
-// todo: this
 func connectRemoteSession(c *ishell.Context) {
-	var sessionIndex int
-	t.ConnectRemoteSession(sessionIndex, struct{}{})
+	fmt.Println("connecting to remote")
+	if len(c.Args) != 1{
+		fmt.Println("wrong number of arguments given")
+		return
+	}
+	CounterPartyConnInfo := c.Args[0]
+	err := t.ConnectRemoteSession(activeCard,CounterPartyConnInfo)
+	if err != nil{
+		c.Err(err)
+	}
 }
 
 // todo: this

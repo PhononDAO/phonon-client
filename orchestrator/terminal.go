@@ -2,9 +2,15 @@ package orchestrator
 
 import (
 	"errors"
+	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/remote"
+	log "github.com/sirupsen/logrus"
 )
 
 type PhononTerminal struct {
@@ -23,8 +29,16 @@ func (t *PhononTerminal) GenerateMock() error {
 		return err
 	}
 	sess, _ := card.NewSession(c)
+	// sign with demo key. there's no reason a mock card would not be signed with demo key
+	err = c.InstallCertificate(cert.SignWithDemoKey)
+	if err != nil {
+		return err
+	}
+	err = sess.Init("111111")
+	if err != nil{
+		return err
+	}
 	t.sessions = append(t.sessions, sess)
-
 	return nil
 }
 
@@ -77,10 +91,28 @@ func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} 
 	return struct{}{}
 }
 
-func (t *PhononTerminal) ConnectRemoteSession(sessionIndex int, someRemoteInterface interface{}) {
-	// todo: this whole thing
-	// t.sessions[sessionIndex].remote = &remoteSession{}
-	return
+func (t *PhononTerminal) ConnectRemoteSession(session *card.Session,cardURL string) error {
+	u, err := url.Parse(cardURL)
+	if err != nil{
+		return fmt.Errorf("Unable to parse url for card connection: %s", err.Error())
+	}
+	pathSeparated := strings.Split(u.Path,"/")
+	counterpartyID := pathSeparated[len(pathSeparated)-1]
+	log.Info("connecting")
+	remConn, err := remote.Connect(session, fmt.Sprintf("https://%s/phonon",u.Host), true)
+	if err != nil {
+		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
+	}
+	log.Info("successfully connected to remote server. Establishing connection to peer")
+	err = remConn.ConnectToCard(counterpartyID)
+	if err != nil{
+		return err
+	}
+	if counterpartyID < session.GetName(){
+		return nil
+	}
+	err = session.PairWithRemoteCard(remConn)
+	return err
 }
 
 func (t *PhononTerminal) ProposeTransaction() {

@@ -16,6 +16,7 @@ const (
 
 	// instructions
 	InsIdentifyCard     = 0x14
+	InsLoadCert         = 0x15
 	InsVerifyPIN        = 0x20
 	InsChangePIN        = 0x21
 	InsCreatePhonon     = 0x30
@@ -32,8 +33,10 @@ const (
 	InsCardPair2        = 0x52
 	InsFinalizeCardPair = 0x53
 	InsGenerateInvoice  = 0x54
-	InsReceiveInvoice   = 0x55
-	InsLoadCert         = 0x15
+	InsGetFriendlyName  = 0x56
+	InsSetFriendlyName  = 0x57
+
+	InsReceiveInvoice = 0x55
 
 	// tags
 	TagSelectAppInfo           = 0xA4
@@ -134,8 +137,7 @@ func NewCommandIdentifyCard(nonce []byte) *Command {
 			nonce,
 		),
 		PossibleErrs: map[int]string{
-			SW_DATA_INVALID:      "Invalid Data Received",
-			SW_INS_NOT_SUPPORTED: "Invalid INS",
+			SW_DATA_INVALID: "Received Challenge is not correct length",
 		},
 	}
 }
@@ -166,7 +168,7 @@ func NewCommandChangePIN(pin string) *Command {
 		),
 		PossibleErrs: map[int]string{
 			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
-			SW_INCORRECT_P1P2:           "Invalid parameters",
+			SW_INCORRECT_P1P2:           "Parameter neither change user pin or change pairing secret",
 		},
 	}
 }
@@ -199,8 +201,14 @@ func NewCommandSetDescriptor(data []byte) *Command {
 		PossibleErrs: map[int]string{
 			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
 			SW_WRONG_LENGTH:             "Wrong data length",
-			SW_FILE_INVALID:             "Invalid data",
-			SW_FUNC_NOT_SUPPORTED:       "Phonon type not supported",
+			SW_FILE_INVALID:             "Phonon index 0 invalid",
+			SW_FILE_INVALID + 1:         "Phonon does not exist",
+			SW_FILE_INVALID + 3:         "Phonon does not exist",
+			SW_FILE_INVALID + 4:         "Unable to decode Currency TLV",
+			SW_FILE_INVALID + 5:         "Unable to set currency type to 0x00",
+			SW_FILE_INVALID + 6:         "Unable to decode Phonon Value TLV",
+
+			SW_FUNC_NOT_SUPPORTED: "Phonon type not supported",
 		},
 	}
 }
@@ -215,7 +223,11 @@ func NewCommandListPhonons(p1 byte, p2 byte, data []byte) *Command {
 			data,
 		),
 		PossibleErrs: map[int]string{
-			SW_WRONG_DATA:               "Request invalid",
+			SW_WRONG_DATA:               "No remaining phonons to list",
+			SW_WRONG_DATA + 1:           "Unable to decode phonon filter TLV",
+			SW_WRONG_DATA + 2:           "unable to decode phonon currency TLV",
+			SW_WRONG_DATA + 3:           "Unable to decode less than TLV",
+			SW_WRONG_DATA + 4:           "Unable to decode greater than TLV",
 			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
 			SW_INCORRECT_P1P2:           "Incorrect Parameters received",
 		},
@@ -235,7 +247,9 @@ func NewCommandGetPhononPubKey(data []byte) *Command {
 			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
 			SW_WRONG_LENGTH:             "Data length incorrect",
 			SW_WRONG_DATA:               "Phonon index invalid",
-			SW_FILE_INVALID:             "Phonon Invalid",
+			SW_FILE_INVALID:             "Phonon index 0 invalid",
+			SW_FILE_INVALID + 1:         "Phonon at index exceeds available phonon list",
+			SW_FILE_INVALID + 3:         "phonon at index is null",
 			SW_FILE_NOT_FOUND:           "Phonon not initialized",
 		},
 	}
@@ -254,7 +268,10 @@ func NewCommandDestroyPhonon(data []byte) *Command {
 			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
 			SW_WRONG_LENGTH:             "Incoming length wrong",
 			SW_WRONG_DATA:               "Invalid phonon index",
-			SW_FILE_INVALID:             "Invalid phonon index",
+			SW_FILE_INVALID:             "Phonon index 0 invalid",
+			SW_FILE_INVALID + 1:         "Phononon doesn't exist",
+			// adding 2 doesn't work because it conflicts with another error
+			SW_FILE_INVALID + 3: "Phonon already deleted",
 		},
 	}
 }
@@ -277,7 +294,8 @@ func NewCommandSendPhonons(data []byte, p2Length byte, extendedRequest bool) *Co
 		),
 		PossibleErrs: map[int]string{
 			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
-			SW_INCORRECT_P1P2:           "Incorrect parameters sent",
+			SW_INCORRECT_P1P2:           "PhononList continue greater than 1",
+			SW_INCORRECT_P1P2 + 1:       "No Phonons Requested",
 			SW_WRONG_DATA:               "Incorrect phonon index",
 		},
 	}
@@ -296,8 +314,8 @@ func NewCommandReceivePhonons(phononTransferPacket []byte) *Command {
 		),
 		PossibleErrs: map[int]string{
 			SW_CONDITIONS_NOT_SATISFIED: "Phonon recipt conditions not met",
-			SW_FILE_FULL:                "Maximum number of phonons reached",
-			SW_WRONG_DATA:               "Phonon received not valid",
+			SW_FILE_FULL:                "Maximum number of phonons exceeded",
+			SW_WRONG_DATA:               "Unable to decode Phonon key list TLV",
 		},
 	}
 }
@@ -315,7 +333,8 @@ func NewCommandSetReceiveList(data []byte) *Command {
 		PossibleErrs: map[int]string{
 			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
 			SW_FILE_FULL:                "No phonon with index passed",
-			SW_WRONG_DATA:               "Phonon to be received not valid",
+			SW_WRONG_DATA:               "Unable to decode Phonon key list TLV",
+			SW_WRONG_DATA + 1:           "Unable to decode phonon key TLV",
 		},
 	}
 }
@@ -331,7 +350,7 @@ func NewCommandTransactionAck(data []byte) *Command {
 		),
 		PossibleErrs: map[int]string{
 			SW_CONDITIONS_NOT_SATISFIED: "Pin Not Validated",
-			SW_WRONG_DATA:               "Wrong data supplied"},
+			SW_WRONG_DATA:               "Unable to decode TLV tag"},
 	}
 }
 
@@ -344,7 +363,11 @@ func NewCommandInitCardPairing(data []byte) *Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
+			SW_WRONG_DATA:               "Unable to decode certificate TLV",
+			SW_COMMAND_NOT_ALLOWED:      "Card certificate not initialized",
+		},
 	}
 }
 
@@ -358,9 +381,9 @@ func NewCommandCardPair(data []byte) *Command {
 			data,
 		),
 		PossibleErrs: map[int]string{
-
-			SW_CONDITIONS_NOT_SATISFIED: "Pairing already completed",
-			SW_INCORRECT_P1P2:           "Unable to determine pairing step",
+			SW_CONDITIONS_NOT_SATISFIED: "Pin Not Validated",
+			SW_WRONG_DATA:               "Unable to decode card certificate TLV",
+			SW_WRONG_DATA + 1:           "Unable to decode salt TLV",
 		},
 	}
 }
@@ -374,7 +397,12 @@ func NewCommandCardPair2(data []byte) *Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			SW_CONDITIONS_NOT_SATISFIED: "Pin not validated",
+			SW_WRONG_DATA:               "Unable to read salt",
+			SW_WRONG_DATA + 1:           "Unable to read AES TLV",
+			SW_WRONG_DATA + 2:           "Unable to read Signature TLV",
+		},
 	}
 }
 
@@ -387,7 +415,12 @@ func NewCommandFinalizeCardPair(data []byte) *Command {
 			0x00,
 			data,
 		),
-		PossibleErrs: map[int]string{},
+		PossibleErrs: map[int]string{
+			// No idea how you can get this far without validating a pin
+			SW_CONDITIONS_NOT_SATISFIED:      "Pin not validated",
+			SW_WRONG_DATA:                    "Unable to read Receiver signature TLV",
+			SW_SECURITY_STATUS_NOT_SATISFIED: "Unable to verify signature",
+		},
 	}
 }
 
@@ -401,12 +434,8 @@ func NewCommandInstallCert(data []byte) *Command {
 			data,
 		),
 		PossibleErrs: map[int]string{
-			SW_CONDITIONS_NOT_SATISFIED:       "Secure Channel is already Open",
-			SW_INCORRECT_P1P2:                 "Invalid P1 Parameter(Wrong instruction step)",
-			SW_WRONG_LENGTH:                   "Invalid Data Length",
-			SW_WRONG_DATA:                     "Invalid data",
-			SW_SECURE_MESSAGING_NOT_SUPPORTED: "Certificate Not Loaded",
-			SW_SECURITY_STATUS_NOT_SATISFIED:  "Unable to generate secret or Challenge failed. Unable to verify cryptogram",
+			SW_COMMAND_NOT_ALLOWED: "Certificate already loaded",
+			SW_DATA_INVALID:        "Unable to save certificate",
 		},
 	}
 }
@@ -510,6 +539,33 @@ func NewCommandReceiveInvoice() *Command {
 			[]byte{0x00},
 		),
 		//TODO: Errors
+		PossibleErrs: map[int]string{},
+	}
+}
+
+func NewCommandGetFriendlyName() *Command {
+	return &Command{
+		ApduCmd: apdu.NewCommand(
+			globalplatform.ClaGp,
+			InsSetFriendlyName,
+			0x00,
+			0x00,
+			[]byte{0x00},
+		),
+		//TODO: Errors
+		PossibleErrs: map[int]string{},
+	}
+}
+
+func NewCommandSetFriendlyName(name string) *Command {
+	return &Command{
+		ApduCmd: apdu.NewCommand(
+			globalplatform.ClaGp,
+			InsGetFriendlyName,
+			0x00,
+			0x00,
+			[]byte(name),
+		),
 		PossibleErrs: map[int]string{},
 	}
 }

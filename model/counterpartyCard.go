@@ -5,7 +5,6 @@ import (
 )
 
 type CounterpartyPhononCard interface {
-	ConnectToCard(id string) error
 	GetCertificate() (*cert.CardCertificate, error)
 	CardPair(initPairingData []byte) (cardPairData []byte, err error)
 	CardPair2(cardPairData []byte) (cardPairData2 []byte, err error)

@@ -146,9 +146,17 @@ func parseListPhononsResponse(resp []byte) ([]*model.Phonon, error) {
 }
 
 func ParsePhononDescriptor(description []byte) (*model.Phonon, error) {
-	//TODO actually parse Phonon TLV
-	return &model.Phonon{}, nil
+	collection, err := tlv.ParseTLVPacket(description)
+	if err != nil {
+		return nil, err
+	}
+	phonon, err := TLVDecodePublicPhononFields(collection)
+	if err != nil {
+		return nil, err
+	}
+	return phonon, nil
 }
+
 func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err error) {
 	collection, err := tlv.ParseTLVPacket(resp)
 	if err != nil {

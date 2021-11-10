@@ -800,3 +800,21 @@ func (cs *PhononCommandSet) ReceiveInvoice(invoiceData []byte) (err error) {
 
 	return nil
 }
+
+func (cs *PhononCommandSet) GetFriendlyName() (string, error) {
+	log.Debug("sending GET_FRIENDLY_NAME command")
+	cmd := NewCommandGetFriendlyName()
+	resp, err := cs.Send(cmd)
+	if err != nil {
+		return "", err
+	}
+	name := string(resp.Data)
+	return name, nil
+}
+
+func (cs *PhononCommandSet) SetFriendlyName(name string) error {
+	log.Debug("sending SET_FRIENDLY_NAME command")
+	cmd := NewCommandSetFriendlyName(name)
+	_, err := cs.sc.Send(cmd)
+	return err
+}

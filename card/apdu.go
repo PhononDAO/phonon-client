@@ -33,6 +33,8 @@ const (
 	InsCardPair2        = 0x52
 	InsFinalizeCardPair = 0x53
 	InsGenerateInvoice  = 0x54
+	InsGetFriendlyName  = 0x56
+	InsSetFriendlyName  = 0x57
 
 	InsReceiveInvoice = 0x55
 
@@ -533,6 +535,33 @@ func NewCommandReceiveInvoice() *Command {
 			[]byte{0x00},
 		),
 		//TODO: Errors
+		PossibleErrs: map[int]string{},
+	}
+}
+
+func NewCommandGetFriendlyName() *Command {
+	return &Command{
+		ApduCmd: apdu.NewCommand(
+			globalplatform.ClaGp,
+			InsSetFriendlyName,
+			0x00,
+			0x00,
+			[]byte{0x00},
+		),
+		//TODO: Errors
+		PossibleErrs: map[int]string{},
+	}
+}
+
+func NewCommandSetFriendlyName(name string) *Command {
+	return &Command{
+		ApduCmd: apdu.NewCommand(
+			globalplatform.ClaGp,
+			InsGetFriendlyName,
+			0x00,
+			0x00,
+			[]byte(name),
+		),
 		PossibleErrs: map[int]string{},
 	}
 }

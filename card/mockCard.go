@@ -23,7 +23,7 @@ import (
 const StandardSchemaSupportedVersions uint8 = 0
 
 type MockCard struct {
-	Phonons []MockPhonon
+	Phonons []*MockPhonon
 
 	// This is a slice of indeces of deleted phonons. This is to match the insert logic of the card implementation
 	deletedPhonons  []int
@@ -45,7 +45,7 @@ type MockPhonon struct {
 	deleted    bool
 }
 
-func (c *MockCard) addPhonon(p MockPhonon) (index uint16) {
+func (c *MockCard) addPhonon(p *MockPhonon) (index uint16) {
 	if len(c.deletedPhonons) > 0 {
 		index := c.deletedPhonons[len(c.deletedPhonons)-1]
 		c.Phonons[index] = p
@@ -53,7 +53,6 @@ func (c *MockCard) addPhonon(p MockPhonon) (index uint16) {
 	} else {
 		c.Phonons = append(c.Phonons, p)
 		index = uint16(len(c.Phonons) - 1)
-
 	}
 	p.KeyIndex = index
 	return
@@ -93,26 +92,25 @@ func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 		return phonon, err
 	}
 
-	//Parse private key and derive public key
+	//Parse private key for later
 	rawPrivKey, err := phononTLV.FindTag(TagPhononPrivKey)
 	if err != nil {
 		log.Debug("could not parse phonon private key tlv")
 		return phonon, err
 	}
-	log.Debugf("rawPrivKeyBytes: % X", rawPrivKey)
-	phonon.PrivateKey, err = util.ParseECCPrivKey(rawPrivKey)
-	if err != nil {
-		return phonon, err
-	}
-	phonon.PubKey = &phonon.PrivateKey.PublicKey
-
-	//Parse public fields and extended schema
+	//Parse standard public fields and extended schema
 	publicPhonon, err := TLVDecodePublicPhononFields(phononTLV)
 	if err != nil {
 		return phonon, err
 	}
 
 	phonon.Phonon = *publicPhonon
+
+	phonon.PrivateKey, err = util.ParseECCPrivKey(rawPrivKey)
+	if err != nil {
+		return phonon, err
+	}
+	phonon.PubKey = &phonon.PrivateKey.PublicKey
 
 	return phonon, nil
 }
@@ -497,7 +495,7 @@ func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pub
 	newp.PrivateKey = private
 	newp.CurveType = curveType
 	//add it in the correct place
-	index := c.addPhonon(newp)
+	index := c.addPhonon(&newp)
 
 	return index, newp.PubKey, nil
 }
@@ -507,7 +505,13 @@ func (c *MockCard) SetDescriptor(phonon *model.Phonon) error {
 		return fmt.Errorf("No phonon at index %d", phonon.KeyIndex)
 	}
 
-	c.Phonons[phonon.KeyIndex].Phonon = *phonon
+	storedPhonon := &c.Phonons[phonon.KeyIndex].Phonon
+
+	storedPhonon.SchemaVersion = phonon.SchemaVersion
+	storedPhonon.ExtendedSchemaVersion = phonon.ExtendedSchemaVersion
+	storedPhonon.CurrencyType = phonon.CurrencyType
+	storedPhonon.Denomination = phonon.Denomination
+	storedPhonon.ExtendedSchemaVersion = phonon.ExtendedSchemaVersion
 
 	return nil
 }
@@ -522,7 +526,7 @@ func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue ui
 	for _, phonon := range c.Phonons {
 		if !phonon.deleted &&
 			(currencyType == 0x00 || phonon.CurrencyType == currencyType) &&
-			phonon.Denomination.Value() > int(greaterThanValue) &&
+			(greaterThanValue == 0 || phonon.Denomination.Value() > int(greaterThanValue)) &&
 			(lessThanValue == 0 || phonon.Denomination.Value() < int(lessThanValue)) {
 			ret = append(ret, &phonon.Phonon)
 		}
@@ -535,6 +539,10 @@ func (c *MockCard) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, er
 	if index > len(c.Phonons) || c.Phonons[index].deleted {
 		return &ecdsa.PublicKey{}, fmt.Errorf("No phonon at index %d", index)
 	}
+	if c.Phonons[index].PubKey == nil {
+		return nil, errors.New("phonon pubkey not found. internal error")
+	}
+
 	return c.Phonons[index].PubKey, nil
 }
 
@@ -700,8 +708,7 @@ func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
 	}
 	//Store all received phonons
 	for _, p := range phonons {
-		log.Debugf("adding phonon to table: %+v", p)
-		c.addPhonon(p)
+		c.addPhonon(&p)
 	}
 
 	return nil

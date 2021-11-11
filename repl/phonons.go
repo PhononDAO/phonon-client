@@ -58,10 +58,12 @@ func listPhonons(c *ishell.Context) {
 		return
 	}
 	for _, p := range phonons {
+		c.Println("requesting pubKey for phonon: ", p)
 		p.PubKey, err = activeCard.GetPhononPubKey(p.KeyIndex)
 		c.Println("retrieved pubKey: ", p.PubKey)
 		if err != nil {
 			c.Printf("error retrieving phonon pubKey at keyIndex %v. err: %v\n", p.KeyIndex, err)
+			return
 		}
 	}
 	c.Println("phonons: ")
@@ -76,7 +78,7 @@ func setDescriptor(c *ishell.Context) {
 	}
 	numCorrectArgs := 3
 	if len(c.Args) != numCorrectArgs {
-		c.Println("setDescriptor requires %v args", numCorrectArgs)
+		c.Printf("setDescriptor requires %v args\n", numCorrectArgs)
 		return
 	}
 

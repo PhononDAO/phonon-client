@@ -64,9 +64,6 @@ func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 //Excludes PubKey and KeyIndex
 func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, error) {
 	phonon := &model.Phonon{}
-	for tag, _ := range phononTLV {
-		log.Debugf("found tag in decoding: % X", tag)
-	}
 	//CurveType
 	rawCurveType, err := phononTLV.FindTag(TagCurveType)
 	if err != nil {

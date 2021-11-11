@@ -75,7 +75,7 @@ func NewDenomination(i int) (Denomination, error) {
 	}, nil
 }
 
-func (d *Denomination) Value() int {
+func (d Denomination) Value() int {
 	output := int(d.Base)
 	exponent := d.Exponent
 	for exponent != 0 {
@@ -85,6 +85,6 @@ func (d *Denomination) Value() int {
 	return output
 }
 
-func (d *Denomination) String() string {
-	return fmt.Sprintf("%v", d.Value())
+func (d Denomination) String() string {
+	return fmt.Sprint(d.Value())
 }

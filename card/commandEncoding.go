@@ -163,15 +163,25 @@ func ParsePhononDescriptor(description []byte) (*model.Phonon, error) {
 }
 
 func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err error) {
-	collection, err := tlv.ParseTLVPacket(resp)
+	collection, err := tlv.ParseTLVPacket(resp, TagTransferPhononPacket)
 	if err != nil {
 		return nil, err
 	}
-	rawPubKey, err := collection.FindTag(TagPhononPubKey)
+	//Find interior phonon description tag
+	description, err := collection.FindTag(TagPhononPrivateDescription)
+	if err != nil {
+		return nil, err
+	}
+	//Parse again to get TLV's nested under description
+	descriptionTLV, err := tlv.ParseTLVPacket(description)
 	if err != nil {
 		return nil, err
 	}
 
+	rawPubKey, err := descriptionTLV.FindTag(TagPhononPubKey)
+	if err != nil {
+		return nil, err
+	}
 	pubKey, err = util.ParseECDSAPubKey(rawPubKey)
 	if err != nil {
 		return nil, err

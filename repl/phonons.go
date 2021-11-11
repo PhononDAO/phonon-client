@@ -85,7 +85,6 @@ func setDescriptor(c *ishell.Context) {
 		c.Println("keyIndex could not be parsed: ", err)
 		return
 	}
-	//TODO: Present these options better
 	currencyTypeInt, err := strconv.Atoi(c.Args[1])
 	if err != nil {
 		c.Println("currencyType could not be parse: ", err)
@@ -116,8 +115,6 @@ func setDescriptor(c *ishell.Context) {
 		return
 	}
 	c.Println("descriptor set successfully")
-	//TODO: wizard?
-	//TODO: Resolve SetDescriptor issue on card
 }
 
 func redeemPhonon(c *ishell.Context) {

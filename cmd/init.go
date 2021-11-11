@@ -57,7 +57,6 @@ func init() {
 	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-//TODO: reimplement with new Session
 func initializeCard(pin string) {
 	fmt.Println("running initializeCard!!!")
 

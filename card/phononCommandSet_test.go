@@ -82,7 +82,6 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		{model.Ethereum, model.Denomination{1, 0}},
 	}
 
-	//TODO: pass different filters into this function
 	type phononFilter struct {
 		currencyType        model.CurrencyType
 		lessThanValue       uint64
@@ -140,7 +139,6 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 	for _, f := range filters {
 		// fmt.Printf("listing phonons with filter: %+v\n", f)
-		//TODO: wrap up as list function, and pass different lists
 		receivedPhonons, err := cs.ListPhonons(f.currencyType, f.lessThanValue, f.greaterThanValue)
 		if err != nil {
 			t.Error("err listing all phonons: ", err)
@@ -159,7 +157,6 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 			// fmt.Printf("%+v\n", received)
 			for _, created := range createdPhonons {
 				// fmt.Printf("createdPubKey: % X\n", created.PubKey)
-				//Todo figure out why this isn't matching
 				if received.PubKey.Equal(created.PubKey) {
 					matchedPhononCount += 1
 					if !cmp.Equal(received, created) {
@@ -325,7 +322,6 @@ func TestReuseDestroyedIndex(t *testing.T) {
 
 }
 
-// TODO
 //Pairing + Send/Receive cycle
 // SEND_PHONONS
 // SET_RECV_LIST

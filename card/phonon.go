@@ -68,7 +68,6 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 		log.Debugf("found tag in decoding: % X", tag)
 	}
 	//CurveType
-	//TODO: inspect supported curve types
 	rawCurveType, err := phononTLV.FindTag(TagCurveType)
 	if err != nil {
 		return nil, err

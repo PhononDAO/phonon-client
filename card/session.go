@@ -61,7 +61,6 @@ func (s *Session) SetPaired(status bool) {
 }
 
 func (s *Session) GetName() string {
-	//TODO: Use future card GET_NAME
 	if s.Cert.PubKey != nil {
 		hexString := util.ECDSAPubKeyToHexString(s.identityPubKey)
 		if len(hexString) >= 16 {
@@ -77,7 +76,6 @@ func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
 		return s.Cert, nil
 	}
 
-	//TODO, fetch this if it's not there yet
 	return &cert.CardCertificate{}, errors.New("certificate not cached by session yet")
 }
 
@@ -100,7 +98,6 @@ func (s *Session) Connect() error {
 		return err
 	}
 	s.Cert = cert
-	//todo: remove this
 	s.identityPubKey, _ = util.ParseECDSAPubKey(s.Cert.PubKey)
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
@@ -112,7 +109,6 @@ func (s *Session) Connect() error {
 
 //Initializes the card with a PIN
 //Also creates a secure channel and verifies the PIN that was just set
-//TODO: Fix MUTUAL_AUTH Error returned when called this way
 func (s *Session) Init(pin string) error {
 	if s.pinInitialized {
 		return ErrAlreadyInitialized
@@ -123,7 +119,6 @@ func (s *Session) Init(pin string) error {
 	}
 	s.pinInitialized = true
 	//Open new secure connection now that card is initialized
-	//TODO: Find out why MUTUAL_AUTH fails immediately after initialization but works normally
 	err = s.Connect()
 	if err != nil {
 		return err

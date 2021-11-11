@@ -42,7 +42,7 @@ var (
 type PhononCommandSet struct {
 	c               types.Channel
 	sc              *SecureChannel
-	ApplicationInfo *types.ApplicationInfo //TODO: Determine if needed
+	ApplicationInfo *types.ApplicationInfo
 	PairingInfo     *types.PairingInfo
 }
 
@@ -64,7 +64,6 @@ func (cs PhononCommandSet) Send(cmd *Command) (*apdu.Response, error) {
 
 }
 
-//TODO: determine if I should return these values or have the secure channel handle it internally
 //Selects the phonon applet for further usage
 func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error) {
 	cmd := NewCommandSelectPhononApplet()
@@ -499,7 +498,6 @@ func (cs *PhononCommandSet) listPhononsExtended() (phonons []*model.Phonon, err 
 	return phonons, nil
 }
 
-//TODO: replace this check in send and receive and other functions with specific error checks
 //Generally checks status, including extended responses
 func checkContinuation(status uint16) (continues bool, err error) {
 	if status == 0x9000 {
@@ -572,7 +570,6 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 	// 	keyIndices = keyIndices[:maxPhononsPerRequest]
 	// }
 
-	//TODO: protect the caller from passing too many keyIndices for an APDU
 	data, p2Length := encodeSendPhononsData(keyIndices)
 	cmd := NewCommandSendPhonons(data, p2Length, extendedRequest)
 	resp, err := cs.sc.Send(cmd)

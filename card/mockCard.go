@@ -20,7 +20,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//TODO: replace with config value
 const StandardSchemaSupportedVersions uint8 = 0
 
 type MockCard struct {
@@ -475,7 +474,7 @@ func (c *MockCard) FinalizeCardPair(cardPair2Data []byte) (err error) {
 }
 
 func (c *MockCard) Pair() (*cert.CardCertificate, error) {
-	//TODO
+	//omitted since mockCard does not actually need to establish a secure channel
 	return &c.IdentityCert, nil
 }
 
@@ -514,14 +513,13 @@ func (c *MockCard) SetDescriptor(phonon *model.Phonon) error {
 }
 
 func (c *MockCard) OpenSecureChannel() error {
-	//TODO
+	//omitted since mockCard does not actually need to establish a secure channel
 	return nil
 }
 
 func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
 	var ret []*model.Phonon
 	for _, phonon := range c.Phonons {
-		//TODO: Do better than accepting loss of precision here
 		if !phonon.deleted &&
 			(currencyType == 0x00 || phonon.CurrencyType == currencyType) &&
 			phonon.Denomination.Value() > int(greaterThanValue) &&
@@ -605,13 +603,6 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 
 		outgoingPhonons = append(outgoingPhonons, phononTLV.Encode()...)
 	}
-	// invoiceSC := SecureChannel{}
-	// log.Debugf("invoice before sendPhonon encryption")
-	// log.Debugf("ID: % X", []byte(c.outgoingInvoice.ID))
-	// log.Debugf("Key: % X", c.outgoingInvoice.Key)
-
-	//TODO: divide enckey and MAC
-	// invoiceSC.Init([]byte(c.outgoingInvoice.ID), c.outgoingInvoice.Key, c.outgoingInvoice.Key)
 
 	phononTransferTLV, err := tlv.NewTLV(TagTransferPhononPacket, outgoingPhonons)
 	if err != nil {
@@ -623,11 +614,6 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 		return nil, errors.New("could not encrypt outgoing phonons")
 	}
 
-	// invoiceIDTLV, err := tlv.NewTLV(TagInvoiceID, []byte(c.outgoingInvoice.ID))
-	// if err != nil {
-	// 	return nil, errors.New("could not encode invoice with TLV")
-	// }
-	// response := append(encryptedPhonons, encryptedPhonons...)
 	return encryptedPhonons, nil
 }
 

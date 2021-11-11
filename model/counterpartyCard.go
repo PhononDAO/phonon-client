@@ -10,7 +10,6 @@ type CounterpartyPhononCard interface {
 	CardPair2(cardPairData []byte) (cardPairData2 []byte, err error)
 	FinalizeCardPair(cardPair2Data []byte) error
 	ReceivePhonons(phononTransfer []byte) error
-	RequestPhonons(phonons []Phonon) (phononTransfer []byte, err error)
 	GenerateInvoice() (invoiceData []byte, err error)
 	ReceiveInvoice(invoiceData []byte) error
 }

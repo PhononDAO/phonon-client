@@ -35,7 +35,7 @@ func (t *PhononTerminal) GenerateMock() error {
 		return err
 	}
 	err = sess.Init("111111")
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	t.sessions = append(t.sessions, sess)
@@ -52,8 +52,6 @@ func (t *PhononTerminal) RefreshSessions() ([]*card.Session, error) {
 	if len(t.sessions) == 0 {
 		return nil, errors.New("no cards detected")
 	}
-	//TODO: maybe handle if refresh is called in the middle of a terminal usage
-	//Or rename this function to something like InitSessions
 	return t.sessions, nil
 }
 
@@ -91,24 +89,24 @@ func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} 
 	return struct{}{}
 }
 
-func (t *PhononTerminal) ConnectRemoteSession(session *card.Session,cardURL string) error {
+func (t *PhononTerminal) ConnectRemoteSession(session *card.Session, cardURL string) error {
 	u, err := url.Parse(cardURL)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("Unable to parse url for card connection: %s", err.Error())
 	}
-	pathSeparated := strings.Split(u.Path,"/")
+	pathSeparated := strings.Split(u.Path, "/")
 	counterpartyID := pathSeparated[len(pathSeparated)-1]
 	log.Info("connecting")
-	remConn, err := remote.Connect(session, fmt.Sprintf("https://%s/phonon",u.Host), true)
+	remConn, err := remote.Connect(session, fmt.Sprintf("https://%s/phonon", u.Host), true)
 	if err != nil {
 		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
 	}
 	log.Info("successfully connected to remote server. Establishing connection to peer")
 	err = remConn.ConnectToCard(counterpartyID)
-	if err != nil{
+	if err != nil {
 		return err
 	}
-	if counterpartyID < session.GetName(){
+	if counterpartyID < session.GetName() {
 		return nil
 	}
 	err = session.PairWithRemoteCard(remConn)

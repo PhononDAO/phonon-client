@@ -86,19 +86,11 @@ func setListAndReceive() {
 		return
 	}
 
-	//TODO: actually test this
-	// badTransfer, err := cs.SendPhonons([]uint16{uint16(1)}, false)
-	// if err != nil {
-	// 	return
-	// }
 	err = cs.SetReceiveList([]*ecdsa.PublicKey{phononPubKey})
 	if err != nil {
 		return
 	}
-	//bad request
 	err = cs.ReceivePhonons(phononTransfer)
-	//good request
-	// err = cs.ReceivePhonons(transferPackets[0])
 	if err != nil {
 		return
 	}

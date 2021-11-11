@@ -21,7 +21,6 @@ func encodeKeyIndexList(keyIndices []uint16) []byte {
 		binary.BigEndian.PutUint16(b, keyIndex)
 		keyIndexBytes = append(keyIndexBytes, b...)
 	}
-	//TODO: possibly handle potential error
 	data, _ := tlv.NewTLV(TagPhononKeyIndexList, keyIndexBytes)
 	return data.Encode()
 }

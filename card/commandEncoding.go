@@ -153,6 +153,12 @@ func ParsePhononDescriptor(description []byte) (*model.Phonon, error) {
 	if err != nil {
 		return nil, err
 	}
+	//Additionally parse KeyIndex
+	keyIndexBytes, err := collection.FindTag(TagKeyIndex)
+	if err != nil {
+		return nil, err
+	}
+	phonon.KeyIndex = binary.BigEndian.Uint16(keyIndexBytes)
 	return phonon, nil
 }
 

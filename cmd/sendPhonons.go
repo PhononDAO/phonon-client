@@ -156,8 +156,8 @@ func sendPhonons() {
 		fmt.Println("unable to list receiver phonons: ", err)
 		return
 	}
+	fmt.Println("receiver has phonons: ")
 	for _, p := range phonons {
-		fmt.Println("receiver has phonons: ")
 		fmt.Printf("%+v", p)
 	}
 }

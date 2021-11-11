@@ -23,8 +23,15 @@ type Phonon struct {
 }
 
 func (p *Phonon) String() string {
-	return fmt.Sprintf("KeyIndex: %v, Denomination: %v, currencyType: %v, PubKey: %v\n",
-		p.KeyIndex, p.Denomination, p.CurrencyType, util.ECDSAPubKeyToHexString(p.PubKey))
+	return fmt.Sprintf("KeyIndex: %v\nDenomination: %v\ncurrencyType: %v\nPubKey: %v\nCurveType: %v\nSchemaVersion: %v\nExtendedSchemaVersion: %v\nExtendedTLV: %v\n",
+		p.KeyIndex,
+		p.Denomination,
+		p.CurrencyType,
+		util.ECDSAPubKeyToHexString(p.PubKey),
+		p.CurveType,
+		p.SchemaVersion,
+		p.ExtendedSchemaVersion,
+		p.ExtendedTLV)
 }
 
 type CurrencyType uint16
@@ -64,12 +71,18 @@ func NewDenomination(i int) (Denomination, error) {
 	}
 	return Denomination{
 		Base:     uint8(i),
-		Exponent: 0,
+		Exponent: exponent,
 	}, nil
 }
 
 func (d *Denomination) Value() int {
-	return int(d.Base * 10 * d.Exponent)
+	output := int(d.Base)
+	exponent := d.Exponent
+	for exponent != 0 {
+		output *= 10
+		exponent -= 1
+	}
+	return output
 }
 
 func (d *Denomination) String() string {

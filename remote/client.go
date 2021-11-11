@@ -14,7 +14,6 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
-	"github.com/GridPlus/phonon-client/model"
 	"github.com/posener/h2conn"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"

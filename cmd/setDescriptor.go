@@ -67,7 +67,7 @@ func setDescriptor() {
 		}
 
 		fmt.Println("sending set descriptor for keyIndex ", keyIndex)
-		err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Ethereum, Denomination: model.Denomination{100, 0}})
+		err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Ethereum, Denomination: model.Denomination{100, 100}})
 		if err != nil {
 			fmt.Println("unable to set descriptor")
 			return

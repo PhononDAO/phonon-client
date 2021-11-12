@@ -3,6 +3,7 @@ package card
 import (
 	"crypto/ecdsa"
 	"errors"
+	"fmt"
 
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
@@ -55,6 +56,10 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 	}
 
 	return s, nil
+}
+
+func (s *Session) Ree(){
+	fmt.Println("reee")
 }
 
 func (s *Session) SetPaired(status bool) {

@@ -58,7 +58,9 @@ func listPhonons(c *ishell.Context) {
 		return
 	}
 	for _, p := range phonons {
+		c.Println("requesting pubKey for phonon: ", p)
 		p.PubKey, err = activeCard.GetPhononPubKey(p.KeyIndex)
+		c.Println("retrieved pubKey: ", p.PubKey)
 		if err != nil {
 			c.Printf("error retrieving phonon pubKey at keyIndex %v. err: %v\n", p.KeyIndex, err)
 		}

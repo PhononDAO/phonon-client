@@ -40,25 +40,25 @@ func encodeSetDescriptorData(p *model.Phonon) ([]byte, error) {
 	return append(keyIndexTLV.Encode(), phononTLV...), nil
 }
 
-func encodeListPhononsData(currencyType model.CurrencyType, lessThanValue model.Denomination, greaterThanValue model.Denomination) (p2 byte, data []byte, err error) {
+func encodeListPhononsData(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) (p2 byte, data []byte, err error) {
 	//Toggle filter bytes for nonzero lessThan and greaterThan filter values
-	if lessThanValue.Value() == 0 {
+	if lessThanValue == 0 {
 		//Don't filter on value at all
-		if greaterThanValue.Value() == 0 {
+		if greaterThanValue == 0 {
 			p2 = 0x00
 		}
 		//Filter on only GreaterThan Value
-		if greaterThanValue.Value() > 0 {
+		if greaterThanValue > 0 {
 			p2 = 0x02
 		}
 	}
-	if lessThanValue.Value() > 0 {
+	if lessThanValue > 0 {
 		//Filter on only LessThanValue
-		if greaterThanValue.Value() == 0 {
+		if greaterThanValue == 0 {
 			p2 = 0x01
 		}
 		//Filter on LessThan and GreaterThan
-		if greaterThanValue.Value() > 0 {
+		if greaterThanValue > 0 {
 			p2 = 0x03
 		}
 
@@ -72,22 +72,17 @@ func encodeListPhononsData(currencyType model.CurrencyType, lessThanValue model.
 	if err != nil {
 		return p2, nil, err
 	}
-
-	// tlv.NewTLV(TagValueFilterLessThan, []byte{byte(lessThanValue.Base), byte(greaterThanValue.Base)})
 	//Translate filter values to bytes
-	// lessThanBytes := make([]byte, 8)
-	// binary.BigEndian.PutUint64(lessThanBytes, lessThanValue)
+	lessThanBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(lessThanBytes, lessThanValue)
 
-	// greaterThanBytes := make([]byte, 8)
-	// binary.BigEndian.PutUint64(greaterThanBytes, greaterThanValue)
+	greaterThanBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(greaterThanBytes, greaterThanValue)
 
-	lessThanBytes := []byte{byte(lessThanValue.Base), byte(lessThanValue.Exponent)}
 	lessThanTLV, err := tlv.NewTLV(TagValueFilterLessThan, lessThanBytes)
 	if err != nil {
 		return p2, nil, err
 	}
-
-	greaterThanBytes := []byte{byte(greaterThanValue.Base), byte(greaterThanValue.Exponent)}
 	greaterThanTLV, err := tlv.NewTLV(TagValueFilterMoreThan, greaterThanBytes)
 	if err != nil {
 		return p2, nil, err

@@ -58,7 +58,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
-func (s *Session) Ree(){
+func (s *Session) Ree() {
 	fmt.Println("reee")
 }
 
@@ -66,6 +66,9 @@ func (s *Session) SetPaired(status bool) {
 }
 
 func (s *Session) GetName() string {
+	if s.Cert == nil {
+		return "unknown"
+	}
 	if s.Cert.PubKey != nil {
 		hexString := util.ECDSAPubKeyToHexString(s.identityPubKey)
 		if len(hexString) >= 16 {

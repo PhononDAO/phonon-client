@@ -58,6 +58,11 @@ func (c *MockCard) addPhonon(p *MockPhonon) (index uint16) {
 	return
 }
 
+func (c *MockCard) deletePhonon(index int) {
+	c.deletedPhonons = append(c.deletedPhonons, index)
+	c.Phonons[index].deleted = true
+}
+
 func (phonon *MockPhonon) Encode() (tlv.TLV, error) {
 	privKeyTLV, err := tlv.NewTLV(TagPhononPrivKey, phonon.PrivateKey.D.Bytes())
 	if err != nil {
@@ -598,7 +603,7 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 	log.Debug("mock SEND_PHONONS command")
 	var outgoingPhonons []byte
 	for _, k := range keyIndices {
-		if int(k) > len(c.Phonons) {
+		if int(k) >= len(c.Phonons) {
 			return nil, errors.New("keyIndex exceeds length of phonon list")
 		}
 		if c.Phonons[k].deleted {
@@ -620,6 +625,11 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 	encryptedPhonons, err := c.sc.Encrypt(phononTransferTLV.Encode())
 	if err != nil {
 		return nil, errors.New("could not encrypt outgoing phonons")
+	}
+
+	//Delete sent phonons
+	for _, k := range keyIndices {
+		c.deletePhonon(int(k))
 	}
 
 	return encryptedPhonons, nil

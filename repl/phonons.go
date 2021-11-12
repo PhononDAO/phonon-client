@@ -63,7 +63,6 @@ func listPhonons(c *ishell.Context) {
 		c.Println("retrieved pubKey: ", p.PubKey)
 		if err != nil {
 			c.Printf("error retrieving phonon pubKey at keyIndex %v. err: %v\n", p.KeyIndex, err)
-			return
 		}
 	}
 	c.Println("phonons: ")
@@ -146,6 +145,7 @@ func redeemPhonon(c *ishell.Context) {
 	privKey, err := activeCard.DestroyPhonon(uint16(keyIndex))
 	if err != nil {
 		c.Printf("unable to redeem and destroy phonon at keyIndex %v, err: %v\n", keyIndex, err)
+		return
 	}
 	c.Println("redeemed phonon at keyIndex: ", keyIndex)
 	c.Println("private key: ")

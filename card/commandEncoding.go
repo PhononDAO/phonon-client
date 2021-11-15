@@ -317,3 +317,14 @@ func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertifi
 
 	return salt, cardCert, pairingSig, nil
 }
+
+func parseGetAvailableMemoryResponse(data []byte) (persistentMem int, onResetMem int, onDeselectMem int, err error) {
+	if len(data) != 12 {
+		return 0, 0, 0, errors.New("response invalid length")
+	}
+	persistentMem = int(binary.BigEndian.Uint32(data[0:4]))
+	onResetMem = int(binary.BigEndian.Uint32(data[4:8]))
+	onDeselectMem = int(binary.BigEndian.Uint32(data[8:12]))
+
+	return persistentMem, onResetMem, onDeselectMem, nil
+}

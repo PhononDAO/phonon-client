@@ -817,3 +817,18 @@ func (cs *PhononCommandSet) SetFriendlyName(name string) error {
 	_, err := cs.sc.Send(cmd)
 	return err
 }
+
+func (cs *PhononCommandSet) GetAvailableMemory() (persistentMem int, onResetMem int, onDeselectMem int, err error) {
+	log.Debug("sending GET_AVAILABLE_MEMORY command")
+	cmd := NewCommandGetAvailableMemory()
+	data, err := cs.sc.Send(cmd)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	persistentMem, onResetMem, onDeselectMem, err = parseGetAvailableMemoryResponse(data.Data)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	return persistentMem, onResetMem, onDeselectMem, nil
+}

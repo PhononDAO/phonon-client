@@ -37,6 +37,7 @@ type MockCard struct {
 	scPairData      SecureChannelPairingDetails
 	invoices        map[string][]byte
 	outgoingInvoice Invoice
+	staticPairing   bool
 }
 
 type MockPhonon struct {
@@ -144,6 +145,26 @@ func NewMockCard() (*MockCard, error) {
 		identityKey:    identityPrivKey,
 		IdentityPubKey: &identityPrivKey.PublicKey,
 		invoices:       make(map[string][]byte),
+	}, nil
+}
+
+//Creates a special debug version of the mock which utilizes static keys and salts
+//to create deterministic payloads for card debugging
+func NewStaticMockCard() (*MockCard, error) {
+	var D []byte
+	for x := 0; x < 32; x++ {
+		D = append(D, 0x01)
+	}
+	identityPrivKey, err := ethcrypto.ToECDSA(D)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("generated static privKey: % X\n", identityPrivKey.D.Bytes())
+	return &MockCard{
+		identityKey:    identityPrivKey,
+		IdentityPubKey: &identityPrivKey.PublicKey,
+		invoices:       make(map[string][]byte),
+		staticPairing:  true,
 	}, nil
 }
 
@@ -262,8 +283,15 @@ func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairi
 		return nil, err
 	}
 	//Store salt for use in session key generation in CARD_PAIR_2
-	c.scPairData.cardToCardSalt = util.RandomKey(32)
+	if c.staticPairing {
+		for x := 0; x < 32; x++ {
+			c.scPairData.cardToCardSalt = append(c.scPairData.cardToCardSalt, 0x01)
+		}
+	} else {
+		c.scPairData.cardToCardSalt = util.RandomKey(32)
+	}
 
+	log.Debugf("card to card salt: % X\n", c.scPairData.cardToCardSalt)
 	saltTLV, err := tlv.NewTLV(TagSalt, c.scPairData.cardToCardSalt)
 	if err != nil {
 		return nil, err
@@ -277,7 +305,16 @@ func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairi
 func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte, err error) {
 	log.Debug("sending mock CARD_PAIR command")
 	//Initialize pairing salt
-	receiverSalt := util.RandomKey(32)
+	var receiverSalt []byte
+	if c.staticPairing {
+		log.Debug("static salting")
+		for x := 0; x < 32; x++ {
+			receiverSalt = append(receiverSalt, 0x01)
+		}
+	} else {
+		receiverSalt = util.RandomKey(32)
+	}
+	log.Debugf("receiver salt: % X\n", receiverSalt)
 
 	//Parse Pairing Values from counterparty
 	collection, err := tlv.ParseTLVPacket(initCardPairingData)
@@ -335,7 +372,7 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 
 	sessionKey := sha512.Sum512(sessionKeyMaterial)
 
-	log.Debugf("sessionKey: % X", sessionKey)
+	log.Debugf("sessionKey: % X\n", sessionKey)
 	//Derive secure channel info
 	encKey := sessionKey[:len(sessionKey)/2]
 	macKey := sessionKey[len(sessionKey)/2:]
@@ -415,7 +452,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	sessionKeyMaterial = append(sessionKeyMaterial, ecdhSecret...)
 
 	sessionKey := sha512.Sum512(sessionKeyMaterial)
-	log.Debugf("session key: % X", sessionKey)
+	log.Debugf("sessionKey: % X\n", sessionKey)
 
 	//Derive secure channel info
 	encKey := make([]byte, len(sessionKey)/2)

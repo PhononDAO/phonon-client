@@ -426,7 +426,7 @@ func (cs *PhononCommandSet) SetDescriptor(p *model.Phonon) error {
 //Set lessThanValue or greaterThanValue to 0 to ignore the parameter. Returned phonons omit the public key to reduce data transmission
 //After processing, the list client should send GET_PHONON_PUB_KEY to retrieve the corresponding pubkeys if necessary.
 func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
-	log.Debug("sending list phonons command")
+	log.Debug("sending LIST_PHONONS command")
 	p2, cmdData, err := encodeListPhononsData(currencyType, lessThanValue, greaterThanValue)
 	if err != nil {
 		return nil, err

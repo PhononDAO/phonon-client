@@ -139,3 +139,28 @@ func OpenBestConnectionWithReaderIndex(index int) (cs *PhononCommandSet, initali
 	}
 	return cs, initialized, nil
 }
+
+func OpenStaticConnection() (*StaticPhononCommandSet, error) {
+	pcs, err := Connect()
+	if err != nil {
+		log.Error("could not connect to card: ", err)
+		return nil, err
+	}
+	cs := NewStaticPhononCommandSet(pcs)
+	if err != nil {
+		return nil, err
+	}
+	_, _, _, err = cs.Select()
+	if err != nil {
+		return nil, err
+	}
+	_, err = cs.Pair()
+	if err != nil {
+		return nil, err
+	}
+	err = cs.OpenSecureChannel()
+	if err != nil {
+		return nil, err
+	}
+	return cs, nil
+}

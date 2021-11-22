@@ -38,6 +38,7 @@ var listPhononsCmd = &cobra.Command{
 var currency uint16
 var greaterThanValue float32
 var lessThanValue float32
+var static bool
 
 func init() {
 	rootCmd.AddCommand(listPhononsCmd)
@@ -48,6 +49,7 @@ func init() {
 	listPhononsCmd.PersistentFlags().Float32VarP(&greaterThanValue, "gt", "g", 0, "phonon denomination must be greater than this float32 value")
 	listPhononsCmd.PersistentFlags().Float32VarP(&lessThanValue, "lt", "l", 0, "phonon denomination must be less than this float32 value")
 
+	listPhononsCmd.PersistentFlags().BoolVarP(&static, "static", "s", false, "use a static secret in pairing")
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// listPhononsCmd.PersistentFlags().String("foo", "", "A help for foo")
@@ -58,11 +60,22 @@ func init() {
 }
 
 func listPhonons() {
-	cs, err := card.OpenSecureConnection()
-	if err != nil {
-		fmt.Println(err)
-		return
+	var cs model.PhononCard
+	var err error
+	if static {
+		cs, err = card.OpenStaticConnection()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	} else {
+		cs, err = card.OpenSecureConnection()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
+
 	if err = cs.VerifyPIN("111111"); err != nil {
 		fmt.Println(err)
 		return

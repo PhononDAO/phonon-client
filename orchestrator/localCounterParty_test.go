@@ -56,5 +56,3 @@ func TestCardToCardPair(t *testing.T) {
 	}
 	t.Log("paired local mock with remote actual card")
 }
-
-//TODO: Add Tests for Send Phonons and Receive Phonons

@@ -3,7 +3,6 @@ package orchestrator
 import (
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
-	"github.com/GridPlus/phonon-client/model"
 )
 
 type localCounterParty struct {
@@ -28,7 +27,6 @@ func (lcp *localCounterParty) CardPair2(cardPairData []byte) (cardPairData2 []by
 	return lcp.s.CardPair2(cardPairData)
 }
 
-//TODO: figure out how this state should actually be tracked
 func (lcp *localCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
 	return lcp.s.FinalizeCardPair(cardPair2Data)
 }
@@ -39,11 +37,6 @@ func (lcp *localCounterParty) ReceivePhonons(phononTransfer []byte) error {
 		return err
 	}
 	return nil
-}
-
-func (lcp *localCounterParty) RequestPhonons(phonons []model.Phonon) (phononTransfer []byte, err error) {
-	//TODO implement
-	return nil, nil
 }
 
 func (lcp *localCounterParty) GenerateInvoice() (invoiceData []byte, err error) {

@@ -56,7 +56,7 @@ func init() {
 
 func sendPhonons() {
 	fmt.Println("opening session with sender Card")
-	var senderCard card.PhononCard
+	var senderCard model.PhononCard
 	var err error
 	if useMockSender {
 		senderCard, err = card.NewMockCard()
@@ -87,7 +87,12 @@ func sendPhonons() {
 		fmt.Println(err)
 		return
 	}
-	err = sender.SetDescriptor(keyIndex, model.Ethereum, 1)
+	p := &model.Phonon{
+		KeyIndex:     keyIndex,
+		CurrencyType: model.Ethereum,
+		Denomination: model.Denomination{1, 0},
+	}
+	err = sender.SetDescriptor(p)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -102,7 +107,7 @@ func sendPhonons() {
 		fmt.Println("listing sender phonons: ")
 		fmt.Printf("%+v\n", p)
 	}
-	var receiverCard card.PhononCard
+	var receiverCard model.PhononCard
 	if useMockReceiver {
 		receiverCard, err = card.NewMockCard()
 		if err != nil {
@@ -151,8 +156,8 @@ func sendPhonons() {
 		fmt.Println("unable to list receiver phonons: ", err)
 		return
 	}
+	fmt.Println("receiver has phonons: ")
 	for _, p := range phonons {
-		fmt.Println("receiver has phonons: ")
 		fmt.Printf("%+v", p)
 	}
 }

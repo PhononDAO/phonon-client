@@ -35,7 +35,7 @@ func (t *PhononTerminal) GenerateMock() error {
 		return err
 	}
 	err = sess.Init("111111")
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	t.sessions = append(t.sessions, sess)
@@ -52,8 +52,6 @@ func (t *PhononTerminal) RefreshSessions() ([]*card.Session, error) {
 	if len(t.sessions) == 0 {
 		return nil, errors.New("no cards detected")
 	}
-	//TODO: maybe handle if refresh is called in the middle of a terminal usage
-	//Or rename this function to something like InitSessions
 	return t.sessions, nil
 }
 
@@ -66,73 +64,30 @@ func (t *PhononTerminal) ListSessions() []*card.Session {
 	return t.sessions
 }
 
-func (t *PhononTerminal) UnlockCard(sessionIndex int, pin string) error {
-	// send the pin to the backing card. ezpz
-	return nil
-}
-
-func (t *PhononTerminal) ListPhonons(cardIndex int) (interface{}, error) {
-	// t.sessions[cardIndex].s.ListPhonons()
-	return struct{}{}, nil
-}
-
-func (t *PhononTerminal) CreatePhonon(cardIndex int) (int, error) {
-	// t.sessions[cardIndex].s.cs.CreatePhonon()
-	return 0, nil
-}
-
-func (t *PhononTerminal) SetDescriptor(cardIndex int, phononIndex int, descriptor interface{}) {
-	// todo: replace descriptor with the actual type used for descriptor
-	// t.sessions[cardIndex].s.cs.SetDescriptor(phononIndex
-}
-
-func (t *PhononTerminal) GetBalance(cardIndex int, phononIndex int) interface{} {
-	// It's called GetBalance, but really, it's more of a get filtered phonons from card
-	return struct{}{}
-}
-
-func (t *PhononTerminal) ConnectRemoteSession(session *card.Session,cardURL string) error {
+func (t *PhononTerminal) ConnectRemoteSession(session *card.Session, cardURL string) error {
 	u, err := url.Parse(cardURL)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("Unable to parse url for card connection: %s", err.Error())
 	}
-	pathSeparated := strings.Split(u.Path,"/")
+	pathSeparated := strings.Split(u.Path, "/")
 	counterpartyID := pathSeparated[len(pathSeparated)-1]
 	log.Info("connecting")
-	remConn, err := remote.Connect(session, fmt.Sprintf("https://%s/phonon",u.Host), true)
+	remConn, err := remote.Connect(session, fmt.Sprintf("https://%s/phonon", u.Host), true)
 	if err != nil {
 		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
 	}
 	log.Info("successfully connected to remote server. Establishing connection to peer")
 	err = remConn.ConnectToCard(counterpartyID)
-	if err != nil{
+	if err != nil {
 		return err
 	}
-	if counterpartyID < session.GetName(){
+	if counterpartyID < session.GetName() {
 		return nil
 	}
 	err = session.PairWithRemoteCard(remConn)
 	return err
 }
 
-func (t *PhononTerminal) ProposeTransaction() {
-	// implementation details to be determined at a later date
-}
-
-func (t *PhononTerminal) ListReceivedProposedTransactions() {
-	// implementation details to be determined at a later date
-}
-
 func (t *PhononTerminal) SetReceiveMode(sessionIndex int) {
 	// set this session to accept incoming secureConnections
-}
-
-/* not sure how we should handle invoice requests
-func (t *termianl) ApproveInvoice() {
-	//todo
-}*/
-
-func (t *PhononTerminal) RedeemPhonon(cardIndex int, phononIndex int) interface{} {
-	// t.sessions[cardIndex].s.cs.DestroyPhonon()
-	return struct{}{}
 }

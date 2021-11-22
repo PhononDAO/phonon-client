@@ -106,7 +106,7 @@ func (c *clientSession) process(msg Message) {
 		if msg.Name == ResponseCertificate {
 			certParsed, err := cert.ParseRawCardCertificate(msg.Payload)
 			if err != nil {
-				log.Info("failed to parse certificate from client %s", err.Error())
+				log.Infof("failed to parse certificate from client %s\n", err.Error())
 				return
 			}
 			c.certificate = &certParsed
@@ -153,7 +153,7 @@ func (c *clientSession) process(msg Message) {
 			if c.challengeNonce == [32]byte{} {
 				_, err := rand.Reader.Read(c.challengeNonce[:])
 				if err != nil {
-					log.Errorf("Error generating challenge: %s",err.Error())
+					log.Errorf("Error generating challenge: %s", err.Error())
 					return
 				}
 			}
@@ -206,7 +206,7 @@ func (c *clientSession) provideCertificate() {
 }
 
 func (c *clientSession) ConnectCard2Card(msg Message) {
-	log.Info("attempting to connect card %s to card %s", c.Name, string(msg.Payload))
+	log.Infof("attempting to connect card %s to card %s\n", c.Name, string(msg.Payload))
 	counterparty, ok := clientSessions[string(msg.Payload)]
 	if !ok {
 		c.sender.Encode(Message{

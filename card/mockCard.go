@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/sha512"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"unicode"
@@ -14,14 +13,17 @@ import (
 	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/tlv"
 	"github.com/GridPlus/phonon-client/util"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
 
+const StandardSchemaSupportedVersions uint8 = 0
+
 type MockCard struct {
-	Phonons []MockPhonon
+	Phonons []*MockPhonon
 
 	// This is a slice of indeces of deleted phonons. This is to match the insert logic of the card implementation
 	deletedPhonons  []int
@@ -35,6 +37,7 @@ type MockCard struct {
 	scPairData      SecureChannelPairingDetails
 	invoices        map[string][]byte
 	outgoingInvoice Invoice
+	staticPairing   bool
 }
 
 type MockPhonon struct {
@@ -43,7 +46,7 @@ type MockPhonon struct {
 	deleted    bool
 }
 
-func (c *MockCard) addPhonon(p MockPhonon) (index uint16) {
+func (c *MockCard) addPhonon(p *MockPhonon) (index uint16) {
 	if len(c.deletedPhonons) > 0 {
 		index := c.deletedPhonons[len(c.deletedPhonons)-1]
 		c.Phonons[index] = p
@@ -51,64 +54,69 @@ func (c *MockCard) addPhonon(p MockPhonon) (index uint16) {
 	} else {
 		c.Phonons = append(c.Phonons, p)
 		index = uint16(len(c.Phonons) - 1)
-
 	}
 	p.KeyIndex = index
 	return
 }
 
-func (phonon *MockPhonon) Encode() (TLV, error) {
-	privKeyTLV, _ := NewTLV(TagPhononPrivKey, phonon.PrivateKey.D.Bytes())
-	valueBytes, _ := util.Float32ToBytes(phonon.Value)
-	valueTLV, _ := NewTLV(TagPhononValue, valueBytes)
+func (c *MockCard) deletePhonon(index int) {
+	c.deletedPhonons = append(c.deletedPhonons, index)
+	c.Phonons[index].deleted = true
+}
 
-	currencyTypeBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(currencyTypeBytes, uint16(phonon.CurrencyType))
-
-	currencyTypeTLV, _ := NewTLV(TagCurrencyType, currencyTypeBytes)
-
-	phononDescriptionBytes := append(privKeyTLV.Encode(), valueTLV.Encode()...)
-	phononDescriptionBytes = append(phononDescriptionBytes, currencyTypeTLV.Encode()...)
-
-	phononDescriptionTLV, _ := NewTLV(TagPhononPrivateDescription, phononDescriptionBytes)
+func (phonon *MockPhonon) Encode() (tlv.TLV, error) {
+	privKeyTLV, err := tlv.NewTLV(TagPhononPrivKey, phonon.PrivateKey.D.Bytes())
+	if err != nil {
+		log.Error("could not encode mockPhonon privKey: ", err)
+		return tlv.TLV{}, err
+	}
+	//Also include CurveType
+	curveTypeTLV, err := tlv.NewTLV(TagCurveType, []byte{byte(phonon.CurveType)})
+	if err != nil {
+		return tlv.TLV{}, err
+	}
+	//Encode internal phonon
+	phononTLV, err := TLVEncodePhononDescriptor(&phonon.Phonon)
+	if err != nil {
+		log.Error("mock could not encode inner phonon: ", phonon.Phonon)
+		return tlv.TLV{}, err
+	}
+	data := append(privKeyTLV.Encode(), curveTypeTLV.Encode()...)
+	data = append(data, phononTLV...)
+	phononDescriptionTLV, err := tlv.NewTLV(TagPhononPrivateDescription, data)
+	if err != nil {
+		log.Error("mock could not encode phonon description: ", err)
+		return tlv.TLV{}, err
+	}
 
 	return phononDescriptionTLV, nil
 }
 
 func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
-	phononTLV, err := ParseTLVPacket(privatePhononTLV, TagPhononPrivateDescription)
+	phononTLV, err := tlv.ParseTLVPacket(privatePhononTLV, TagPhononPrivateDescription)
 	if err != nil {
 		return phonon, err
 	}
-	//privKey
+
+	//Parse private key for later
 	rawPrivKey, err := phononTLV.FindTag(TagPhononPrivKey)
 	if err != nil {
+		log.Debug("could not parse phonon private key tlv")
 		return phonon, err
 	}
-	log.Debugf("rawPrivKeyBytes: % X", rawPrivKey)
+	//Parse standard public fields and extended schema
+	publicPhonon, err := TLVDecodePublicPhononFields(phononTLV)
+	if err != nil {
+		return phonon, err
+	}
+
+	phonon.Phonon = *publicPhonon
+
 	phonon.PrivateKey, err = util.ParseECCPrivKey(rawPrivKey)
 	if err != nil {
 		return phonon, err
 	}
 	phonon.PubKey = &phonon.PrivateKey.PublicKey
-
-	//value
-	valueBytes, err := phononTLV.FindTag(TagPhononValue)
-	if err != nil {
-		return phonon, err
-	}
-	phonon.Value, err = util.BytesToFloat32(valueBytes)
-	if err != nil {
-		return phonon, err
-	}
-
-	//currencyType
-	currencyTypeBytes, err := phononTLV.FindTag(TagCurrencyType)
-	if err != nil {
-		return phonon, err
-	}
-	log.Debugf("currencyTypeBytes: % X", currencyTypeBytes)
-	phonon.CurrencyType = model.CurrencyType(binary.BigEndian.Uint16(currencyTypeBytes))
 
 	return phonon, nil
 }
@@ -137,6 +145,26 @@ func NewMockCard() (*MockCard, error) {
 		identityKey:    identityPrivKey,
 		IdentityPubKey: &identityPrivKey.PublicKey,
 		invoices:       make(map[string][]byte),
+	}, nil
+}
+
+//Creates a special debug version of the mock which utilizes static keys and salts
+//to create deterministic payloads for card debugging
+func NewStaticMockCard() (*MockCard, error) {
+	var D []byte
+	for x := 0; x < 32; x++ {
+		D = append(D, 0x01)
+	}
+	identityPrivKey, err := ethcrypto.ToECDSA(D)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("generated static privKey: % X\n", identityPrivKey.D.Bytes())
+	return &MockCard{
+		identityKey:    identityPrivKey,
+		IdentityPubKey: &identityPrivKey.PublicKey,
+		invoices:       make(map[string][]byte),
+		staticPairing:  true,
 	}, nil
 }
 
@@ -250,17 +278,25 @@ func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairi
 	}
 
 	log.Debugf("receiver pubKey: % X", receiverCert.PubKey)
-	cardCertTLV, err := NewTLV(TagCardCertificate, c.IdentityCert.Serialize())
-	if err != nil {
-		return nil, err
-	}
-	salt, err := NewTLV(TagSalt, util.RandomKey(32))
+	cardCertTLV, err := tlv.NewTLV(TagCardCertificate, c.IdentityCert.Serialize())
 	if err != nil {
 		return nil, err
 	}
 	//Store salt for use in session key generation in CARD_PAIR_2
-	c.scPairData.cardToCardSalt = salt.value
-	initPairingData = EncodeTLVList(cardCertTLV, salt)
+	if c.staticPairing {
+		for x := 0; x < 32; x++ {
+			c.scPairData.cardToCardSalt = append(c.scPairData.cardToCardSalt, 0x01)
+		}
+	} else {
+		c.scPairData.cardToCardSalt = util.RandomKey(32)
+	}
+
+	log.Debugf("card to card salt: % X\n", c.scPairData.cardToCardSalt)
+	saltTLV, err := tlv.NewTLV(TagSalt, c.scPairData.cardToCardSalt)
+	if err != nil {
+		return nil, err
+	}
+	initPairingData = tlv.EncodeTLVList(cardCertTLV, saltTLV)
 
 	log.Debugf("returning initPairingData: % X", initPairingData)
 	return initPairingData, nil
@@ -269,18 +305,27 @@ func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairi
 func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte, err error) {
 	log.Debug("sending mock CARD_PAIR command")
 	//Initialize pairing salt
-	receiverSalt := util.RandomKey(32)
+	var receiverSalt []byte
+	if c.staticPairing {
+		log.Debug("static salting")
+		for x := 0; x < 32; x++ {
+			receiverSalt = append(receiverSalt, 0x01)
+		}
+	} else {
+		receiverSalt = util.RandomKey(32)
+	}
+	log.Debugf("receiver salt: % X\n", receiverSalt)
 
 	//Parse Pairing Values from counterparty
-	tlv, err := ParseTLVPacket(initCardPairingData)
+	collection, err := tlv.ParseTLVPacket(initCardPairingData)
 	if err != nil {
 		return nil, errors.New("could not parse TLV packet")
 	}
-	senderCardCertRaw, err := tlv.FindTag(TagCardCertificate)
+	senderCardCertRaw, err := collection.FindTag(TagCardCertificate)
 	if err != nil {
 		return nil, errors.New("could not find certificate tlv tag")
 	}
-	senderSalt, err := tlv.FindTag(TagSalt)
+	senderSalt, err := collection.FindTag(TagSalt)
 	if err != nil {
 		return nil, errors.New("could not find sender salt tlv tag")
 	}
@@ -327,7 +372,7 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 
 	sessionKey := sha512.Sum512(sessionKeyMaterial)
 
-	log.Debugf("sessionKey: % X", sessionKey)
+	log.Debugf("sessionKey: % X\n", sessionKey)
 	//Derive secure channel info
 	encKey := sessionKey[:len(sessionKey)/2]
 	macKey := sessionKey[len(sessionKey)/2:]
@@ -352,9 +397,9 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 
 	log.Debugf("cryptogram: % X", cryptogram)
 	log.Debugf("receiverSig: % X", receiverSig)
-	receiverSaltTLV, _ := NewTLV(TagSalt, receiverSalt)
-	aesIVTLV, _ := NewTLV(TagAesIV, aesIV)
-	receiverSigTLV, _ := NewTLV(TagECDSASig, receiverSig)
+	receiverSaltTLV, _ := tlv.NewTLV(TagSalt, receiverSalt)
+	aesIVTLV, _ := tlv.NewTLV(TagAesIV, aesIV)
+	receiverSigTLV, _ := tlv.NewTLV(TagECDSASig, receiverSig)
 
 	cardPairingData = append(receiverSaltTLV.Encode(), aesIVTLV.Encode()...)
 	cardPairingData = append(cardPairingData, receiverSigTLV.Encode()...)
@@ -364,19 +409,19 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 
 func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
 	log.Debug("sending mock CARD_PAIR_2 command")
-	tlv, err := ParseTLVPacket(cardPairData)
+	collection, err := tlv.ParseTLVPacket(cardPairData)
 	if err != nil {
 		return nil, err
 	}
-	receiverSalt, err := tlv.FindTag(TagSalt)
+	receiverSalt, err := collection.FindTag(TagSalt)
 	if err != nil {
 		return nil, err
 	}
-	aesIV, err := tlv.FindTag(TagAesIV)
+	aesIV, err := collection.FindTag(TagAesIV)
 	if err != nil {
 		return nil, err
 	}
-	receiverSig, err := tlv.FindTag(TagECDSASig)
+	receiverSig, err := collection.FindTag(TagECDSASig)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +452,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 	sessionKeyMaterial = append(sessionKeyMaterial, ecdhSecret...)
 
 	sessionKey := sha512.Sum512(sessionKeyMaterial)
-	log.Debugf("session key: % X", sessionKey)
+	log.Debugf("sessionKey: % X\n", sessionKey)
 
 	//Derive secure channel info
 	encKey := make([]byte, len(sessionKey)/2)
@@ -437,7 +482,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 		return nil, err
 	}
 
-	senderSigTLV, err := NewTLV(TagECDSASig, senderSig)
+	senderSigTLV, err := tlv.NewTLV(TagECDSASig, senderSig)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +492,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 
 func (c *MockCard) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	log.Debug("sending mock FINALIZE_CARD_PAIR command")
-	tlv, err := ParseTLVPacket(cardPair2Data)
+	tlv, err := tlv.ParseTLVPacket(cardPair2Data)
 	if err != nil {
 		return err
 	}
@@ -469,13 +514,13 @@ func (c *MockCard) FinalizeCardPair(cardPair2Data []byte) (err error) {
 }
 
 func (c *MockCard) Pair() (*cert.CardCertificate, error) {
-	//TODO
+	//omitted since mockCard does not actually need to establish a secure channel
 	return &c.IdentityCert, nil
 }
 
 //Phonon Management Functions
 
-func (c *MockCard) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
+func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
 	if !c.pinVerified {
 		return 0, nil, ErrPINNotEntered
 	}
@@ -490,34 +535,41 @@ func (c *MockCard) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err
 	}
 	newp.PubKey = &private.PublicKey
 	newp.PrivateKey = private
+	newp.CurveType = curveType
 	//add it in the correct place
-	index := c.addPhonon(newp)
+	index := c.addPhonon(&newp)
 
 	return index, newp.PubKey, nil
 }
 
-func (c *MockCard) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
-	index := int(keyIndex)
-	if index >= len(c.Phonons) || c.Phonons[index].deleted {
-		return fmt.Errorf("No phonon at index %d", index)
+func (c *MockCard) SetDescriptor(phonon *model.Phonon) error {
+	if int(phonon.KeyIndex) >= len(c.Phonons) || c.Phonons[phonon.KeyIndex].deleted {
+		return fmt.Errorf("No phonon at index %d", phonon.KeyIndex)
 	}
-	c.Phonons[index].CurrencyType = currencyType
-	c.Phonons[index].Value = value
+
+	storedPhonon := &c.Phonons[phonon.KeyIndex].Phonon
+
+	storedPhonon.SchemaVersion = phonon.SchemaVersion
+	storedPhonon.ExtendedSchemaVersion = phonon.ExtendedSchemaVersion
+	storedPhonon.CurrencyType = phonon.CurrencyType
+	storedPhonon.Denomination = phonon.Denomination
+	storedPhonon.ExtendedSchemaVersion = phonon.ExtendedSchemaVersion
+
 	return nil
 }
 
 func (c *MockCard) OpenSecureChannel() error {
-	//TODO
+	//omitted since mockCard does not actually need to establish a secure channel
 	return nil
 }
 
-func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error) {
+func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
 	var ret []*model.Phonon
 	for _, phonon := range c.Phonons {
 		if !phonon.deleted &&
 			(currencyType == 0x00 || phonon.CurrencyType == currencyType) &&
-			phonon.Value > greaterThanValue &&
-			(lessThanValue == 0 || phonon.Value < lessThanValue) {
+			(greaterThanValue == 0 || phonon.Denomination.Value() > int(greaterThanValue)) &&
+			(lessThanValue == 0 || phonon.Denomination.Value() < int(lessThanValue)) {
 			ret = append(ret, &phonon.Phonon)
 		}
 	}
@@ -529,6 +581,10 @@ func (c *MockCard) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, er
 	if index > len(c.Phonons) || c.Phonons[index].deleted {
 		return &ecdsa.PublicKey{}, fmt.Errorf("No phonon at index %d", index)
 	}
+	if c.Phonons[index].PubKey == nil {
+		return nil, errors.New("phonon pubkey not found. internal error")
+	}
+
 	return c.Phonons[index].PubKey, nil
 }
 
@@ -562,7 +618,7 @@ func (c *MockCard) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 // 	//TODO: divide enckey and MAC
 // 	invoiceSC.Init([]byte(c.outgoingInvoice.ID), c.outgoingInvoice.Key, c.outgoingInvoice.Key)
 
-// 	phononTransferTLV, err := NewTLV(TagTransferPhononPacket, outgoingPhonons)
+// 	phononTransferTLV, err := tlv.NewTLV(TagTransferPhononPacket, outgoingPhonons)
 // 	if err != nil {
 // 		return nil, errors.New("could not encode phonon transfer TLV")
 // 	}
@@ -572,7 +628,7 @@ func (c *MockCard) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 // 		return nil, errors.New("could not encrypt outgoing phonons")
 // 	}
 
-// 	invoiceIDTLV, err := NewTLV(TagInvoiceID, []byte(c.outgoingInvoice.ID))
+// 	invoiceIDTLV, err := tlv.NewTLV(TagInvoiceID, []byte(c.outgoingInvoice.ID))
 // 	if err != nil {
 // 		return nil, errors.New("could not encode invoice with TLV")
 // 	}
@@ -584,7 +640,7 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 	log.Debug("mock SEND_PHONONS command")
 	var outgoingPhonons []byte
 	for _, k := range keyIndices {
-		if int(k) > len(c.Phonons) {
+		if int(k) >= len(c.Phonons) {
 			return nil, errors.New("keyIndex exceeds length of phonon list")
 		}
 		if c.Phonons[k].deleted {
@@ -597,15 +653,8 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 
 		outgoingPhonons = append(outgoingPhonons, phononTLV.Encode()...)
 	}
-	// invoiceSC := SecureChannel{}
-	// log.Debugf("invoice before sendPhonon encryption")
-	// log.Debugf("ID: % X", []byte(c.outgoingInvoice.ID))
-	// log.Debugf("Key: % X", c.outgoingInvoice.Key)
 
-	//TODO: divide enckey and MAC
-	// invoiceSC.Init([]byte(c.outgoingInvoice.ID), c.outgoingInvoice.Key, c.outgoingInvoice.Key)
-
-	phononTransferTLV, err := NewTLV(TagTransferPhononPacket, outgoingPhonons)
+	phononTransferTLV, err := tlv.NewTLV(TagTransferPhononPacket, outgoingPhonons)
 	if err != nil {
 		return nil, errors.New("could not encode phonon transfer TLV")
 	}
@@ -615,17 +664,17 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 		return nil, errors.New("could not encrypt outgoing phonons")
 	}
 
-	// invoiceIDTLV, err := NewTLV(TagInvoiceID, []byte(c.outgoingInvoice.ID))
-	// if err != nil {
-	// 	return nil, errors.New("could not encode invoice with TLV")
-	// }
-	// response := append(encryptedPhonons, encryptedPhonons...)
+	//Delete sent phonons
+	for _, k := range keyIndices {
+		c.deletePhonon(int(k))
+	}
+
 	return encryptedPhonons, nil
 }
 
 //For invoiced receives
 // func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
-// 	data, err := ParseTLVPacket(transaction)
+// 	data, err := tlv.ParseTLVPacket(transaction)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -649,7 +698,7 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 // 		return err
 // 	}
 
-// 	phononTransferPacketTLV, err := ParseTLVPacket(phononTransferPacketData, TagTransferPhononPacket)
+// 	phononTransferPacketTLV, err := tlv.ParseTLVPacket(phononTransferPacketData, TagTransferPhononPacket)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -685,7 +734,7 @@ func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
 		return err
 	}
 
-	phononTransferPacketTLV, err := ParseTLVPacket(phononTransferPacketData, TagTransferPhononPacket)
+	phononTransferPacketTLV, err := tlv.ParseTLVPacket(phononTransferPacketData, TagTransferPhononPacket)
 	if err != nil {
 		return err
 	}
@@ -706,8 +755,7 @@ func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
 	}
 	//Store all received phonons
 	for _, p := range phonons {
-		log.Debugf("adding phonon to table: %+v", p)
-		c.addPhonon(p)
+		c.addPhonon(&p)
 	}
 
 	return nil
@@ -730,11 +778,11 @@ func (c *MockCard) GenerateInvoice() (invoiceData []byte, err error) {
 
 	c.invoices[invoiceID] = invoiceKey
 
-	keyTLV, err := NewTLV(TagAESKey, invoiceKey)
+	keyTLV, err := tlv.NewTLV(TagAESKey, invoiceKey)
 	if err != nil {
 		return nil, err
 	}
-	idTLV, err := NewTLV(TagAesIV, []byte(invoiceID))
+	idTLV, err := tlv.NewTLV(TagAesIV, []byte(invoiceID))
 	if err != nil {
 		return nil, err
 	}
@@ -753,7 +801,7 @@ func (c *MockCard) ReceiveInvoice(invoiceData []byte) (err error) {
 	if err != nil {
 		return err
 	}
-	collection, err := ParseTLVPacket(data)
+	collection, err := tlv.ParseTLVPacket(data)
 	if err != nil {
 		return err
 	}

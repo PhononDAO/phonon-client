@@ -60,13 +60,13 @@ func transactionAck() {
 		fmt.Println(err)
 		return
 	}
-	keyIndex, _, err := cs.CreatePhonon()
+	keyIndex, _, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println("created phonon with keyIndex: ", keyIndex)
-	err = cs.SetDescriptor(keyIndex, model.Bitcoin, .1)
+	err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Bitcoin, Denomination: model.Denomination{1, 0}})
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -1,84 +1,48 @@
-# Phonon-client
+# Phonon-client Alpha
+phonon-client is a library, user interface, and set of utilities for interacting with phonon cards and the phonon network as a whole.
 
-### Release Conventions
-See https://github.com/marketplace/actions/autotag
+This library can be cloned and used directly, or prebuilt binaries are available for the latest master under the releases page.
+# Usage
+This client can be used in multiple ways depending on your goals.
 
-All commits to master will automatically create a tag with a bumped patch version, and upload the generated binaries under a release corresponding to the created tag.
-
-Commit with #minor or #major to bump minor and major version numbers rather than the patch number. Commits that reference an issue with the "enhancement" label will also automatically bump the minor version.
-
-
-
-# Use Cases
-Proposed use cases for the phonon network, which the client API should ultimately be able to support
-
-### Make a Payment
-For example, buy a cup of coffee using phonons. Simple, one-time transfer of specific amount of phonons from one card to another.
-
-### Micropayments
-Make a series of streaming micropayments. Triggered over time or by a specific event?
-
-### Atomic Swaps
-Exchange phonons between two parties at an agreed upon exchange rate
-
-### Changemaker
-Make change with a "changemaker" entity, who possesses various denominations of change, and allows users to swap phonons
-for larger or smaller denominations at their convenience, charging a nominal fee.
-Make the change you want to see in the world.
-
-
-## API Draft
-
-Description of  operations that a phonon client would need to support in order to build a functioning system that can support the above operations.
-
+For general interactive use the repl (Read Eval Print Loop) is the most user friendly and fleshed out interface. It can be opened like so
 ```
-detect() cardID {
-  //detect that a card has been connected to the reader and is available to the system to transact
-}
+go run main/phonon.go repl
+help
+```
+Calling help will provide the complete list of available commands
+
+For quickly testing changes or performing simple one off operations the cmd interface is preferable. Available commands can be brought up by running the below.
+```
+go run main/phonon.go
+```
+Commands are then called like so:
+```
+go run main/phonon.go init
 ```
 
-```
-startTransfer(cardA cardID, cardB cardID) error {
-  //Create a secure channel between two cards so that phonons can be transferred securely
-}
-```
+For users interested in integrating phonon library code into applications, building new user interfaces, or generally interfacing with phonon cards programmatically, the primary interface to be concerned with is PhononCard in model/card.go. This describes the full set of commands which the phonon javacard applet is capable of processing. The actual card implementation is under card/phononCommandSet.go. There is a mostly complete mock implementation of the javacard applet which can be used in testing under card/mockCard.go
+
+## Initialization
+A new phonon card must have a certificate installed and a pin initialized in order to be able to perform most functions. A new development phonon card can be set up after the applet is installed by running the following two commands. These are available from within the repl as well if preferred.
 
 ```
-send(sourceCard cardID, targetCard cardID, amount float, currencyType int) error {
-  //sends a specific amount, internally calculating a valid collection of phonons to complete the transfer
-  //Simplest, low level send that other more complex exchange methods can be built on top of
-  //returns an error if the transaction cannot be completed due to lack of funds or impossible amount to satisfy with existing phonons
-}
+go run main/phonon.go installCardCert -d
+go run main/phonon.go init
 ```
 
-```
-deposit(targetCard cardID, amount float, currencyType int, denominations denominationStrategy) error {
-  //Deposit an amount of phonons of a certain currency
-  //denominations can hold a list or function specifying what denominations the phonons should be held in to make up the requested amount
-  //error can be returned if the blockchain transaction is unsuccessful
-  //on success the phonons will be deposited on the card
-}
-```
-
-```
-withdraw(targetCard cardID, amount float, currencyType int, address string, denominationPreference denominationStrategy) error {
-  //Withdraw an amount of phonons of a certain currency from the card to the chain at the specified address
-  //denominationPreference can be set to specify which phonons to liquidate if this is a partial withdrawal
-  //(for example largest phonons first, smallest first, etc.)
-  //errors can be returned if there is an issue completing the withdrawal
-}
-```
-
-Other higher level payment primitives built on top of send...
-```
-swap() //atomically swapping different asset types
-autopay() //regularly send a specified amount on an interval
-makeChange() //Send in two directions based on change calculation
-```
 # Building
 ## Requirements:
 - a go compiler
 - a c compiler for whatever architecture you are compiling for
 ## Process
-Run make build
-note: for windows compilation from mac or linux, you will need to install mingw-64 from your favorite package manager 
+Build for your local machine architecture
+```
+make build
+```
+
+Build for windows x86
+```
+make build-windows
+```
+note: for windows compilation from mac or linux, you will need to install mingw-64 from your favorite package manager

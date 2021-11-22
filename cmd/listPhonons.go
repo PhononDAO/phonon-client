@@ -77,6 +77,6 @@ func listPhonons() {
 		return
 	}
 	for _, phonon := range phonons {
-		fmt.Printf("retrieved phonon: %+v\n", phonon)
+		fmt.Printf("retrieved phonon: %v\n", phonon)
 	}
 }

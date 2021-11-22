@@ -60,14 +60,14 @@ func setDescriptor() {
 		return
 	}
 	for i := 0; i < phononCount; i++ {
-		keyIndex, _, err := cs.CreatePhonon()
+		keyIndex, _, err := cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			fmt.Println("error creating phonon: ", err)
 			return
 		}
 
 		fmt.Println("sending set descriptor for keyIndex ", keyIndex)
-		err = cs.SetDescriptor(keyIndex, model.Ethereum, 100)
+		err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Ethereum, Denomination: model.Denomination{100, 100}})
 		if err != nil {
 			fmt.Println("unable to set descriptor")
 			return

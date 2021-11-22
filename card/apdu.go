@@ -15,28 +15,28 @@ const (
 	maxAPDULength = 256
 
 	// instructions
-	InsIdentifyCard     = 0x14
-	InsLoadCert         = 0x15
-	InsVerifyPIN        = 0x20
-	InsChangePIN        = 0x21
-	InsCreatePhonon     = 0x30
-	InsSetDescriptor    = 0x31
-	InsListPhonons      = 0x32
-	InsGetPhononPubKey  = 0x33
-	InsDestroyPhonon    = 0x34
-	InsSendPhonons      = 0x35
-	InsRecvPhonons      = 0x36
-	InsSetRecvList      = 0x37
-	InsTransactionAck   = 0x38
-	InsInitCardPairing  = 0x50
-	InsCardPair         = 0x51
-	InsCardPair2        = 0x52
-	InsFinalizeCardPair = 0x53
-	InsGenerateInvoice  = 0x54
-	InsGetFriendlyName  = 0x56
-	InsSetFriendlyName  = 0x57
-
-	InsReceiveInvoice = 0x55
+	InsIdentifyCard       = 0x14
+	InsLoadCert           = 0x15
+	InsVerifyPIN          = 0x20
+	InsChangePIN          = 0x21
+	InsCreatePhonon       = 0x30
+	InsSetDescriptor      = 0x31
+	InsListPhonons        = 0x32
+	InsGetPhononPubKey    = 0x33
+	InsDestroyPhonon      = 0x34
+	InsSendPhonons        = 0x35
+	InsRecvPhonons        = 0x36
+	InsSetRecvList        = 0x37
+	InsTransactionAck     = 0x38
+	InsInitCardPairing    = 0x50
+	InsCardPair           = 0x51
+	InsCardPair2          = 0x52
+	InsFinalizeCardPair   = 0x53
+	InsGenerateInvoice    = 0x54
+	InsGetFriendlyName    = 0x56
+	InsSetFriendlyName    = 0x57
+	InsReceiveInvoice     = 0x55
+	InsGetAvailableMemory = 0x99
 
 	// tags
 	TagSelectAppInfo           = 0xA4
@@ -55,10 +55,14 @@ const (
 	TagValueFilterLessThan = 0x84
 	TagValueFilterMoreThan = 0x85
 
-	TagPhononCollection = 0x52
-	TagPhononDescriptor = 0x50
-	TagPhononValue      = 0x83
-	TagCurrencyType     = 0x82
+	TagPhononCollection      = 0x52
+	TagPhononDescriptor      = 0x50
+	TagPhononDenomBase       = 0x83
+	TagPhononDenomExp        = 0x86
+	TagCurrencyType          = 0x82
+	TagCurveType             = 0x87
+	TagSchemaVersion         = 0x88
+	TagExtendedSchemaVersion = 0x89
 
 	TagPhononKeyIndexList       = 0x42
 	TagTransferPhononPacket     = 0x43
@@ -169,12 +173,12 @@ func NewCommandChangePIN(pin string) *Command {
 	}
 }
 
-func NewCommandCreatePhonon() *Command {
+func NewCommandCreatePhonon(curveType byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
 			globalplatform.ClaISO7816,
 			InsCreatePhonon,
-			0x00,
+			curveType,
 			0x00,
 			[]byte{0x00},
 		),
@@ -563,5 +567,17 @@ func NewCommandSetFriendlyName(name string) *Command {
 			[]byte(name),
 		),
 		PossibleErrs: map[int]string{},
+	}
+}
+
+func NewCommandGetAvailableMemory() *Command {
+	return &Command{
+		ApduCmd: apdu.NewCommand(
+			globalplatform.ClaGp,
+			InsGetAvailableMemory,
+			0x00,
+			0x00,
+			nil,
+		),
 	}
 }

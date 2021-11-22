@@ -14,7 +14,6 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
-	"github.com/GridPlus/phonon-client/model"
 	"github.com/posener/h2conn"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
@@ -66,7 +65,7 @@ func Connect(s *card.Session, url string, ignoreTLS bool) (*RemoteConnection, er
 		cardPair1DataChan:        make(chan []byte, 1),
 		finalizeCardPairDataChan: make(chan []byte, 1),
 
-		phononAckChan : make(chan bool, 1),
+		phononAckChan: make(chan bool, 1),
 	}
 
 	go remoteConn.HandleIncoming()
@@ -196,7 +195,7 @@ func (c *RemoteConnection) processFinalizeCardPair(msg Message) {
 
 func (c *RemoteConnection) processReceivePhonons(msg Message) {
 	err := c.session.ReceivePhonons(msg.Payload)
-	if err != nil{
+	if err != nil {
 		log.Error(err.Error())
 		return
 	}
@@ -304,21 +303,16 @@ func (c *RemoteConnection) ConnectToCard(cardID string) error {
 func (c *RemoteConnection) ReceivePhonons(PhononTransfer []byte) error {
 	c.sendMessage(RequestReceivePhonon, PhononTransfer)
 	select {
-	case <- time.After(10 * time.Second):
+	case <-time.After(10 * time.Second):
 		log.Error("unable to verify remote recipt of phonons")
 		return ErrTimeout
-	case <- c.phononAckChan:
+	case <-c.phononAckChan:
 		return nil
 	}
 }
 
-func (c *RemoteConnection) RequestPhonons(phonons []model.Phonon) (phononTransfer []byte, err error) {
-	// IDK about this one buckaroo
-	return
-}
-
 func (c *RemoteConnection) GenerateInvoice() (invoiceData []byte, err error) {
-	// todo: 
+	// todo:
 	return
 }
 

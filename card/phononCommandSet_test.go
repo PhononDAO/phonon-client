@@ -71,40 +71,44 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 	type phononDescription struct {
 		currencyType model.CurrencyType
-		value        float32
+		value        model.Denomination
 	}
 	phononTable := []phononDescription{
-		{model.Bitcoin, 1},
-		{model.Bitcoin, 0.00000001},
-		{model.Bitcoin, 99999999},
-		{model.Ethereum, 0.000000000000000001},
-		{model.Ethereum, 999999999999999999},
-		{model.Ethereum, 1},
+		{model.Bitcoin, model.Denomination{1, 0}},
+		{model.Bitcoin, model.Denomination{1, 8}},
+		{model.Bitcoin, model.Denomination{99, 6}},
+		{model.Ethereum, model.Denomination{1, 18}},
+		{model.Ethereum, model.Denomination{9, 18}},
+		{model.Ethereum, model.Denomination{1, 0}},
 	}
 
-	//TODO: pass different filters into this function
 	type phononFilter struct {
 		currencyType        model.CurrencyType
-		lessThanValue       float32
-		greaterThanValue    float32
+		lessThanValue       uint64
+		greaterThanValue    uint64
 		expectedPhononCount int
 	}
 
 	var createdPhonons []*model.Phonon
 	for _, description := range phononTable {
-		keyIndex, pubKey, err := cs.CreatePhonon()
+		keyIndex, pubKey, err := cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			t.Error("err creating test phonon: ", err)
 			return
+		}
+		p := &model.Phonon{
+			KeyIndex:     keyIndex,
+			CurrencyType: description.currencyType,
+			Denomination: description.value,
 		}
 		//track created to review after listing to check that we get out exactly what we put in
 		createdPhonons = append(createdPhonons, &model.Phonon{
 			KeyIndex:     keyIndex,
 			PubKey:       pubKey,
-			Value:        description.value,
+			Denomination: description.value,
 			CurrencyType: description.currencyType})
 
-		err = cs.SetDescriptor(keyIndex, description.currencyType, description.value)
+		err = cs.SetDescriptor(p)
 		if err != nil {
 			t.Error("err setting test phonon descriptor: ", err)
 			return
@@ -135,7 +139,6 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 	for _, f := range filters {
 		// fmt.Printf("listing phonons with filter: %+v\n", f)
-		//TODO: wrap up as list function, and pass different lists
 		receivedPhonons, err := cs.ListPhonons(f.currencyType, f.lessThanValue, f.greaterThanValue)
 		if err != nil {
 			t.Error("err listing all phonons: ", err)
@@ -154,7 +157,6 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 			// fmt.Printf("%+v\n", received)
 			for _, created := range createdPhonons {
 				// fmt.Printf("createdPubKey: % X\n", created.PubKey)
-				//Todo figure out why this isn't matching
 				if received.PubKey.Equal(created.PubKey) {
 					matchedPhononCount += 1
 					if !cmp.Equal(received, created) {
@@ -182,12 +184,17 @@ func TestDestroyPhonon(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	keyIndex, createdPubKey, err := cs.CreatePhonon()
+	keyIndex, createdPubKey, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = cs.SetDescriptor(keyIndex, model.Ethereum, .578)
+	p := &model.Phonon{
+		KeyIndex:     keyIndex,
+		CurrencyType: model.Ethereum,
+		Denomination: model.Denomination{57, 0},
+	}
+	err = cs.SetDescriptor(p)
 	if err != nil {
 		t.Error(err)
 		return
@@ -234,7 +241,7 @@ func TestFillPhononTable(t *testing.T) {
 	maxPhononCount := 256
 	var createdIndices []uint16
 	for i := 0; i < maxPhononCount-initialCount; i++ {
-		keyIndex, _, err := cs.CreatePhonon()
+		keyIndex, _, err := cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			t.Error(err)
 			return
@@ -273,17 +280,17 @@ func TestReuseDestroyedIndex(t *testing.T) {
 		return
 	}
 	//Create three phonons so we can check reusing an index from the middle, beginning, and end of the list
-	keyIndex1, _, err := cs.CreatePhonon()
+	keyIndex1, _, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	keyIndex2, _, err := cs.CreatePhonon()
+	keyIndex2, _, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	keyIndex3, _, err := cs.CreatePhonon()
+	keyIndex3, _, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
 		t.Error(err)
 		return
@@ -298,7 +305,7 @@ func TestReuseDestroyedIndex(t *testing.T) {
 			return err
 		}
 		//Should be equivalent to index
-		reusedIndex, _, err := cs.CreatePhonon()
+		reusedIndex, _, err := cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			t.Error(err)
 			return err
@@ -315,7 +322,6 @@ func TestReuseDestroyedIndex(t *testing.T) {
 
 }
 
-// TODO
 //Pairing + Send/Receive cycle
 // SEND_PHONONS
 // SET_RECV_LIST

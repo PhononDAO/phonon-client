@@ -1,10 +1,9 @@
-package card
+package model
 
 import (
 	"crypto/ecdsa"
 
 	"github.com/GridPlus/phonon-client/cert"
-	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
 )
 
@@ -16,9 +15,9 @@ type PhononCard interface {
 	IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error)
 	VerifyPIN(pin string) error
 	ChangePIN(pin string) error
-	CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error)
-	SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error
-	ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error)
+	CreatePhonon(curveType CurveType) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error)
+	SetDescriptor(phonon *Phonon) error
+	ListPhonons(currencyType CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*Phonon, error)
 	GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error)
 	DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error)
 	SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error)

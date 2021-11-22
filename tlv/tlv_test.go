@@ -1,4 +1,4 @@
-package card
+package tlv
 
 import (
 	"testing"
@@ -6,6 +6,14 @@ import (
 	"github.com/GridPlus/keycard-go/hexutils"
 	"github.com/GridPlus/phonon-client/util"
 	log "github.com/sirupsen/logrus"
+)
+
+//Duplicate tags needed for standalone TLV test here
+const (
+	TagSelectAppInfo           = 0xA4
+	TagCardUID                 = 0x8F
+	TagCardSecureChannelPubKey = 0x80
+	TagAppVersion              = 0x02
 )
 
 func TestParseTLV(t *testing.T) {

@@ -20,6 +20,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
@@ -40,6 +41,7 @@ var (
 	useMockSender       bool
 	senderReaderIndex   int
 	receiverReaderIndex int
+	staticPairing       bool
 )
 
 func init() {
@@ -50,6 +52,8 @@ func init() {
 
 	pairCardToCardCmd.Flags().IntVarP(&receiverReaderIndex, "receiver-reader-index", "r", 0, "pass the reader index to use for the receiver card")
 	pairCardToCardCmd.Flags().IntVarP(&senderReaderIndex, "sender-reader-index", "s", 0, "pass the reader index to use for the sender card")
+
+	pairCardToCardCmd.Flags().BoolVarP(&staticPairing, "static", "t", false, "Use statically generated insecure keys and salts to generate deterministic pairing payloads")
 
 	// Here you will define your flags and configuration settings.
 
@@ -64,15 +68,24 @@ func init() {
 
 func PairCardToCard() {
 	fmt.Println("opening session with sender Card")
-	var senderCard card.PhononCard
+	var senderCard model.PhononCard
 	var sender *card.Session
 	var err error
 	if useMockSender {
-		senderCard, err = card.NewMockCard()
-		if err != nil {
-			fmt.Println(err)
-			return
+		if staticPairing {
+			senderCard, err = card.NewStaticMockCard()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		} else {
+			senderCard, err = card.NewMockCard()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 		}
+
 		sender, err = card.NewSession(senderCard)
 		if err != nil {
 			fmt.Println(err)
@@ -106,14 +119,24 @@ func PairCardToCard() {
 		fmt.Println(err)
 		return
 	}
-	var receiverCard card.PhononCard
+	var receiverCard model.PhononCard
 	var receiverSession *card.Session
 	if useMockReceiver {
-		receiverCard, err = card.NewMockCard()
-		if err != nil {
-			fmt.Println(err)
-			return
+		if staticPairing {
+			fmt.Println("cmd static pairing")
+			receiverCard, err = card.NewStaticMockCard()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		} else {
+			receiverCard, err = card.NewMockCard()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 		}
+
 		fmt.Println("opening receiver session")
 		receiverSession, err = card.NewSession(receiverCard)
 		if err != nil {

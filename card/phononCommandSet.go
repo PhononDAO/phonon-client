@@ -16,6 +16,7 @@ import (
 	"github.com/GridPlus/keycard-go/types"
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/tlv"
 	"github.com/GridPlus/phonon-client/util"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
@@ -41,7 +42,7 @@ var (
 type PhononCommandSet struct {
 	c               types.Channel
 	sc              *SecureChannel
-	ApplicationInfo *types.ApplicationInfo //TODO: Determine if needed
+	ApplicationInfo *types.ApplicationInfo
 	PairingInfo     *types.PairingInfo
 }
 
@@ -63,7 +64,6 @@ func (cs PhononCommandSet) Send(cmd *Command) (*apdu.Response, error) {
 
 }
 
-//TODO: determine if I should return these values or have the secure channel handle it internally
 //Selects the phonon applet for further usage
 func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error) {
 	cmd := NewCommandSelectPhononApplet()
@@ -368,9 +368,10 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 	return cs.checkOK(resp, err)
 }
 
-func (cs *PhononCommandSet) CreatePhonon() (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
+func (cs *PhononCommandSet) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
 	log.Debug("sending CREATE_PHONON command")
-	cmd := NewCommandCreatePhonon()
+
+	cmd := NewCommandCreatePhonon(byte(curveType))
 	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
 	if err != nil {
 		log.Error("create phonon command failed: ", err)
@@ -404,15 +405,15 @@ func checkPhononTableErrors(sw uint16) error {
 	return nil
 }
 
-func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
+func (cs *PhononCommandSet) SetDescriptor(p *model.Phonon) error {
 	log.Debug("sending SET_DESCRIPTOR command")
-	data, err := encodeSetDescriptorData(keyIndex, currencyType, value)
+	data, err := encodeSetDescriptorData(p)
 	if err != nil {
 		return err
 	}
 
 	cmd := NewCommandSetDescriptor(data)
-	resp, err := cs.sc.Send(cmd) //temp normal channel for testing
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		log.Error("set descriptor command failed: ", err)
 		return err
@@ -424,8 +425,8 @@ func (cs *PhononCommandSet) SetDescriptor(keyIndex uint16, currencyType model.Cu
 //ListPhonons takes a currency type and range bounds and returns a listing of the phonons currently stored on the card
 //Set lessThanValue or greaterThanValue to 0 to ignore the parameter. Returned phonons omit the public key to reduce data transmission
 //After processing, the list client should send GET_PHONON_PUB_KEY to retrieve the corresponding pubkeys if necessary.
-func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error) {
-	log.Debug("sending list phonons command")
+func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
+	log.Debug("sending LIST_PHONONS command")
 	p2, cmdData, err := encodeListPhononsData(currencyType, lessThanValue, greaterThanValue)
 	if err != nil {
 		return nil, err
@@ -497,7 +498,6 @@ func (cs *PhononCommandSet) listPhononsExtended() (phonons []*model.Phonon, err 
 	return phonons, nil
 }
 
-//TODO: replace this check in send and receive and other functions with specific error checks
 //Generally checks status, including extended responses
 func checkContinuation(status uint16) (continues bool, err error) {
 	if status == 0x9000 {
@@ -511,7 +511,7 @@ func checkContinuation(status uint16) (continues bool, err error) {
 
 func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
 	log.Debug("sending GET_PHONON_PUB_KEY command")
-	data, err := NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
+	data, err := tlv.NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
 	if err != nil {
 		return nil, err
 	}
@@ -535,7 +535,7 @@ func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.Publ
 
 func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
 	log.Debug("sending DESTROY_PHONON command")
-	data, err := NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
+	data, err := tlv.NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
 	if err != nil {
 		return nil, err
 	}
@@ -570,7 +570,6 @@ func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest boo
 	// 	keyIndices = keyIndices[:maxPhononsPerRequest]
 	// }
 
-	//TODO: protect the caller from passing too many keyIndices for an APDU
 	data, p2Length := encodeSendPhononsData(keyIndices)
 	cmd := NewCommandSendPhonons(data, p2Length, extendedRequest)
 	resp, err := cs.sc.Send(cmd)
@@ -664,7 +663,7 @@ func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
 //Data is passed transparently from card to card since no client processing is necessary
 func (cs *PhononCommandSet) InitCardPairing(receiverCert cert.CardCertificate) (initPairingData []byte, err error) {
 	log.Debug("sending INIT_CARD_PAIRING command")
-	certTLV, err := NewTLV(TagCardCertificate, receiverCert.Serialize())
+	certTLV, err := tlv.NewTLV(TagCardCertificate, receiverCert.Serialize())
 	if err != nil {
 		return nil, err
 	}
@@ -817,4 +816,19 @@ func (cs *PhononCommandSet) SetFriendlyName(name string) error {
 	cmd := NewCommandSetFriendlyName(name)
 	_, err := cs.sc.Send(cmd)
 	return err
+}
+
+func (cs *PhononCommandSet) GetAvailableMemory() (persistentMem int, onResetMem int, onDeselectMem int, err error) {
+	log.Debug("sending GET_AVAILABLE_MEMORY command")
+	cmd := NewCommandGetAvailableMemory()
+	data, err := cs.sc.Send(cmd)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	persistentMem, onResetMem, onDeselectMem, err = parseGetAvailableMemoryResponse(data.Data)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	return persistentMem, onResetMem, onDeselectMem, nil
 }

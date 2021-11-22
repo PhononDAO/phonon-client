@@ -3,6 +3,7 @@ package card
 import (
 	"crypto/ecdsa"
 	"errors"
+	"fmt"
 
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
@@ -15,7 +16,7 @@ import (
 Keeps a client side cache of the card state to make interaction
 with the card through this API more convenient*/
 type Session struct {
-	cs             PhononCard
+	cs             model.PhononCard
 	RemoteCard     model.CounterpartyPhononCard
 	identityPubKey *ecdsa.PublicKey
 	active         bool
@@ -32,7 +33,7 @@ var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 
 //Creates a new card session, automatically connecting if the card is already initialized with a PIN
 //The next step is to run VerifyPIN to gain access to the secure commands on the card
-func NewSession(storage PhononCard) (s *Session, err error) {
+func NewSession(storage model.PhononCard) (s *Session, err error) {
 	s = &Session{
 		cs:             storage,
 		active:         true,
@@ -57,11 +58,17 @@ func NewSession(storage PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
-func (s *Session) SetPaired(status bool){
+func (s *Session) Ree() {
+	fmt.Println("reee")
+}
+
+func (s *Session) SetPaired(status bool) {
 }
 
 func (s *Session) GetName() string {
-	//TODO: Use future card GET_NAME
+	if s.Cert == nil {
+		return "unknown"
+	}
 	if s.Cert.PubKey != nil {
 		hexString := util.ECDSAPubKeyToHexString(s.identityPubKey)
 		if len(hexString) >= 16 {
@@ -72,12 +79,11 @@ func (s *Session) GetName() string {
 }
 
 func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
-	if s.Cert != nil{
+	if s.Cert != nil {
 		log.Debugf("GetCertificate returning cert: % X", s.Cert)
 		return s.Cert, nil
 	}
 
-	//TODO, fetch this if it's not there yet
 	return &cert.CardCertificate{}, errors.New("certificate not cached by session yet")
 }
 
@@ -100,7 +106,6 @@ func (s *Session) Connect() error {
 		return err
 	}
 	s.Cert = cert
-	//todo: remove this
 	s.identityPubKey, _ = util.ParseECDSAPubKey(s.Cert.PubKey)
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
@@ -112,7 +117,6 @@ func (s *Session) Connect() error {
 
 //Initializes the card with a PIN
 //Also creates a secure channel and verifies the PIN that was just set
-//TODO: Fix MUTUAL_AUTH Error returned when called this way
 func (s *Session) Init(pin string) error {
 	if s.pinInitialized {
 		return ErrAlreadyInitialized
@@ -123,7 +127,6 @@ func (s *Session) Init(pin string) error {
 	}
 	s.pinInitialized = true
 	//Open new secure connection now that card is initialized
-	//TODO: Find out why MUTUAL_AUTH fails immediately after initialization but works normally
 	err = s.Connect()
 	if err != nil {
 		return err
@@ -160,17 +163,17 @@ func (s *Session) CreatePhonon() (keyIndex uint16, pubkey *ecdsa.PublicKey, err 
 	if !s.verified() {
 		return 0, nil, ErrPINNotEntered
 	}
-	return s.cs.CreatePhonon()
+	return s.cs.CreatePhonon(model.Secp256k1)
 }
 
-func (s *Session) SetDescriptor(keyIndex uint16, currencyType model.CurrencyType, value float32) error {
+func (s *Session) SetDescriptor(p *model.Phonon) error {
 	if !s.verified() {
 		return ErrPINNotEntered
 	}
-	return s.cs.SetDescriptor(keyIndex, currencyType, value)
+	return s.cs.SetDescriptor(p)
 }
 
-func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue float32, greaterThanValue float32) ([]*model.Phonon, error) {
+func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
 	if !s.verified() {
 		return nil, ErrPINNotEntered
 	}

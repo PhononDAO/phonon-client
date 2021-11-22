@@ -10,8 +10,6 @@ import (
 
 var ErrReaderNotFound = errors.New("card reader not found")
 
-//TODO: Remove most of these functions
-
 func ConnectAll() (sessions []*Session, err error) {
 	ctx, err := scard.EstablishContext()
 	if err != nil {
@@ -87,7 +85,6 @@ func ConnectWithReaderIndex(index int) (*PhononCommandSet, error) {
 	return ConnectWithContext(ctx, index)
 }
 
-//TODO: probably remove this in favor of just returning a PhononCommandSet
 //Connects and Opens a Secure Connection with a card
 func OpenSecureConnection() (*PhononCommandSet, error) {
 	cs, err := Connect()

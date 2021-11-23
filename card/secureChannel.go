@@ -131,7 +131,7 @@ func (sc *SecureChannel) Send(cmd *Command) (resp *apdu.Response, err error) {
 		cmd.ApduCmd.Data = newData
 	}
 	//TODO: sqelch all this in configuration
-	fmt.Fprintf(apduLog, "#INS %v\n", cmd.ApduCmd.Ins)
+	fmt.Fprintf(apduLog, "#INS % X\n", cmd.ApduCmd.Ins)
 	outputAPDU, _ := cmd.ApduCmd.Serialize()
 	fmt.Fprintf(apduLog, "/send %X\n", outputAPDU)
 	resp, err = sc.c.Send(cmd.ApduCmd)

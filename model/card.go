@@ -32,3 +32,8 @@ type PhononCard interface {
 	GenerateInvoice() (invoiceData []byte, err error)
 	ReceiveInvoice(invoiceData []byte) (err error)
 }
+
+type PhysicalPhononCard interface {
+	PhononCard
+	GetAvailableMemory() (persistentMem int, onResetMem int, onDeselectMem int, err error)
+}

@@ -25,6 +25,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/model"
 
 	"github.com/ebfe/scard"
 	"github.com/spf13/cobra"
@@ -41,10 +42,9 @@ var installCardCert = &cobra.Command{
 }
 
 var (
-	useDemoKey      bool
-	yubikeySlot     string
-	yubikeyPass     string
-	usePhononApplet bool
+	useDemoKey  bool
+	yubikeySlot string
+	yubikeyPass string
 )
 
 func init() {
@@ -52,8 +52,10 @@ func init() {
 
 	installCardCert.Flags().BoolVarP(&useDemoKey, "demo", "d", false, "Use the demo key to sign -- insecure for demo purposes only")
 
-	installCardCert.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing ubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
-	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Ubikey Password")
+	installCardCert.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing yubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
+	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Yubikey Password")
+	installCardCert.PersistentFlags().BoolVarP(&static, "static", "t", false, "use a static secret in pairing")
+
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -97,10 +99,16 @@ func InstallCardCert() {
 		signKeyFunc = cert.SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
 	}
 
+	var cs model.PhononCard
 	// Select Card if multiple. Otherwise go with first one or error out
-	cs, err := scConnectInteractive()
+	baseCS, err := scConnectInteractive()
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
+	}
+	if static {
+		cs = card.NewStaticPhononCommandSet(baseCS)
+	} else {
+		cs = baseCS
 	}
 
 	_, _, _, err = cs.Select()

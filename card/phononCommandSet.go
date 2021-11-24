@@ -55,6 +55,12 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 }
 
 func (cs PhononCommandSet) Send(cmd *Command) (*apdu.Response, error) {
+	//Log commands to apdu log
+	//TODO: sqelch all this in configuration
+	fmt.Fprintf(apduLog, "#INS % X\n", cmd.ApduCmd.Ins)
+	outputAPDU, _ := cmd.ApduCmd.Serialize()
+	fmt.Fprintf(apduLog, "/send %X\n", outputAPDU)
+
 	resp, err := cs.c.Send(cmd.ApduCmd)
 	if err != nil {
 		return resp, err

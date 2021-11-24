@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/model"
+
 	"github.com/spf13/cobra"
 )
 
@@ -45,6 +47,7 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 
 	initCmd.Flags().IntVarP(&readerIndex, "reader-index", "i", 0, "pass the reader index for the card")
+	initCmd.PersistentFlags().BoolVarP(&static, "static", "t", false, "use a static secret in pairing")
 
 	// Here you will define your flags and configuration settings.
 
@@ -60,11 +63,23 @@ func init() {
 func initializeCard(pin string) {
 	fmt.Println("running initializeCard!!!")
 
-	cs, err := card.ConnectWithReaderIndex(readerIndex)
+	// cs, err := card.ConnectWithReaderIndex(readerIndex)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	var cs model.PhononCard
+	baseCS, err := scConnectInteractive()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	if static {
+		cs = card.NewStaticPhononCommandSet(baseCS)
+	} else {
+		cs = baseCS
+	}
+
 	_, _, _, err = cs.Select()
 	if err != nil {
 		fmt.Println(err)

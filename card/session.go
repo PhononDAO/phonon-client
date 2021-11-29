@@ -58,10 +58,6 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
-func (s *Session) Ree() {
-	fmt.Println("reee")
-}
-
 func (s *Session) SetPaired(status bool) {
 }
 

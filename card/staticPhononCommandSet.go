@@ -28,6 +28,16 @@ func NewStaticPhononCommandSet(cs *PhononCommandSet) *StaticPhononCommandSet {
 	}
 }
 
+//staticBytes returns a slice of bytes filled with 0x01 values of the specified length
+//for the purpose of generating deterministic pairing variables
+func staticBytes(length int) []byte {
+	bytes := make([]byte, length)
+	for i := 0; i < length; i++ {
+		bytes[i] = 0x01
+	}
+	return bytes
+}
+
 func (cs *StaticPhononCommandSet) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error) {
 	cmd := NewCommandSelectPhononApplet()
 	cmd.ApduCmd.SetLe(0)
@@ -62,16 +72,11 @@ func (cs *StaticPhononCommandSet) Select() (instanceUID []byte, cardPubKey *ecds
 func (cs *StaticPhononCommandSet) Pair() (*cert.CardCertificate, error) {
 	log.Debug("sending static PAIR command")
 	//Generate static salt
-	clientSalt := make([]byte, 0)
-	for i := 0; i < 32; i++ {
-		clientSalt = append(clientSalt, 0x01)
-	}
+	clientSalt := staticBytes(32)
 
 	//Staticize this key
-	staticEntropy := make([]byte, 256)
-	for i := 0; i < 256; i++ {
-		staticEntropy = append(staticEntropy, 0x01)
-	}
+	staticEntropy := staticBytes(256)
+
 	r := strings.NewReader(string(staticEntropy))
 	pairingPrivKey, err := ecdsa.GenerateKey(ethcrypto.S256(), r)
 	if err != nil {
@@ -160,4 +165,46 @@ func (cs *StaticPhononCommandSet) Pair() (*cert.CardCertificate, error) {
 
 	log.Debug("pairing succeeded")
 	return &cardCert, nil
+}
+
+func (cs *StaticPhononCommandSet) OpenSecureChannel() error {
+	log.Debug("sending OPEN_SECURE_CHANNEL command")
+	if cs.ApplicationInfo == nil {
+		return errors.New("cannot open secure channel without setting PairingInfo")
+	}
+
+	cmd := NewCommandOpenSecureChannel(uint8(cs.PairingInfo.Index), cs.sc.RawPublicKey())
+	resp, err := cs.Send(cmd)
+	if err = cs.checkOK(resp, err); err != nil {
+		return err
+	}
+
+	log.Debug("card2term session key inputs: ")
+	log.Debugf("cs.sc.RawPublicKey: %X\n", cs.sc.RawPublicKey())
+	log.Debugf("cs.sc.Secret: %X\n", cs.sc.Secret())
+	log.Debugf("cs.PairingInfo.Key: %X\n", cs.PairingInfo.Key)
+	log.Debugf("resp.Data: %X\n", resp.Data)
+	encKey, macKey, iv := crypto.DeriveSessionKeys(cs.sc.Secret(), cs.PairingInfo.Key, resp.Data)
+	cs.sc.Init(iv, encKey, macKey)
+
+	log.Debugf("card2term secure channel keys: ")
+	log.Debugf("encKey: %X\n", encKey)
+	log.Debugf("macKey: %X\n", macKey)
+	log.Debugf("iv: %X\n", iv)
+	err = cs.mutualAuthenticate()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (cs *StaticPhononCommandSet) mutualAuthenticate() error {
+	log.Debug("sending static MUTUAL_AUTH command")
+	data := staticBytes(32)
+	cmd := NewCommandMutualAuthenticate(data)
+
+	resp, err := cs.sc.Send(cmd)
+
+	return cs.checkOK(resp, err)
 }

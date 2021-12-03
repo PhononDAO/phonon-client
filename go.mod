@@ -12,6 +12,7 @@ require (
 	github.com/ebfe/scard v0.0.0-20190212122703-c3d1b1916a95
 	github.com/ethereum/go-ethereum v1.10.4
 	github.com/google/go-cmp v0.5.4
+	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/posener/h2conn v0.0.0-20180911140238-13e7df33ed15

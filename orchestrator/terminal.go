@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
@@ -82,7 +83,21 @@ func (t *PhononTerminal) ConnectRemoteSession(session *card.Session, cardURL str
 		return err
 	}
 	if counterpartyID < session.GetName() {
-		return nil
+		paired := make(chan bool, 1)
+		go func() {
+			for {
+				if session.IsPairedToCard() {
+					paired <- true
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+		}()
+		select {
+		case <-time.After(30 * time.Second):
+			return errors.New("pairing timed out")
+		case <-paired:
+			return nil
+		}
 	}
 	err = session.PairWithRemoteCard(remConn)
 	return err

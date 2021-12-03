@@ -1,0 +1,13 @@
+GET
+	/listSessions - {sessions: ["card1","card2","card3"]}
+	/cards/#session_name/listPhonons - [{"index":81,"phononPubkey":"something","type":"btc","value": 89,"initialized":true}]
+
+
+POST
+#	/cards/#session_name/unlock {pin: 123456}
+#	/cards/#session_name/phonon/#PhononIndex/setDescriptor
+	/cards/#session_name/phonon/Create
+	/cards/#session_name/Pair {"url":"https://phonon-bridge.tld/phonon/#cardname"}
+	/cards/#session_name/phonon/#PhononIndex/send
+
+list sessions -> unlock -> createPhonon -> listPhonons -> set descriptor -> pairRemote -> sendPhonon

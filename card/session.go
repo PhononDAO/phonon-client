@@ -3,7 +3,6 @@ package card
 import (
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
 
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"

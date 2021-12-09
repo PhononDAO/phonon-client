@@ -18,8 +18,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -51,8 +51,9 @@ func init() {
 }
 
 func setDescriptor() {
-	cs, err := card.OpenSecureConnection()
+	cs, err := orchestrator.QuickSecureConnection(readerIndex)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	err = cs.VerifyPIN("111111")
@@ -67,7 +68,7 @@ func setDescriptor() {
 		}
 
 		fmt.Println("sending set descriptor for keyIndex ", keyIndex)
-		err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Ethereum, Denomination: model.Denomination{100, 100}})
+		err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Ethereum, Denomination: model.Denomination{Base: 100, Exponent: 100}})
 		if err != nil {
 			fmt.Println("unable to set descriptor")
 			return

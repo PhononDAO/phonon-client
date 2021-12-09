@@ -1,16 +1,14 @@
 package orchestrator
 
 import (
-	"github.com/GridPlus/phonon-client/card"
 	"testing"
+
+	"github.com/GridPlus/phonon-client/card"
 )
 
 func TestCardToCardPair(t *testing.T) {
 	//Test with real sender and mock receiver card
-	cs, err := card.Connect()
-	if err != nil {
-		t.Error("could not connect to card", err)
-	}
+	cs, err := Connect()
 	session, err := card.NewSession(cs)
 	if err != nil {
 		t.Error(err)

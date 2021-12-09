@@ -18,7 +18,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +47,7 @@ func init() {
 }
 
 func openSecureChannel() {
-	cs, err := card.Connect()
+	cs, err := orchestrator.Connect(readerIndex)
 	if err != nil {
 		fmt.Println("could not connect to card: ", err)
 	}

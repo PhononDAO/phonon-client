@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -64,8 +64,9 @@ func init() {
 }
 
 func createPhonon(n int) {
-	cs, err := card.OpenSecureConnection()
+	cs, err := orchestrator.QuickSecureConnection(readerIndex)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	err = cs.VerifyPIN("111111")

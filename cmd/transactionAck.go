@@ -18,8 +18,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -51,8 +51,9 @@ func init() {
 
 //Creates a phonon, sends it, and confirms the transaction for testing purposes
 func transactionAck() {
-	cs, err := card.OpenSecureConnection()
+	cs, err := orchestrator.QuickSecureConnection(readerIndex)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	err = cs.VerifyPIN("111111")
@@ -66,7 +67,7 @@ func transactionAck() {
 		return
 	}
 	fmt.Println("created phonon with keyIndex: ", keyIndex)
-	err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Bitcoin, Denomination: model.Denomination{1, 0}})
+	err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Bitcoin, Denomination: model.Denomination{Base: 1, Exponent: 0}})
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
@@ -156,35 +157,35 @@ func (s *Session) verified() bool {
 
 func (s *Session) CreatePhonon() (keyIndex uint16, pubkey *ecdsa.PublicKey, err error) {
 	if !s.verified() {
-		return 0, nil, ErrPINNotEntered
+		return 0, nil, card.ErrPINNotEntered
 	}
 	return s.cs.CreatePhonon(model.Secp256k1)
 }
 
 func (s *Session) SetDescriptor(p *model.Phonon) error {
 	if !s.verified() {
-		return ErrPINNotEntered
+		return card.ErrPINNotEntered
 	}
 	return s.cs.SetDescriptor(p)
 }
 
 func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
 	if !s.verified() {
-		return nil, ErrPINNotEntered
+		return nil, card.ErrPINNotEntered
 	}
 	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
 }
 
 func (s *Session) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
 	if !s.verified() {
-		return nil, ErrPINNotEntered
+		return nil, card.ErrPINNotEntered
 	}
 	return s.cs.GetPhononPubKey(keyIndex)
 }
 
 func (s *Session) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
 	if !s.verified() {
-		return nil, ErrPINNotEntered
+		return nil, card.ErrPINNotEntered
 	}
 	return s.cs.DestroyPhonon(keyIndex)
 }
@@ -195,21 +196,21 @@ func (s *Session) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardS
 
 func (s *Session) InitCardPairing(receiverCert cert.CardCertificate) ([]byte, error) {
 	if !s.verified() {
-		return nil, ErrPINNotEntered
+		return nil, card.ErrPINNotEntered
 	}
 	return s.cs.InitCardPairing(receiverCert)
 }
 
 func (s *Session) CardPair(initPairingData []byte) ([]byte, error) {
 	if !s.verified() {
-		return nil, ErrPINNotEntered
+		return nil, card.ErrPINNotEntered
 	}
 	return s.cs.CardPair(initPairingData)
 }
 
 func (s *Session) CardPair2(cardPairData []byte) (cardPair2Data []byte, err error) {
 	if !s.verified() {
-		return nil, ErrPINNotEntered
+		return nil, card.ErrPINNotEntered
 	}
 	cardPair2Data, err = s.cs.CardPair2(cardPairData)
 	if err != nil {
@@ -221,7 +222,7 @@ func (s *Session) CardPair2(cardPairData []byte) (cardPair2Data []byte, err erro
 
 func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 	if !s.verified() {
-		return ErrPINNotEntered
+		return card.ErrPINNotEntered
 	}
 	err := s.cs.FinalizeCardPair(cardPair2Data)
 	if err != nil {

@@ -102,7 +102,7 @@ func PairCardToCard() {
 			return
 		}
 	} else {
-		senderCard, err = card.ConnectWithReaderIndex(senderReaderIndex)
+		senderCard, err = orchestrator.Connect(senderReaderIndex)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -155,7 +155,7 @@ func PairCardToCard() {
 		}
 	} else {
 		fmt.Println("opening physical connection with receiver card")
-		receiverCard, err = card.ConnectWithReaderIndex(receiverReaderIndex)
+		receiverCard, err = orchestrator.Connect(receiverReaderIndex)
 		if err != nil {
 			fmt.Println(err)
 			return

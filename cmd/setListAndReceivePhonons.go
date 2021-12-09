@@ -19,8 +19,8 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -57,8 +57,9 @@ func init() {
 }
 
 func setListAndReceive() {
-	cs, err := card.OpenSecureConnection()
+	cs, err := orchestrator.QuickSecureConnection(readerIndex)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
@@ -73,7 +74,7 @@ func setListAndReceive() {
 		return
 	}
 
-	err = cs.SetDescriptor(&model.Phonon{KeyIndex: uint16(keyIndex), CurrencyType: model.Ethereum, Denomination: model.Denomination{5, 0}})
+	err = cs.SetDescriptor(&model.Phonon{KeyIndex: uint16(keyIndex), CurrencyType: model.Ethereum, Denomination: model.Denomination{Base: 5, Exponent: 0}})
 	if err != nil {
 		fmt.Println(err)
 		return

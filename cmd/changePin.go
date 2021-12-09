@@ -18,7 +18,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/GridPlus/phonon-client/util"
 	"github.com/spf13/cobra"
 )
@@ -49,12 +49,11 @@ func init() {
 }
 
 func changePin() {
-	//
-	// cs, err := card.OpenSecureConnection()
-	// if err != nil {
-	// 	return
-	// }
-	cs := card.MockCard{}
+	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Println("enter current pin for verification")
 	verificationPin, err := util.PinPrompt()
 	if err != nil {

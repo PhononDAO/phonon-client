@@ -7,10 +7,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/GridPlus/keycard-go/io"
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/remote"
+	"github.com/GridPlus/phonon-client/usb"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,9 +48,16 @@ func (t *PhononTerminal) GenerateMock() error {
 func (t *PhononTerminal) RefreshSessions() ([]*card.Session, error) {
 	t.sessions = nil
 	var err error
-	t.sessions, err = card.ConnectAll()
+	readers, err := usb.ConnectAllUSBReaders()
 	if err != nil {
 		return nil, err
+	}
+	for _, reader := range readers {
+		session, err := card.NewSession(card.NewPhononCommandSet(io.NewNormalChannel(reader)))
+		if err != nil {
+			return nil, err
+		}
+		t.sessions = append(t.sessions, session)
 	}
 	if len(t.sessions) == 0 {
 		return nil, errors.New("no cards detected")

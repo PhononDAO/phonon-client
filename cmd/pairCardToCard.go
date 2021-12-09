@@ -22,6 +22,8 @@ import (
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/session"
+
 	"github.com/spf13/cobra"
 )
 
@@ -69,7 +71,7 @@ func init() {
 func PairCardToCard() {
 	fmt.Println("opening session with sender Card")
 	var senderCard model.PhononCard
-	var sender *card.Session
+	var sender *session.Session
 	var err error
 	if useMockSender {
 		if staticPairing {
@@ -86,7 +88,7 @@ func PairCardToCard() {
 			}
 		}
 
-		sender, err = card.NewSession(senderCard)
+		sender, err = session.NewSession(senderCard)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -107,7 +109,7 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
-		sender, err = card.NewSession(senderCard)
+		sender, err = session.NewSession(senderCard)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -120,7 +122,7 @@ func PairCardToCard() {
 		return
 	}
 	var receiverCard model.PhononCard
-	var receiverSession *card.Session
+	var receiverSession *session.Session
 	if useMockReceiver {
 		if staticPairing {
 			fmt.Println("cmd static pairing")
@@ -138,7 +140,7 @@ func PairCardToCard() {
 		}
 
 		fmt.Println("opening receiver session")
-		receiverSession, err = card.NewSession(receiverCard)
+		receiverSession, err = session.NewSession(receiverCard)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -160,7 +162,7 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
-		receiverSession, err = card.NewSession(receiverCard)
+		receiverSession, err = session.NewSession(receiverCard)
 		if err != nil {
 			fmt.Println(err)
 			return

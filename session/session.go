@@ -1,4 +1,4 @@
-package card
+package session
 
 import (
 	"crypto/ecdsa"

@@ -12,12 +12,13 @@ import (
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/remote"
+	"github.com/GridPlus/phonon-client/session"
 	"github.com/GridPlus/phonon-client/usb"
 	log "github.com/sirupsen/logrus"
 )
 
 type PhononTerminal struct {
-	sessions []*card.Session
+	sessions []*session.Session
 }
 
 type remoteSession struct {
@@ -31,7 +32,7 @@ func (t *PhononTerminal) GenerateMock() error {
 	if err != nil {
 		return err
 	}
-	sess, _ := card.NewSession(c)
+	sess, _ := session.NewSession(c)
 	// sign with demo key. there's no reason a mock card would not be signed with demo key
 	err = c.InstallCertificate(cert.SignWithDemoKey)
 	if err != nil {
@@ -45,7 +46,7 @@ func (t *PhononTerminal) GenerateMock() error {
 	return nil
 }
 
-func (t *PhononTerminal) RefreshSessions() ([]*card.Session, error) {
+func (t *PhononTerminal) RefreshSessions() ([]*session.Session, error) {
 	t.sessions = nil
 	var err error
 	readers, err := usb.ConnectAllUSBReaders()
@@ -53,7 +54,7 @@ func (t *PhononTerminal) RefreshSessions() ([]*card.Session, error) {
 		return nil, err
 	}
 	for _, reader := range readers {
-		session, err := card.NewSession(card.NewPhononCommandSet(io.NewNormalChannel(reader)))
+		session, err := session.NewSession(card.NewPhononCommandSet(io.NewNormalChannel(reader)))
 		if err != nil {
 			return nil, err
 		}
@@ -70,11 +71,11 @@ func (t *PhononTerminal) RefreshSessions() ([]*card.Session, error) {
 // 	return err
 // }
 
-func (t *PhononTerminal) ListSessions() []*card.Session {
+func (t *PhononTerminal) ListSessions() []*session.Session {
 	return t.sessions
 }
 
-func (t *PhononTerminal) ConnectRemoteSession(session *card.Session, cardURL string) error {
+func (t *PhononTerminal) ConnectRemoteSession(session *session.Session, cardURL string) error {
 	u, err := url.Parse(cardURL)
 	if err != nil {
 		return fmt.Errorf("Unable to parse url for card connection: %s", err.Error())

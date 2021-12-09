@@ -22,6 +22,7 @@ import (
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/session"
 	"github.com/spf13/cobra"
 )
 
@@ -73,7 +74,7 @@ func sendPhonons() {
 			return
 		}
 	}
-	sender, _ := card.NewSession(senderCard)
+	sender, _ := session.NewSession(senderCard)
 	err = sender.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)
@@ -125,7 +126,7 @@ func sendPhonons() {
 	}
 
 	fmt.Println("opening receiver session")
-	receiverSession, _ := card.NewSession(receiverCard)
+	receiverSession, _ := session.NewSession(receiverCard)
 	err = receiverSession.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)

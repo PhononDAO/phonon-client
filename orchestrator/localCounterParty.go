@@ -1,15 +1,15 @@
 package orchestrator
 
 import (
-	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/session"
 )
 
 type localCounterParty struct {
-	s *card.Session
+	s *session.Session
 }
 
-func NewLocalCounterParty(session *card.Session) *localCounterParty {
+func NewLocalCounterParty(session *session.Session) *localCounterParty {
 	return &localCounterParty{
 		s: session,
 	}

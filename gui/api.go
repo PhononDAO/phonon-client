@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/session"
 	"github.com/GridPlus/phonon-client/util"
 	"github.com/gorilla/mux"
 )
@@ -299,14 +299,14 @@ func generatemock(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func selectSession(p map[string]string) (*card.Session, error) {
+func selectSession(p map[string]string) (*session.Session, error) {
 	sessionName, ok := p["sessionID"]
 	if !ok {
 		fmt.Println("unable to find session")
 		return nil, fmt.Errorf("Unable to find sesion")
 	}
 	sessions := t.ListSessions()
-	var targetSession *card.Session
+	var targetSession *session.Session
 	for _, session := range sessions {
 		if session.GetName() == sessionName {
 			targetSession = session

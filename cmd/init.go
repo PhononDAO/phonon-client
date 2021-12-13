@@ -18,7 +18,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -39,13 +39,8 @@ var initCmd = &cobra.Command{
 	Args: cobra.MaximumNArgs(1),
 }
 
-var readerIndex int
-
 func init() {
 	rootCmd.AddCommand(initCmd)
-
-	initCmd.Flags().IntVarP(&readerIndex, "reader-index", "i", 0, "pass the reader index for the card")
-
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -59,8 +54,7 @@ func init() {
 
 func initializeCard(pin string) {
 	fmt.Println("running initializeCard!!!")
-
-	cs, err := card.ConnectWithReaderIndex(readerIndex)
+	cs, err := orchestrator.Connect(readerIndex)
 	if err != nil {
 		fmt.Println(err)
 		return

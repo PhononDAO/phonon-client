@@ -18,6 +18,7 @@ import (
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/tlv"
 	"github.com/GridPlus/phonon-client/util"
+
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
@@ -273,6 +274,44 @@ func (cs *PhononCommandSet) mutualAuthenticate() error {
 	resp, err := cs.sc.Send(cmd)
 
 	return cs.checkOK(resp, err)
+}
+
+//OpenSecureChannel is a convenience function to perform all of the necessary options to open a card
+//to terminal secure channel in sequence
+
+func (cs *PhononCommandSet) OpenSecureConnection() error {
+	_, _, _, err := cs.Select()
+	if err != nil {
+		log.Error("could not select phonon applet: ", err)
+		return err
+	}
+	_, err = cs.Pair()
+	if err != nil {
+		log.Error("could not pair: ", err)
+		return err
+	}
+	err = cs.OpenSecureChannel()
+	if err != nil {
+		log.Error("could not open secure channel: ", err)
+		return err
+	}
+	return nil
+}
+
+func (cs *PhononCommandSet) OpenBestConnection() (initialized bool, err error) {
+	_, _, initialized, err = cs.Select()
+	if !initialized {
+		return false, err
+	}
+	_, err = cs.Pair()
+	if err != nil {
+		return false, err
+	}
+	err = cs.OpenSecureChannel()
+	if err != nil {
+		return false, err
+	}
+	return initialized, nil
 }
 
 func (cs *PhononCommandSet) Init(pin string) error {

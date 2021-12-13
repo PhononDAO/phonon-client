@@ -20,7 +20,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -52,7 +52,7 @@ func init() {
 }
 
 func identifyCard() {
-	cs, err := card.Connect()
+	cs, err := orchestrator.Connect(readerIndex)
 	if err != nil {
 		return
 	}

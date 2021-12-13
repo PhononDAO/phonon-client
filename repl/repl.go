@@ -3,15 +3,16 @@ package repl
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/session"
+
 	ishell "github.com/abiosoft/ishell/v2"
 )
 
 var (
 	t          *orchestrator.PhononTerminal
 	shell      *ishell.Shell
-	activeCard *card.Session
+	activeCard *session.Session
 )
 
 const standardPrompt string = "Phonon>"
@@ -88,7 +89,7 @@ func Start() {
 		Func: cardPairLocal,
 		Help: "Pair with another phonon card to establish a secure connection for the exchange of phonons.",
 	})
-	
+
 	shell.AddCmd(&ishell.Cmd{
 		Name: "sendPhonons",
 		Func: sendPhonons,
@@ -100,17 +101,17 @@ func Start() {
 	// 	Help: "Retrieve the type and balance of a phonon on card. First argument is index of the card containing the phonon, and not needed if a card is selected. Second argument is the index of the phonon you wish to see the balance of",
 	// })
 
-	 shell.AddCmd(&ishell.Cmd{
-	 	Name: "pairRemote",
-	 	Func: connectRemoteSession,
-	 	Help: "Connect to a remote server",
-	 })
+	shell.AddCmd(&ishell.Cmd{
+		Name: "pairRemote",
+		Func: connectRemoteSession,
+		Help: "Connect to a remote server",
+	})
 
-	 shell.AddCmd(&ishell.Cmd{
-	 	Name:     "mock",
-	 	Func:     addMock,
-	 	Help:     "make a mock card and add it to the session",
-	 })
+	shell.AddCmd(&ishell.Cmd{
+		Name: "mock",
+		Func: addMock,
+		Help: "make a mock card and add it to the session",
+	})
 	// shell.AddCmd(&ishell.Cmd{
 	// 	Name: "receive",
 	// 	Func: setReceiveMode,
@@ -123,7 +124,7 @@ func Start() {
 }
 
 //internal bookkeeping method to set a card to receive subsequent commands
-func setActiveCard(c *ishell.Context, s *card.Session) {
+func setActiveCard(c *ishell.Context, s *session.Session) {
 	activeCard = s
 	updatePrompt()
 	c.Printf("%v selected\n", activeCard.GetName())
@@ -240,13 +241,13 @@ func getBalance(c *ishell.Context) {
 
 func connectRemoteSession(c *ishell.Context) {
 	fmt.Println("connecting to remote")
-	if len(c.Args) != 1{
+	if len(c.Args) != 1 {
 		fmt.Println("wrong number of arguments given")
 		return
 	}
 	CounterPartyConnInfo := c.Args[0]
-	err := t.ConnectRemoteSession(activeCard,CounterPartyConnInfo)
-	if err != nil{
+	err := t.ConnectRemoteSession(activeCard, CounterPartyConnInfo)
+	if err != nil {
 		c.Err(err)
 	}
 }

@@ -3,3 +3,4 @@ phonon
 phonon.exe
 localCerts/
 gui/frontend/build/*
+androidSDK/

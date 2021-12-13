@@ -5,7 +5,9 @@ import (
 
 	"testing"
 
+	"github.com/GridPlus/keycard-go/io"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/usb"
 	"github.com/google/go-cmp/cmp"
 	log "github.com/sirupsen/logrus"
 )
@@ -15,7 +17,12 @@ var testPin string = "111111"
 
 //SELECT
 func TestSelect(t *testing.T) {
-	cs, err := Connect()
+	card, err := usb.ConnectUSBReader(0)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cs := NewPhononCommandSet(io.NewNormalChannel(card))
 	if err != nil {
 		t.Error(err)
 		return
@@ -45,7 +52,13 @@ func TestSelect(t *testing.T) {
 //OPEN_SECURE_CHANNEL
 //MUTUAL_AUTH
 func TestOpenSecureConnection(t *testing.T) {
-	_, err := OpenSecureConnection()
+	card, err := usb.ConnectUSBReader(0)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
 		return
@@ -58,7 +71,13 @@ func TestOpenSecureConnection(t *testing.T) {
 //GET_PHONON_PUB_KEY
 //LIST_PHONONS
 func TestCreateSetAndListPhonons(t *testing.T) {
-	cs, err := OpenSecureConnection()
+	card, err := usb.ConnectUSBReader(0)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
 		return
@@ -175,7 +194,13 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 // DESTROY_PHONON
 func TestDestroyPhonon(t *testing.T) {
-	cs, err := OpenSecureConnection()
+	card, err := usb.ConnectUSBReader(0)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
 		return
@@ -223,7 +248,13 @@ func TestFillPhononTable(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping TestFillPhononTable in short mode")
 	}
-	cs, err := OpenSecureConnection()
+	card, err := usb.ConnectUSBReader(0)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
 		return
@@ -270,7 +301,13 @@ func TestFillPhononTable(t *testing.T) {
 }
 
 func TestReuseDestroyedIndex(t *testing.T) {
-	cs, err := OpenSecureConnection()
+	card, err := usb.ConnectUSBReader(0)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
 		return

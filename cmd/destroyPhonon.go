@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -57,7 +57,13 @@ func init() {
 }
 
 func destroyPhonon(keyIndex uint16) {
-	cs, err := card.OpenSecureConnection()
+	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = cs.OpenSecureConnection()
 	if err != nil {
 		fmt.Println(err)
 		return

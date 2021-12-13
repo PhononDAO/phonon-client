@@ -14,6 +14,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/session"
 	"github.com/posener/h2conn"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
@@ -23,7 +24,7 @@ type RemoteConnection struct {
 	conn                     *h2conn.Conn
 	encoder                  *gob.Encoder
 	remoteCertificate        *cert.CardCertificate
-	session                  *card.Session
+	session                  *session.Session
 	identifiedWithServerChan chan bool
 	identifiedWithServer     bool
 	counterpartyNonce        [32]byte
@@ -43,7 +44,7 @@ type RemoteConnection struct {
 // this will go someplace, I swear
 var ErrTimeout = errors.New("Timeout")
 
-func Connect(s *card.Session, url string, ignoreTLS bool) (*RemoteConnection, error) {
+func Connect(s *session.Session, url string, ignoreTLS bool) (*RemoteConnection, error) {
 	d := &h2conn.Client{
 		Client: &http.Client{
 			Transport: &http2.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: ignoreTLS}},

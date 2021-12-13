@@ -4,13 +4,12 @@ import (
 	"testing"
 
 	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/GridPlus/phonon-client/session"
 )
 
 func TestCardToCardPair(t *testing.T) {
 	//Test with real sender and mock receiver card
-	cs, err := orchestrator.Connect()
+	cs, err := Connect(0)
 	if err != nil {
 		t.Error(err)
 		return

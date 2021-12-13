@@ -78,14 +78,14 @@ func (t *PhononTerminal) ListSessions() []*session.Session {
 func (t *PhononTerminal) ConnectRemoteSession(session *session.Session, cardURL string) error {
 	u, err := url.Parse(cardURL)
 	if err != nil {
-		return fmt.Errorf("Unable to parse url for card connection: %s", err.Error())
+		return fmt.Errorf("unable to parse url for card connection: %s", err.Error())
 	}
 	pathSeparated := strings.Split(u.Path, "/")
 	counterpartyID := pathSeparated[len(pathSeparated)-1]
 	log.Info("connecting")
 	remConn, err := remote.Connect(session, fmt.Sprintf("https://%s/phonon", u.Host), true)
 	if err != nil {
-		return fmt.Errorf("Unable to connect to remote session: %s", err.Error())
+		return fmt.Errorf("unable to connect to remote session: %s", err.Error())
 	}
 	log.Info("successfully connected to remote server. Establishing connection to peer")
 	err = remConn.ConnectToCard(counterpartyID)

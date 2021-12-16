@@ -174,37 +174,6 @@ func NewMockCard(isInitialized bool, isStatic bool) (*MockCard, error) {
 	return mockCard, nil
 }
 
-// //Creates a special debug version of the mock which utilizes static keys and salts
-// //to create deterministic payloads for card debugging
-// func NewStaticMockCard() (*MockCard, error) {
-// 	var D []byte
-// 	for x := 0; x < 32; x++ {
-// 		D = append(D, 0x01)
-// 	}
-// 	identityPrivKey, err := ethcrypto.ToECDSA(D)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	log.Debugf("generated static privKey: % X\n", identityPrivKey.D.Bytes())
-// 	return &MockCard{
-// 		identityKey:    identityPrivKey,
-// 		IdentityPubKey: &identityPrivKey.PublicKey,
-// 		invoices:       make(map[string][]byte),
-// 		staticPairing:  true,
-// 	}, nil
-// }
-
-// func NewInitializedMockCard() (*MockCard, error) {
-// 	mockCard, err := NewMockCard()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	testPin := "111111"
-// 	mockCard.InstallCertificate(cert.SignWithDemoKey)
-// 	mockCard.Init(testPin)
-// 	return mockCard, nil
-// }
-
 func (c *MockCard) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error) {
 	instanceUID = util.RandomKey(16)
 

@@ -19,7 +19,7 @@ func TestCardToCardPair(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	mockCard, err := card.NewInitializedMockCard()
+	mockCard, err := card.NewMockCard(true, false)
 	if err != nil {
 		t.Error(err)
 		return

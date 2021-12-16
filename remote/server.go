@@ -20,7 +20,7 @@ func StartServer(port string, certfile string, keyfile string) {
 	http.HandleFunc("/phonon", handle)
 	http.HandleFunc("/connected", listConnected)
 	http.HandleFunc("/", index)
-	err := http.ListenAndServeTLS("localhost:"+port, certfile, keyfile, nil)
+	err := http.ListenAndServeTLS(":"+port, certfile, keyfile, nil)
 	if err != nil {
 		log.Errorf("Error with web server:, %s", err.Error())
 	}

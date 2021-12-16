@@ -20,6 +20,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/orchestrator"
 
 	"github.com/spf13/cobra"
 )
@@ -41,8 +42,6 @@ var initCmd = &cobra.Command{
 	Args: cobra.MaximumNArgs(1),
 }
 
-var readerIndex int
-
 func init() {
 	rootCmd.AddCommand(initCmd)
 
@@ -62,24 +61,15 @@ func init() {
 
 func initializeCard(pin string) {
 	fmt.Println("running initializeCard!!!")
-
-	// cs, err := card.ConnectWithReaderIndex(readerIndex)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-	var cs model.PhononCard
-	baseCS, err := scConnectInteractive()
+	baseCS, err := orchestrator.Connect(readerIndex)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	var cs model.PhononCard
 	if static {
 		cs = card.NewStaticPhononCommandSet(baseCS)
-	} else {
-		cs = baseCS
 	}
-
 	_, _, _, err = cs.Select()
 	if err != nil {
 		fmt.Println(err)

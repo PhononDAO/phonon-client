@@ -18,18 +18,17 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/cert"
-	"github.com/GridPlus/phonon-client/model"
-
-	"github.com/ebfe/scard"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // installCardCert represents the installCardCert command
@@ -82,14 +81,19 @@ func InstallCardCert() {
 			reader := bufio.NewReader(os.Stdin)
 			input, err := reader.ReadString('\n')
 			if err != nil {
+				fmt.Println(err)
 				return
 			}
 			input = strings.TrimSuffix(input, "\n")
 			yubikeySlotInt, err = strconv.Atoi(input)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 		}
 		if yubikeyPass == "" {
 			fmt.Println("Please enter the yubikey password:")
-			passBytes, err := terminal.ReadPassword(0)
+			passBytes, err := term.ReadPassword(0)
 			if err != nil {
 				log.Fatalf("Unable to retrieve password from console: %s", err.Error())
 			}
@@ -101,7 +105,8 @@ func InstallCardCert() {
 
 	var cs model.PhononCard
 	// Select Card if multiple. Otherwise go with first one or error out
-	baseCS, err := scConnectInteractive()
+	// baseCS, err := scConnectInteractive()
+	baseCS, err := orchestrator.Connect(readerIndex)
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
 	}
@@ -119,40 +124,5 @@ func InstallCardCert() {
 	err = cs.InstallCertificate(signKeyFunc)
 	if err != nil {
 		log.Fatalf("Unable to Install Certificate: %s", err.Error())
-	}
-}
-
-func scConnectInteractive() (*card.PhononCommandSet, error) {
-	ctx, err := scard.EstablishContext()
-	if err != nil {
-		log.Fatalf("Unable to establish Smart Card context: %s", err.Error())
-		return nil, err
-	}
-
-	readers, err := ctx.ListReaders()
-	if err != nil {
-		log.Fatalf("Unable to list readers: %s", err.Error())
-		return nil, err
-	}
-	if len(readers) == 0 {
-		return nil, card.ErrReaderNotFound
-	} else if len(readers) == 1 {
-		return card.ConnectWithContext(ctx, 0)
-	} else {
-		fmt.Println("Please Select the index of the  card you wish to use:")
-		for i, reader := range readers {
-			fmt.Printf("%d: %s", i, string(reader))
-		}
-		reader := bufio.NewReader(os.Stdin)
-		cardIndexStr, err := reader.ReadString('\n')
-		cardIndexStr = strings.Trim(cardIndexStr, "\n")
-		if err != nil {
-			return nil, err
-		}
-		cardIndexInt, err := strconv.Atoi(cardIndexStr)
-		if err != nil {
-			return nil, err
-		}
-		return card.ConnectWithContext(ctx, cardIndexInt)
 	}
 }

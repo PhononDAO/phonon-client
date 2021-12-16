@@ -18,7 +18,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +29,7 @@ var getAvailableMemoryCmd = &cobra.Command{
 	Long: `Retrieve the card's available memory statistics.
 	Returns persistent memory, transient memory on reset, then transient memory on deselect`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cs, err := card.OpenSecureConnection()
+		cs, err := orchestrator.QuickSecureConnection(readerIndex)
 		if err != nil {
 			fmt.Println(err)
 			return

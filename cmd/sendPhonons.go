@@ -22,6 +22,7 @@ import (
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/session"
 	"github.com/spf13/cobra"
 )
 
@@ -67,13 +68,13 @@ func sendPhonons() {
 		senderCard.InstallCertificate(cert.SignWithDemoKey)
 		senderCard.Init("111111")
 	} else {
-		senderCard, _, err = card.OpenBestConnectionWithReaderIndex(senderReaderIndex)
+		senderCard, err = orchestrator.Connect(senderReaderIndex)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
-	sender, _ := card.NewSession(senderCard)
+	sender, _ := session.NewSession(senderCard)
 	err = sender.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)
@@ -90,7 +91,7 @@ func sendPhonons() {
 	p := &model.Phonon{
 		KeyIndex:     keyIndex,
 		CurrencyType: model.Ethereum,
-		Denomination: model.Denomination{1, 0},
+		Denomination: model.Denomination{Base: 1, Exponent: 0},
 	}
 	err = sender.SetDescriptor(p)
 	if err != nil {
@@ -117,7 +118,7 @@ func sendPhonons() {
 		receiverCard.InstallCertificate(cert.SignWithDemoKey)
 		receiverCard.Init("111111")
 	} else {
-		receiverCard, _, err = card.OpenBestConnectionWithReaderIndex(receiverReaderIndex)
+		receiverCard, err = orchestrator.Connect(receiverReaderIndex)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -125,7 +126,7 @@ func sendPhonons() {
 	}
 
 	fmt.Println("opening receiver session")
-	receiverSession, _ := card.NewSession(receiverCard)
+	receiverSession, _ := session.NewSession(receiverCard)
 	err = receiverSession.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)

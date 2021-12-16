@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,7 @@ var selectCmd = &cobra.Command{
 	Short: "Test SELECT command",
 	Long:  `Test SELECT command`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cs, err := card.Connect()
+		cs, err := orchestrator.Connect(readerIndex)
 		if err != nil {
 			return
 		}

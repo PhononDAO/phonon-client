@@ -18,8 +18,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -60,20 +60,10 @@ func init() {
 }
 
 func listPhonons() {
-	var cs model.PhononCard
-	var err error
-	if static {
-		cs, err = card.OpenStaticConnection()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-	} else {
-		cs, err = card.OpenSecureConnection()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
 	if err = cs.VerifyPIN("111111"); err != nil {

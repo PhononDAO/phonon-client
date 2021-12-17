@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/GridPlus/phonon-client/session"
@@ -60,13 +59,11 @@ func sendPhonons() {
 	var senderCard model.PhononCard
 	var err error
 	if useMockSender {
-		senderCard, err = card.NewMockCard()
+		senderCard, err = card.NewMockCard(true, false)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		senderCard.InstallCertificate(cert.SignWithDemoKey)
-		senderCard.Init("111111")
 	} else {
 		senderCard, err = orchestrator.Connect(senderReaderIndex)
 		if err != nil {
@@ -110,13 +107,11 @@ func sendPhonons() {
 	}
 	var receiverCard model.PhononCard
 	if useMockReceiver {
-		receiverCard, err = card.NewMockCard()
+		receiverCard, err = card.NewMockCard(true, false)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		receiverCard.InstallCertificate(cert.SignWithDemoKey)
-		receiverCard.Init("111111")
 	} else {
 		receiverCard, err = orchestrator.Connect(receiverReaderIndex)
 		if err != nil {

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/GridPlus/keycard-go/crypto"
-
 	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/util"

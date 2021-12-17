@@ -22,9 +22,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetFriendlyNameCmd represents the GetFriendlyName command
-var GetFriendlyNameCmd = &cobra.Command{
-	Use:   "GetFriendlyName",
+// getFriendlyNameCmd represents the GetFriendlyName command
+var getFriendlyNameCmd = &cobra.Command{
+	Use:   "getFriendlyName",
 	Short: "retrieve the card's previously set Friendly Name",
 	Run: func(cmd *cobra.Command, args []string) {
 		getFriendlyName()
@@ -32,7 +32,7 @@ var GetFriendlyNameCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(GetFriendlyNameCmd)
+	rootCmd.AddCommand(getFriendlyNameCmd)
 
 	// Here you will define your flags and configuration settings.
 

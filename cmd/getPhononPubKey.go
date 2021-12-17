@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/util"
 	"github.com/spf13/cobra"
 )
 
@@ -60,5 +61,5 @@ func getPhononPubKey(keyIndex uint16) {
 		fmt.Println("error getting phonon public key: ", err)
 		return
 	}
-	fmt.Printf("got pubkey X: % X Y: % X\n", pubKey.X.Bytes(), pubKey.Y.Bytes())
+	fmt.Print("got pubkey: ", util.ECDSAPubKeyToHexString(pubKey))
 }

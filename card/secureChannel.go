@@ -17,22 +17,20 @@ import (
 var ErrInvalidResponseMAC = errors.New("invalid response MAC")
 
 type SecureChannel struct {
-	c          types.Channel
-	open       bool
-	secret     []byte
-	publicKey  *ecdsa.PublicKey
-	encKey     []byte
-	macKey     []byte
-	iv         []byte
-	apduLogger *log.Logger
+	c         types.Channel
+	open      bool
+	secret    []byte
+	publicKey *ecdsa.PublicKey
+	encKey    []byte
+	macKey    []byte
+	iv        []byte
 }
 
 func NewSecureChannel(c types.Channel) *SecureChannel {
 	//TODO: provide configuration to switch this somewhere
 
 	return &SecureChannel{
-		c:          c,
-		apduLogger: apduLogger,
+		c: c,
 	}
 }
 

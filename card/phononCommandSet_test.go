@@ -409,6 +409,12 @@ func TestIncompletePairing(t *testing.T) {
 		return
 	}
 
+	//Issue Send to unpaired card
+	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	if err != nil {
+		t.Log(err)
+	}
+
 	//Start pairing process but don't complete it.
 	initCardPairingData, err := cs.InitCardPairing(mock.IdentityCert)
 	if err != nil {
@@ -421,7 +427,7 @@ func TestIncompletePairing(t *testing.T) {
 		t.Log("expected error received calling SEND_PHONONS command after just INIT_CARD_PAIRING err: ", err)
 	}
 
-	//Reset card and try again to ensure card has not been bricked
+	//Reset card and try again with every card pairing command
 	keyIndex, err = prepareCardForPairingTest(cs)
 	if err != nil {
 		t.Error(err)

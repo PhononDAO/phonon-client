@@ -37,6 +37,7 @@ var selectCmd = &cobra.Command{
 			fmt.Println("could not select applet", err)
 			return
 		}
+		fmt.Println("select ran succesfully")
 	},
 }
 

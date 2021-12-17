@@ -3,7 +3,6 @@ package card
 import (
 	"github.com/GridPlus/keycard-go/io"
 	"github.com/GridPlus/phonon-client/model"
-
 	"github.com/GridPlus/phonon-client/usb"
 )
 

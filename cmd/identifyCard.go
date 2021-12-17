@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -68,13 +69,10 @@ func identifyCard() {
 	log.Debugf("ecdsaSignature: % X\n", append(cardSig.R.Bytes(), cardSig.S.Bytes()...))
 	//Validate sig
 
-	// valid := ecdsa.Verify(ecdsaCardPubKey, nonce, ecdsaSignature.R, ecdsaSignature.S)
-	// if !valid {
-	// 	log.Error("card signature on nonce not valid")
-	// 	return
-	// }
+	valid := ecdsa.Verify(cardPubKey, nonce, cardSig.R, cardSig.S)
+	if !valid {
+		log.Error("card signature on nonce not valid")
+		return
+	}
 	log.Debug("identify card signature on nonce valid")
-	//Create cert
-
-	//Load Cert
 }

@@ -18,8 +18,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -37,21 +37,11 @@ var transactionAckCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(transactionAckCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// transactionAckCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// transactionAckCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 //Creates a phonon, sends it, and confirms the transaction for testing purposes
 func transactionAck() {
-	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)
 		return

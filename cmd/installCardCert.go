@@ -21,7 +21,6 @@ import (
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/orchestrator"
 	"log"
 	"os"
 	"strconv"
@@ -50,19 +49,8 @@ func init() {
 	rootCmd.AddCommand(installCardCert)
 
 	installCardCert.Flags().BoolVarP(&useDemoKey, "demo", "d", false, "Use the demo key to sign -- insecure for demo purposes only")
-
 	installCardCert.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing yubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
 	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Yubikey Password")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// installCardCertCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// installCardCertCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func InstallCardCert() {
@@ -103,7 +91,7 @@ func InstallCardCert() {
 	}
 
 	var cs model.PhononCard
-	baseCS, err := orchestrator.Connect(readerIndex)
+	baseCS, err := card.Connect(readerIndex)
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
 	}

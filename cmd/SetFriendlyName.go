@@ -18,7 +18,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +42,7 @@ func setFriendlyName() {
 	if name == "" {
 		fmt.Println("Please input a name to set for the card")
 	}
-	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)
 		return

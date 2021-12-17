@@ -11,6 +11,7 @@ type PhononCard interface {
 	Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error)
 	Pair() (*cert.CardCertificate, error)
 	OpenSecureChannel() error
+	OpenSecureConnection() error
 	Init(pin string) error
 	IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error)
 	VerifyPIN(pin string) error
@@ -31,9 +32,7 @@ type PhononCard interface {
 	InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) (err error)
 	GenerateInvoice() (invoiceData []byte, err error)
 	ReceiveInvoice(invoiceData []byte) (err error)
-}
-
-type PhysicalPhononCard interface {
-	PhononCard
+	SetFriendlyName(name string) error
+	GetFriendlyName() (string, error)
 	GetAvailableMemory() (persistentMem int, onResetMem int, onDeselectMem int, err error)
 }

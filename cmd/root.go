@@ -37,9 +37,6 @@ var rootCmd = &cobra.Command{
 https://github.com/GridPlus/phonon-network
 
 Use this library to create, describe, approve, send, receive, and export phonons.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -53,10 +50,6 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.phonon-client.yaml)")
 	rootCmd.PersistentFlags().IntVarP(&readerIndex, "reader-index", "i", 0, "pass the reader index for the card")

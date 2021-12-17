@@ -81,7 +81,7 @@ func PairCardToCard() {
 			return
 		}
 	} else {
-		senderCard, err = orchestrator.Connect(senderReaderIndex)
+		senderCard, err = card.QuickSecureConnection(senderReaderIndex, staticPairing)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -115,7 +115,7 @@ func PairCardToCard() {
 		}
 	} else {
 		fmt.Println("opening physical connection with receiver card")
-		receiverCard, err = orchestrator.Connect(receiverReaderIndex)
+		receiverCard, err = card.QuickSecureConnection(receiverReaderIndex, staticPairing)
 		if err != nil {
 			fmt.Println(err)
 			return

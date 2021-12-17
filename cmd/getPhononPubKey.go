@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/spf13/cobra"
 )
 
@@ -42,20 +42,10 @@ a list command, as LIST_PHONONS does not return public keys in order to conserve
 
 func init() {
 	rootCmd.AddCommand(getPhononPubKeyCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// getPhononPubKeyCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// getPhononPubKeyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func getPhononPubKey(keyIndex uint16) {
-	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)
 		return

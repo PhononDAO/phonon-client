@@ -20,7 +20,6 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/orchestrator"
 
 	"github.com/spf13/cobra"
 )
@@ -48,7 +47,7 @@ func init() {
 
 func initializeCard(pin string) {
 	fmt.Println("running initializeCard!!!")
-	baseCS, err := orchestrator.Connect(readerIndex)
+	baseCS, err := card.Connect(readerIndex)
 	if err != nil {
 		fmt.Println(err)
 		return

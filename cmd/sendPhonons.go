@@ -43,15 +43,6 @@ func init() {
 
 	sendPhononsCmd.Flags().IntVarP(&receiverReaderIndex, "receiver-reader-index", "r", 0, "pass the reader index to use for the receiver card")
 	sendPhononsCmd.Flags().IntVarP(&senderReaderIndex, "sender-reader-index", "s", 0, "pass the reader index to use for the sender card")
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// sendPhononsCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// sendPhononsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func sendPhonons() {
@@ -65,7 +56,7 @@ func sendPhonons() {
 			return
 		}
 	} else {
-		senderCard, err = orchestrator.Connect(senderReaderIndex)
+		senderCard, err = card.QuickSecureConnection(senderReaderIndex, staticPairing)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -113,7 +104,7 @@ func sendPhonons() {
 			return
 		}
 	} else {
-		receiverCard, err = orchestrator.Connect(receiverReaderIndex)
+		receiverCard, err = card.QuickSecureConnection(receiverReaderIndex, staticPairing)
 		if err != nil {
 			fmt.Println(err)
 			return

@@ -18,7 +18,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/spf13/cobra"
 )
 
@@ -34,20 +34,10 @@ var receivePhononsCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(receivePhononsCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// receivePhononsCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// receivePhononsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func receivePhonons() {
-	cs, err := orchestrator.Connect(readerIndex)
+	cs, err := card.Connect(readerIndex)
 	if err != nil {
 		return
 	}

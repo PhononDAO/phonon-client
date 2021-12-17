@@ -19,8 +19,8 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/orchestrator"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -37,20 +37,10 @@ var setReceiveListCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(setReceiveListCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// setReceiveListCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// setReceiveListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func setReceiveList() {
-	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -392,6 +392,7 @@ func prepareCardForPairingTest() (model.PhononCard, uint16, error) {
 	return cs, keyIndex, nil
 }
 
+//Test is informational only for now. Proper error value that should be returned from send is not defined
 func TestIncompletePairing(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mock, err := NewMockCard(true, false)
@@ -423,15 +424,44 @@ func TestIncompletePairing(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = cs.CardPair(initCardPairingData)
+	cardPairData, err := cs.CardPair(initCardPairingData)
 	if err != nil {
-		t.Error("error during CARD_PAIR_1 test. err: ", err)
+		t.Log("error during CARD_PAIR_1 test. err: ", err)
 		return
 	}
 
 	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
 	if err != nil {
 		t.Log("expected error received calling SEND_PHONONS after just CARD_PAIR_1. err: ", err)
+	}
+
+	cs, keyIndex, err = prepareCardForPairingTest()
+	if err != nil {
+		t.Error(err)
+	}
+
+	cardPair2Data, err := cs.CardPair2(cardPairData)
+	if err != nil {
+		t.Log(err)
+	}
+	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	if err != nil {
+		t.Log("expected error received calling SEND_PHONONS after just CARD_PAIR_2. err: ", err)
+	}
+
+	cs, keyIndex, err = prepareCardForPairingTest()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = cs.FinalizeCardPair(cardPair2Data)
+	if err != nil {
+		t.Log(err)
+
+	}
+	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	if err != nil {
+		t.Log("expected error received calling SEND_PHONONS after just FINALIZE_CARD_PAIR. err: ", err)
 	}
 }
 

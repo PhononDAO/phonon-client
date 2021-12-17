@@ -27,6 +27,7 @@ import (
 
 var cfgFile string
 var readerIndex int
+var staticPairing bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -59,10 +60,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.phonon-client.yaml)")
 	rootCmd.PersistentFlags().IntVarP(&readerIndex, "reader-index", "i", 0, "pass the reader index for the card")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().BoolVarP(&staticPairing, "static", "t", false, "use insecure static values in all card pairing operations. useful for debugging card issues")
 
 }
 

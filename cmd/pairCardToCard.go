@@ -42,7 +42,6 @@ var (
 	useMockSender       bool
 	senderReaderIndex   int
 	receiverReaderIndex int
-	staticPairing       bool
 )
 
 func init() {
@@ -53,8 +52,6 @@ func init() {
 
 	pairCardToCardCmd.Flags().IntVarP(&receiverReaderIndex, "receiver-reader-index", "r", 0, "pass the reader index to use for the receiver card")
 	pairCardToCardCmd.Flags().IntVarP(&senderReaderIndex, "sender-reader-index", "s", 0, "pass the reader index to use for the sender card")
-
-	pairCardToCardCmd.Flags().BoolVarP(&staticPairing, "static", "t", false, "Use statically generated insecure keys and salts to generate deterministic pairing payloads")
 
 	// Here you will define your flags and configuration settings.
 

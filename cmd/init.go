@@ -44,19 +44,6 @@ var initCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-
-	initCmd.Flags().IntVarP(&readerIndex, "reader-index", "i", 0, "pass the reader index for the card")
-	initCmd.PersistentFlags().BoolVarP(&static, "static", "t", false, "use a static secret in pairing")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// initCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func initializeCard(pin string) {
@@ -67,8 +54,10 @@ func initializeCard(pin string) {
 		return
 	}
 	var cs model.PhononCard
-	if static {
+	if staticPairing {
 		cs = card.NewStaticPhononCommandSet(baseCS)
+	} else {
+		cs = baseCS
 	}
 	_, _, _, err = cs.Select()
 	if err != nil {

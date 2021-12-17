@@ -150,7 +150,7 @@ func NewMockCard(isInitialized bool, isStatic bool) (*MockCard, error) {
 		for x := 0; x < 32; x++ {
 			D = append(D, 0x01)
 		}
-		identityPrivKey, err := ethcrypto.ToECDSA(D)
+		identityPrivKey, err = ethcrypto.ToECDSA(D)
 		if err != nil {
 			return nil, err
 		}

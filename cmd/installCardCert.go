@@ -53,7 +53,6 @@ func init() {
 
 	installCardCert.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing yubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
 	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Yubikey Password")
-	installCardCert.PersistentFlags().BoolVarP(&static, "static", "t", false, "use a static secret in pairing")
 
 	// Here you will define your flags and configuration settings.
 
@@ -104,18 +103,15 @@ func InstallCardCert() {
 	}
 
 	var cs model.PhononCard
-	// Select Card if multiple. Otherwise go with first one or error out
-	// baseCS, err := scConnectInteractive()
 	baseCS, err := orchestrator.Connect(readerIndex)
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
 	}
-	if static {
+	if staticPairing {
 		cs = card.NewStaticPhononCommandSet(baseCS)
 	} else {
 		cs = baseCS
 	}
-
 	_, _, _, err = cs.Select()
 	if err != nil {
 		fmt.Println(err)

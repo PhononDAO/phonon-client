@@ -359,24 +359,18 @@ func TestReuseDestroyedIndex(t *testing.T) {
 
 }
 
-func prepareCardForPairingTest() (model.PhononCard, uint16, error) {
-	card, err := usb.ConnectUSBReader(0)
+func prepareCardForPairingTest(cs *StaticPhononCommandSet) (uint16, error) {
+	err := cs.OpenSecureConnection()
 	if err != nil {
-		return nil, 0, err
-	}
-	//Use static command set to generate debugger logs
-	cs := NewStaticPhononCommandSet(NewPhononCommandSet(io.NewNormalChannel(card)))
-	err = cs.OpenSecureConnection()
-	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 	if err = cs.VerifyPIN(testPin); err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 
 	keyIndex, pubKey, err := cs.CreatePhonon(model.Secp256k1)
 	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 	denom, _ := model.NewDenomination(100)
 	p := &model.Phonon{
@@ -387,9 +381,9 @@ func prepareCardForPairingTest() (model.PhononCard, uint16, error) {
 	}
 	err = cs.SetDescriptor(p)
 	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
-	return cs, keyIndex, nil
+	return keyIndex, nil
 }
 
 //Test is informational only for now. Proper error value that should be returned from send is not defined
@@ -401,7 +395,15 @@ func TestIncompletePairing(t *testing.T) {
 		return
 	}
 
-	cs, keyIndex, err := prepareCardForPairingTest()
+	card, err := usb.ConnectUSBReader(0)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//Use static command set to generate debugger logs
+	cs := NewStaticPhononCommandSet(NewPhononCommandSet(io.NewNormalChannel(card)))
+
+	keyIndex, err := prepareCardForPairingTest(cs)
 	if err != nil {
 		t.Error(err)
 		return
@@ -420,7 +422,7 @@ func TestIncompletePairing(t *testing.T) {
 	}
 
 	//Reset card and try again to ensure card has not been bricked
-	cs, keyIndex, err = prepareCardForPairingTest()
+	keyIndex, err = prepareCardForPairingTest(cs)
 	if err != nil {
 		t.Error(err)
 	}
@@ -435,7 +437,7 @@ func TestIncompletePairing(t *testing.T) {
 		t.Log("expected error received calling SEND_PHONONS after just CARD_PAIR_1. err: ", err)
 	}
 
-	cs, keyIndex, err = prepareCardForPairingTest()
+	keyIndex, err = prepareCardForPairingTest(cs)
 	if err != nil {
 		t.Error(err)
 	}
@@ -449,7 +451,7 @@ func TestIncompletePairing(t *testing.T) {
 		t.Log("expected error received calling SEND_PHONONS after just CARD_PAIR_2. err: ", err)
 	}
 
-	cs, keyIndex, err = prepareCardForPairingTest()
+	keyIndex, err = prepareCardForPairingTest(cs)
 	if err != nil {
 		t.Error(err)
 		return

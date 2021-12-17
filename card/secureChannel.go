@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/crypto"
 	"github.com/GridPlus/keycard-go/globalplatform"
@@ -12,43 +11,28 @@ import (
 	"github.com/GridPlus/keycard-go/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
-	"os"
 	"strings"
 )
-
-var apduLog *os.File
-var apduLogger *log.Logger
 
 var ErrInvalidResponseMAC = errors.New("invalid response MAC")
 
 type SecureChannel struct {
-	c         types.Channel
-	open      bool
-	secret    []byte
-	publicKey *ecdsa.PublicKey
-	encKey    []byte
-	macKey    []byte
-	iv        []byte
+	c          types.Channel
+	open       bool
+	secret     []byte
+	publicKey  *ecdsa.PublicKey
+	encKey     []byte
+	macKey     []byte
+	iv         []byte
+	apduLogger *log.Logger
 }
 
 func NewSecureChannel(c types.Channel) *SecureChannel {
 	//TODO: provide configuration to switch this somewhere
-	apduLogger = &log.Logger{
-		Out:       apduLog,
-		Formatter: &APDUDebugFormatter{},
-		Level:     log.DebugLevel,
-	}
-	var err error
-	if apduLogger.Level == log.DebugLevel {
-		apduLog, err = os.Create("apdu.log")
-		log.Info("created apdu.log")
-		if err != nil {
-			log.Error("failed to create apdu.log", err)
-		}
-	}
 
 	return &SecureChannel{
-		c: c,
+		c:          c,
+		apduLogger: apduLogger,
 	}
 }
 
@@ -138,10 +122,12 @@ func (sc *SecureChannel) Send(cmd *Command) (resp *apdu.Response, err error) {
 		newData := append(sc.iv, encData...)
 		cmd.ApduCmd.Data = newData
 	}
-	//TODO: sqelch all this in configuration
-	fmt.Fprintf(apduLog, "#INS % X\n", cmd.ApduCmd.Ins)
+
+	//Log APDUs in debugger format to file
+	apduLogger.Debugf("#INS % X\n", cmd.ApduCmd.Ins)
 	outputAPDU, _ := cmd.ApduCmd.Serialize()
-	fmt.Fprintf(apduLog, "/send %X\n", outputAPDU)
+	apduLogger.Debugf("/send %X\n", outputAPDU)
+
 	resp, err = sc.c.Send(cmd.ApduCmd)
 	if err != nil {
 		return nil, err

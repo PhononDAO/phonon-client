@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/GridPlus/keycard-go"
 	"github.com/GridPlus/keycard-go/apdu"
@@ -40,6 +41,9 @@ var (
 	ErrUnknown           = errors.New("unknown error")
 )
 
+var apduLogFile *os.File
+var apduLogger *log.Logger
+
 type PhononCommandSet struct {
 	c               types.Channel
 	sc              *SecureChannel
@@ -48,6 +52,21 @@ type PhononCommandSet struct {
 }
 
 func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
+	level := log.DebugLevel
+	var err error
+	if level == log.DebugLevel {
+		apduLogFile, err = os.Create("../apdu.log")
+		log.Info("created apdu.log")
+		if err != nil {
+			log.Error("failed to create apdu.log", err)
+		}
+	}
+	apduLogger = &log.Logger{
+		Out:       apduLogFile,
+		Formatter: &APDUDebugFormatter{},
+		Level:     log.DebugLevel,
+	}
+
 	return &PhononCommandSet{
 		c:               c,
 		sc:              NewSecureChannel(c),
@@ -58,9 +77,10 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 func (cs PhononCommandSet) Send(cmd *Command) (*apdu.Response, error) {
 	//Log commands to apdu log
 	//TODO: sqelch all this in configuration
-	fmt.Fprintf(apduLog, "#INS % X\n", cmd.ApduCmd.Ins)
+	//Log APDUs in debugger format to file
+	apduLogger.Debugf("#INS % X\n", cmd.ApduCmd.Ins)
 	outputAPDU, _ := cmd.ApduCmd.Serialize()
-	fmt.Fprintf(apduLog, "/send %X\n", outputAPDU)
+	apduLogger.Debugf("/send %X\n", outputAPDU)
 
 	resp, err := cs.c.Send(cmd.ApduCmd)
 	if err != nil {

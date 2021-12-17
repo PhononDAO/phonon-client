@@ -208,3 +208,24 @@ func (cs *StaticPhononCommandSet) mutualAuthenticate() error {
 
 	return cs.checkOK(resp, err)
 }
+
+/*OpenSecureChannel is a convenience function to perform all of the necessary options to open a card
+to terminal secure channel in sequence. Runs SELECT, PAIR, OPEN_SECURE_CHANNEL*/
+func (cs *StaticPhononCommandSet) OpenSecureConnection() error {
+	_, _, _, err := cs.Select()
+	if err != nil {
+		log.Error("could not select phonon applet: ", err)
+		return err
+	}
+	_, err = cs.Pair()
+	if err != nil {
+		log.Error("could not pair: ", err)
+		return err
+	}
+	err = cs.OpenSecureChannel()
+	if err != nil {
+		log.Error("could not open secure channel: ", err)
+		return err
+	}
+	return nil
+}

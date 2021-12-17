@@ -17,6 +17,7 @@ import (
 )
 
 var apduLog *os.File
+var apduLogger *log.Logger
 
 var ErrInvalidResponseMAC = errors.New("invalid response MAC")
 
@@ -31,14 +32,21 @@ type SecureChannel struct {
 }
 
 func NewSecureChannel(c types.Channel) *SecureChannel {
-	//TODO: switch this via a config file
-	//Setup APDU Debugging
-	var err error
-	apduLog, err = os.Create("apdu.log")
-	log.Info("created apdu.log")
-	if err != nil {
-		log.Error("failed to create apdu.log", err)
+	//TODO: provide configuration to switch this somewhere
+	apduLogger = &log.Logger{
+		Out:       apduLog,
+		Formatter: &APDUDebugFormatter{},
+		Level:     log.DebugLevel,
 	}
+	var err error
+	if apduLogger.Level == log.DebugLevel {
+		apduLog, err = os.Create("apdu.log")
+		log.Info("created apdu.log")
+		if err != nil {
+			log.Error("failed to create apdu.log", err)
+		}
+	}
+
 	return &SecureChannel{
 		c: c,
 	}

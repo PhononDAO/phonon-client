@@ -359,12 +359,13 @@ func TestReuseDestroyedIndex(t *testing.T) {
 
 }
 
-func prepareCardForPairingTest() (*PhononCommandSet, uint16, error) {
+func prepareCardForPairingTest() (model.PhononCard, uint16, error) {
 	card, err := usb.ConnectUSBReader(0)
 	if err != nil {
 		return nil, 0, err
 	}
-	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	//Use static command set to generate debugger logs
+	cs := NewStaticPhononCommandSet(NewPhononCommandSet(io.NewNormalChannel(card)))
 	err = cs.OpenSecureConnection()
 	if err != nil {
 		return nil, 0, err

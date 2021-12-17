@@ -2,9 +2,6 @@
 phonon
 phonon.exe
 localCerts/
-<<<<<<< HEAD
 apdu.log
-=======
 gui/frontend/build/*
 androidSDK/
->>>>>>> master

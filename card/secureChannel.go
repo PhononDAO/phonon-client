@@ -27,8 +27,6 @@ type SecureChannel struct {
 }
 
 func NewSecureChannel(c types.Channel) *SecureChannel {
-	//TODO: provide configuration to switch this somewhere
-
 	return &SecureChannel{
 		c: c,
 	}

@@ -46,3 +46,6 @@ Build for windows x86
 make build-windows
 ```
 note: for windows compilation from mac or linux, you will need to install mingw-64 from your favorite package manager
+
+# License 
+The source code files in this repository are license under the terms of the Mozilla Public License 2.0

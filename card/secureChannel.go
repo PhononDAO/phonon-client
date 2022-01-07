@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"errors"
-	"strings"
-
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/crypto"
 	"github.com/GridPlus/keycard-go/globalplatform"
@@ -13,6 +11,7 @@ import (
 	"github.com/GridPlus/keycard-go/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 var ErrInvalidResponseMAC = errors.New("invalid response MAC")
@@ -119,6 +118,11 @@ func (sc *SecureChannel) Send(cmd *Command) (resp *apdu.Response, err error) {
 		newData := append(sc.iv, encData...)
 		cmd.ApduCmd.Data = newData
 	}
+
+	//Log APDUs in debugger format to file
+	apduLogger.Debugf("#INS % X\n", cmd.ApduCmd.Ins)
+	outputAPDU, _ := cmd.ApduCmd.Serialize()
+	apduLogger.Debugf("/send %X\n", outputAPDU)
 
 	resp, err = sc.c.Send(cmd.ApduCmd)
 	if err != nil {

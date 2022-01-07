@@ -359,6 +359,120 @@ func TestReuseDestroyedIndex(t *testing.T) {
 
 }
 
+func prepareCardForPairingTest(cs *StaticPhononCommandSet) (uint16, error) {
+	err := cs.OpenSecureConnection()
+	if err != nil {
+		return 0, err
+	}
+	if err = cs.VerifyPIN(testPin); err != nil {
+		return 0, err
+	}
+
+	keyIndex, pubKey, err := cs.CreatePhonon(model.Secp256k1)
+	if err != nil {
+		return 0, err
+	}
+	denom, _ := model.NewDenomination(100)
+	p := &model.Phonon{
+		KeyIndex:     keyIndex,
+		PubKey:       pubKey,
+		Denomination: denom,
+		CurrencyType: model.Ethereum,
+	}
+	err = cs.SetDescriptor(p)
+	if err != nil {
+		return 0, err
+	}
+	return keyIndex, nil
+}
+
+//Test is informational only for now. Proper error value that should be returned from send is not defined
+func TestIncompletePairing(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	mock, err := NewMockCard(true, false)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	card, err := usb.ConnectUSBReader(0)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//Use static command set to generate debugger logs
+	cs := NewStaticPhononCommandSet(NewPhononCommandSet(io.NewNormalChannel(card)))
+
+	keyIndex, err := prepareCardForPairingTest(cs)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	//Issue Send to unpaired card
+	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	if err != nil {
+		t.Log(err)
+	}
+
+	//Start pairing process but don't complete it.
+	initCardPairingData, err := cs.InitCardPairing(mock.IdentityCert)
+	if err != nil {
+		t.Error("unable to send INIT_CARD_PAIRING. err: ", err)
+		return
+	}
+	//Issue SendPhonons command
+	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	if err != nil {
+		t.Log("expected error received calling SEND_PHONONS command after just INIT_CARD_PAIRING err: ", err)
+	}
+
+	//Reset card and try again with every card pairing command
+	keyIndex, err = prepareCardForPairingTest(cs)
+	if err != nil {
+		t.Error(err)
+	}
+	cardPairData, err := cs.CardPair(initCardPairingData)
+	if err != nil {
+		t.Log("error during CARD_PAIR_1 test. err: ", err)
+		return
+	}
+
+	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	if err != nil {
+		t.Log("expected error received calling SEND_PHONONS after just CARD_PAIR_1. err: ", err)
+	}
+
+	keyIndex, err = prepareCardForPairingTest(cs)
+	if err != nil {
+		t.Error(err)
+	}
+
+	cardPair2Data, err := cs.CardPair2(cardPairData)
+	if err != nil {
+		t.Log(err)
+	}
+	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	if err != nil {
+		t.Log("expected error received calling SEND_PHONONS after just CARD_PAIR_2. err: ", err)
+	}
+
+	keyIndex, err = prepareCardForPairingTest(cs)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = cs.FinalizeCardPair(cardPair2Data)
+	if err != nil {
+		t.Log(err)
+
+	}
+	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	if err != nil {
+		t.Log("expected error received calling SEND_PHONONS after just FINALIZE_CARD_PAIR. err: ", err)
+	}
+}
+
 //Pairing + Send/Receive cycle
 // SEND_PHONONS
 // SET_RECV_LIST

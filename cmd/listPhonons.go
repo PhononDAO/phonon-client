@@ -18,8 +18,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -42,23 +42,13 @@ var lessThanValue float32
 func init() {
 	rootCmd.AddCommand(listPhononsCmd)
 
-	// Here you will define your flags and configuration settings.
-
 	listPhononsCmd.PersistentFlags().Uint16VarP(&currency, "currencyType", "c", 0, "0 matches all phonons, 1 for Bitcoin, 2 for Ethereum")
 	listPhononsCmd.PersistentFlags().Float32VarP(&greaterThanValue, "gt", "g", 0, "phonon denomination must be greater than this float32 value")
 	listPhononsCmd.PersistentFlags().Float32VarP(&lessThanValue, "lt", "l", 0, "phonon denomination must be less than this float32 value")
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listPhononsCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listPhononsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func listPhonons() {
-	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)
 		return

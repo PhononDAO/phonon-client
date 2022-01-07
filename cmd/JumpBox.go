@@ -43,14 +43,4 @@ func init() {
 	JumpBoxCmd.Flags().StringVarP(&port, "port", "p", "8080", "port for clients to connect on")
 	JumpBoxCmd.Flags().StringVarP(&certificate, "cert", "c", "", "SSL certificate")
 	JumpBoxCmd.Flags().StringVarP(&key, "key", "k", "", "SSL key")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// JumpBoxCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// JumpBoxCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

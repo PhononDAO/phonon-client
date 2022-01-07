@@ -9,7 +9,6 @@ import (
 
 	"github.com/GridPlus/keycard-go/io"
 	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/remote"
 	"github.com/GridPlus/phonon-client/session"
@@ -28,20 +27,15 @@ type remoteSession struct {
 var ErrRemoteNotPaired error = errors.New("no remote card paired")
 
 func (t *PhononTerminal) GenerateMock() error {
-	c, err := card.NewMockCard()
+	c, err := card.NewMockCard(true, false)
 	if err != nil {
 		return err
 	}
-	sess, _ := session.NewSession(c)
-	// sign with demo key. there's no reason a mock card would not be signed with demo key
-	err = c.InstallCertificate(cert.SignWithDemoKey)
+	sess, err := session.NewSession(c)
 	if err != nil {
 		return err
 	}
-	err = sess.Init("111111")
-	if err != nil {
-		return err
-	}
+
 	t.sessions = append(t.sessions, sess)
 	return nil
 }

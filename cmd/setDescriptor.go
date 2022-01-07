@@ -18,8 +18,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -39,19 +39,11 @@ var phononCount int
 func init() {
 	rootCmd.AddCommand(setDescriptorCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// setDescriptorCmd.PersistentFlags().String("foo", "", "A help for foo")
 	setDescriptorCmd.PersistentFlags().IntVarP(&phononCount, "count", "c", 1, "number of phonons to create with descriptor set")
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// setDescriptorCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func setDescriptor() {
-	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -68,7 +60,12 @@ func setDescriptor() {
 		}
 
 		fmt.Println("sending set descriptor for keyIndex ", keyIndex)
-		err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Ethereum, Denomination: model.Denomination{Base: 100, Exponent: 100}})
+		d, err := model.NewDenomination(100000)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = cs.SetDescriptor(&model.Phonon{KeyIndex: keyIndex, CurrencyType: model.Ethereum, Denomination: d})
 		if err != nil {
 			fmt.Println("unable to set descriptor")
 			return

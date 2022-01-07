@@ -18,13 +18,13 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/model"
 	"log"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/GridPlus/phonon-client/cert"
-	"github.com/GridPlus/phonon-client/orchestrator"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -49,18 +49,8 @@ func init() {
 	rootCmd.AddCommand(installCardCert)
 
 	installCardCert.Flags().BoolVarP(&useDemoKey, "demo", "d", false, "Use the demo key to sign -- insecure for demo purposes only")
-
-	installCardCert.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing ubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
-	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Ubikey Password")
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// installCardCertCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// installCardCertCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	installCardCert.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing yubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
+	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Yubikey Password")
 }
 
 func InstallCardCert() {
@@ -100,12 +90,16 @@ func InstallCardCert() {
 		signKeyFunc = cert.SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
 	}
 
-	// Select Card if multiple. Otherwise go with first one or error out
-	cs, err := orchestrator.Connect(readerIndex)
+	var cs model.PhononCard
+	baseCS, err := card.Connect(readerIndex)
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
 	}
-
+	if staticPairing {
+		cs = card.NewStaticPhononCommandSet(baseCS)
+	} else {
+		cs = baseCS
+	}
 	_, _, _, err = cs.Select()
 	if err != nil {
 		fmt.Println(err)

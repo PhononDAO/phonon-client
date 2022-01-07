@@ -27,6 +27,7 @@ import (
 
 var cfgFile string
 var readerIndex int
+var staticPairing bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -36,9 +37,6 @@ var rootCmd = &cobra.Command{
 https://github.com/GridPlus/phonon-network
 
 Use this library to create, describe, approve, send, receive, and export phonons.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -53,16 +51,9 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.phonon-client.yaml)")
 	rootCmd.PersistentFlags().IntVarP(&readerIndex, "reader-index", "i", 0, "pass the reader index for the card")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().BoolVarP(&staticPairing, "static", "t", false, "use insecure static values in all card pairing operations. useful for debugging card issues")
 
 }
 

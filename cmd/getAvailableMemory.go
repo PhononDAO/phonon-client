@@ -18,7 +18,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +29,7 @@ var getAvailableMemoryCmd = &cobra.Command{
 	Long: `Retrieve the card's available memory statistics.
 	Returns persistent memory, transient memory on reset, then transient memory on deselect`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cs, err := orchestrator.QuickSecureConnection(readerIndex)
+		cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -39,11 +39,6 @@ var getAvailableMemoryCmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
-		// cs, err := card.Connect()
-		// if err != nil {
-		// 	fmt.Println(err)
-		// 	return
-		// }
 
 		persistentMem, onResetMem, onDeselectMem, err := cs.GetAvailableMemory()
 		if err != nil {
@@ -58,14 +53,4 @@ var getAvailableMemoryCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(getAvailableMemoryCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// getAvailableMemoryCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// getAvailableMemoryCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

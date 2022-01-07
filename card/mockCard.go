@@ -38,6 +38,7 @@ type MockCard struct {
 	invoices        map[string][]byte
 	outgoingInvoice Invoice
 	staticPairing   bool
+	friendlyName    string
 }
 
 type MockPhonon struct {
@@ -136,46 +137,41 @@ type Invoice struct {
 	Key []byte //32 length
 }
 
-func NewMockCard() (*MockCard, error) {
-	identityPrivKey, err := ethcrypto.GenerateKey()
-	if err != nil {
-		return nil, err
+func NewMockCard(isInitialized bool, isStatic bool) (*MockCard, error) {
+	var identityPrivKey *ecdsa.PrivateKey
+	var err error
+	if !isStatic {
+		identityPrivKey, err = ethcrypto.GenerateKey()
+		if err != nil {
+			return nil, err
+		}
+		//If mock is static, use a predetermined identity private key seed
+	} else if isStatic {
+		var D []byte
+		for x := 0; x < 32; x++ {
+			D = append(D, 0x01)
+		}
+		identityPrivKey, err = ethcrypto.ToECDSA(D)
+		if err != nil {
+			return nil, err
+		}
+		log.Debugf("generated static privKey: % X\n", identityPrivKey.D.Bytes())
 	}
-	return &MockCard{
+
+	mockCard := &MockCard{
 		identityKey:    identityPrivKey,
 		IdentityPubKey: &identityPrivKey.PublicKey,
 		invoices:       make(map[string][]byte),
-	}, nil
-}
+		staticPairing:  isStatic,
+	}
 
-//Creates a special debug version of the mock which utilizes static keys and salts
-//to create deterministic payloads for card debugging
-func NewStaticMockCard() (*MockCard, error) {
-	var D []byte
-	for x := 0; x < 32; x++ {
-		D = append(D, 0x01)
+	//If card should be initialized, go ahead and install a mock cert and set the test pin
+	if isInitialized {
+		testPin := "111111"
+		mockCard.InstallCertificate(cert.SignWithDemoKey)
+		mockCard.Init(testPin)
 	}
-	identityPrivKey, err := ethcrypto.ToECDSA(D)
-	if err != nil {
-		return nil, err
-	}
-	log.Debugf("generated static privKey: % X\n", identityPrivKey.D.Bytes())
-	return &MockCard{
-		identityKey:    identityPrivKey,
-		IdentityPubKey: &identityPrivKey.PublicKey,
-		invoices:       make(map[string][]byte),
-		staticPairing:  true,
-	}, nil
-}
 
-func NewInitializedMockCard() (*MockCard, error) {
-	mockCard, err := NewMockCard()
-	if err != nil {
-		return nil, err
-	}
-	testPin := "111111"
-	mockCard.InstallCertificate(cert.SignWithDemoKey)
-	mockCard.Init(testPin)
 	return mockCard, nil
 }
 
@@ -262,6 +258,25 @@ func (c *MockCard) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) 
 	log.Debugf("installed cert: % X, len: %v", rawCardCert, len(rawCardCert))
 	c.IdentityCert, err = cert.ParseRawCardCertificate(rawCardCert)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *MockCard) OpenSecureConnection() error {
+	_, _, _, err := c.Select()
+	if err != nil {
+		log.Error("could not select mock phonon applet. err: ", err)
+		return err
+	}
+	_, err = c.Pair()
+	if err != nil {
+		log.Error("could not pair mock. err: ", err)
+		return err
+	}
+	err = c.OpenSecureChannel()
+	if err != nil {
+		log.Error("could not open mock secure channel. err: ", err)
 		return err
 	}
 	return nil
@@ -821,4 +836,18 @@ func (c *MockCard) ReceiveInvoice(invoiceData []byte) (err error) {
 	}
 	log.Debugf("mock setting outgoingInvoice ID: % X, Key: % X", c.outgoingInvoice.ID, c.outgoingInvoice.Key)
 	return nil
+}
+
+func (c *MockCard) SetFriendlyName(name string) error {
+	c.friendlyName = name
+	return nil
+}
+
+func (c *MockCard) GetFriendlyName() (string, error) {
+	return c.friendlyName, nil
+}
+
+func (c *MockCard) GetAvailableMemory() (int, int, int, error) {
+	//Command is irrelevant in the mock, so just return 0's
+	return 0, 0, 0, nil
 }

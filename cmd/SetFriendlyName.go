@@ -18,15 +18,15 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-client/card"
 	"github.com/spf13/cobra"
 )
 
 var name string
 
-// SetFriendlyNameCmd represents the SetFriendlyName command
-var SetFriendlyNameCmd = &cobra.Command{
-	Use:   "SetFriendlyName",
+// setFriendlyNameCmd represents the SetFriendlyName command
+var setFriendlyNameCmd = &cobra.Command{
+	Use:   "setFriendlyName",
 	Short: "Set friendly name for phonon card",
 	Run: func(cmd *cobra.Command, args []string) {
 		setFriendlyName()
@@ -34,15 +34,15 @@ var SetFriendlyNameCmd = &cobra.Command{
 }
 
 func init() {
-	SetFriendlyNameCmd.PersistentFlags().StringVar(&name, "name", "", "Friendly name to call your card")
-	rootCmd.AddCommand(SetFriendlyNameCmd)
+	setFriendlyNameCmd.PersistentFlags().StringVar(&name, "name", "", "Friendly name to call your card")
+	rootCmd.AddCommand(setFriendlyNameCmd)
 }
 
 func setFriendlyName() {
 	if name == "" {
 		fmt.Println("Please input a name to set for the card")
 	}
-	cs, err := orchestrator.QuickSecureConnection(readerIndex)
+	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)
 		return

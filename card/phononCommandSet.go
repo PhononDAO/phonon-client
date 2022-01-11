@@ -16,6 +16,7 @@ import (
 	"github.com/GridPlus/keycard-go/gridplus"
 	"github.com/GridPlus/keycard-go/types"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/tlv"
 	"github.com/GridPlus/phonon-client/util"
@@ -49,11 +50,14 @@ type PhononCommandSet struct {
 	sc              *SecureChannel
 	ApplicationInfo *types.ApplicationInfo
 	PairingInfo     *types.PairingInfo
+	PhononCACert    []byte
 }
 
 func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
-	level := log.DebugLevel
 	var err error
+	conf := config.GetConfig().PhononCommandSetConfig
+	var level = conf.LogLevel
+
 	if level == log.DebugLevel {
 		apduLogFile, err = os.Create("../apdu.log")
 		log.Info("created apdu.log")
@@ -71,6 +75,7 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 		c:               c,
 		sc:              NewSecureChannel(c),
 		ApplicationInfo: &types.ApplicationInfo{},
+		PhononCACert:    conf.PhononCACert,
 	}
 }
 
@@ -161,18 +166,18 @@ func (cs *PhononCommandSet) Pair() (*cert.CardCertificate, error) {
 		return &cert.CardCertificate{}, err
 	}
 	//Validate card's certificate has valid GridPlus signature
-	certValid := cert.ValidateCardCertificate(cardCert, gridplus.SafecardDevCAPubKey)
-	log.Debug("certificate signature valid: ", certValid)
-	if !certValid {
-		log.Error("unable to verify card certificate.")
+	err = cert.ValidateCardCertificate(cardCert, cs.PhononCACert)
+	if err != nil {
+		log.Error("unable to verify card certificate signature")
 		return &cert.CardCertificate{}, err
 	}
+	log.Debug("certificate signature valid")
 
 	pubKeyValid := gridplus.ValidateECCPubKey(cardCertPubKey)
 	log.Debug("certificate public key valid: ", pubKeyValid)
 	if !pubKeyValid {
 		log.Error("card pubkey invalid")
-		return &cert.CardCertificate{}, err
+		return &cert.CardCertificate{}, errors.New("certificate pubkey invalid")
 	}
 
 	//challenge message test

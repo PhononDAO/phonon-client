@@ -108,12 +108,12 @@ func (cs *StaticPhononCommandSet) Pair() (*cert.CardCertificate, error) {
 		return &cert.CardCertificate{}, err
 	}
 	//Validate card's certificate has valid GridPlus signature
-	certValid := cert.ValidateCardCertificate(cardCert, gridplus.SafecardDevCAPubKey)
-	log.Debug("certificate signature valid: ", certValid)
-	if !certValid {
+	err = cert.ValidateCardCertificate(cardCert, gridplus.SafecardDevCAPubKey)
+	if err != nil {
 		log.Error("unable to verify card certificate.")
 		return &cert.CardCertificate{}, err
 	}
+	log.Debug("certificate signature valid")
 
 	pubKeyValid := gridplus.ValidateECCPubKey(cardCertPubKey)
 	log.Debug("certificate public key valid: ", pubKeyValid)

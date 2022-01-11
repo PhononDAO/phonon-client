@@ -365,9 +365,9 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	log.Debugf("Sig: % X", senderCardCert.Sig)
 
 	//Validate counterparty certificate
-	valid := cert.ValidateCardCertificate(senderCardCert, gridplus.SafecardDevCAPubKey)
-	if !valid {
-		return nil, errors.New("counterparty certificate signature was invalid")
+	err = cert.ValidateCardCertificate(senderCardCert, gridplus.SafecardDevCAPubKey)
+	if err != nil {
+		return nil, err
 	}
 
 	pubKeyValid := gridplus.ValidateECCPubKey(senderPubKey)
@@ -446,9 +446,9 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 		return nil, err
 	}
 	//Validate counterparty certificate
-	valid := cert.ValidateCardCertificate(c.scPairData.counterPartyCert, gridplus.SafecardDevCAPubKey)
-	if !valid {
-		return nil, errors.New("counterparty certificate signature was invalid")
+	err = cert.ValidateCardCertificate(c.scPairData.counterPartyCert, gridplus.SafecardDevCAPubKey)
+	if err != nil {
+		return nil, err
 	}
 
 	pubKeyValid := gridplus.ValidateECCPubKey(receiverPubKey)
@@ -488,7 +488,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 
 	log.Debugf("receiverPubKey: % X", receiverPubKey)
 	//Validate ReceiverSig
-	valid = ecdsa.VerifyASN1(receiverPubKey, cryptogram[0:], receiverSig)
+	valid := ecdsa.VerifyASN1(receiverPubKey, cryptogram[0:], receiverSig)
 	if !valid {
 		return nil, errors.New("counterparty cryptogram signature invalid")
 	}

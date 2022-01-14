@@ -7,7 +7,7 @@ import (
 )
 
 func Connect(readerIndex int) (*PhononCommandSet, error) {
-	scard, err := usb.ConnectUSBReader(0)
+	scard, err := usb.ConnectUSBReader(readerIndex)
 	if err != nil {
 		return nil, err
 	}

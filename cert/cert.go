@@ -134,8 +134,8 @@ func SignWithDemoKey(cert []byte) ([]byte, error) {
 func SignWithYubikeyFunc(slot int, password string) func([]byte) ([]byte, error) {
 	return func(cert []byte) ([]byte, error) {
 
-		c := connector.NewHTTPConnector("localhost:1234")
-		sm, err := yubihsm.NewSessionManager(c, 1, "password")
+		c := connector.NewHTTPConnector("localhost:12345")
+		sm, err := yubihsm.NewSessionManager(c, 1, password)
 		if err != nil {
 			panic(err)
 		}
@@ -151,7 +151,7 @@ func SignWithYubikeyFunc(slot int, password string) func([]byte) ([]byte, error)
 			return []byte{}, err
 		}
 
-		return res.(*commands.SignDataEddsaResponse).Signature, nil
+		return res.(*commands.SignDataEcdsaResponse).Signature, nil
 	}
 }
 

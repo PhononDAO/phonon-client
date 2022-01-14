@@ -47,7 +47,7 @@ func TestParseTLV(t *testing.T) {
 		return
 	}
 
-	ecdsaPubKey, err := util.ParseECDSAPubKey(pubKey)
+	ecdsaPubKey, err := util.ParseECCPubKey(pubKey)
 	if err != nil {
 		log.Error(err)
 		return

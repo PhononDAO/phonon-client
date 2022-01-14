@@ -287,7 +287,7 @@ func (c *MockCard) InitCardPairing(receiverCert cert.CardCertificate) (initPairi
 	//Ingest counterparty cert and save it for use in CARD_PAIR_2
 	log.Debugf("received receiverCert: % X, len: %v", receiverCert.Serialize(), len(receiverCert.Serialize()))
 	c.scPairData.counterPartyCert = receiverCert
-	_, err = util.ParseECDSAPubKey(receiverCert.PubKey)
+	_, err = util.ParseECCPubKey(receiverCert.PubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +349,7 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	if err != nil {
 		return nil, err
 	}
-	senderPubKey, err := util.ParseECDSAPubKey(senderCardCert.PubKey)
+	senderPubKey, err := util.ParseECCPubKey(senderCardCert.PubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -441,7 +441,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 		return nil, err
 	}
 
-	receiverPubKey, err := util.ParseECDSAPubKey(c.scPairData.counterPartyCert.PubKey)
+	receiverPubKey, err := util.ParseECCPubKey(c.scPairData.counterPartyCert.PubKey)
 	if err != nil {
 		return nil, err
 	}

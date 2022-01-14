@@ -61,5 +61,5 @@ func getPhononPubKey(keyIndex uint16) {
 		fmt.Println("error getting phonon public key: ", err)
 		return
 	}
-	fmt.Print("got pubkey: ", util.ECDSAPubKeyToHexString(pubKey))
+	fmt.Print("got pubkey: ", util.ECCPubKeyToHexString(pubKey))
 }

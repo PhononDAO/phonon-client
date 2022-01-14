@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/asn1"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -14,6 +15,8 @@ import (
 type ECDSASignature struct {
 	R, S *big.Int
 }
+
+var ErrInvalidECCPubKeyFormat = errors.New("ECC pubkey format could not be detected")
 
 func ParseECDSASignature(rawSig []byte) (*ECDSASignature, error) {
 	signature := &ECDSASignature{}
@@ -26,17 +29,34 @@ func ParseECDSASignature(rawSig []byte) (*ECDSASignature, error) {
 	return signature, nil
 }
 
-func ParseECDSAPubKey(pubKey []byte) (*ecdsa.PublicKey, error) {
-	ecdsaPubKey, err := ethcrypto.UnmarshalPubkey(pubKey)
-	if err != nil {
-		log.Error("could not unmarshal ecdsa pub key from raw: ", err)
-		log.Error("raw pubkey:\n", hex.Dump(pubKey))
-		return nil, err
+func ParseECCPubKey(rawPubKey []byte) (pubKey *ecdsa.PublicKey, err error) {
+	if len(rawPubKey) == 0 {
+		return nil, errors.New("pubKey was zero length")
 	}
-	return ecdsaPubKey, nil
+	if rawPubKey[0] == 0x04 {
+		//Unmarshal uncompressed pubkey format
+		pubKey, err = ethcrypto.UnmarshalPubkey(rawPubKey)
+		if err != nil {
+			log.Error("could not unmarshal uncompressed ecdsa pub key from raw: ", err)
+			log.Error("raw pubkey:\n", hex.Dump(rawPubKey))
+			return nil, err
+		}
+	} else if rawPubKey[0] == 0x02 || rawPubKey[0] == 0x03 {
+		//Unmarshal compressed pubkey format
+		pubKey, err = ethcrypto.DecompressPubkey(rawPubKey)
+		if err != nil {
+			log.Error("could not unmarshal compressed ecdsa pub key from raw: ", err)
+			return nil, err
+		}
+	} else {
+		log.Debugf("could not detect ECC pubkey format from key: % X\n", rawPubKey)
+		return nil, ErrInvalidECCPubKeyFormat
+	}
+
+	return pubKey, nil
 }
 
-func ECDSAPubKeyToHexString(pubKey *ecdsa.PublicKey) string {
+func ECCPubKeyToHexString(pubKey *ecdsa.PublicKey) string {
 	return fmt.Sprintf("%x", ethcrypto.FromECDSAPub(pubKey))
 }
 

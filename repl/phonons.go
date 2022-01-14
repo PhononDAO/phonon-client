@@ -19,7 +19,7 @@ func createPhonon(c *ishell.Context) {
 	}
 	c.Println("created phonon")
 	c.Println("Key Index: ", keyIndex)
-	c.Println("Public Key: ", util.ECDSAPubKeyToHexString(pubKey))
+	c.Println("Public Key: ", util.ECCPubKeyToHexString(pubKey))
 }
 
 func listPhonons(c *ishell.Context) {

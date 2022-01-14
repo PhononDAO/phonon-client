@@ -66,7 +66,7 @@ func (s *Session) GetName() string {
 		return "unknown"
 	}
 	if s.Cert.PubKey != nil {
-		hexString := util.ECDSAPubKeyToHexString(s.identityPubKey)
+		hexString := util.ECCPubKeyToHexString(s.identityPubKey)
 		if len(hexString) >= 16 {
 			return hexString[:16]
 		}
@@ -102,7 +102,7 @@ func (s *Session) Connect() error {
 		return err
 	}
 	s.Cert = cert
-	s.identityPubKey, _ = util.ParseECDSAPubKey(s.Cert.PubKey)
+	s.identityPubKey, _ = util.ParseECCPubKey(s.Cert.PubKey)
 	err = s.cs.OpenSecureChannel()
 	if err != nil {
 		return err

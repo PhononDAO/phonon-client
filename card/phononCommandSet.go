@@ -161,7 +161,7 @@ func (cs *PhononCommandSet) Pair() (*cert.CardCertificate, error) {
 		return &cert.CardCertificate{}, err
 	}
 
-	cardCertPubKey, err := util.ParseECDSAPubKey(cardCert.PubKey)
+	cardCertPubKey, err := util.ParseECCPubKey(cardCert.PubKey)
 	if err != nil {
 		return &cert.CardCertificate{}, err
 	}

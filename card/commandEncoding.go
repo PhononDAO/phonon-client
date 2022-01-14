@@ -182,7 +182,7 @@ func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err err
 	if err != nil {
 		return nil, err
 	}
-	pubKey, err = util.ParseECDSAPubKey(rawPubKey)
+	pubKey, err = util.ParseECCPubKey(rawPubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func parseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKey *ecdsa.Publ
 
 	keyIndex = binary.BigEndian.Uint16(keyIndexBytes)
 
-	pubKey, err = util.ParseECDSAPubKey(pubKeyBytes)
+	pubKey, err = util.ParseECCPubKey(pubKeyBytes)
 	if err != nil {
 		log.Error("could not parse pubkey from phonon response: ", err)
 		return keyIndex, nil, err
@@ -247,7 +247,7 @@ func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey *ecdsa.Pub
 			return nil, nil, false, errors.New("invalid response length")
 		}
 		instanceUID = resp[4:20]
-		cardPubKey, err = util.ParseECDSAPubKey(resp[22:87])
+		cardPubKey, err = util.ParseECCPubKey(resp[22:87])
 		if err != nil {
 			log.Error("select could not parse returned public key")
 			return nil, nil, false, err
@@ -262,7 +262,7 @@ func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey *ecdsa.Pub
 	case 0x80:
 		log.Debug("pin uninitialized")
 		length := int(resp[1])
-		cardPubKey, err = util.ParseECDSAPubKey(resp[2 : 2+length])
+		cardPubKey, err = util.ParseECCPubKey(resp[2 : 2+length])
 		if err != nil {
 			log.Error("select could not parse returned public key")
 			return nil, nil, false, err
@@ -280,7 +280,7 @@ func ParseIdentifyCardResponse(resp []byte) (cardPubKey *ecdsa.PublicKey, sig *u
 		log.Errorf("identify card response invalid length %v should be %v ", len(resp), correctLength)
 		return nil, nil, err
 	}
-	cardPubKey, err = util.ParseECDSAPubKey(resp[2:67])
+	cardPubKey, err = util.ParseECCPubKey(resp[2:67])
 	if err != nil {
 		return nil, nil, errors.New("could not parse card public key")
 	}

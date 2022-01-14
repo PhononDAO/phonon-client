@@ -67,7 +67,7 @@ func ValidateCardCertificate(cert CardCertificate, CAPubKey []byte) error {
 	certBytes := cert.Digest()
 	certHash := sha256.Sum256(certBytes)
 
-	CApubKey, err := util.ParseECDSAPubKey(CAPubKey)
+	CApubKey, err := util.ParseECCPubKey(CAPubKey)
 	if err != nil {
 		log.Error("could not parse CAPubKey: ", err)
 		return err

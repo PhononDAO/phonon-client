@@ -129,7 +129,7 @@ func (c *clientSession) process(msg Message) {
 				log.Error("Unable to parse IdentifyCardResponse", err.Error())
 				return
 			}
-			key, err := util.ParseECDSAPubKey(c.certificate.PubKey)
+			key, err := util.ParseECCPubKey(c.certificate.PubKey)
 			if err != nil {
 				log.Error("Unable to parse pubkey from certificate", err.Error())
 				return
@@ -139,7 +139,7 @@ func (c *clientSession) process(msg Message) {
 				return
 			}
 			c.validated = true
-			hexString := util.ECDSAPubKeyToHexString(key)
+			hexString := util.ECCPubKeyToHexString(key)
 			name := hexString[:16]
 			c.Name = name
 			clientSessions[name] = c

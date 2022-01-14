@@ -18,7 +18,7 @@ func GetConfig() Config {
 	//Add viper/commandline integration later
 	conf := Config{
 		PhononCommandSetConfig: PhononCommandSetConfig{
-			PhononCACert: cert.PhononAlphaCAPubKey,
+			PhononCACert: cert.PhononDemoCAPubKey,
 			LogLevel:     log.DebugLevel,
 		},
 	}

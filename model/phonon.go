@@ -27,7 +27,7 @@ func (p *Phonon) String() string {
 		p.KeyIndex,
 		p.Denomination,
 		p.CurrencyType,
-		util.ECDSAPubKeyToHexString(p.PubKey),
+		util.ECCPubKeyToHexString(p.PubKey),
 		p.CurveType,
 		p.SchemaVersion,
 		p.ExtendedSchemaVersion,

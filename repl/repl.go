@@ -172,8 +172,7 @@ func refresh(c *ishell.Context) {
 	sessions, err := t.RefreshSessions()
 	if err != nil {
 		c.Printf("error refreshing sessions: %v", err)
-	}
-	if len(sessions) == 0 {
+	} else if len(sessions) == 0 {
 		c.Println("no attached cards detected")
 	} else if len(sessions) == 1 {
 		c.Println("one attached card detected, setting as active")

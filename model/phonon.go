@@ -3,6 +3,7 @@ package model
 
 import (
 	"crypto/ecdsa"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -32,6 +33,33 @@ func (p *Phonon) String() string {
 		p.SchemaVersion,
 		p.ExtendedSchemaVersion,
 		p.ExtendedTLV)
+}
+
+type UserRequestedPhonon struct {
+	KeyIndex              uint16
+	PubKey                string //pubkey as hexstring
+	SchemaVersion         uint8
+	ExtendedSchemaVersion uint8
+	Denomination          int
+	CurrencyType          int
+	//TODO extendedTLV
+}
+
+func (p *Phonon) MarshalJSON() ([]byte, error) {
+	userReqPhonon := &UserRequestedPhonon{
+		KeyIndex:              p.KeyIndex,
+		PubKey:                util.ECCPubKeyToHexString(p.PubKey),
+		SchemaVersion:         p.SchemaVersion,
+		ExtendedSchemaVersion: p.ExtendedSchemaVersion,
+		Denomination:          p.Denomination.Value(),
+		CurrencyType:          int(p.CurrencyType),
+		//TODO extendedTLV
+	}
+	jsonBytes, err := json.Marshal(userReqPhonon)
+	if err != nil {
+		return nil, err
+	}
+	return jsonBytes, nil
 }
 
 type CurrencyType uint16

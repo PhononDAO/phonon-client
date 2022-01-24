@@ -169,18 +169,9 @@ func listPhonons(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	ret := []phonRet{}
-	for _, phon := range phonons {
-		pubkey := util.ECCPubKeyToHexString(phon.PubKey)
-		ret = append(ret, phonRet{
-			Index:  int(phon.KeyIndex),
-			PubKey: pubkey,
-			Type:   int(phon.CurrencyType),
-			Value:  phon.Denomination.Value(),
-		})
-	}
+
 	enc := json.NewEncoder(w)
-	err = enc.Encode(ret)
+	err = enc.Encode(phonons)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

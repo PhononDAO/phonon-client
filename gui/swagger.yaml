@@ -3,7 +3,7 @@ info:
   description: "UI frontend api (if that makes any sense)"
   version: "0.0.0"
   title: "Phonon-api"
-host: "localhost:8080"
+host: "localhost:{{.}}"
 basePath: "/"
 tags:
 - name: "sessions"

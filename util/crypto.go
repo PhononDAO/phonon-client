@@ -68,3 +68,7 @@ func ParseECCPrivKey(privKey []byte) (*ecdsa.PrivateKey, error) {
 	}
 	return eccPrivKey, nil
 }
+
+func CardIDFromPubKey(pubKey *ecdsa.PublicKey) string {
+	return ECCPubKeyToHexString(pubKey)[:16]
+}

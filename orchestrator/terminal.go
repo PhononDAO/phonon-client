@@ -13,6 +13,7 @@ import (
 	"github.com/GridPlus/phonon-client/remote"
 	"github.com/GridPlus/phonon-client/session"
 	"github.com/GridPlus/phonon-client/usb"
+	"github.com/GridPlus/phonon-client/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -69,6 +70,7 @@ func (t *PhononTerminal) ListSessions() []*session.Session {
 	return t.sessions
 }
 
+//TODO: probably rework this to move to session because it's awkward to control it from here via the rest server
 func (t *PhononTerminal) ConnectRemoteSession(session *session.Session, cardURL string) error {
 	u, err := url.Parse(cardURL)
 	if err != nil {
@@ -77,6 +79,7 @@ func (t *PhononTerminal) ConnectRemoteSession(session *session.Session, cardURL 
 	pathSeparated := strings.Split(u.Path, "/")
 	counterpartyID := pathSeparated[len(pathSeparated)-1]
 	log.Info("connecting")
+	//guard
 	remConn, err := remote.Connect(session, fmt.Sprintf("https://%s/phonon", u.Host), true)
 	if err != nil {
 		return fmt.Errorf("unable to connect to remote session: %s", err.Error())
@@ -84,9 +87,15 @@ func (t *PhononTerminal) ConnectRemoteSession(session *session.Session, cardURL 
 	log.Info("successfully connected to remote server. Establishing connection to peer")
 	err = remConn.ConnectToCard(counterpartyID)
 	if err != nil {
+		log.Info("returning error from ConnectRemoteSession")
 		return err
 	}
-	if counterpartyID < session.GetName() {
+	localPubKey, err := util.ParseECCPubKey(session.Cert.PubKey)
+	if err != nil{
+		//we shouldn't get this far and still receive this error
+		return err
+	}
+	if counterpartyID < util.CardIDFromPubKey(localPubKey) {
 		paired := make(chan bool, 1)
 		go func() {
 			for {

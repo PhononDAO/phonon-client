@@ -28,16 +28,13 @@ func StartServer(port string, certfile string, keyfile string) {
 
 type clientSession struct {
 	Name           string
-	certificate    *cert.CardCertificate
-	challengeNonce [32]byte
+	certificate    cert.CardCertificate
 	underlyingConn *h2conn.Conn
-	sender         *gob.Encoder
-	receiver       *gob.Decoder
+	out            *gob.Encoder
+	in             *gob.Decoder
 	validated      bool
-	end            chan bool
 	Counterparty   *clientSession
 	// the same name that goes in the lookup value of the clientSession map
-	name string
 }
 
 var clientSessions map[string]*clientSession
@@ -54,113 +51,65 @@ func listConnected(w http.ResponseWriter, r *http.Request) {
 func handle(w http.ResponseWriter, r *http.Request) {
 	conn, err := h2conn.Accept(w, r)
 	if err != nil {
-		log.Debug("Unable to establish http2 duplex connection with ", r.RemoteAddr)
-		//status teapot is obviously wrong here. need to research what causes this error and return a proper response
-		http.Error(w, "Unable to establish duplex connection between server and client", http.StatusTeapot)
+		log.Error("Unable to establish http2 duplex connection with ", r.RemoteAddr)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+	defer conn.Close()
+
 	cmdEncoder := gob.NewEncoder(conn)
 	cmdDecoder := gob.NewDecoder(conn)
 	//generate session
 	session := clientSession{
-		sender:   cmdEncoder,
-		receiver: cmdDecoder,
-		end:      make(chan (bool)),
+		Name:           "",
+		certificate:    cert.CardCertificate{},
+		underlyingConn: conn,
+		out:            cmdEncoder,
+		in:             cmdDecoder,
+		validated:      false,
+		Counterparty:   nil,
 	}
 
-	messageChan := make(chan (Message))
-
-	go func(msgchan chan Message) {
-		defer close(msgchan)
-		for {
-			message := Message{}
-			err := session.receiver.Decode(&message)
-			if err != nil {
-				log.Info("Error receiving message from connected client")
-				return
-			}
-			msgchan <- message
+	valid, err := session.ValidateClient()
+	if err != nil {
+		err = session.out.Encode(err.Error())
+		if err != nil {
+			log.Error("failed sending cert validation failure response: ", err)
+			return
 		}
-	}(messageChan)
-
-	newMessage := Message{
-		Name: RequestCertificate,
 	}
-
-	cmdEncoder.Encode(newMessage)
-
-	for message := range messageChan {
-		session.process(message)
+	if !valid {
+		//TODO: use a real error, possibly from cert package
+		msg := Message{
+			Name:    MessageDisconnected,
+			Payload: []byte("Certificate invalid"),
+		}
+		err = session.out.Encode(msg)
+		if err != nil {
+			log.Error("failed sending invalid cert response: ", err)
+			return
+		}
+		log.Error("certificate invalid")
 	}
-	conn.Close()
+	log.Info("validated client connection: ", session.Name)
 
-	//ask connected card for a certificate and send challenge
-	//when certificate is verified, add to list of connected cards
-	//process messages
+	//Client is now validated, move on
+	for r.Context().Err() == nil {
+		var msg Message
+		err := session.in.Decode(&msg)
+		if err != nil {
+			log.Error("failed receiving message: ", err)
+			return
+		}
+		log.Debugf("received %v message with payload: % X\n", msg.Name, msg.Payload)
+		err = session.process(msg)
+		if err != nil {
+			log.Errorf("failed to process incoming %v msg. err: %v", msg.Name, err)
+			log.Errorf("msg payload: % X", msg.Payload)
+		}
+	}
 }
 
-func (c *clientSession) process(msg Message) {
-	log.Infof("processing message: %s\nPayload: %+v\nPayloadString: %s\n", msg.Name, msg.Payload, string(msg.Payload))
-	// if the client hasn't identified itself with the server, ignore what they are doing until they provide the certificate, and keep asking for it.
-	if c.certificate == nil {
-		// if they are providing the certificate, accept it, and then generate a challenge, add it to the challenge test, and continue executing
-		if msg.Name == ResponseCertificate {
-			certParsed, err := cert.ParseRawCardCertificate(msg.Payload)
-			if err != nil {
-				log.Infof("failed to parse certificate from client %s\n", err.Error())
-				return
-			}
-			c.certificate = &certParsed
-		} else {
-			//ask for the certificate again
-			c.sender.Encode(Message{
-				Name: RequestCertificate,
-			})
-			return
-		}
-	}
-
-	if !c.validated {
-		if msg.Name == ResponseIdentify {
-			buf := bytes.NewBuffer(msg.Payload)
-			decoder := gob.NewDecoder(buf)
-			var sig = &util.ECDSASignature{}
-			err := decoder.Decode(sig)
-			if err != nil {
-				log.Error("Unable to parse IdentifyCardResponse", err.Error())
-				return
-			}
-			key, err := util.ParseECCPubKey(c.certificate.PubKey)
-			if err != nil {
-				log.Error("Unable to parse pubkey from certificate", err.Error())
-				return
-			}
-			if !ecdsa.Verify(key, c.challengeNonce[:], sig.R, sig.S) {
-				log.Error("unable to verify card challenge")
-				return
-			}
-			c.validated = true
-			hexString := util.ECCPubKeyToHexString(key)
-			name := hexString[:16]
-			c.Name = name
-			clientSessions[name] = c
-			c.sender.Encode(Message{
-				Name:    MessageIdentifiedWithServer,
-				Payload: []byte(name),
-			})
-			return
-		} else {
-			if c.challengeNonce == [32]byte{} {
-				_, err := rand.Reader.Read(c.challengeNonce[:])
-				if err != nil {
-					log.Errorf("Error generating challenge: %s", err.Error())
-					return
-				}
-			}
-			c.RequestIdentify()
-			return
-		}
-		// if the challenge text has been set, ignore what they want and send it again
-	}
+func (c *clientSession) process(msg Message) error {
 	switch msg.Name {
 	case RequestConnectCard2Card:
 		c.ConnectCard2Card(msg)
@@ -170,23 +119,110 @@ func (c *clientSession) process(msg Message) {
 		c.endSession(msg)
 	case RequestNoOp:
 		c.noop(msg)
-	case ResponseIdentify, RequestCardPair1, ResponseCardPair1, RequestCardPair2, ResponseCardPair2, RequestFinalizeCardPair, ResponseFinalizeCardPair, RequestReceivePhonon, MessagePhononAck:
+	case RequestIdentify, ResponseIdentify, RequestCardPair1, ResponseCardPair1, RequestCardPair2, ResponseCardPair2, RequestFinalizeCardPair, ResponseFinalizeCardPair, RequestReceivePhonon, MessagePhononAck, RequestVerifyPaired, ResponseVerifyPaired:
 		c.passthrough(msg)
 	case RequestCertificate:
 		c.provideCertificate()
 	}
+	//TODO: provide actual errors, or ensure all the cases handle errors themselves
+	return nil
 }
 
-func (c *clientSession) RequestIdentify() {
-	c.sender.Encode(Message{
-		Name:    RequestIdentify,
-		Payload: c.challengeNonce[:],
+func (c *clientSession) ValidateClient() (bool, error) {
+	log.Info("validating client connection")
+	//Read client certificate
+	var in Message
+	err := c.in.Decode(&in)
+	if err != nil {
+		log.Error("unable to decode raw client certificate bytes: ", err)
+		return false, err
+	}
+	log.Info("past first Decode:")
+	c.certificate, err = cert.ParseRawCardCertificate(in.Payload)
+	if err != nil {
+		log.Infof("failed to parse certificate from client %s\n", err.Error())
+		return false, err
+	}
+	log.Info("parsed cert: ", c.certificate)
+	//Validate certificate is signed by valid origin
+
+	//Send Identify Card Challenge
+	challengeNonce, err := c.RequestIdentify()
+	if err != nil {
+		log.Error("failed to send IDENTIFY_CARD request: ", err)
+		return false, nil
+	}
+
+	sig, err := c.ReceiveIdentifyResponse()
+	if err != nil {
+		log.Error("failed to receive IDENTIFY_CARD response: ", err)
+		return false, err
+	}
+	log.Infof("received sig from identifyResponse: %+v", sig)
+	key, err := util.ParseECCPubKey(c.certificate.PubKey)
+	if err != nil {
+		log.Error("Unable to parse pubkey from certificate", err.Error())
+		return false, err
+	}
+	if !ecdsa.Verify(key, challengeNonce, sig.R, sig.S) {
+		log.Error("unable to verify card challenge")
+		return false, err
+	}
+
+	//Cert has been validated, register clientSession with server and grab card name
+	c.validated = true
+	name := util.CardIDFromPubKey(key)
+	c.Name = name
+	clientSessions[name] = c
+	c.out.Encode(Message{
+		Name:    MessageIdentifiedWithServer,
+		Payload: []byte(name),
 	})
+
+	//Return to main loop to process further client requests
+	return true, nil
+}
+
+func (c *clientSession) RequestIdentify() (challengeNonce []byte, err error) {
+	challengeNonce = make([]byte, 32)
+	_, err = rand.Reader.Read(challengeNonce)
+	if err != nil {
+		log.Error("unable to generate challenge nonce. err: ", err)
+		return nil, err
+	}
+	err = c.out.Encode(Message{Name: RequestIdentify, Payload: challengeNonce})
+	if err != nil {
+		log.Error("unable to send identify request")
+		return nil, err
+	}
+	return challengeNonce, nil
+}
+
+func (c *clientSession) ReceiveIdentifyResponse() (*util.ECDSASignature, error) {
+	var identifyResp Message
+	var sig util.ECDSASignature
+	err := c.in.Decode(&identifyResp)
+	if err != nil {
+		log.Error("could not receive identify response. err: ", err)
+		return nil, err
+	}
+	log.Infof("received identify response: %+v\n", identifyResp)
+	if identifyResp.Name == ResponseIdentify {
+		buf := bytes.NewBuffer(identifyResp.Payload)
+		decoder := gob.NewDecoder(buf)
+		err := decoder.Decode(&sig)
+		if err != nil {
+			log.Error("unable to decode sig. err: ", err)
+			return nil, err
+		}
+	}
+	log.Info("returning sig")
+	return &sig, nil
 }
 
 func (c *clientSession) provideCertificate() {
 	if c.Counterparty == nil {
-		c.sender.Encode(Message{
+		c.out.Encode(Message{
 			Name:    MessageError,
 			Payload: []byte("No counterparty connected. Cannot get certificate"),
 		})
@@ -196,7 +232,7 @@ func (c *clientSession) provideCertificate() {
 		Name:    ResponseCertificate,
 		Payload: c.Counterparty.certificate.Serialize(),
 	}
-	err := c.sender.Encode(msg)
+	err := c.out.Encode(msg)
 	if err != nil {
 		log.Error("Error encoding provideCertificate reply: ", err)
 		return
@@ -204,11 +240,43 @@ func (c *clientSession) provideCertificate() {
 	return
 }
 
+//Start of alternate implementation using pairing map
+// func (c *clientSession) ConnectCard2Card(counterpartyID string) {
+// 	for {
+// 		if counterparty, ok := clientSessions[counterpartyID]; ok {
+// 			log.Info("counterparty found, connecting %v to %v", c.Name, counterparty)
+// 			//generate hash representing pairing
+// 			//TODO: make this more bulletproof, collisions are semi possible
+// 			var pairingData []byte
+// 			var p pairing
+// 			if c.Name < counterparty.Name {
+// 				pairingData = append([]byte(c.Name), []byte(counterparty.Name)...)
+// 				p = pairing{
+// 					initiator: c,
+// 					responder: counterparty,
+// 				}
+// 			} else {
+// 				pairingData = append([]byte(counterparty.Name), []byte(c.Name)...)
+// 				p = pairing{
+// 					initiator: counterparty,
+// 					responder: c,
+// 				}
+// 			}
+// 			pairingHash := sha256.Sum256(pairingData)
+// 			pairingID := string(pairingHash[:])
+// 			pairings[pairingID] = p
+
+// 		}
+// 		time.Sleep(250 * time.Millisecond)
+// 	}
+
+// }
+
 func (c *clientSession) ConnectCard2Card(msg Message) {
 	log.Infof("attempting to connect card %s to card %s\n", c.Name, string(msg.Payload))
 	counterparty, ok := clientSessions[string(msg.Payload)]
 	if !ok {
-		c.sender.Encode(Message{
+		c.out.Encode(Message{
 			Name:    MessageError,
 			Payload: []byte("No connected card"),
 		})
@@ -217,16 +285,17 @@ func (c *clientSession) ConnectCard2Card(msg Message) {
 	} else if counterparty.Counterparty == nil && c.Counterparty == nil {
 		counterparty.Counterparty = c
 		c.Counterparty = counterparty
-		c.sender.Encode(Message{
+		c.out.Encode(Message{
 			Name: MessageConnectedToCard,
 		})
-		c.Counterparty.sender.Encode(Message{
+		c.Counterparty.out.Encode(Message{
 			Name: MessageConnectedToCard,
 		})
+		log.Infof("Connected card %s to card %s\n", c.Name, c.Counterparty.Name)
 	} else if c.Counterparty == counterparty && counterparty.Counterparty == c {
 		//do nothing
 	} else {
-		c.sender.Encode(Message{
+		c.out.Encode(Message{
 			Name:    MessageError,
 			Payload: []byte("Unable to connect. Connection already satisfied"),
 		})
@@ -235,20 +304,27 @@ func (c *clientSession) ConnectCard2Card(msg Message) {
 
 func (c *clientSession) disconnectFromCard(msg Message) {
 	out := Message{
-		Name: MessageDisconnected,
+		Name: RequestDisconnectFromCard,
 	}
 	// encode can fail, so it needs to be checked. Not sure how to handle that
-	c.Counterparty.sender.Encode(out)
-	c.sender.Encode(out)
-	c.Counterparty.Counterparty = nil
+	if c.Counterparty != nil && c.Counterparty.out != nil {
+		c.Counterparty.out.Encode(out)
+	}
+	if c.out != nil {
+		c.out.Encode(out)
+	}
+	if c.Counterparty != nil {
+		c.Counterparty.Counterparty = nil
+	}
 	c.Counterparty = nil
 }
 
 func (c *clientSession) endSession(msg Message) {
-	if c.Counterparty != nil {
-		c.disconnectFromCard(msg)
+	c.disconnectFromCard(msg)
+	delete(clientSessions, c.Name)
+	if c.underlyingConn != nil {
+		c.underlyingConn.Close()
 	}
-	c.underlyingConn.Close()
 }
 
 func (c *clientSession) noop(msg Message) {
@@ -258,14 +334,14 @@ func (c *clientSession) noop(msg Message) {
 
 func (c *clientSession) passthrough(msg Message) {
 	if c.Counterparty == nil {
+		log.Debug("Passing through message to counterparty")
 		ret := Message{
 			Name: MessagePassthruFailed,
 		}
-		c.sender.Encode(ret)
-		return
+		c.out.Encode(ret)
+	} else {
+		c.Counterparty.out.Encode(msg)
 	}
-	c.Counterparty.sender.Encode(msg)
-	// needs error handling on the encoding
 }
 
 func (c *clientSession) RequestSendPhonon(msg Message) {

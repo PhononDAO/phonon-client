@@ -12,4 +12,17 @@ type CounterpartyPhononCard interface {
 	ReceivePhonons(phononTransfer []byte) error
 	GenerateInvoice() (invoiceData []byte, err error)
 	ReceiveInvoice(invoiceData []byte) error
+	VerifyPaired() error
+	PairingStatus() RemotePairingStatus
 }
+
+type RemotePairingStatus int
+
+const (
+	StatusUnconnected RemotePairingStatus = iota
+	StatusConnectedToBridge
+	StatusConnectedToCard
+	StatusPaired
+	StatusCardPair1Complete
+	StatusCardPair2Complete
+)

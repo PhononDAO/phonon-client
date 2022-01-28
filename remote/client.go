@@ -14,7 +14,9 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/session"
+	"github.com/GridPlus/phonon-client/util"
 	"github.com/posener/h2conn"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
@@ -22,7 +24,8 @@ import (
 
 type RemoteConnection struct {
 	conn                     *h2conn.Conn
-	encoder                  *gob.Encoder
+	out                      *gob.Encoder
+	in                       *gob.Decoder
 	remoteCertificate        *cert.CardCertificate
 	session                  *session.Session
 	identifiedWithServerChan chan bool
@@ -30,13 +33,14 @@ type RemoteConnection struct {
 	counterpartyNonce        [32]byte
 	verified                 bool
 	connectedToCardChan      chan bool
-	pairFinalized            bool
+	verifyPairedChan         chan string
 
 	//card pairing message channels
 	remoteCertificateChan    chan cert.CardCertificate
 	remoteIdentityChan       chan []byte
 	cardPair1DataChan        chan []byte
 	finalizeCardPairDataChan chan []byte
+	pairingStatus            model.RemotePairingStatus
 
 	phononAckChan chan bool
 }
@@ -51,12 +55,19 @@ func Connect(s *session.Session, url string, ignoreTLS bool) (*RemoteConnection,
 		},
 	}
 
-	conn, _, err := d.Connect(context.Background(), url) //url)
+	conn, resp, err := d.Connect(context.Background(), url) //url)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to connect to remote server %e,", err)
 	}
-	remoteConn := &RemoteConnection{
-		conn: conn,
+	if resp.StatusCode != http.StatusOK {
+		log.Error("received bad status from jumpbox. err: ", resp.Status)
+	}
+
+	client := &RemoteConnection{
+		session: s,
+		conn:    conn,
+		out:     gob.NewEncoder(conn),
+		in:      gob.NewDecoder(conn),
 		//initialize connection channels
 		connectedToCardChan:      make(chan bool, 1),
 		identifiedWithServerChan: make(chan bool, 1),
@@ -67,39 +78,56 @@ func Connect(s *session.Session, url string, ignoreTLS bool) (*RemoteConnection,
 		finalizeCardPairDataChan: make(chan []byte, 1),
 
 		phononAckChan: make(chan bool, 1),
+
+		pairingStatus: model.StatusConnectedToBridge,
 	}
 
-	go remoteConn.HandleIncoming()
-	remoteConn.encoder = gob.NewEncoder(conn)
-	remoteConn.session = s
-	return remoteConn, nil
+	//First send the client cert to kick off connection validation
+	if s.Cert == nil {
+		s.Cert, err = s.GetCertificate()
+		if err != nil {
+			log.Error("could not fetch certificate from card: ", err)
+			return nil, err
+		}
+	}
+	log.Debug("client has crt: ", s.Cert)
+	msg := Message{
+		Name:    ResponseCertificate,
+		Payload: s.Cert.Serialize(),
+	}
+	err = client.out.Encode(msg)
+	if err != nil {
+		log.Error("unable to send cert to jump server. err: ", err)
+		return nil, err
+	}
+
+	go client.HandleIncoming()
+
+	select {
+	case <-client.identifiedWithServerChan:
+	case <-time.After(time.Second * 10):
+		return nil, fmt.Errorf("Verification with server timed out")
+	}
+
+	client.pairingStatus = model.StatusConnectedToBridge
+	return client, nil
 }
 
-// memory leak ohh boy!
 func (c *RemoteConnection) HandleIncoming() {
-	cmdDecoder := gob.NewDecoder(c.conn)
-	messageChan := make(chan (Message))
-
-	go func(msgchan chan Message) {
-		defer close(msgchan)
-		for {
-			message := Message{}
-			//todo read raw and decode separately to avoid killing the whole thing on a malformed message
-			err := cmdDecoder.Decode(&message)
-			if err != nil {
-				log.Info("Error receiving message from connected server")
-				return
-			}
-			msgchan <- message
-		}
-	}(messageChan)
-
-	for message := range messageChan {
+	var err error
+	message := Message{}
+	err = c.in.Decode(&message)
+	for err == nil {
 		c.process(message)
+		message = Message{}
+		err = c.in.Decode(&message)
 	}
+	log.Printf("Error decoding message: %s", err.Error())
+	c.pairingStatus = model.StatusUnconnected
 }
 
 func (c *RemoteConnection) process(msg Message) {
+	log.Debug(fmt.Sprintf("Processing %s message", msg.Name))
 	switch msg.Name {
 	case RequestCertificate:
 		c.sendCertificate(msg)
@@ -116,6 +144,7 @@ func (c *RemoteConnection) process(msg Message) {
 		c.identifiedWithServer = true
 	case MessageConnectedToCard:
 		c.connectedToCardChan <- true
+		c.pairingStatus = model.StatusConnectedToCard
 	// Card pairing requests and responses
 	case RequestCardPair1:
 		c.processCardPair1(msg)
@@ -129,6 +158,16 @@ func (c *RemoteConnection) process(msg Message) {
 		c.phononAckChan <- true
 	case RequestReceivePhonon:
 		c.processReceivePhonons(msg)
+	case RequestVerifyPaired:
+		c.processRequestVerifyPaired(msg)
+	case MessageDisconnected:
+		c.disconnect()
+	case RequestDisconnectFromCard:
+		c.disconnectFromCard()
+	case ResponseVerifyPaired:
+		if c.verifyPairedChan != nil {
+			c.verifyPairedChan <- string(msg.Payload)
+		}
 	}
 }
 
@@ -173,15 +212,25 @@ func (c *RemoteConnection) processIdentify(msg Message) {
 }
 
 func (c *RemoteConnection) processCardPair1(msg Message) {
+	if c.pairingStatus != model.StatusConnectedToCard {
+		log.Error("Card either not connected to a card or already paired")
+		return
+	}
 	cardPairData, err := c.session.CardPair(msg.Payload)
 	if err != nil {
 		log.Error("error with card pair 1", err.Error())
+		return
 	}
+	c.pairingStatus = model.StatusCardPair1Complete
 	c.sendMessage(ResponseCardPair1, cardPairData)
 
 }
 
 func (c *RemoteConnection) processFinalizeCardPair(msg Message) {
+	if c.pairingStatus != model.StatusCardPair1Complete {
+		log.Error("Unable to pair. Step one not complete")
+		return
+	}
 	err := c.session.FinalizeCardPair(msg.Payload)
 	if err != nil {
 		log.Error("Error finalizing Card Pair", err.Error())
@@ -189,12 +238,13 @@ func (c *RemoteConnection) processFinalizeCardPair(msg Message) {
 		return
 	}
 	c.sendMessage(ResponseFinalizeCardPair, []byte{})
-	c.pairFinalized = true
+	c.pairingStatus = model.StatusPaired
 	c.session.RemoteCard = c
 	//c.finalizeCardPairErrorChan <- err
 }
 
 func (c *RemoteConnection) processReceivePhonons(msg Message) {
+	// would check for status to be paired, but for replayability, I'm not entirely sure this is necessary
 	err := c.session.ReceivePhonons(msg.Payload)
 	if err != nil {
 		log.Error(err.Error())
@@ -232,6 +282,7 @@ func (c *RemoteConnection) Identify() error {
 }
 
 func (c *RemoteConnection) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
+	log.Debug("card pair initiated")
 	c.sendMessage(RequestCardPair1, initPairingData)
 	select {
 	case cardPairData := <-c.cardPair1DataChan:
@@ -248,7 +299,7 @@ func (c *RemoteConnection) CardPair2(cardPairData []byte) (cardPairData2 []byte,
 
 func (c *RemoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 	c.sendMessage(RequestFinalizeCardPair, cardPair2Data)
-	if !c.pairFinalized {
+	if !(c.pairingStatus == model.StatusPaired) {
 		select {
 		case errorbytes := <-c.finalizeCardPairDataChan:
 			var err error
@@ -261,7 +312,7 @@ func (c *RemoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 			return ErrTimeout
 		}
 	}
-	c.pairFinalized = true
+	c.pairingStatus = model.StatusPaired
 	c.session.RemoteCard = c
 	return nil
 }
@@ -281,24 +332,24 @@ func (c *RemoteConnection) GetCertificate() (*cert.CardCertificate, error) {
 }
 
 func (c *RemoteConnection) ConnectToCard(cardID string) error {
-	if !c.identifiedWithServer {
-		select {
-		case <-time.After(10 * time.Second):
-			return ErrTimeout
-		case <-c.identifiedWithServerChan:
-			log.Info("received Identified with server")
-		}
-	}
 	log.Info("sending requestConnectCard2Card message")
 	c.sendMessage(RequestConnectCard2Card, []byte(cardID))
+	var err error
 	select {
 	case <-time.After(10 * time.Second):
 		log.Error("Connection Timed out Waiting for peer")
 		c.conn.Close()
-		return ErrTimeout
+		err = ErrTimeout
 	case <-c.connectedToCardChan:
-		return nil
+		c.pairingStatus = model.StatusConnectedToCard
+		err = nil
 	}
+	cert, err := c.GetCertificate()
+	if err != nil {
+		return err
+	}
+	c.remoteCertificate = cert
+	return nil
 }
 
 func (c *RemoteConnection) ReceivePhonons(PhononTransfer []byte) error {
@@ -330,6 +381,59 @@ func (c *RemoteConnection) sendMessage(messageName string, messagePayload []byte
 		Name:    messageName,
 		Payload: messagePayload,
 	}
+	c.out.Encode(tosend)
+}
 
-	c.encoder.Encode(tosend)
+func (c *RemoteConnection) VerifyPaired() error {
+	tosend := &Message{
+		Name:    RequestVerifyPaired,
+		Payload: []byte(""),
+	}
+	c.verifyPairedChan = make(chan string)
+	c.out.Encode(tosend)
+
+	var connectedCardID string
+	select {
+	case connectedCardID = <-c.verifyPairedChan:
+	case <-time.After(10 * time.Second):
+		return fmt.Errorf("counterparty card not paired to this card")
+	}
+	c.verifyPairedChan = nil
+
+	var err error
+	if connectedCardID != c.session.GetName(){
+		//remote isn't paired to this card
+		err = c.session.PairWithRemoteCard(c)
+	}
+	return err
+}
+
+func (c *RemoteConnection) processRequestVerifyPaired(msg Message) {
+	tosend := &Message{
+		Name: ResponseVerifyPaired,
+	}
+	if c.pairingStatus == model.StatusPaired {
+		key, err := util.ParseECCPubKey(c.remoteCertificate.PubKey)
+		if err != nil {
+			//oopsie
+			return
+		}
+		msg := util.CardIDFromPubKey(key)
+		tosend.Payload = []byte(msg)
+	}
+	c.out.Encode(tosend)
+}
+
+func (c *RemoteConnection) PairingStatus() model.RemotePairingStatus {
+	return c.pairingStatus
+}
+
+func (c *RemoteConnection) disconnect() {
+	c.pairingStatus = model.StatusUnconnected
+	c.session.SetPaired(false)
+}
+
+func (c *RemoteConnection) disconnectFromCard() {
+	c.pairingStatus = model.StatusConnectedToBridge
+	c.session.SetPaired(false)
 }

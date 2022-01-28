@@ -27,6 +27,8 @@ var (
 	MessagePhononAck          = "AckPhonon"
 
 	// Client to client commands
+	RequestVerifyPaired      = "VerifyPairing"
+	ResponseVerifyPaired     = "VerifyPairingRespnose"
 	RequestCardPair1         = "CardPair1"
 	ResponseCardPair1        = "CardPair1Response"
 	RequestCardPair2         = "CardPair2"

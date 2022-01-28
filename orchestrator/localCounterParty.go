@@ -1,17 +1,23 @@
 package orchestrator
 
 import (
+	"fmt"
+
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/session"
+
+	"github.com/GridPlus/phonon-client/model"
 )
 
 type localCounterParty struct {
-	s *session.Session
+	s             *session.Session
+	pairingStatus model.RemotePairingStatus
 }
 
 func NewLocalCounterParty(session *session.Session) *localCounterParty {
 	return &localCounterParty{
-		s: session,
+		s:             session,
+		pairingStatus: model.StatusConnectedToCard,
 	}
 }
 
@@ -28,6 +34,7 @@ func (lcp *localCounterParty) CardPair2(cardPairData []byte) (cardPairData2 []by
 }
 
 func (lcp *localCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
+	lcp.pairingStatus = model.StatusPaired
 	return lcp.s.FinalizeCardPair(cardPair2Data)
 }
 
@@ -45,4 +52,16 @@ func (lcp *localCounterParty) GenerateInvoice() (invoiceData []byte, err error) 
 
 func (lcp *localCounterParty) ReceiveInvoice(invoiceData []byte) error {
 	return lcp.s.ReceiveInvoice(invoiceData)
+}
+
+func (lcp *localCounterParty) VerifyPaired() error {
+	if lcp.pairingStatus == model.StatusPaired {
+		return nil
+	} else {
+		return fmt.Errorf("Not paired to local counterparty")
+	}
+}
+
+func (lcp *localCounterParty) PairingStatus() model.RemotePairingStatus {
+	return lcp.pairingStatus
 }

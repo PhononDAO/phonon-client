@@ -1,7 +1,16 @@
+[![Phonon Logo](./assets/logo.svg)](https://phonon.network)
+![Mozilla Public 2.0 License](https://img.shields.io/badge/license-MozillaPublic2.0-green) 
+![Go Programming Language](https://img.shields.io/badge/Go-00ADD8?style=flat&logo=go&logoColor=white)
+
+# Come see us
+[![Reddit](https://img.shields.io/badge/Reddit-FF4500?style=flat&logo=reddit&logoColor=white)](https://reddit.com/r/PhononDAO)
+[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=flat&logo=twitter&logoColor=white)](https://twitter.com/PhononDAO)
+
+[![Discord](https://img.shields.io/badge/Discord-7289DA?style=flat&logo=discord&logoColor=white)](https://discord.gg/RNQtyBaKMH)[![Discord](https://img.shields.io/discord/921799167779672064?labelColor=5b209a)](https://discord.gg/RNQtyBaKMH)
 # Phonon-client Alpha
 phonon-client is a library, user interface, and set of utilities for interacting with phonon cards and the phonon network as a whole.
-
 This library can be cloned and used directly, or prebuilt binaries are available for the latest master under the releases page.
+
 # Usage
 This client can be used in multiple ways depending on your goals.
 

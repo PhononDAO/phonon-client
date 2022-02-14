@@ -5,3 +5,4 @@ localCerts/
 apdu.log
 gui/frontend/build/*
 androidSDK/
+release/MacOS/Phonon.app/Contents/MacOS/phonon

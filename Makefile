@@ -26,3 +26,6 @@ android-sdk:
 	mkdir -p androidSDK/
 	cd session && gomobile bind  -target android -o ../androidSDK/phononAndroid.aar
 
+release-mac: build
+	cp phonon ./release/MacOS/Phonon.app/Contents/MacOS/phonon
+	

@@ -3,6 +3,7 @@ package model
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,23 +22,29 @@ type Phonon struct {
 	Denomination          Denomination
 	CurrencyType          CurrencyType
 	ExtendedTLV           []tlv.TLV
+	Address               string //chain specific attribute not stored on card
+	AddressType           uint8  //chain specific address type identifier
 }
 
 func (p *Phonon) String() string {
-	return fmt.Sprintf("KeyIndex: %v\nDenomination: %v\ncurrencyType: %v\nPubKey: %v\nCurveType: %v\nSchemaVersion: %v\nExtendedSchemaVersion: %v\nExtendedTLV: %v\n",
+	return fmt.Sprintf("KeyIndex: %v\nDenomination: %v\ncurrencyType: %v\nPubKey: %v\nAddress: %v\nCurveType: %v\nSchemaVersion: %v\nExtendedSchemaVersion: %v\nExtendedTLV: %v\n",
 		p.KeyIndex,
 		p.Denomination,
 		p.CurrencyType,
 		util.ECCPubKeyToHexString(p.PubKey),
+		p.Address,
 		p.CurveType,
 		p.SchemaVersion,
 		p.ExtendedSchemaVersion,
 		p.ExtendedTLV)
 }
 
-type UserRequestedPhonon struct {
+//Phonon data structured for display to the user an
+type PhononJSON struct {
 	KeyIndex              uint16
 	PubKey                string //pubkey as hexstring
+	Address               string //Chain specific address as hexstring
+	AddressType           uint8
 	SchemaVersion         uint8
 	ExtendedSchemaVersion uint8
 	Denomination          int
@@ -45,10 +52,43 @@ type UserRequestedPhonon struct {
 	//TODO extendedTLV
 }
 
+//Unmarshals a PhononUserView into an internal phonon representation
+func (p *Phonon) UnmarshalJSON(b []byte) error {
+	phuv := PhononJSON{}
+	err := json.Unmarshal(b, &phuv)
+	if err != nil {
+		return err
+	}
+	p.KeyIndex = phuv.KeyIndex
+	//Convert hexstring pubkey to *ecdsa.PublicKey
+	pubKeyBytes, err := hex.DecodeString(phuv.PubKey)
+	if err != nil {
+		return err
+	}
+	p.PubKey, err = util.ParseECCPubKey(pubKeyBytes)
+	if err != nil {
+		return err
+	}
+
+	p.Address = phuv.Address
+	p.AddressType = phuv.AddressType
+	p.SchemaVersion = phuv.SchemaVersion
+	p.ExtendedSchemaVersion = phuv.ExtendedSchemaVersion
+	//Convert int to model.Denomination
+	p.Denomination, err = NewDenomination(phuv.Denomination)
+	if err != nil {
+		return err
+	}
+	p.CurrencyType = CurrencyType(phuv.CurrencyType)
+
+	return nil
+}
+
 func (p *Phonon) MarshalJSON() ([]byte, error) {
-	userReqPhonon := &UserRequestedPhonon{
+	userReqPhonon := &PhononJSON{
 		KeyIndex:              p.KeyIndex,
 		PubKey:                util.ECCPubKeyToHexString(p.PubKey),
+		Address:               p.Address,
 		SchemaVersion:         p.SchemaVersion,
 		ExtendedSchemaVersion: p.ExtendedSchemaVersion,
 		Denomination:          p.Denomination.Value(),

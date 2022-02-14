@@ -64,12 +64,14 @@ func createPhonon(n int) {
 		return
 	}
 	for i := 0; i < n; i++ {
-		keyIndex, pubKey, err := cs.CreatePhonon(model.Secp256k1)
+		p := &model.Phonon{}
+		p.KeyIndex, p.PubKey, err = cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			fmt.Println("error creating phonon")
 			fmt.Println(err)
 			return
 		}
-		fmt.Printf("created phonon with keyIndex %v and pubKey % X\n", keyIndex, append(pubKey.X.Bytes(), pubKey.Y.Bytes()...))
+		fmt.Println("created phonon:\n", p)
+		// fmt.Printf("created phonon with keyIndex %v and pubKey % X\n", keyIndex, append(pubKey.X.Bytes(), pubKey.Y.Bytes()...))
 	}
 }

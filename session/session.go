@@ -6,6 +6,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/chain"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
 
@@ -60,7 +61,6 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 
 func (s *Session) SetPaired(status bool) {
 }
-
 
 func (s *Session) GetName() string {
 	if s.Cert == nil {
@@ -318,3 +318,93 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 	s.RemoteCard = remoteCard
 	return nil
 }
+
+/*InitDepositPhonons takes a currencyType and a map of denominations to quantity,
+Creates the required phonons, deposits them using the configured service for the asset
+and upon success sets their descriptors*/
+func (s *Session) InitDepositPhonons(currencyType model.CurrencyType, denoms []model.Denomination) (phonons []*model.Phonon, err error) {
+	log.Debugf("running InitDepositPhonons with data: %v, %v\n", currencyType, denoms)
+	if !s.verified() {
+		return nil, card.ErrPINNotEntered
+	}
+	for _, denom := range denoms {
+		p := &model.Phonon{}
+		p.KeyIndex, p.PubKey, err = s.CreatePhonon()
+		log.Debug("ran CreatePhonons in InitDepositLoop")
+		if err != nil {
+			log.Error("failed to create phonon for deposit: ", err)
+			return nil, err
+		}
+		p.Denomination = denom
+		p.CurrencyType = currencyType
+		p.Address, err = chain.DeriveAddress(p)
+		if err != nil {
+			log.Error("failed to derive address for phonon deposit: ", err)
+			return nil, err
+		}
+
+		phonons = append(phonons, p)
+	}
+	return phonons, nil
+}
+
+type DepositConfirmation struct {
+	Phonon           *model.Phonon
+	ConfirmedOnChain bool
+	ConfirmedOnCard  bool
+}
+
+func (s *Session) FinalizeDepositPhonons(confirmations []DepositConfirmation) ([]DepositConfirmation, error) {
+	log.Debug("running finalizeDepositPhonon")
+	if !s.verified() {
+		return nil, card.ErrPINNotEntered
+	}
+	var lastErr error
+	for _, v := range confirmations {
+		err := s.FinalizeDepositPhonon(v)
+		if err != nil {
+			lastErr = err
+			v.ConfirmedOnCard = false
+		} else {
+			v.ConfirmedOnCard = true
+		}
+	}
+	return confirmations, lastErr
+}
+
+func (s *Session) FinalizeDepositPhonon(dc DepositConfirmation) error {
+	if dc.ConfirmedOnChain {
+		err := s.SetDescriptor(dc.Phonon)
+		if err != nil {
+			log.Error("unable to finalize deposit by setting descriptor for phonon: ", dc.Phonon)
+			return err
+		}
+	} else {
+		_, err := s.DestroyPhonon(dc.Phonon.KeyIndex)
+		if err != nil {
+			log.Error("unable to clean up deposit failure by destroying phonon: ", dc.Phonon)
+		}
+	}
+	return nil
+}
+
+//Check outcome of above somehow
+// 	if err != nil {
+// 		//If deposit fails, cleanup phonons that weren't able to be encumbered on chain
+// 		for _, p := range phonons {
+// 			_, err := s.DestroyPhonon(p.KeyIndex)
+// 			if err != nil {
+// 				log.Error("unable to destroy unconfirmed phonon at KeyIndex %v. err: ", p.KeyIndex, err)
+// 			}
+// 		}
+// 		return nil, err
+// 	}
+// 	for _, p := range phonons {
+// 		err = s.SetDescriptor(p)
+// 		if err != nil {
+// 			//TODO: work out what to do in the event that only some descriptors fail
+// 			log.Error("unable to set descriptor on deposited phonon at KeyIndex: %v. err: ", p.KeyIndex, err)
+// 		}
+// 	}
+// 	return phonons, nil
+// }

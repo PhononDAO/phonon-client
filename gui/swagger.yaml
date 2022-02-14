@@ -114,7 +114,7 @@ paths:
       name: sessionID
       type: string
       description: sessionID of connected card
-      
+
   /cards/{sessionID}/phonon/{phononIndex}/setDescriptor:
     post:
       tags:
@@ -214,3 +214,113 @@ paths:
       name: phononIndex
       type: string
       description: index of phonon to redeem
+  /cards/{sessionID}/phonon/initDeposit:
+    post:
+      tags:
+      - "phonons"
+      summary: "initiate a new phonon deposit by creating raw phonons and retrieving their keyIndices, denominations, and addresses"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        "404":
+          description: "status not found"
+        "400":
+          description: "could not parse request"
+        "500":
+          description: "could not create necessary phonons"
+        "200":
+          description: "phonons created"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Phonon"
+    parameters:
+    - in: "path"
+      required: true
+      name: sessionID
+      type: string
+      description: "sessionID of connected card"
+    - in: "body"
+      name: "body"
+      description: "phonon currencyType and list of denominations to be created"
+      required: true
+      schema:
+        $ref: "#/definitions/DepositRequest"
+  /cards/{sessionID}/phonon/finalizeDeposit:
+    post:
+      tags:
+      - "phonons"
+      summary: "finalize a phonon deposit by confirming success or failure of on chain deposit transaction"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        "404":
+          description: "status not found"
+        "400":
+          description: "could not parse request"
+        "500":
+          description: "failed to finalize deposit"
+        "200":
+          description: "deposit finalized"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/DepositConfirmation"
+      parameters:
+      - in: "path"
+        required: true
+        name: sessionID
+        type: string
+        description: "sessionID of connected card"
+      - in: "body"
+        name: "body"
+        description: "phonons to be finalized along with status of on chain deposit transaction"
+        required: true
+        schema:
+          type: "array"
+          items:
+            $ref: "#/definitions/DepositConfirmation"
+
+definitions:
+  Phonon:
+    type: object
+    properties:
+      KeyIndex:
+        type: "integer"
+      PubKey:
+        type: "string"
+      Address:
+        type: "string"
+      AddressType:
+        type: "integer"
+      SchemaVersion:
+        type: "integer"
+      ExtendedSchemaVersion:
+        type: "integer"
+      Denomination:
+        type: "integer"
+      CurrencyType:
+        type: "integer"
+  DepositRequest:
+    type: object
+    properties:
+      CurrencyType:
+        type: "integer"
+      Denominations:
+        type: "array"
+        items:
+          type: "integer"
+  DepositConfirmation:
+    type: object
+    properties:
+      Phonon:
+        $ref: "#/definitions/Phonon"
+      ConfirmedOnChain:
+        type: "boolean"
+      ConfirmedOnCard:
+        type: "boolean"
+

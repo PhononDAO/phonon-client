@@ -67,6 +67,8 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/send", session.send)
 	r.HandleFunc("/cards/{sessionID}/phonon/create", session.createPhonon)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/redeem", session.redeemPhonon)
+	r.HandleFunc("/cards/{sessionID}/phonon/initDeposit", session.initDepositPhonons)
+	r.HandleFunc("/cards/{sessionID}/phonon/finalizeDeposit", session.finalizeDepositPhonons)
 	// api docs
 	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/", http.FileServer(http.FS(swagger))))
 	r.HandleFunc("/swagger.json", serveAPIFunc(port))
@@ -106,6 +108,82 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 		PubKey string `json:"pubkey"`
 	}{Index: index,
 		PubKey: pub})
+}
+
+func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	var depositPhononReq struct {
+		CurrencyType  model.CurrencyType
+		Denominations []int
+	}
+	err = json.NewDecoder(r.Body).Decode(&depositPhononReq)
+	if err != nil {
+		log.Error("unable to decode initDeposit request")
+		return
+	}
+	var denoms []model.Denomination
+	for _, i := range depositPhononReq.Denominations {
+		d, err := model.NewDenomination(i)
+		if err != nil {
+			log.Error("error converting integer denomination request to denomination. err: ", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		denoms = append(denoms, d)
+	}
+	log.Debug("depositPhononReq: ", depositPhononReq)
+	log.Debug("denoms: ", denoms)
+	phonons, err := sess.InitDepositPhonons(depositPhononReq.CurrencyType, denoms)
+	if err != nil {
+		log.Error("unable to create phonons for deposit. err: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	enc := json.NewEncoder(w)
+	err = enc.Encode(phonons)
+	if err != nil {
+		log.Error("unable to encode outgoing depositPhonons response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (apiSession apiSession) finalizeDepositPhonons(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	var depositConfirmations []session.DepositConfirmation
+	err = json.NewDecoder(r.Body).Decode(&depositConfirmations)
+	if err != nil {
+		log.Error("unable to decode depositConfirmations json. err: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ret, err := sess.FinalizeDepositPhonons(depositConfirmations)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	enc := json.NewEncoder(w)
+	err = enc.Encode(ret)
+	if err != nil {
+		log.Error("unable to encode outgoing deposit confirmation response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func serveapi(w http.ResponseWriter, r *http.Request) {
+	http.ServeContent(w, r, "swagger.json", time.Time{}, bytes.NewReader(swaggeryaml))
 }
 
 func serveAPIFunc(port string) func(w http.ResponseWriter, r *http.Request) {
@@ -346,7 +424,7 @@ func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*session.S
 	sessionName, ok := p["sessionID"]
 	if !ok {
 		fmt.Println("unable to find session")
-		return nil, fmt.Errorf("Unable to find sesion")
+		return nil, fmt.Errorf("unable to find sesion")
 	}
 	sessions := apiSession.t.ListSessions()
 	var targetSession *session.Session
@@ -357,7 +435,7 @@ func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*session.S
 		}
 	}
 	if targetSession == nil {
-		return nil, fmt.Errorf("Unable to find sesion")
+		return nil, fmt.Errorf("unable to find sesion")
 	}
 	return targetSession, nil
 }

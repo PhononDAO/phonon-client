@@ -1,0 +1,2 @@
+#!/bin/bash 
+exec "${0%/*}/phonon" webUI -p 8080 -m

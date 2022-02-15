@@ -15,6 +15,7 @@ import (
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/GridPlus/phonon-client/session"
 	"github.com/GridPlus/phonon-client/util"
+	"github.com/getlantern/systray"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
@@ -25,6 +26,12 @@ var swaggeryaml []byte
 
 //go:embed swagger
 var swagger embed.FS
+
+//go:embed icons/phonon.png
+var phononLogo []byte
+
+//go:embed icons/x.png
+var xIcon []byte
 
 type apiSession struct {
 	t orchestrator.PhononTerminal
@@ -75,18 +82,37 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 
 	http.Handle("/", r)
 	log.Debug("Listening for incoming connections on " + port)
-	if certFile != "" && keyFile != "" {
-		err := http.ListenAndServeTLS(":"+port, certFile, keyFile, handler)
-		if err != nil {
-			log.Fatal("could not start GUI REST server on SSL: ", err)
-		}
-	} else {
-		err := http.ListenAndServe(":"+port, handler)
-		if err != nil {
-			log.Fatal("could not start GUI REST server", err)
-		}
-	}
 
+	go func() {
+		if certFile != "" && keyFile != "" {
+			err := http.ListenAndServeTLS(":"+port, certFile, keyFile, handler)
+			if err != nil {
+				log.Fatal("could not start GUI REST server on SSL: ", err)
+			}
+		} else {
+			err := http.ListenAndServe(":"+port, handler)
+			if err != nil {
+				log.Fatal("could not start GUI REST server", err)
+			}
+		}
+	}()
+	systray.Run(onReady, onExit)
+}
+
+func onReady() {
+	systray.SetIcon(phononLogo)
+	systray.SetTitle("")
+	systray.SetTooltip("Phonon UI backend is currently running")
+	mQuit := systray.AddMenuItem("Quit", "Exit PhononUI")
+	mQuit.SetIcon(xIcon)
+	go func() {
+		<-mQuit.ClickedCh
+		systray.Quit()
+	}()
+}
+
+func onExit() {
+	log.Println("Server killed by systray interaction")
 }
 
 func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request) {

@@ -37,8 +37,18 @@ type apiSession struct {
 	t orchestrator.PhononTerminal
 }
 
+type sessionCache struct {
+	// scandalous! a pointer to a bool! that's using 8 times more space than necessary
+	cachePopulated bool
+	phonons        map[uint16]*model.Phonon
+}
+
+var cache map[string]*sessionCache
+
 func Server(port string, certFile string, keyFile string, mock bool) {
 	session := apiSession{}
+	//initialize cache map
+	cache = make(map[string]*sessionCache)
 	if mock {
 		//Start server with a mock and ignore actual cards
 		err := session.t.GenerateMock()
@@ -47,10 +57,23 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 			log.Error("unable to generate mock during REST server startup: ", err)
 			return
 		}
+		//will only be one
+		for _, sess := range session.t.ListSessions() {
+			cache[sess.GetName()] = &sessionCache{
+				phonons:        make(map[uint16]*model.Phonon),
+				cachePopulated: false,
+			}
+		}
 	} else {
-		_, err := session.t.RefreshSessions()
+		sessions, err := session.t.RefreshSessions()
 		if err != nil {
 			log.Error("unable to refresh card sessions during REST server startup: ", err)
+		}
+		for _, session := range sessions {
+			cache[session.GetName()] = &sessionCache{
+				phonons:        make(map[uint16]*model.Phonon),
+				cachePopulated: false,
+			}
 		}
 	}
 	r := mux.NewRouter()
@@ -128,6 +151,12 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 		return
 	}
 	pub := util.ECCPubKeyToHexString(pubkey)
+
+	cache[sess.GetName()].phonons[index] = &model.Phonon{
+		KeyIndex: index,
+		PubKey:   pubkey,
+	}
+
 	enc := json.NewEncoder(w)
 	enc.Encode(struct {
 		Index  uint16 `json:"index"`
@@ -169,6 +198,11 @@ func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	for _, phonon := range phonons {
+		cache[sess.GetName()].phonons[phonon.KeyIndex] = phonon
+	}
+
 	enc := json.NewEncoder(w)
 	err = enc.Encode(phonons)
 	if err != nil {
@@ -199,6 +233,11 @@ func (apiSession apiSession) finalizeDepositPhonons(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	for _, r := range ret {
+		cache[sess.GetName()].phonons[r.Phonon.KeyIndex] = r.Phonon
+	}
+
 	enc := json.NewEncoder(w)
 	err = enc.Encode(ret)
 	if err != nil {
@@ -206,10 +245,6 @@ func (apiSession apiSession) finalizeDepositPhonons(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func serveapi(w http.ResponseWriter, r *http.Request) {
-	http.ServeContent(w, r, "swagger.json", time.Time{}, bytes.NewReader(swaggeryaml))
 }
 
 func serveAPIFunc(port string) func(w http.ResponseWriter, r *http.Request) {
@@ -231,7 +266,6 @@ func serveAPIFunc(port string) func(w http.ResponseWriter, r *http.Request) {
 
 func (apiSession apiSession) listSessions(w http.ResponseWriter, r *http.Request) {
 	sessions := apiSession.t.ListSessions()
-
 	names := []string{}
 	if len(sessions) == 0 {
 		http.Error(w, "no cards found", http.StatusNotFound)
@@ -314,19 +348,32 @@ func (apiSession apiSession) listPhonons(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	phonons, err := sess.ListPhonons(0, 0, 0)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	for _, p := range phonons {
-		p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex)
+
+	phonons := []*model.Phonon{}
+	if cache[sess.GetName()].cachePopulated {
+		phonons = []*model.Phonon{}
+		for _, phonon := range cache[sess.GetName()].phonons {
+			phonons = append(phonons, phonon)
+		}
+	} else {
+		phonons, err = sess.ListPhonons(0, 0, 0)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	}
 
+		for _, p := range phonons {
+			p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		for _, phonon := range phonons {
+			cache[sess.GetName()].phonons[phonon.KeyIndex] = phonon
+		}
+		cache[sess.GetName()].cachePopulated = true
+	}
 	enc := json.NewEncoder(w)
 	err = enc.Encode(phonons)
 	if err != nil {
@@ -375,7 +422,7 @@ func (apiSession apiSession) setDescriptor(w http.ResponseWriter, r *http.Reques
 		CurrencyType: model.CurrencyType(inputs.CurrencyType),
 	}
 	p.KeyIndex = uint16(index)
-
+	cache[sess.GetName()].phonons[p.KeyIndex] = p
 	err = sess.SetDescriptor(p)
 	if err != nil {
 		http.Error(w, "Unable to set descriptor", http.StatusBadRequest)
@@ -400,7 +447,10 @@ func (apiSession apiSession) send(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to convert index to int:"+err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	err = sess.SendPhonons([]uint16{uint16(index)})
+	delete(cache[sess.GetName()].phonons, uint16(index))
+
 	if err != nil {
 		http.Error(w, "unable to send phonons: "+err.Error(), http.StatusInternalServerError)
 	}
@@ -431,6 +481,7 @@ func (apiSession apiSession) redeemPhonon(w http.ResponseWriter, r *http.Request
 	ret := struct {
 		PrivateKey string `json:"privateKey"`
 	}{PrivateKey: fmt.Sprintf("%x", privkey.D)}
+	delete(cache[sess.GetName()].phonons, uint16(index))
 	enc := json.NewEncoder(w)
 	err = enc.Encode(ret)
 	if err != nil {

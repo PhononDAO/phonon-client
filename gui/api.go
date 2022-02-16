@@ -38,7 +38,6 @@ type apiSession struct {
 }
 
 type sessionCache struct {
-	// scandalous! a pointer to a bool! that's using 8 times more space than necessary
 	cachePopulated bool
 	phonons        map[uint16]*model.Phonon
 }

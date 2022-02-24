@@ -421,12 +421,12 @@ func (apiSession apiSession) setDescriptor(w http.ResponseWriter, r *http.Reques
 		CurrencyType: model.CurrencyType(inputs.CurrencyType),
 	}
 	p.KeyIndex = uint16(index)
-	cache[sess.GetName()].phonons[p.KeyIndex] = p
 	err = sess.SetDescriptor(p)
 	if err != nil {
 		http.Error(w, "Unable to set descriptor", http.StatusBadRequest)
 		return
 	}
+	cache[sess.GetName()].phonons[p.KeyIndex] = p
 }
 
 func (apiSession apiSession) send(w http.ResponseWriter, r *http.Request) {
@@ -448,11 +448,12 @@ func (apiSession apiSession) send(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = sess.SendPhonons([]uint16{uint16(index)})
-	delete(cache[sess.GetName()].phonons, uint16(index))
 
 	if err != nil {
 		http.Error(w, "unable to send phonons: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
+	delete(cache[sess.GetName()].phonons, uint16(index))
 }
 
 func (apiSession apiSession) redeemPhonon(w http.ResponseWriter, r *http.Request) {

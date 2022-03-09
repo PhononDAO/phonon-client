@@ -13,7 +13,6 @@ import (
 
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/session"
 	"github.com/GridPlus/phonon-client/util"
 	"github.com/getlantern/systray"
 	"github.com/gorilla/mux"
@@ -98,6 +97,8 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/redeem", session.redeemPhonon)
 	r.HandleFunc("/cards/{sessionID}/phonon/initDeposit", session.initDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/finalizeDeposit", session.finalizeDepositPhonons)
+	r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
+	r.HandleFunc("/cards/{sessionID}/connectLocal", session.ConnectLocal)
 	// api docs
 	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/", http.FileServer(http.FS(swagger))))
 	r.HandleFunc("/swagger.json", serveAPIFunc(port))
@@ -218,8 +219,7 @@ func (apiSession apiSession) finalizeDepositPhonons(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-
-	var depositConfirmations []session.DepositConfirmation
+	var depositConfirmations []orchestrator.DepositConfirmation
 	err = json.NewDecoder(r.Body).Decode(&depositConfirmations)
 	if err != nil {
 		log.Error("unable to decode depositConfirmations json. err: ", err)
@@ -304,6 +304,46 @@ func (apiSession apiSession) unlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+func (apiSession apiSession) ConnectRemote(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Unable to read body", http.StatusBadRequest)
+		return
+	}
+	ConnectionReq := struct {
+		URL string `json:"url"`
+	}{}
+	err = json.Unmarshal(body, &ConnectionReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = sess.ConnectToRemoteProvider(ConnectionReq.URL)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func (apiSession apiSession) ConnectLocal(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	err = sess.ConnectToLocalProvider()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
 
 func (apiSession apiSession) pair(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -318,14 +358,16 @@ func (apiSession apiSession) pair(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pairReq := struct {
-		URL string `json:"url"`
-	}{}
+		CardID string `json:"cardID"`
+	}{
+		CardID: "",
+	}
 	err = json.Unmarshal(body, &pairReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = apiSession.t.ConnectRemoteSession(sess, pairReq.URL)
+	err = sess.ConnectToCounterparty(pairReq.CardID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -497,14 +539,14 @@ func (apiSession apiSession) generatemock(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*session.Session, error) {
+func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestrator.Session, error) {
 	sessionName, ok := p["sessionID"]
 	if !ok {
 		fmt.Println("unable to find session")
 		return nil, fmt.Errorf("unable to find sesion")
 	}
 	sessions := apiSession.t.ListSessions()
-	var targetSession *session.Session
+	var targetSession *orchestrator.Session
 	for _, session := range sessions {
 		if session.GetName() == sessionName {
 			targetSession = session

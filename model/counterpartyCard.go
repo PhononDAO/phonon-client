@@ -14,6 +14,7 @@ type CounterpartyPhononCard interface {
 	ReceiveInvoice(invoiceData []byte) error
 	VerifyPaired() error
 	PairingStatus() RemotePairingStatus
+	ConnectToCard(string) error
 }
 
 type RemotePairingStatus int

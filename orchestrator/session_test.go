@@ -1,4 +1,4 @@
-package session
+package orchestrator
 
 import (
 	"testing"

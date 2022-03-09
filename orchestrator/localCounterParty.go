@@ -4,17 +4,15 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/cert"
-	"github.com/GridPlus/phonon-client/session"
-
 	"github.com/GridPlus/phonon-client/model"
 )
 
 type localCounterParty struct {
-	s             *session.Session
+	s             *Session
 	pairingStatus model.RemotePairingStatus
 }
 
-func NewLocalCounterParty(session *session.Session) *localCounterParty {
+func NewLocalCounterParty(session *Session) *localCounterParty {
 	return &localCounterParty{
 		s:             session,
 		pairingStatus: model.StatusConnectedToCard,
@@ -64,4 +62,9 @@ func (lcp *localCounterParty) VerifyPaired() error {
 
 func (lcp *localCounterParty) PairingStatus() model.RemotePairingStatus {
 	return lcp.pairingStatus
+}
+
+func (lcp *localCounterParty) ConnectToCard(string) error {
+	//todo: complete this function and add another for connecting to the lcp provider
+	return nil
 }

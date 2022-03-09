@@ -21,7 +21,6 @@ import (
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/session"
 
 	"github.com/spf13/cobra"
 )
@@ -67,7 +66,7 @@ func init() {
 func PairCardToCard() {
 	fmt.Println("opening session with sender Card")
 	var senderCard model.PhononCard
-	var sender *session.Session
+	var sender *orchestrator.Session
 	var err error
 	if useMockSender {
 		senderCard, err := card.NewMockCard(true, staticPairing)
@@ -75,7 +74,7 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
-		sender, err = session.NewSession(senderCard)
+		sender, err = orchestrator.NewSession(senderCard)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -86,7 +85,7 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
-		sender, err = session.NewSession(senderCard)
+		sender, err = orchestrator.NewSession(senderCard)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -99,7 +98,7 @@ func PairCardToCard() {
 		return
 	}
 	var receiverCard model.PhononCard
-	var receiverSession *session.Session
+	var receiverSession *orchestrator.Session
 	if useMockReceiver {
 		receiverCard, err = card.NewMockCard(true, staticPairing)
 		if err != nil {
@@ -108,7 +107,7 @@ func PairCardToCard() {
 		}
 
 		fmt.Println("opening receiver session")
-		receiverSession, err = session.NewSession(receiverCard)
+		receiverSession, err = orchestrator.NewSession(receiverCard)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -120,7 +119,7 @@ func PairCardToCard() {
 			fmt.Println(err)
 			return
 		}
-		receiverSession, err = session.NewSession(receiverCard)
+		receiverSession, err = orchestrator.NewSession(receiverCard)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -134,10 +133,15 @@ func PairCardToCard() {
 		return
 	}
 
-	receiver := orchestrator.NewLocalCounterParty(receiverSession)
-
 	fmt.Println("starting card to card pairing")
-	err = sender.PairWithRemoteCard(receiver)
+	err = sender.ConnectToLocalProvider()
+	if err != nil {
+		fmt.Println("Unable to initialize local counterparty provider")
+		fmt.Println(err.Error)
+		return
+	}
+
+	err = sender.ConnectToCounterparty(receiverSession.GetName())
 	if err != nil {
 		fmt.Println("error during pairing with counterparty")
 		fmt.Println(err)

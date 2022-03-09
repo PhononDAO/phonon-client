@@ -62,7 +62,46 @@ paths:
           properties:
             pin:
               type: "string"
-  /cards/{sessionID}/Pair:
+  /cards/{sessionID}/connect:
+    post:
+      tags:
+      - "sessions"
+      responses:
+        "404":
+          description: "no session with id"
+        "200":
+          description: "Connected to Jumpbox"
+    parameters:
+      - in: path
+        required: true
+        name: sessionID
+        type: string
+        description: sessionID of connected card
+      - in: "body"
+        name: "body"
+        description: "URL of the jumbbox host https://phonon-bridge.tld"
+        required: true
+        schema:
+          type: object
+          properties:
+            url:
+              type: "string"
+  /cards/{sessionID}/connectLocal:
+    post:
+      tags:
+      - "sessions"
+      responses:
+        "404":
+          description: "no session with id"
+        "200":
+          description: "Ready to pair locally"
+    parameters:
+      - in: path
+        required: true
+        name: sessionID
+        type: string
+        description: sessionID of connected card
+  /cards/{sessionID}/pair:
     post:
       tags:
       - "sessions"
@@ -79,12 +118,12 @@ paths:
         description: sessionID of connected card
       - in: "body"
         name: "body"
-        description: "URL of phonon card in format of https://phonon-bridge.tld/phonon/cardID"
+        description: "ID of the card attached to the jumpobox you wish to pair with"
         required: true
         schema:
           type: object
           properties:
-            url:
+            cardID:
               type: "string"
   /cards/{sessionID}/listPhonons:
     get:

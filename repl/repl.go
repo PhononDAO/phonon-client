@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/session"
 
 	ishell "github.com/abiosoft/ishell/v2"
 )
@@ -12,7 +11,7 @@ import (
 var (
 	t          *orchestrator.PhononTerminal
 	shell      *ishell.Shell
-	activeCard *session.Session
+	activeCard *orchestrator.Session
 )
 
 const standardPrompt string = "Phonon>"
@@ -102,9 +101,15 @@ func Start() {
 	// })
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "pairRemote",
+		Name: "connectRemote",
 		Func: connectRemoteSession,
 		Help: "Connect to a remote server",
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "PairCounterparty",
+		Func: PairWithCounterparty,
+		Help: "pair with a counterparty",
 	})
 
 	shell.AddCmd(&ishell.Cmd{
@@ -124,7 +129,7 @@ func Start() {
 }
 
 //internal bookkeeping method to set a card to receive subsequent commands
-func setActiveCard(c *ishell.Context, s *session.Session) {
+func setActiveCard(c *ishell.Context, s *orchestrator.Session) {
 	activeCard = s
 	updatePrompt()
 	c.Printf("%v selected\n", activeCard.GetName())
@@ -245,14 +250,21 @@ func connectRemoteSession(c *ishell.Context) {
 		return
 	}
 	CounterPartyConnInfo := c.Args[0]
-	err := t.ConnectRemoteSession(activeCard, CounterPartyConnInfo)
+	err := activeCard.ConnectToRemoteProvider(CounterPartyConnInfo)
 	if err != nil {
 		c.Err(err)
 	}
 }
 
-// todo: this
-func setReceiveMode(c *ishell.Context) {
-	var sessionIndex int
-	t.SetReceiveMode(sessionIndex)
+func PairWithCounterparty(c *ishell.Context) {
+	c.Println("Pairing with card")
+	if len(c.Args) != 1 {
+		fmt.Println("wrong number of arguments given")
+		return
+	}
+	CounterPartyID := c.Args[0]
+	err := activeCard.ConnectToCounterparty(CounterPartyID)
+	if err != nil {
+		c.Err(err)
+	}
 }

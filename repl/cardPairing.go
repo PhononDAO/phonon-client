@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/session"
 	"github.com/abiosoft/ishell/v2"
 )
 
@@ -14,7 +13,7 @@ func cardPairLocal(c *ishell.Context) {
 	}
 	c.Println("starting local card pairing")
 	sessions := t.ListSessions()
-	var otherCards []*session.Session
+	var otherCards []*orchestrator.Session
 	var otherCardNames []string
 	for _, session := range sessions {
 		if session != activeCard {

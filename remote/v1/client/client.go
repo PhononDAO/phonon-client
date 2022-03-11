@@ -230,9 +230,8 @@ func (c *RemoteConnection) process(msg v1.Message) {
 		c.identifiedWithServerChan <- true
 		c.identifiedWithServer = true
 	case v1.MessageConnectedToCard:
-		c.connectedToCardChan <- true
-		c.pairingStatus = model.StatusConnectedToCard
-	// Card pairing requests and responses
+		c.processConnectedToCard(msg)
+		// Card pairing requests and responses
 	case v1.RequestCardPair1:
 		c.processCardPair1(msg)
 	case v1.ResponseCardPair1:
@@ -262,7 +261,21 @@ func (c *RemoteConnection) process(msg v1.Message) {
 // Below are the request processing methods
 /////
 
+func (c *RemoteConnection) processConnectedToCard(msg v1.Message) {
+	log.Debug("Processing connected to card message")
+	counterpartyCert, err := cert.ParseRawCardCertificate(msg.Payload)
+	if err != nil {
+		c.logger.Error("unable to process counterparty card certificate: ", err.Error())
+		return
+	}
+	c.remoteCertificate = &counterpartyCert
+	c.connectedToCardChan <- true
+	c.pairingStatus = model.StatusConnectedToCard
+
+}
+
 func (c *RemoteConnection) sendCertificate(msg v1.Message) {
+	c.logger.Debug("caching counterparty certificate")
 	c.sendMessage(v1.ResponseCertificate, c.localCertificate.Serialize())
 }
 
@@ -411,7 +424,7 @@ func (c *RemoteConnection) GetCertificate() (*cert.CardCertificate, error) {
 		}
 
 	} else {
-		c.logger.Debugf("returning cached remote certificate: % X", c.remoteCertificate.Serialize)
+		c.logger.Debugf("returning cached remote certificate: % X", c.remoteCertificate.Serialize())
 	}
 	return c.remoteCertificate, nil
 }
@@ -425,6 +438,7 @@ func (c *RemoteConnection) ConnectToCard(cardID string) error {
 		c.logger.Error("Connection Timed out Waiting for peer")
 		c.conn.Close()
 		err = ErrTimeout
+		return err
 	case <-c.connectedToCardChan:
 		c.pairingStatus = model.StatusConnectedToCard
 		err = nil
@@ -503,6 +517,10 @@ func (c *RemoteConnection) processRequestVerifyPaired(msg v1.Message) {
 		Name: v1.ResponseVerifyPaired,
 	}
 	if c.pairingStatus == model.StatusPaired {
+		if c.remoteCertificate == nil || c.remoteCertificate.PubKey == nil {
+			c.logger.Error("Remote certificate not cached")
+			return
+		}
 		key, err := util.ParseECCPubKey(c.remoteCertificate.PubKey)
 		if err != nil {
 			//oopsie

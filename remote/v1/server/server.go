@@ -296,10 +296,12 @@ func (c *clientSession) ConnectCard2Card(msg v1.Message) {
 		counterparty.Counterparty = c
 		c.Counterparty = counterparty
 		c.out.Encode(v1.Message{
-			Name: v1.MessageConnectedToCard,
+			Name:    v1.MessageConnectedToCard,
+			Payload: c.Counterparty.certificate.Serialize(),
 		})
 		c.Counterparty.out.Encode(v1.Message{
-			Name: v1.MessageConnectedToCard,
+			Name:    v1.MessageConnectedToCard,
+			Payload: c.certificate.Serialize(),
 		})
 		log.Infof("Connected card %s to card %s\n", c.Name, c.Counterparty.Name)
 	} else if c.Counterparty == counterparty && counterparty.Counterparty == c {

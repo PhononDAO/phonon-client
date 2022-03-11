@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
-	"time"
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
@@ -395,27 +394,10 @@ func (s *Session) ConnectToCounterparty(cardID string) error {
 		log.Info("returning error from ConnectRemoteSession")
 		return err
 	}
-	localPubKey, err := util.ParseECCPubKey(s.Cert.PubKey)
+	_, err = util.ParseECCPubKey(s.Cert.PubKey)
 	if err != nil {
 		//we shouldn't get this far and still receive this error
 		return err
-	}
-	if cardID < util.CardIDFromPubKey(localPubKey) {
-		paired := make(chan bool, 1)
-		go func() {
-			for {
-				if s.IsPairedToCard() {
-					paired <- true
-				}
-				time.Sleep(10 * time.Millisecond)
-			}
-		}()
-		select {
-		case <-time.After(30 * time.Second):
-			return errors.New("pairing timed out")
-		case <-paired:
-			return nil
-		}
 	}
 	err = s.PairWithRemoteCard(s.RemoteCard)
 	return err

@@ -7,6 +7,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"net/http"
+	"reflect"
 
 	"github.com/GridPlus/phonon-client/cert"
 	v1 "github.com/GridPlus/phonon-client/remote/v1"
@@ -225,9 +226,17 @@ func (c *clientSession) provideCertificate() {
 	if c.Counterparty == nil {
 		c.out.Encode(v1.Message{
 			Name:    v1.MessageError,
-			Payload: []byte("No counterparty connected. Cannot get certificate"),
+			Payload: []byte("no counterparty connected. Cannot get certificate"),
 		})
 		return
+	}
+	if reflect.DeepEqual(c.Counterparty.certificate, cert.CardCertificate{}) {
+		c.out.Encode(v1.Message{
+			Name:    v1.MessageError,
+			Payload: []byte("failed to retrieve cached counterparty certificate"),
+		})
+		return
+
 	}
 	msg := v1.Message{
 		Name:    v1.ResponseCertificate,
@@ -235,7 +244,7 @@ func (c *clientSession) provideCertificate() {
 	}
 	err := c.out.Encode(msg)
 	if err != nil {
-		log.Error("Error encoding provideCertificate reply: ", err)
+		log.Error("error encoding provideCertificate reply: ", err)
 		return
 	}
 	return

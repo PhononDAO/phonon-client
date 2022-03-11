@@ -35,6 +35,7 @@ type Session struct {
 	pinVerified           bool
 	Cert                  *cert.CardCertificate
 	ElementUsageMtex      sync.Mutex
+	logger                *log.Entry
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
@@ -46,13 +47,20 @@ var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 func NewSession(storage model.PhononCard) (s *Session, err error) {
 	s = &Session{
 		cs:                    storage,
-		active:                true,
-		terminalPaired:        false,
-		pinVerified:           false,
-		ElementUsageMtex:      sync.Mutex{},
+		RemoteCard:            nil,
+		identityPubKey:        &ecdsa.PublicKey{},
 		remoteMessageChan:     make(chan model.SessionRequest),
 		remoteMessageKillChan: make(chan interface{}),
+		active:                true,
+		pinInitialized:        false,
+		terminalPaired:        false,
+		pinVerified:           false,
+		Cert:                  &cert.CardCertificate{},
+		ElementUsageMtex:      sync.Mutex{},
+		logger:                log.WithField("CardID", "unknown"),
 	}
+	s.logger = log.WithField("cardID", s.GetName())
+
 	s.ElementUsageMtex.Lock()
 	_, _, s.pinInitialized, err = s.cs.Select()
 	s.ElementUsageMtex.Unlock()
@@ -98,14 +106,7 @@ func (s *Session) GetName() string {
 	}
 	return "unknown"
 }
-func (s *Session) GetCertificateSerialized() ([]byte, error) {
-	cert, err := s.GetCertificate()
-	if err != nil {
-		return []byte{}, err
-	} else {
-		return cert.Serialize(), nil
-	}
-}
+
 func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
 	if s.Cert != nil {
 		log.Debugf("GetCertificate returning cert: % X", s.Cert)
@@ -305,13 +306,16 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 }
 
 func (s *Session) SendPhonons(keyIndices []uint16) error {
+	log.Debug("Sending phonons")
 	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
 	}
+	log.Debug("verifying pairing")
 	err := s.RemoteCard.VerifyPaired()
 	if err != nil {
 		return err
 	}
+	log.Debug("locking mutex")
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
@@ -323,6 +327,7 @@ func (s *Session) SendPhonons(keyIndices []uint16) error {
 		log.Debug("error receiving phonons on remote")
 		return err
 	}
+	fmt.Println("unlockingMutex")
 	return nil
 }
 
@@ -583,7 +588,9 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 		}
 		var resp model.ResponsePairWithRemote
 		resp.Err = s.PairWithRemoteCard(req.Card)
+		log.Debug("Returning pairing stuff")
 		req.Ret <- resp
+		log.Debug("Done returning pairing stuff")
 	case "RequestSetPaired":
 		req, ok := r.(*model.RequestSetPaired)
 		if !ok {

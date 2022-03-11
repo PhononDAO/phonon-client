@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/GridPlus/phonon-client/gui"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +24,7 @@ var webUICmd = &cobra.Command{
 }
 
 func init() {
+	log.SetFormatter(&log.JSONFormatter{})
 	rootCmd.AddCommand(webUICmd)
 	webUICmd.Flags().StringVarP(&guiPort, "port", "p", "8080", "port for clients to connect on")
 	webUICmd.Flags().StringVarP(&guiCert, "cert", "c", "", "SSL certificate")

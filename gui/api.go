@@ -44,6 +44,7 @@ type sessionCache struct {
 var cache map[string]*sessionCache
 
 func Server(port string, certFile string, keyFile string, mock bool) {
+	log.Debug("Starting local api server")
 	session := apiSession{orchestrator.NewPhononTerminal()}
 	//initialize cache map
 	cache = make(map[string]*sessionCache)
@@ -88,7 +89,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/genMock", session.generatemock)
 	r.HandleFunc("/listSessions", session.listSessions)
 	r.HandleFunc("/cards/{sessionID}/unlock", session.unlock)
-	r.HandleFunc("/cards/{sessionID}/Pair", session.pair)
+	r.HandleFunc("/cards/{sessionID}/pair", session.pair)
 	// phonons
 	r.HandleFunc("/cards/{sessionID}/listPhonons", session.listPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/setDescriptor", session.setDescriptor)

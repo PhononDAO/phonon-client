@@ -23,7 +23,7 @@ const (
 	StatusUnconnected RemotePairingStatus = iota
 	StatusConnectedToBridge
 	StatusConnectedToCard
-	StatusPaired
 	StatusCardPair1Complete
 	StatusCardPair2Complete
+	StatusPaired
 )

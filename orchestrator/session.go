@@ -34,7 +34,6 @@ type Session struct {
 	terminalPaired        bool
 	pinVerified           bool
 	Cert                  *cert.CardCertificate
-	name                  string
 	ElementUsageMtex      sync.Mutex
 }
 
@@ -55,8 +54,8 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		remoteMessageKillChan: make(chan interface{}),
 	}
 	s.ElementUsageMtex.Lock()
-	defer s.ElementUsageMtex.Unlock()
 	_, _, s.pinInitialized, err = s.cs.Select()
+	s.ElementUsageMtex.Unlock()
 	if err != nil {
 		log.Error("cannot select card for new session: ", err)
 		return nil, err

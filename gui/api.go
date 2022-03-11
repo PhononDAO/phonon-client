@@ -33,7 +33,7 @@ var phononLogo []byte
 var xIcon []byte
 
 type apiSession struct {
-	t orchestrator.PhononTerminal
+	t *orchestrator.PhononTerminal
 }
 
 type sessionCache struct {
@@ -44,12 +44,12 @@ type sessionCache struct {
 var cache map[string]*sessionCache
 
 func Server(port string, certFile string, keyFile string, mock bool) {
-	session := apiSession{}
+	session := apiSession{orchestrator.NewPhononTerminal()}
 	//initialize cache map
 	cache = make(map[string]*sessionCache)
 	if mock {
 		//Start server with a mock and ignore actual cards
-		err := session.t.GenerateMock()
+		_, err := session.t.GenerateMock()
 		log.Debug("Mock generated")
 		if err != nil {
 			log.Error("unable to generate mock during REST server startup: ", err)
@@ -105,7 +105,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 
 	http.Handle("/", r)
 	log.Debug("Listening for incoming connections on " + port)
-
+	fmt.Println("listen and serve")
 	go func() {
 		if certFile != "" && keyFile != "" {
 			err := http.ListenAndServeTLS(":"+port, certFile, keyFile, handler)
@@ -270,6 +270,7 @@ func (apiSession apiSession) listSessions(w http.ResponseWriter, r *http.Request
 		http.Error(w, "no cards found", http.StatusNotFound)
 		return
 	}
+
 	for _, v := range sessions {
 		names = append(names, v.GetName())
 	}
@@ -533,9 +534,14 @@ func (apiSession apiSession) redeemPhonon(w http.ResponseWriter, r *http.Request
 }
 
 func (apiSession apiSession) generatemock(w http.ResponseWriter, r *http.Request) {
-	err := apiSession.t.GenerateMock()
+	session, err := apiSession.t.GenerateMock()
 	if err != nil {
 		http.Error(w, "unable to generate mock", http.StatusInternalServerError)
+		return
+	}
+	cache[session] = &sessionCache{
+		cachePopulated: true,
+		phonons:        map[uint16]*model.Phonon{},
 	}
 }
 

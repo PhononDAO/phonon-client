@@ -20,25 +20,31 @@ type remoteSession struct {
 var ErrRemoteNotPaired error = errors.New("no remote card paired")
 var ErrNoSession error = errors.New("No connected session with id found")
 
+func NewPhononTerminal() *PhononTerminal {
+	return &PhononTerminal{
+		sessions: make([]*Session, 0),
+	}
+}
+
 ////
 // basic multi-session management
 ////
-func (t *PhononTerminal) GenerateMock() error {
+func (t *PhononTerminal) GenerateMock() (string, error) {
 	c, err := card.NewMockCard(true, false)
 	if err != nil {
-		return err
+		return "", err
 	}
 	sess, err := NewSession(c)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	t.sessions = append(t.sessions, sess)
-	return nil
+	return sess.GetName(), nil
 }
 
 func (t *PhononTerminal) RefreshSessions() ([]*Session, error) {
-	t.sessions = nil
+	t.sessions = []*Session{}
 	var err error
 	readers, err := usb.ConnectAllUSBReaders()
 	if err != nil {

@@ -290,7 +290,7 @@ func (c *clientSession) ConnectCard2Card(msg v1.Message) {
 			Name:    v1.MessageError,
 			Payload: []byte("No connected card"),
 		})
-		log.Error("No connected session:", string(msg.Payload))
+		log.Error("no connected session:", string(msg.Payload))
 		return
 	} else if counterparty.Counterparty == nil && c.Counterparty == nil {
 		counterparty.Counterparty = c

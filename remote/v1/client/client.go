@@ -214,7 +214,7 @@ func (c *RemoteConnection) HandleIncoming() {
 }
 
 func (c *RemoteConnection) process(msg v1.Message) {
-	c.logger.Debug(fmt.Sprintf("Processing %s message", msg.Name))
+	c.logger.Debug(fmt.Sprintf("processing %s message", msg.Name))
 	switch msg.Name {
 	case v1.RequestCertificate:
 		c.sendCertificate(msg)

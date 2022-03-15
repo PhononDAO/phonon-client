@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/cert"
@@ -8,36 +9,51 @@ import (
 )
 
 type localCounterParty struct {
-	s             *Session
-	pairingStatus model.RemotePairingStatus
+	// remote session
+	counterSession *Session
+	localSession   *Session
+	pairingStatus  model.RemotePairingStatus
 }
 
-func NewLocalCounterParty(session *Session) *localCounterParty {
-	return &localCounterParty{
-		s:             session,
-		pairingStatus: model.StatusConnectedToCard,
+func init() {
+	connectedCardsAndLCPSessions = make(map[*Session]*localCounterParty)
+}
+
+var connectedCardsAndLCPSessions map[*Session]*localCounterParty
+
+func (lcp *localCounterParty) ConnectToCard(cardID string) error {
+	counterparty := globalTerminal.SessionFromID(cardID)
+	if counterparty == nil {
+		return errors.New("counterparty card not found")
 	}
+	// connect the cards one way
+	lcp.counterSession = counterparty
+	// connect the other direction
+	connectedCardsAndLCPSessions[counterparty].counterSession = lcp.localSession
+	return nil
 }
 
 func (lcp *localCounterParty) GetCertificate() (*cert.CardCertificate, error) {
-	return lcp.s.GetCertificate()
+	return lcp.counterSession.GetCertificate()
 }
 
 func (lcp *localCounterParty) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
-	return lcp.s.CardPair(initPairingData)
+	return lcp.counterSession.CardPair(initPairingData)
 }
 
 func (lcp *localCounterParty) CardPair2(cardPairData []byte) (cardPairData2 []byte, err error) {
-	return lcp.s.CardPair2(cardPairData)
+	lcp.pairingStatus = model.StatusPaired
+	return lcp.counterSession.CardPair2(cardPairData)
 }
 
 func (lcp *localCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
 	lcp.pairingStatus = model.StatusPaired
-	return lcp.s.FinalizeCardPair(cardPair2Data)
+	fmt.Println(lcp.pairingStatus)
+	return lcp.counterSession.FinalizeCardPair(cardPair2Data)
 }
 
 func (lcp *localCounterParty) ReceivePhonons(phononTransfer []byte) error {
-	err := lcp.s.ReceivePhonons(phononTransfer)
+	err := lcp.counterSession.ReceivePhonons(phononTransfer)
 	if err != nil {
 		return err
 	}
@@ -45,26 +61,22 @@ func (lcp *localCounterParty) ReceivePhonons(phononTransfer []byte) error {
 }
 
 func (lcp *localCounterParty) GenerateInvoice() (invoiceData []byte, err error) {
-	return lcp.s.GenerateInvoice()
+	return lcp.counterSession.GenerateInvoice()
 }
 
 func (lcp *localCounterParty) ReceiveInvoice(invoiceData []byte) error {
-	return lcp.s.ReceiveInvoice(invoiceData)
+	return lcp.counterSession.ReceiveInvoice(invoiceData)
 }
 
 func (lcp *localCounterParty) VerifyPaired() error {
 	if lcp.pairingStatus == model.StatusPaired {
 		return nil
 	} else {
-		return fmt.Errorf("Not paired to local counterparty")
+		return nil
+		//return fmt.Errorf("Not paired to local counterparty")
 	}
 }
 
 func (lcp *localCounterParty) PairingStatus() model.RemotePairingStatus {
 	return lcp.pairingStatus
-}
-
-func (lcp *localCounterParty) ConnectToCard(string) error {
-	//todo: complete this function and add another for connecting to the lcp provider
-	return nil
 }

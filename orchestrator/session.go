@@ -374,7 +374,6 @@ func (s *Session) ConnectToRemoteProvider(RemoteURL string) error {
 		return fmt.Errorf("unable to parse url for card connection: %s", err.Error())
 	}
 	log.Info("connecting")
-	//guard
 	remConn, err := remote.Connect(s.remoteMessageChan, fmt.Sprintf("https://%s/phonon", u.Host), true)
 	if err != nil {
 		return fmt.Errorf("unable to connect to remote session: %s", err.Error())
@@ -384,7 +383,12 @@ func (s *Session) ConnectToRemoteProvider(RemoteURL string) error {
 }
 
 func (s *Session) ConnectToLocalProvider() error {
-	// uhh
+	lcp := &localCounterParty{
+		localSession:  s,
+		pairingStatus: model.StatusConnectedToBridge,
+	}
+	s.RemoteCard = lcp
+	connectedCardsAndLCPSessions[s] = lcp
 	return nil
 }
 

@@ -20,10 +20,17 @@ type remoteSession struct {
 var ErrRemoteNotPaired error = errors.New("no remote card paired")
 var ErrNoSession error = errors.New("No connected session with id found")
 
-func NewPhononTerminal() *PhononTerminal {
-	return &PhononTerminal{
+var globalTerminal *PhononTerminal
+
+func init() {
+	globalTerminal = &PhononTerminal{
 		sessions: make([]*Session, 0),
 	}
+}
+
+// NewPhononTerminal returns a new reference to the global phonon terminal singleton.
+func NewPhononTerminal() *PhononTerminal {
+	return globalTerminal
 }
 
 ////

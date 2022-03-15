@@ -1,7 +1,6 @@
 package orchestrator_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/GridPlus/phonon-client/model"
@@ -29,24 +28,24 @@ func TestDepositPhonons(t *testing.T) {
 func TestE2EJumpboxSendPhonon(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	//todo: fix this
-	fmt.Println("31")
+
 	go server.StartServer("42069", "/Users/nate/Documents/localhost.cer.pem", "/Users/nate/Documents/localhost.key.pem")
 	term := orchestrator.NewPhononTerminal()
 	mock1, _ := term.GenerateMock()
 	mock2, _ := term.GenerateMock()
-	fmt.Println("32")
+
 	sess1 := term.SessionFromID(mock1)
 	sess2 := term.SessionFromID(mock2)
-	fmt.Println("35")
+
 	sess1.VerifyPIN("111111")
 	sess2.VerifyPIN("111111")
-	fmt.Println("38")
+
 	sess1.ConnectToRemoteProvider("https://localhost:42069/phonon")
 	sess2.ConnectToRemoteProvider("https://localhost:42069/phonon")
-	fmt.Println("41")
+
 	sess1.ConnectToCounterparty(mock2)
 	sess2.CreatePhonon()
-	fmt.Println("44")
+
 	sess2.SetDescriptor(&model.Phonon{
 		KeyIndex:  0,
 		CurveType: 0,
@@ -57,12 +56,53 @@ func TestE2EJumpboxSendPhonon(t *testing.T) {
 		CurrencyType: 2,
 	})
 
-	fmt.Println("55")
 	err := sess2.SendPhonons([]uint16{
 		0,
 	})
 	if err != nil {
 		t.Error(err.Error())
 	}
-	fmt.Println("59")
+
+}
+
+func TestE2ELocalSendPhonon(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	term := orchestrator.NewPhononTerminal()
+	mock1, _ := term.GenerateMock()
+	mock2, _ := term.GenerateMock()
+
+	sess1 := term.SessionFromID(mock1)
+	sess2 := term.SessionFromID(mock2)
+
+	sess1.VerifyPIN("111111")
+	sess2.VerifyPIN("111111")
+
+	sess1.ConnectToLocalProvider()
+	sess2.ConnectToLocalProvider()
+
+	sess1.ConnectToCounterparty(mock2)
+	sess2.CreatePhonon()
+
+	sess2.SetDescriptor(&model.Phonon{
+		KeyIndex:  0,
+		CurveType: 0,
+		Denomination: model.Denomination{
+			Base:     1,
+			Exponent: 3,
+		},
+		CurrencyType: 2,
+	})
+	err := sess2.SendPhonons([]uint16{
+		0,
+	})
+	if err != nil {
+		t.Error(err.Error())
+	}
+	err = sess1.SendPhonons([]uint16{
+		0,
+	})
+	if err != nil {
+		t.Error(err.Error())
+	}
+
 }

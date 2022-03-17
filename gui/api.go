@@ -146,15 +146,16 @@ func logsink(w http.ResponseWriter, r *http.Request) {
 			log.WithFields(log.Fields(msg)).Debug()
 		} else {
 			switch lvlInt {
-			case 20:
+			case jsLevelDebug:
 				log.WithFields(log.Fields(msg)).Debug()
-			case 30:
+			case jsLevelInfo:
 				log.WithFields(log.Fields(msg)).Info()
-			case 40:
+			case jsLevelWarn:
 				log.WithFields(log.Fields(msg)).Warn()
-			case 50:
+			case jsLevelError:
 				log.WithFields(log.Fields(msg)).Error()
-			case 60:
+			// no critical with logrus, so using error
+			case jsLevelCritical:
 				log.WithFields(log.Fields(msg)).Error()
 			default:
 				log.Debug("unable to decode log level from frontend. Defaulting to debug")
@@ -163,6 +164,14 @@ func logsink(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+const (
+	jsLevelDebug    = 20
+	jsLevelInfo     = 30
+	jsLevelWarn     = 40
+	jsLevelError    = 50
+	jsLevelCritical = 60
+)
 
 func parseJSLogLevel(input interface{}) (int, error) {
 	var levelMap map[string]interface{}

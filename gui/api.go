@@ -102,6 +102,9 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/", http.FileServer(http.FS(swagger))))
 	r.HandleFunc("/swagger.json", serveAPIFunc(port))
 
+	// log sink
+	r.HandleFunc("/logs", logsink)
+
 	http.Handle("/", r)
 	log.Debug("Listening for incoming connections on " + port)
 
@@ -119,6 +122,40 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 		}
 	}()
 	systray.Run(onReady, onExit)
+}
+
+func logsink(w http.ResponseWriter, r *http.Request) {
+	var msg map[string]interface{}
+	err := json.NewDecoder(r.Body).Decode(&msg)
+	if err != nil {
+		log.Errorf("Unable to decode logs from frontend: %s", err.Error)
+	}
+	lvl, ok := msg["level"]
+	if !ok {
+		log.Debug(msg)
+		return
+	} else {
+		lvlInt, ok := lvl.(int)
+		if !ok {
+			log.Debug("Unable to decode log level from frontend. Defaulting to debug")
+		} else {
+			switch lvlInt {
+			case 20:
+				log.Debug(msg)
+			case 30:
+				log.Info(msg)
+			case 40:
+				log.Warn(msg)
+			case 50:
+				log.Error(msg)
+			case 60:
+				log.Error(msg)
+			default:
+				log.Debug("unable to decode log level from frontend. Defaulting to debug")
+				log.Debug(msg)
+			}
+		}
+	}
 }
 
 func onReady() {

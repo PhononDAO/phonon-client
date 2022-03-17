@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -46,6 +47,8 @@ var cache map[string]*sessionCache
 
 func Server(port string, certFile string, keyFile string, mock bool) {
 	session := apiSession{}
+	log.SetLevel(log.DebugLevel)
+	log.SetFormatter(&log.JSONFormatter{})
 	//initialize cache map
 	cache = make(map[string]*sessionCache)
 	if mock {
@@ -129,33 +132,55 @@ func logsink(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&msg)
 	if err != nil {
 		log.Errorf("Unable to decode logs from frontend: %s", err.Error)
+		http.Error(w, "unable to decode logs", http.StatusBadRequest)
+		return
 	}
 	lvl, ok := msg["level"]
 	if !ok {
-		log.Debug(msg)
+		log.WithFields(log.Fields(msg)).Debug()
 		return
 	} else {
-		lvlInt, ok := lvl.(int)
-		if !ok {
-			log.Debug("Unable to decode log level from frontend. Defaulting to debug")
+		lvlInt, err := parseJSLogLevel(lvl)
+		if err != nil {
+			log.Debug(fmt.Sprintf("Unable to decode log level from frontend: %s. Defaulting to debug", err.Error()))
+			log.WithFields(log.Fields(msg)).Debug()
 		} else {
 			switch lvlInt {
 			case 20:
-				log.Debug(msg)
+				log.WithFields(log.Fields(msg)).Debug()
 			case 30:
-				log.Info(msg)
+				log.WithFields(log.Fields(msg)).Info()
 			case 40:
-				log.Warn(msg)
+				log.WithFields(log.Fields(msg)).Warn()
 			case 50:
-				log.Error(msg)
+				log.WithFields(log.Fields(msg)).Error()
 			case 60:
-				log.Error(msg)
+				log.WithFields(log.Fields(msg)).Error()
 			default:
 				log.Debug("unable to decode log level from frontend. Defaulting to debug")
-				log.Debug(msg)
+				log.WithFields(log.Fields(msg)).Debug()
 			}
 		}
 	}
+}
+
+func parseJSLogLevel(input interface{}) (int, error) {
+	var levelMap map[string]interface{}
+	if reflect.TypeOf(input) != reflect.TypeOf(map[string]interface{}{}) {
+		return 0, fmt.Errorf("Unable to parse level data from map")
+	} else {
+		levelMap = input.(map[string]interface{})
+	}
+	lvlraw, ok := levelMap["value"]
+	if !ok {
+		return 0, fmt.Errorf("Unable to find value key within level object")
+	}
+	lvlFloat64, ok := lvlraw.(float64)
+	if !ok {
+		return 0, fmt.Errorf("Unable to parse level value: %v into number", lvlraw)
+	}
+	lvlInt := int(lvlFloat64)
+	return lvlInt, nil
 }
 
 func onReady() {

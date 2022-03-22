@@ -83,11 +83,6 @@ func Start() {
 		Func: redeemPhonon,
 		Help: "Destroy the phonon at index on card at index and retrieve the priate key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
 	})
-	shell.AddCmd(&ishell.Cmd{
-		Name: "pairLocal",
-		Func: cardPairLocal,
-		Help: "Pair with another phonon card to establish a secure connection for the exchange of phonons.",
-	})
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "sendPhonons",
@@ -114,7 +109,7 @@ func Start() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "PairCounterparty",
-		Func: PairWithCounterparty,
+		Func: pairWithCounterparty,
 		Help: "pair with a counterparty",
 	})
 
@@ -264,17 +259,13 @@ func connectRemoteSession(c *ishell.Context) {
 
 func connectLocalSession(c *ishell.Context) {
 	fmt.Println("Connecting to local counterparty provider")
-	if len(c.Args) != 1 {
-		fmt.Println("wrong number of arguments given")
-		return
-	}
 	err := activeCard.ConnectToLocalProvider()
-	if err != nil{
+	if err != nil {
 		c.Err(err)
 	}
 }
 
-func PairWithCounterparty(c *ishell.Context) {
+func pairWithCounterparty(c *ishell.Context) {
 	c.Println("Pairing with card")
 	if len(c.Args) != 1 {
 		fmt.Println("wrong number of arguments given")

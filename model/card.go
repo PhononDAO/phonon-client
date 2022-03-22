@@ -36,4 +36,3 @@ type PhononCard interface {
 	GetFriendlyName() (string, error)
 	GetAvailableMemory() (persistentMem int, onResetMem int, onDeselectMem int, err error)
 }
-

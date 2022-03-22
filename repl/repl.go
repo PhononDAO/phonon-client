@@ -107,6 +107,12 @@ func Start() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
+		Name: "connectLocal",
+		Func: connectLocalSession,
+		Help: "Connect to a local card",
+	})
+
+	shell.AddCmd(&ishell.Cmd{
 		Name: "PairCounterparty",
 		Func: PairWithCounterparty,
 		Help: "pair with a counterparty",
@@ -252,6 +258,18 @@ func connectRemoteSession(c *ishell.Context) {
 	CounterPartyConnInfo := c.Args[0]
 	err := activeCard.ConnectToRemoteProvider(CounterPartyConnInfo)
 	if err != nil {
+		c.Err(err)
+	}
+}
+
+func connectLocalSession(c *ishell.Context) {
+	fmt.Println("Connecting to local counterparty provider")
+	if len(c.Args) != 1 {
+		fmt.Println("wrong number of arguments given")
+		return
+	}
+	err := activeCard.ConnectToLocalProvider()
+	if err != nil{
 		c.Err(err)
 	}
 }

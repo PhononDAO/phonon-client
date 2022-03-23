@@ -48,7 +48,6 @@ func (lcp *localCounterParty) CardPair2(cardPairData []byte) (cardPairData2 []by
 
 func (lcp *localCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
 	lcp.pairingStatus = model.StatusPaired
-	fmt.Println(lcp.pairingStatus)
 	return lcp.counterSession.FinalizeCardPair(cardPair2Data)
 }
 
@@ -72,8 +71,7 @@ func (lcp *localCounterParty) VerifyPaired() error {
 	if lcp.pairingStatus == model.StatusPaired {
 		return nil
 	} else {
-		return nil
-		//return fmt.Errorf("Not paired to local counterparty")
+		return fmt.Errorf("Not paired to local counterparty")
 	}
 }
 

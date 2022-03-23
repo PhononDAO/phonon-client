@@ -2,6 +2,7 @@ package repl
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/GridPlus/phonon-client/orchestrator"
 
@@ -18,7 +19,7 @@ const standardPrompt string = "Phonon>"
 
 func Start() {
 	shell = ishell.New()
-	t = &orchestrator.PhononTerminal{}
+	t = orchestrator.NewPhononTerminal()
 	// get initial state of orchestrator
 	shell.Println("Welcome to the phonon command interface")
 	shell.SetPrompt(standardPrompt)
@@ -118,12 +119,6 @@ func Start() {
 		Func: addMock,
 		Help: "make a mock card and add it to the session",
 	})
-	// shell.AddCmd(&ishell.Cmd{
-	// 	Name: "receive",
-	// 	Func: setReceiveMode,
-	// 	Help: "set card at index to receive phonons",
-	// })
-
 	//Automatically refresh connections as the user is dropped into the shell
 	shell.Process("refresh")
 	shell.Run()
@@ -271,7 +266,8 @@ func pairWithCounterparty(c *ishell.Context) {
 		fmt.Println("wrong number of arguments given")
 		return
 	}
-	CounterPartyID := c.Args[0]
+	CounterPartyID := strings.TrimSpace(c.Args[0])
+
 	err := activeCard.ConnectToCounterparty(CounterPartyID)
 	if err != nil {
 		c.Err(err)

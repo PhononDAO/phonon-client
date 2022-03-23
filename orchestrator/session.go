@@ -54,7 +54,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		pinInitialized:        false,
 		terminalPaired:        false,
 		pinVerified:           false,
-		Cert:                  &cert.CardCertificate{},
+		Cert:                  nil,
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
 	}

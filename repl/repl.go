@@ -51,7 +51,6 @@ func Start() {
 		Func: deactivateCard,
 		Help: "Deselect a card if one is selected",
 	})
-
 	shell.AddCmd(&ishell.Cmd{
 		Name: "init",
 		Func: initCard,
@@ -109,9 +108,10 @@ func Start() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "PairCounterparty",
+		Name: "pairCounterparty",
 		Func: pairWithCounterparty,
-		Help: "pair with a counterparty",
+		Help: `pair with a counterparty already connected to the same counterparty provider
+		       Args: [counterpartyCardID]`,
 	})
 
 	shell.AddCmd(&ishell.Cmd{

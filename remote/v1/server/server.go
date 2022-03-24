@@ -1,4 +1,4 @@
-package remote
+package server
 
 import (
 	"bytes"
@@ -7,8 +7,10 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"net/http"
+	"reflect"
 
 	"github.com/GridPlus/phonon-client/cert"
+	v1 "github.com/GridPlus/phonon-client/remote/v1"
 	"github.com/GridPlus/phonon-client/util"
 	"github.com/posener/h2conn"
 	log "github.com/sirupsen/logrus"
@@ -79,8 +81,8 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	}
 	if !valid {
 		//TODO: use a real error, possibly from cert package
-		msg := Message{
-			Name:    MessageDisconnected,
+		msg := v1.Message{
+			Name:    v1.MessageDisconnected,
 			Payload: []byte("Certificate invalid"),
 		}
 		err = session.out.Encode(msg)
@@ -94,7 +96,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 
 	//Client is now validated, move on
 	for r.Context().Err() == nil {
-		var msg Message
+		var msg v1.Message
 		err := session.in.Decode(&msg)
 		if err != nil {
 			log.Error("failed receiving message: ", err)
@@ -109,19 +111,19 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *clientSession) process(msg Message) error {
+func (c *clientSession) process(msg v1.Message) error {
 	switch msg.Name {
-	case RequestConnectCard2Card:
+	case v1.RequestConnectCard2Card:
 		c.ConnectCard2Card(msg)
-	case RequestDisconnectFromCard:
+	case v1.RequestDisconnectFromCard:
 		c.disconnectFromCard(msg)
-	case RequestEndSession:
+	case v1.RequestEndSession:
 		c.endSession(msg)
-	case RequestNoOp:
+	case v1.RequestNoOp:
 		c.noop(msg)
-	case RequestIdentify, ResponseIdentify, RequestCardPair1, ResponseCardPair1, RequestCardPair2, ResponseCardPair2, RequestFinalizeCardPair, ResponseFinalizeCardPair, RequestReceivePhonon, MessagePhononAck, RequestVerifyPaired, ResponseVerifyPaired:
+	case v1.RequestIdentify, v1.ResponseIdentify, v1.RequestCardPair1, v1.ResponseCardPair1, v1.RequestCardPair2, v1.ResponseCardPair2, v1.RequestFinalizeCardPair, v1.ResponseFinalizeCardPair, v1.RequestReceivePhonon, v1.MessagePhononAck, v1.RequestVerifyPaired, v1.ResponseVerifyPaired:
 		c.passthrough(msg)
-	case RequestCertificate:
+	case v1.RequestCertificate:
 		c.provideCertificate()
 	}
 	//TODO: provide actual errors, or ensure all the cases handle errors themselves
@@ -131,7 +133,7 @@ func (c *clientSession) process(msg Message) error {
 func (c *clientSession) ValidateClient() (bool, error) {
 	log.Info("validating client connection")
 	//Read client certificate
-	var in Message
+	var in v1.Message
 	err := c.in.Decode(&in)
 	if err != nil {
 		log.Error("unable to decode raw client certificate bytes: ", err)
@@ -174,8 +176,8 @@ func (c *clientSession) ValidateClient() (bool, error) {
 	name := util.CardIDFromPubKey(key)
 	c.Name = name
 	clientSessions[name] = c
-	c.out.Encode(Message{
-		Name:    MessageIdentifiedWithServer,
+	c.out.Encode(v1.Message{
+		Name:    v1.MessageIdentifiedWithServer,
 		Payload: []byte(name),
 	})
 
@@ -190,7 +192,7 @@ func (c *clientSession) RequestIdentify() (challengeNonce []byte, err error) {
 		log.Error("unable to generate challenge nonce. err: ", err)
 		return nil, err
 	}
-	err = c.out.Encode(Message{Name: RequestIdentify, Payload: challengeNonce})
+	err = c.out.Encode(v1.Message{Name: v1.RequestIdentify, Payload: challengeNonce})
 	if err != nil {
 		log.Error("unable to send identify request")
 		return nil, err
@@ -199,7 +201,7 @@ func (c *clientSession) RequestIdentify() (challengeNonce []byte, err error) {
 }
 
 func (c *clientSession) ReceiveIdentifyResponse() (*util.ECDSASignature, error) {
-	var identifyResp Message
+	var identifyResp v1.Message
 	var sig util.ECDSASignature
 	err := c.in.Decode(&identifyResp)
 	if err != nil {
@@ -207,7 +209,7 @@ func (c *clientSession) ReceiveIdentifyResponse() (*util.ECDSASignature, error) 
 		return nil, err
 	}
 	log.Infof("received identify response: %+v\n", identifyResp)
-	if identifyResp.Name == ResponseIdentify {
+	if identifyResp.Name == v1.ResponseIdentify {
 		buf := bytes.NewBuffer(identifyResp.Payload)
 		decoder := gob.NewDecoder(buf)
 		err := decoder.Decode(&sig)
@@ -222,19 +224,27 @@ func (c *clientSession) ReceiveIdentifyResponse() (*util.ECDSASignature, error) 
 
 func (c *clientSession) provideCertificate() {
 	if c.Counterparty == nil {
-		c.out.Encode(Message{
-			Name:    MessageError,
-			Payload: []byte("No counterparty connected. Cannot get certificate"),
+		c.out.Encode(v1.Message{
+			Name:    v1.MessageError,
+			Payload: []byte("no counterparty connected. Cannot get certificate"),
 		})
 		return
 	}
-	msg := Message{
-		Name:    ResponseCertificate,
+	if reflect.DeepEqual(c.Counterparty.certificate, cert.CardCertificate{}) {
+		c.out.Encode(v1.Message{
+			Name:    v1.MessageError,
+			Payload: []byte("failed to retrieve cached counterparty certificate"),
+		})
+		return
+
+	}
+	msg := v1.Message{
+		Name:    v1.ResponseCertificate,
 		Payload: c.Counterparty.certificate.Serialize(),
 	}
 	err := c.out.Encode(msg)
 	if err != nil {
-		log.Error("Error encoding provideCertificate reply: ", err)
+		log.Error("error encoding provideCertificate reply: ", err)
 		return
 	}
 	return
@@ -272,39 +282,41 @@ func (c *clientSession) provideCertificate() {
 
 // }
 
-func (c *clientSession) ConnectCard2Card(msg Message) {
+func (c *clientSession) ConnectCard2Card(msg v1.Message) {
 	log.Infof("attempting to connect card %s to card %s\n", c.Name, string(msg.Payload))
 	counterparty, ok := clientSessions[string(msg.Payload)]
 	if !ok {
-		c.out.Encode(Message{
-			Name:    MessageError,
+		c.out.Encode(v1.Message{
+			Name:    v1.MessageError,
 			Payload: []byte("No connected card"),
 		})
-		log.Error("No connected session:", string(msg.Payload))
+		log.Error("no connected session:", string(msg.Payload))
 		return
 	} else if counterparty.Counterparty == nil && c.Counterparty == nil {
 		counterparty.Counterparty = c
 		c.Counterparty = counterparty
-		c.out.Encode(Message{
-			Name: MessageConnectedToCard,
+		c.out.Encode(v1.Message{
+			Name:    v1.MessageConnectedToCard,
+			Payload: c.Counterparty.certificate.Serialize(),
 		})
-		c.Counterparty.out.Encode(Message{
-			Name: MessageConnectedToCard,
+		c.Counterparty.out.Encode(v1.Message{
+			Name:    v1.MessageConnectedToCard,
+			Payload: c.certificate.Serialize(),
 		})
 		log.Infof("Connected card %s to card %s\n", c.Name, c.Counterparty.Name)
 	} else if c.Counterparty == counterparty && counterparty.Counterparty == c {
 		//do nothing
 	} else {
-		c.out.Encode(Message{
-			Name:    MessageError,
+		c.out.Encode(v1.Message{
+			Name:    v1.MessageError,
 			Payload: []byte("Unable to connect. Connection already satisfied"),
 		})
 	}
 }
 
-func (c *clientSession) disconnectFromCard(msg Message) {
-	out := Message{
-		Name: RequestDisconnectFromCard,
+func (c *clientSession) disconnectFromCard(msg v1.Message) {
+	out := v1.Message{
+		Name: v1.RequestDisconnectFromCard,
 	}
 	// encode can fail, so it needs to be checked. Not sure how to handle that
 	if c.Counterparty != nil && c.Counterparty.out != nil {
@@ -319,7 +331,7 @@ func (c *clientSession) disconnectFromCard(msg Message) {
 	c.Counterparty = nil
 }
 
-func (c *clientSession) endSession(msg Message) {
+func (c *clientSession) endSession(msg v1.Message) {
 	c.disconnectFromCard(msg)
 	delete(clientSessions, c.Name)
 	if c.underlyingConn != nil {
@@ -327,16 +339,16 @@ func (c *clientSession) endSession(msg Message) {
 	}
 }
 
-func (c *clientSession) noop(msg Message) {
+func (c *clientSession) noop(msg v1.Message) {
 	// don't do anything
 	// this is eventually going to be for preventing connection timeouts, but may not be nessesary in the future
 }
 
-func (c *clientSession) passthrough(msg Message) {
+func (c *clientSession) passthrough(msg v1.Message) {
 	if c.Counterparty == nil {
 		log.Debug("Passing through message to counterparty")
-		ret := Message{
-			Name: MessagePassthruFailed,
+		ret := v1.Message{
+			Name: v1.MessagePassthruFailed,
 		}
 		c.out.Encode(ret)
 	} else {
@@ -344,19 +356,19 @@ func (c *clientSession) passthrough(msg Message) {
 	}
 }
 
-func (c *clientSession) RequestSendPhonon(msg Message) {
+func (c *clientSession) RequestSendPhonon(msg v1.Message) {
 
 }
 
-func (c *clientSession) RequestPhononAck(msg Message) {
+func (c *clientSession) RequestPhononAck(msg v1.Message) {
 
 }
 
-func (c *clientSession) sendPhonon(msg Message) {
+func (c *clientSession) sendPhonon(msg v1.Message) {
 	// save this packet for later
 	// delete after ack
 }
 
-func (c *clientSession) ack(msg Message) {
+func (c *clientSession) ack(msg v1.Message) {
 	// delete saved phonon when received
 }

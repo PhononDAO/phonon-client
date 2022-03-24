@@ -21,7 +21,6 @@ import (
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/session"
 	"github.com/spf13/cobra"
 )
 
@@ -62,7 +61,7 @@ func sendPhonons() {
 			return
 		}
 	}
-	sender, _ := session.NewSession(senderCard)
+	sender, _ := orchestrator.NewSession(senderCard)
 	err = sender.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)
@@ -112,17 +111,15 @@ func sendPhonons() {
 	}
 
 	fmt.Println("opening receiver session")
-	receiverSession, _ := session.NewSession(receiverCard)
+	receiverSession, _ := orchestrator.NewSession(receiverCard)
 	err = receiverSession.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	receiver := orchestrator.NewLocalCounterParty(receiverSession)
-
 	fmt.Println("starting card to card pairing")
-	err = sender.PairWithRemoteCard(receiver)
+	err = sender.ConnectToCounterparty(receiverSession.GetName())
 	if err != nil {
 		fmt.Println("error during pairing with counterparty")
 		fmt.Println(err)

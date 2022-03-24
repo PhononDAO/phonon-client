@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/session"
 	"github.com/abiosoft/ishell/v2"
 )
 
@@ -14,7 +13,7 @@ func cardPairLocal(c *ishell.Context) {
 	}
 	c.Println("starting local card pairing")
 	sessions := t.ListSessions()
-	var otherCards []*session.Session
+	var otherCards []*orchestrator.Session
 	var otherCardNames []string
 	for _, session := range sessions {
 		if session != activeCard {
@@ -33,11 +32,14 @@ func cardPairLocal(c *ishell.Context) {
 	}
 	pairingCard := otherCards[selection]
 	c.Println("starting pairing with ", pairingCard.GetName())
-	remoteCard := orchestrator.NewLocalCounterParty(pairingCard)
-
-	err := activeCard.PairWithRemoteCard(remoteCard)
+	err := activeCard.ConnectToLocalProvider()
 	if err != nil {
-		c.Println("pairing failed: ", err)
+		c.Printf("Error occured in pairing: %s", err.Error())
+		return
+	}
+	err = activeCard.ConnectToCounterparty(otherCards[selection].GetName())
+	if err != nil {
+		c.Printf("Error occured in pairing process: %s", err.Error())
 		return
 	}
 	c.Println("cards successfully paired")

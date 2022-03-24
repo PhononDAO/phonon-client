@@ -164,6 +164,10 @@ func ParseRawCardCertificate(cardCertificateRaw []byte) (cert CardCertificate, e
 	cert.Permissions.permType = cardCertificateRaw[2]
 	cert.Permissions.permLen = cardCertificateRaw[3]
 
+	if cert.Permissions.certLen == 0 || cert.Permissions.permLen == 0 {
+		log.Debugf("invalid certificate found: % X", cardCertificateRaw)
+		return CardCertificate{}, errors.New("Card Certificate Invalid")
+	}
 	permsLen := int(cert.Permissions.permLen)
 	if len(cardCertificateRaw) < 5+permsLen {
 		return CardCertificate{}, errors.New("card certificate too short to read full permissions block")
@@ -174,9 +178,11 @@ func ParseRawCardCertificate(cardCertificateRaw []byte) (cert CardCertificate, e
 	pubKeyLen := int(cert.Permissions.pubKeyLen)
 	certLength := int(cert.Permissions.certLen)
 	if len(cardCertificateRaw) < certLength {
-		return CardCertificate{}, errors.New("certificate was incorrect length")
+		return CardCertificate{}, errors.New("card certificate was incorrect length")
 	}
-
+	if len(cardCertificateRaw) < 6+permsLen+pubKeyLen {
+		return CardCertificate{}, errors.New("card certificate incorrect length")
+	}
 	cert.PubKey = cardCertificateRaw[6+int(cert.Permissions.permLen) : 6+permsLen+pubKeyLen]
 	cert.Sig = cardCertificateRaw[6+permsLen+pubKeyLen : certLength]
 

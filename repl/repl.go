@@ -2,9 +2,9 @@ package repl
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/session"
 
 	ishell "github.com/abiosoft/ishell/v2"
 )
@@ -12,14 +12,14 @@ import (
 var (
 	t          *orchestrator.PhononTerminal
 	shell      *ishell.Shell
-	activeCard *session.Session
+	activeCard *orchestrator.Session
 )
 
 const standardPrompt string = "Phonon>"
 
 func Start() {
 	shell = ishell.New()
-	t = &orchestrator.PhononTerminal{}
+	t = orchestrator.NewPhononTerminal()
 	// get initial state of orchestrator
 	shell.Println("Welcome to the phonon command interface")
 	shell.SetPrompt(standardPrompt)
@@ -51,7 +51,6 @@ func Start() {
 		Func: deactivateCard,
 		Help: "Deselect a card if one is selected",
 	})
-
 	shell.AddCmd(&ishell.Cmd{
 		Name: "init",
 		Func: initCard,
@@ -84,11 +83,6 @@ func Start() {
 		Func: redeemPhonon,
 		Help: "Destroy the phonon at index on card at index and retrieve the priate key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
 	})
-	shell.AddCmd(&ishell.Cmd{
-		Name: "pairLocal",
-		Func: cardPairLocal,
-		Help: "Pair with another phonon card to establish a secure connection for the exchange of phonons.",
-	})
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "sendPhonons",
@@ -102,9 +96,22 @@ func Start() {
 	// })
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "pairRemote",
+		Name: "connectRemote",
 		Func: connectRemoteSession,
 		Help: "Connect to a remote server",
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "connectLocal",
+		Func: connectLocalSession,
+		Help: "Connect to a local card",
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "pairCounterparty",
+		Func: pairWithCounterparty,
+		Help: `pair with a counterparty already connected to the same counterparty provider
+		       Args: [counterpartyCardID]`,
 	})
 
 	shell.AddCmd(&ishell.Cmd{
@@ -112,19 +119,13 @@ func Start() {
 		Func: addMock,
 		Help: "make a mock card and add it to the session",
 	})
-	// shell.AddCmd(&ishell.Cmd{
-	// 	Name: "receive",
-	// 	Func: setReceiveMode,
-	// 	Help: "set card at index to receive phonons",
-	// })
-
 	//Automatically refresh connections as the user is dropped into the shell
 	shell.Process("refresh")
 	shell.Run()
 }
 
 //internal bookkeeping method to set a card to receive subsequent commands
-func setActiveCard(c *ishell.Context, s *session.Session) {
+func setActiveCard(c *ishell.Context, s *orchestrator.Session) {
 	activeCard = s
 	updatePrompt()
 	c.Printf("%v selected\n", activeCard.GetName())
@@ -245,14 +246,30 @@ func connectRemoteSession(c *ishell.Context) {
 		return
 	}
 	CounterPartyConnInfo := c.Args[0]
-	err := t.ConnectRemoteSession(activeCard, CounterPartyConnInfo)
+	err := activeCard.ConnectToRemoteProvider(CounterPartyConnInfo)
 	if err != nil {
 		c.Err(err)
 	}
 }
 
-// todo: this
-func setReceiveMode(c *ishell.Context) {
-	var sessionIndex int
-	t.SetReceiveMode(sessionIndex)
+func connectLocalSession(c *ishell.Context) {
+	fmt.Println("Connecting to local counterparty provider")
+	err := activeCard.ConnectToLocalProvider()
+	if err != nil {
+		c.Err(err)
+	}
+}
+
+func pairWithCounterparty(c *ishell.Context) {
+	c.Println("Pairing with card")
+	if len(c.Args) != 1 {
+		fmt.Println("wrong number of arguments given")
+		return
+	}
+	CounterPartyID := strings.TrimSpace(c.Args[0])
+
+	err := activeCard.ConnectToCounterparty(CounterPartyID)
+	if err != nil {
+		c.Err(err)
+	}
 }

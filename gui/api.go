@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/session"
 	"github.com/GridPlus/phonon-client/util"
 	"github.com/getlantern/systray"
 	"github.com/gorilla/mux"
@@ -35,7 +35,7 @@ var phononLogo []byte
 var xIcon []byte
 
 type apiSession struct {
-	t orchestrator.PhononTerminal
+	t *orchestrator.PhononTerminal
 }
 
 type sessionCache struct {
@@ -46,14 +46,16 @@ type sessionCache struct {
 var cache map[string]*sessionCache
 
 func Server(port string, certFile string, keyFile string, mock bool) {
-	session := apiSession{}
 	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.JSONFormatter{})
+	log.Debug("Starting local api server")
+	session := apiSession{orchestrator.NewPhononTerminal()}
+
 	//initialize cache map
 	cache = make(map[string]*sessionCache)
 	if mock {
 		//Start server with a mock and ignore actual cards
-		err := session.t.GenerateMock()
+		_, err := session.t.GenerateMock()
 		log.Debug("Mock generated")
 		if err != nil {
 			log.Error("unable to generate mock during REST server startup: ", err)
@@ -92,15 +94,18 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/genMock", session.generatemock)
 	r.HandleFunc("/listSessions", session.listSessions)
 	r.HandleFunc("/cards/{sessionID}/unlock", session.unlock)
-	r.HandleFunc("/cards/{sessionID}/Pair", session.pair)
+	r.HandleFunc("/cards/{sessionID}/pair", session.pair)
 	// phonons
 	r.HandleFunc("/cards/{sessionID}/listPhonons", session.listPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/setDescriptor", session.setDescriptor)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/send", session.send)
 	r.HandleFunc("/cards/{sessionID}/phonon/create", session.createPhonon)
-	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/redeem", session.redeemPhonon)
+	r.HandleFunc("/cards/{sessionID}/phonon/redeem", session.redeemPhonons)
+	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/export", session.exportPhonon)
 	r.HandleFunc("/cards/{sessionID}/phonon/initDeposit", session.initDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/finalizeDeposit", session.finalizeDepositPhonons)
+	r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
+	r.HandleFunc("/cards/{sessionID}/connectLocal", session.ConnectLocal)
 	// api docs
 	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/", http.FileServer(http.FS(swagger))))
 	r.HandleFunc("/swagger.json", serveAPIFunc(port))
@@ -110,7 +115,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 
 	http.Handle("/", r)
 	log.Debug("Listening for incoming connections on " + port)
-
+	fmt.Println("listen and serve")
 	go func() {
 		if certFile != "" && keyFile != "" {
 			err := http.ListenAndServeTLS(":"+port, certFile, keyFile, handler)
@@ -244,25 +249,16 @@ func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.
 	}
 	var depositPhononReq struct {
 		CurrencyType  model.CurrencyType
-		Denominations []int
+		Denominations []*model.Denomination
 	}
 	err = json.NewDecoder(r.Body).Decode(&depositPhononReq)
 	if err != nil {
 		log.Error("unable to decode initDeposit request")
 		return
 	}
-	var denoms []model.Denomination
-	for _, i := range depositPhononReq.Denominations {
-		d, err := model.NewDenomination(i)
-		if err != nil {
-			log.Error("error converting integer denomination request to denomination. err: ", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-		denoms = append(denoms, d)
-	}
 	log.Debug("depositPhononReq: ", depositPhononReq)
-	log.Debug("denoms: ", denoms)
-	phonons, err := sess.InitDepositPhonons(depositPhononReq.CurrencyType, denoms)
+	log.Debug("denoms: ", depositPhononReq.Denominations)
+	phonons, err := sess.InitDepositPhonons(depositPhononReq.CurrencyType, depositPhononReq.Denominations)
 	if err != nil {
 		log.Error("unable to create phonons for deposit. err: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -289,8 +285,7 @@ func (apiSession apiSession) finalizeDepositPhonons(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-
-	var depositConfirmations []session.DepositConfirmation
+	var depositConfirmations []orchestrator.DepositConfirmation
 	err = json.NewDecoder(r.Body).Decode(&depositConfirmations)
 	if err != nil {
 		log.Error("unable to decode depositConfirmations json. err: ", err)
@@ -303,11 +298,6 @@ func (apiSession apiSession) finalizeDepositPhonons(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	for _, r := range ret {
-		cache[sess.GetName()].phonons[r.Phonon.KeyIndex] = r.Phonon
-	}
-
 	enc := json.NewEncoder(w)
 	err = enc.Encode(ret)
 	if err != nil {
@@ -315,6 +305,65 @@ func (apiSession apiSession) finalizeDepositPhonons(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Request) {
+	sess, err := apiSession.sessionFromMuxVars(mux.Vars(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	type redeemPhononRequest struct {
+		P             *model.Phonon
+		RedeemAddress string
+	}
+	var reqs []*redeemPhononRequest
+	err = json.NewDecoder(r.Body).Decode(&reqs)
+	if err != nil {
+		log.Error("unable to decode redeemPhonons json. err: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(reqs) == 0 {
+		log.Error("request data empty")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	for _, req := range reqs {
+		log.Debugf("received redeem phonon %+v", req.P)
+		log.Debug("received redeem address: ", req.RedeemAddress)
+	}
+	//TODO: Validate data contains what it needs to
+	type redeemPhononResp struct {
+		TransactionData string
+		PrivKey         string
+		err             string
+	}
+	var resps []*redeemPhononResp
+	for _, req := range reqs {
+		var respErr string
+		transactionData, privKeyString, err := sess.RedeemPhonon(req.P, req.RedeemAddress)
+		//If err capture the error message as a string, else return string value ""
+		if err != nil {
+			respErr = err.Error()
+		}
+		resps = append(resps, &redeemPhononResp{
+			TransactionData: transactionData,
+			PrivKey:         privKeyString,
+			err:             respErr,
+		})
+	}
+
+	enc := json.NewEncoder(w)
+	err = enc.Encode(resps)
+	if err != nil {
+		log.Error("unable to encode outgoing redeem response")
+		return
+	}
+}
+
+func serveapi(w http.ResponseWriter, r *http.Request) {
+	http.ServeContent(w, r, "swagger.json", time.Time{}, bytes.NewReader(swaggeryaml))
 }
 
 func serveAPIFunc(port string) func(w http.ResponseWriter, r *http.Request) {
@@ -341,6 +390,7 @@ func (apiSession apiSession) listSessions(w http.ResponseWriter, r *http.Request
 		http.Error(w, "no cards found", http.StatusNotFound)
 		return
 	}
+
 	for _, v := range sessions {
 		names = append(names, v.GetName())
 	}
@@ -375,6 +425,46 @@ func (apiSession apiSession) unlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+func (apiSession apiSession) ConnectRemote(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Unable to read body", http.StatusBadRequest)
+		return
+	}
+	ConnectionReq := struct {
+		URL string `json:"url"`
+	}{}
+	err = json.Unmarshal(body, &ConnectionReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = sess.ConnectToRemoteProvider(ConnectionReq.URL)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func (apiSession apiSession) ConnectLocal(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	err = sess.ConnectToLocalProvider()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
 
 func (apiSession apiSession) pair(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -389,14 +479,16 @@ func (apiSession apiSession) pair(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pairReq := struct {
-		URL string `json:"url"`
-	}{}
+		CardID string `json:"cardID"`
+	}{
+		CardID: "",
+	}
 	err = json.Unmarshal(body, &pairReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = apiSession.t.ConnectRemoteSession(sess, pairReq.URL)
+	err = sess.ConnectToCounterparty(pairReq.CardID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -481,7 +573,7 @@ func (apiSession apiSession) setDescriptor(w http.ResponseWriter, r *http.Reques
 	}{}
 	json.Unmarshal(b, &inputs)
 
-	den, err := model.NewDenomination(inputs.Value)
+	den, err := model.NewDenomination(big.NewInt(int64(inputs.Value)))
 	if err != nil {
 		http.Error(w, "Unable to convert value to base and exponent form for phonon storage: "+err.Error(), http.StatusBadRequest)
 	}
@@ -527,7 +619,7 @@ func (apiSession apiSession) send(w http.ResponseWriter, r *http.Request) {
 	delete(cache[sess.GetName()].phonons, uint16(index))
 }
 
-func (apiSession apiSession) redeemPhonon(w http.ResponseWriter, r *http.Request) {
+func (apiSession apiSession) exportPhonon(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sess, err := apiSession.sessionFromMuxVars(vars)
 	if err != nil {
@@ -562,20 +654,25 @@ func (apiSession apiSession) redeemPhonon(w http.ResponseWriter, r *http.Request
 }
 
 func (apiSession apiSession) generatemock(w http.ResponseWriter, r *http.Request) {
-	err := apiSession.t.GenerateMock()
+	session, err := apiSession.t.GenerateMock()
 	if err != nil {
 		http.Error(w, "unable to generate mock", http.StatusInternalServerError)
+		return
+	}
+	cache[session] = &sessionCache{
+		cachePopulated: true,
+		phonons:        map[uint16]*model.Phonon{},
 	}
 }
 
-func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*session.Session, error) {
+func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestrator.Session, error) {
 	sessionName, ok := p["sessionID"]
 	if !ok {
 		fmt.Println("unable to find session")
-		return nil, fmt.Errorf("unable to find sesion")
+		return nil, fmt.Errorf("unable to find session")
 	}
 	sessions := apiSession.t.ListSessions()
-	var targetSession *session.Session
+	var targetSession *orchestrator.Session
 	for _, session := range sessions {
 		if session.GetName() == sessionName {
 			targetSession = session
@@ -583,7 +680,7 @@ func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*session.S
 		}
 	}
 	if targetSession == nil {
-		return nil, fmt.Errorf("unable to find sesion")
+		return nil, fmt.Errorf("unable to find session")
 	}
 	return targetSession, nil
 }

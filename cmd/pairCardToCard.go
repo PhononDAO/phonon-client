@@ -17,11 +17,9 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
-	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/session"
 
 	"github.com/spf13/cobra"
 )
@@ -66,31 +64,32 @@ func init() {
 
 func PairCardToCard() {
 	fmt.Println("opening session with sender Card")
-	var senderCard model.PhononCard
-	var sender *session.Session
+	var sender *orchestrator.Session
 	var err error
+	terminal := orchestrator.NewPhononTerminal()
+	var sessions []*orchestrator.Session
+	if !useMockSender || !useMockReceiver {
+		sessions, err = terminal.RefreshSessions()
+		if err != nil {
+			log.Fatal("Unable to find connected card/s" + err.Error())
+		}
+
+	}
+	if !useMockSender && senderReaderIndex > len(sessions)-1 {
+		log.Fatal("not enough connected cards for senderReaderIndex:" + fmt.Sprint(senderReaderIndex))
+	}
+	if !useMockReceiver && receiverReaderIndex > len(sessions)-1 {
+		log.Fatal("not enough connected cards for receiverReaderIndex:" + fmt.Sprint(receiverReaderIndex))
+	}
+
 	if useMockSender {
-		senderCard, err := card.NewMockCard(true, staticPairing)
+		senderCardID, err := terminal.GenerateMock()
 		if err != nil {
-			fmt.Println(err)
-			return
+			log.Fatal("Unable to generate mock sender: " + err.Error())
 		}
-		sender, err = session.NewSession(senderCard)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		sender = terminal.SessionFromID(senderCardID)
 	} else {
-		senderCard, err = card.QuickSecureConnection(senderReaderIndex, staticPairing)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		sender, err = session.NewSession(senderCard)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		sender = sessions[senderReaderIndex]
 	}
 	fmt.Println("sender verify PIN")
 	err = sender.VerifyPIN("111111")
@@ -98,33 +97,16 @@ func PairCardToCard() {
 		fmt.Println(err)
 		return
 	}
-	var receiverCard model.PhononCard
-	var receiverSession *session.Session
+	var receiverSession *orchestrator.Session
 	if useMockReceiver {
-		receiverCard, err = card.NewMockCard(true, staticPairing)
+		receiverCardID, err := terminal.GenerateMock()
 		if err != nil {
-			fmt.Println(err)
-			return
+			log.Fatal("Unable to generate mock receiver: " + err.Error())
 		}
-
-		fmt.Println("opening receiver session")
-		receiverSession, err = session.NewSession(receiverCard)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		receiverSession = terminal.SessionFromID(receiverCardID)
 	} else {
 		fmt.Println("opening physical connection with receiver card")
-		receiverCard, err = card.QuickSecureConnection(receiverReaderIndex, staticPairing)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		receiverSession, err = session.NewSession(receiverCard)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		receiverSession = sessions[receiverReaderIndex]
 	}
 
 	fmt.Println("verifying receiver PIN")
@@ -134,10 +116,21 @@ func PairCardToCard() {
 		return
 	}
 
-	receiver := orchestrator.NewLocalCounterParty(receiverSession)
-
 	fmt.Println("starting card to card pairing")
-	err = sender.PairWithRemoteCard(receiver)
+	err = sender.ConnectToLocalProvider()
+	if err != nil {
+		fmt.Println("Unable to initialize local counterparty provider")
+		fmt.Println(err.Error())
+		return
+	}
+	err = receiverSession.ConnectToLocalProvider()
+	if err != nil {
+		fmt.Println("Unable to initialize local counterparty provider")
+		fmt.Println(err.Error())
+		return
+	}
+
+	err = sender.ConnectToCounterparty(receiverSession.GetName())
 	if err != nil {
 		fmt.Println("error during pairing with counterparty")
 		fmt.Println(err)

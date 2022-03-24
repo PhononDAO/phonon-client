@@ -1,4 +1,4 @@
-package remote
+package v1
 
 // haha ask me what the difference between a payload and parameters is
 type Message struct {

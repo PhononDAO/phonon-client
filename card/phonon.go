@@ -11,7 +11,7 @@ import (
 
 //TLV Encodes the phonon standard schema used for setting it's descriptor. Must be extended with additional fields
 //to suit the various commands that deal with phonons.
-//Excludes fields KeyIndex, PubKey, and CurveType
+//Excludes fields KeyIndex, PubKey, and CurveType which are already known by the card at the time of creation
 //Includes fields SchemaVersion, ExtendedSchemaVersion, CurrencyType, Denomination, and ExtendedTLVs
 func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 	//KeyIndex omitted
@@ -48,6 +48,12 @@ func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	//adding chainID support through extended schema to avoid card code change
+	chainIDTLV, err := tlv.NewTLV(TagChainID, []byte{byte(p.ChainID)})
+	if err != nil {
+		return nil, err
+	}
+	p.ExtendedTLV = append(p.ExtendedTLV, chainIDTLV)
 
 	phononTLV := append(schemaVersionTLV.Encode(), extendedSchemaVersionTLV.Encode()...)
 	phononTLV = append(phononTLV, denomBaseTLV.Encode()...)
@@ -137,5 +143,14 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 		TagPhononDenomBase, TagPhononDenomExp, TagCurrencyType}
 	phonon.ExtendedTLV = phononTLV.GetRemainingTLVs(standardTags)
 
+	//Collecting ChainID from extended tags pending a more elegant way to do this
+	for _, entry := range phonon.ExtendedTLV {
+		if entry.Tag == TagChainID {
+			//guard parsing against panics
+			if len(entry.Value) == 1 {
+				phonon.ChainID = int(entry.Value[0])
+			}
+		}
+	}
 	return phonon, nil
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func addMock(c *ishell.Context){
-	err := t.GenerateMock()
+	_, err := t.GenerateMock()
 	if err != nil{
 		fmt.Println("Error generating mock phonon card")
 	}

@@ -1,33 +1,30 @@
-package orchestrator
+package orchestrator_test
 
 import (
 	"testing"
 
-	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/session"
+	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/sirupsen/logrus"
 )
 
 func TestCardToCardPair(t *testing.T) {
-	//Test with real sender and mock receiver card
-	cs, err := card.Connect(0)
+	logrus.SetLevel(logrus.DebugLevel)
+	term := orchestrator.NewPhononTerminal()
+	sessions, err := term.RefreshSessions()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	s, err := session.NewSession(cs)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	mockCard, err := card.NewMockCard(true, false)
+	s := sessions[0]
+	mockID, err := term.GenerateMock()
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	mockSession, err := session.NewSession(mockCard)
-	if err != nil {
-		t.Error(err)
+	mockSession := term.SessionFromID(mockID)
+	if mockSession == nil {
+		t.Error("unable to locate newly generated mock session")
 		return
 	}
 	err = mockSession.VerifyPIN("111111")
@@ -35,27 +32,25 @@ func TestCardToCardPair(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	mockRemote := NewLocalCounterParty(mockSession)
-
 	err = s.VerifyPIN("111111")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = s.PairWithRemoteCard(mockRemote)
+	err = s.ConnectToLocalProvider()
 	if err != nil {
-		t.Error("error pairing with remote: ", err)
+		t.Error(err)
 		return
 	}
-	t.Log("paired local actual card with remote mock")
-
-	//Test with real receiver and mock sender card
-
-	cardAsRemote := NewLocalCounterParty(s)
-	err = mockSession.PairWithRemoteCard(cardAsRemote)
+	err = mockSession.ConnectToLocalProvider()
 	if err != nil {
-		t.Error("error pairing mock with remote card: ", err)
+		t.Error(err)
 		return
 	}
-	t.Log("paired local mock with remote actual card")
+	err = s.ConnectToCounterparty(mockID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 }

@@ -14,6 +14,7 @@ type CounterpartyPhononCard interface {
 	ReceiveInvoice(invoiceData []byte) error
 	VerifyPaired() error
 	PairingStatus() RemotePairingStatus
+	ConnectToCard(string) error
 }
 
 type RemotePairingStatus int
@@ -22,7 +23,7 @@ const (
 	StatusUnconnected RemotePairingStatus = iota
 	StatusConnectedToBridge
 	StatusConnectedToCard
-	StatusPaired
 	StatusCardPair1Complete
 	StatusCardPair2Complete
+	StatusPaired
 )

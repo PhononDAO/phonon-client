@@ -80,6 +80,9 @@ const (
 
 	TagInvoiceID = 0x96
 
+	//extended tags
+	TagChainID = 0x20
+
 	//ISO7816 Standard Responses
 	SW_APPLET_SELECT_FAILED           = 0x6999
 	SW_BYTES_REMAINING_00             = 0x6100

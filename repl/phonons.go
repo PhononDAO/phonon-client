@@ -1,6 +1,7 @@
 package repl
 
 import (
+	"math/big"
 	"strconv"
 
 	"github.com/GridPlus/phonon-client/model"
@@ -96,7 +97,7 @@ func setDescriptor(c *ishell.Context) {
 		c.Println("value could not be parse: ", err)
 		return
 	}
-	denomination, err := model.NewDenomination(int(value))
+	denomination, err := model.NewDenomination(big.NewInt(int64(value)))
 	if err != nil {
 		c.Println("cannot represent denomination: ", err)
 		return

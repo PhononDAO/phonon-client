@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/model"
@@ -60,7 +61,7 @@ func setDescriptor() {
 		}
 
 		fmt.Println("sending set descriptor for keyIndex ", keyIndex)
-		d, err := model.NewDenomination(100000)
+		d, err := model.NewDenomination(big.NewInt(100000))
 		if err != nil {
 			fmt.Println(err)
 			return

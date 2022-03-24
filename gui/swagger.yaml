@@ -189,7 +189,36 @@ paths:
       type: string
       description: sessionID of connected card
 
-  /cards/{sessionID}/phonon/{phononIndex}/redeem:
+  /cards/{sessionID}/phonon/redeem:
+    post:
+      tags:
+      - "phonons"
+      responses:
+        "400":
+          description: "unable to decode request"
+        "500":
+          description: "unable to encode response"
+        "200":
+          description: "phonon successfully redeemed"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/RedeemPhononResponse"
+    parameters:
+    - in: path
+      required: true
+      name: sessionID
+      type: string
+      description: sessionID of connected card
+    - in: "body"
+      name: "body"
+      description: "array of phonons to redeem along with redeem addresses to send them to"
+      required: true
+      schema:
+        type: "array"
+        items:
+          $ref: "#/definitions/RedeemPhononRequest"
+  /cards/{sessionID}/phonon/{phononIndex}/export:
     post:
       tags:
       - "phonons"
@@ -323,4 +352,17 @@ definitions:
         type: "boolean"
       ConfirmedOnCard:
         type: "boolean"
+  RedeemPhononRequest:
+    type: object
+    properties:
+      Phonon:
+        $ref: "#/definitions/Phonon"
+      RedeemAddress:
+        type: "string"
+  RedeemPhononResponse:
+    type: object
+    properties:
+      TransactionData: "string"
+      PrivKey: "string"
+      err: "string"
 

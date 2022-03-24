@@ -2,7 +2,7 @@ package card
 
 import (
 	"fmt"
-
+	"math/big"
 	"testing"
 
 	"github.com/GridPlus/keycard-go/io"
@@ -372,7 +372,7 @@ func prepareCardForPairingTest(cs *StaticPhononCommandSet) (uint16, error) {
 	if err != nil {
 		return 0, err
 	}
-	denom, _ := model.NewDenomination(100)
+	denom, _ := model.NewDenomination(big.NewInt(100))
 	p := &model.Phonon{
 		KeyIndex:     keyIndex,
 		PubKey:       pubKey,

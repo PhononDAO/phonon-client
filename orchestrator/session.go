@@ -35,6 +35,7 @@ type Session struct {
 	Cert                  *cert.CardCertificate
 	ElementUsageMtex      sync.Mutex
 	logger                *log.Entry
+	chainSrv              chain.ChainService
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
@@ -44,6 +45,10 @@ var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 //Creates a new card session, automatically connecting if the card is already initialized with a PIN
 //The next step is to run VerifyPIN to gain access to the secure commands on the card
 func NewSession(storage model.PhononCard) (s *Session, err error) {
+	chainSrv, err := chain.NewMultiChainRouter()
+	if err != nil {
+		return nil, err
+	}
 	s = &Session{
 		cs:                    storage,
 		RemoteCard:            nil,
@@ -57,6 +62,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		Cert:                  nil,
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
+		chainSrv:              chainSrv,
 	}
 	s.logger = log.WithField("cardID", s.GetName())
 
@@ -77,12 +83,13 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		return nil, err
 	}
 	// launch session request handler
-	go s.handleIncommingSessionRequests()
+	go s.handleIncomingSessionRequests()
+	log.Debug("initialized new applet session")
 	return s, nil
 }
 
 // loop until killed
-func (s *Session) handleIncommingSessionRequests() {
+func (s *Session) handleIncomingSessionRequests() {
 	for {
 		select {
 		case req := <-s.remoteMessageChan:
@@ -438,7 +445,7 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 /*InitDepositPhonons takes a currencyType and a map of denominations to quantity,
 Creates the required phonons, deposits them using the configured service for the asset
 and upon success sets their descriptors*/
-func (s *Session) InitDepositPhonons(currencyType model.CurrencyType, denoms []model.Denomination) (phonons []*model.Phonon, err error) {
+func (s *Session) InitDepositPhonons(currencyType model.CurrencyType, denoms []*model.Denomination) (phonons []*model.Phonon, err error) {
 	log.Debugf("running InitDepositPhonons with data: %v, %v\n", currencyType, denoms)
 	if !s.verified() {
 		return nil, card.ErrPINNotEntered
@@ -451,9 +458,9 @@ func (s *Session) InitDepositPhonons(currencyType model.CurrencyType, denoms []m
 			log.Error("failed to create phonon for deposit: ", err)
 			return nil, err
 		}
-		p.Denomination = denom
+		p.Denomination = *denom
 		p.CurrencyType = currencyType
-		p.Address, err = chain.DeriveAddress(p)
+		p.Address, err = s.chainSrv.DeriveAddress(p)
 		if err != nil {
 			log.Error("failed to derive address for phonon deposit: ", err)
 			return nil, err
@@ -464,6 +471,7 @@ func (s *Session) InitDepositPhonons(currencyType model.CurrencyType, denoms []m
 	return phonons, nil
 }
 
+//Phonon Deposit and Redeem higher level methods
 type DepositConfirmation struct {
 	Phonon           *model.Phonon
 	ConfirmedOnChain bool
@@ -588,3 +596,23 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 		req.Ret <- resp
 	}
 }
+
+/*RedeemPhonon takes a phonon and a redemptionAddress as an asset specific address string (usually hex encoded)
+and submits a transaction to the asset's chain in order to transfer it to another address
+In case the on chain transfer fails, returns the private key as a fallback so that access to the asset is not lost*/
+func (s *Session) RedeemPhonon(p *model.Phonon, redeemAddress string) (transactionData string, privKeyString string, err error) {
+	//Retrieve phonon private key.
+	privKey, err := s.DestroyPhonon(p.KeyIndex)
+	if err != nil {
+		return "", "", err
+	}
+	privKeyString = util.ECCPrivKeyToHex(privKey)
+	transactionData, err = s.chainSrv.RedeemPhonon(p, privKey, redeemAddress)
+	if err != nil {
+		return "", privKeyString, err
+	}
+
+	return transactionData, privKeyString, nil
+}
+
+//TODO: retry and track progress automatically.

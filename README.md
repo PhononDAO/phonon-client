@@ -1,5 +1,5 @@
 [![Phonon Logo](./assets/logo.svg)](https://phonon.network)
-![Mozilla Public 2.0 License](https://img.shields.io/badge/license-MozillaPublic2.0-green) 
+![Mozilla Public 2.0 License](https://img.shields.io/badge/license-MozillaPublic2.0-green)
 ![Go Programming Language](https://img.shields.io/badge/Go-00ADD8?style=flat&logo=go&logoColor=white)
 
 # Come see us
@@ -44,6 +44,21 @@ go run main/phonon.go init
 ## Requirements:
 - a go compiler
 - a c compiler for whatever architecture you are compiling for
+- the go stringer tool
+
+## Dependencies
+A recent version of golang, up to date requirement given in the go.mod file. (1.16 as of this writing.)
+
+The go stringer tool, which generates human readable strings based on constant variable names for display and data exchange purposes. Install with:
+```
+go install golang.org/x/tools/cmd/stringer@latest
+```
+Ensure that your go/bin folder is set in your system's $PATH variable
+```
+export PATH=$PATH:`go env GOPATH`/bin
+```
+It's recommended to set this variable in your shell profile to make this value persist in new sessions.
+
 ## Process
 Build for your local machine architecture
 ```
@@ -56,5 +71,5 @@ make build-windows
 ```
 note: for windows compilation from mac or linux, you will need to install mingw-64 from your favorite package manager
 
-# License 
+# License
 The source code files in this repository are license under the terms of the Mozilla Public License 2.0

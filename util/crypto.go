@@ -60,6 +60,10 @@ func ECCPubKeyToHexString(pubKey *ecdsa.PublicKey) string {
 	return fmt.Sprintf("%x", ethcrypto.FromECDSAPub(pubKey))
 }
 
+func ECCPrivKeyToHex(privKey *ecdsa.PrivateKey) string {
+	return fmt.Sprintf("%x", ethcrypto.FromECDSA(privKey))
+}
+
 func ParseECCPrivKey(privKey []byte) (*ecdsa.PrivateKey, error) {
 	eccPrivKey, err := ethcrypto.ToECDSA(privKey)
 	if err != nil {

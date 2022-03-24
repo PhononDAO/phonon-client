@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"math/big"
 	"net/http"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -45,8 +46,11 @@ type sessionCache struct {
 var cache map[string]*sessionCache
 
 func Server(port string, certFile string, keyFile string, mock bool) {
+	log.SetLevel(log.DebugLevel)
+	log.SetFormatter(&log.JSONFormatter{})
 	log.Debug("Starting local api server")
 	session := apiSession{orchestrator.NewPhononTerminal()}
+
 	//initialize cache map
 	cache = make(map[string]*sessionCache)
 	if mock {
@@ -106,6 +110,9 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/", http.FileServer(http.FS(swagger))))
 	r.HandleFunc("/swagger.json", serveAPIFunc(port))
 
+	// log sink
+	r.HandleFunc("/logs", logsink)
+
 	http.Handle("/", r)
 	log.Debug("Listening for incoming connections on " + port)
 	fmt.Println("listen and serve")
@@ -123,6 +130,71 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 		}
 	}()
 	systray.Run(onReady, onExit)
+}
+
+func logsink(w http.ResponseWriter, r *http.Request) {
+	var msg map[string]interface{}
+	err := json.NewDecoder(r.Body).Decode(&msg)
+	if err != nil {
+		log.Errorf("Unable to decode logs from frontend: %s", err.Error)
+		http.Error(w, "unable to decode logs", http.StatusBadRequest)
+		return
+	}
+	lvl, ok := msg["level"]
+	if !ok {
+		log.WithFields(log.Fields(msg)).Debug()
+		return
+	} else {
+		lvlInt, err := parseJSLogLevel(lvl)
+		if err != nil {
+			log.Debug(fmt.Sprintf("Unable to decode log level from frontend: %s. Defaulting to debug", err.Error()))
+			log.WithFields(log.Fields(msg)).Debug()
+		} else {
+			switch lvlInt {
+			case jsLevelDebug:
+				log.WithFields(log.Fields(msg)).Debug()
+			case jsLevelInfo:
+				log.WithFields(log.Fields(msg)).Info()
+			case jsLevelWarn:
+				log.WithFields(log.Fields(msg)).Warn()
+			case jsLevelError:
+				log.WithFields(log.Fields(msg)).Error()
+			// no critical with logrus, so using error
+			case jsLevelCritical:
+				log.WithFields(log.Fields(msg)).Error()
+			default:
+				log.Debug("unable to decode log level from frontend. Defaulting to debug")
+				log.WithFields(log.Fields(msg)).Debug()
+			}
+		}
+	}
+}
+
+const (
+	jsLevelDebug    = 20
+	jsLevelInfo     = 30
+	jsLevelWarn     = 40
+	jsLevelError    = 50
+	jsLevelCritical = 60
+)
+
+func parseJSLogLevel(input interface{}) (int, error) {
+	var levelMap map[string]interface{}
+	if reflect.TypeOf(input) != reflect.TypeOf(map[string]interface{}{}) {
+		return 0, fmt.Errorf("Unable to parse level data from map")
+	} else {
+		levelMap = input.(map[string]interface{})
+	}
+	lvlraw, ok := levelMap["value"]
+	if !ok {
+		return 0, fmt.Errorf("Unable to find value key within level object")
+	}
+	lvlFloat64, ok := lvlraw.(float64)
+	if !ok {
+		return 0, fmt.Errorf("Unable to parse level value: %v into number", lvlraw)
+	}
+	lvlInt := int(lvlFloat64)
+	return lvlInt, nil
 }
 
 func onReady() {

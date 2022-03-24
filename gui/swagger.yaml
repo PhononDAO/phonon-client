@@ -352,7 +352,26 @@ paths:
           type: "array"
           items:
             $ref: "#/definitions/DepositConfirmation"
-
+  /logs:
+    post:
+      tags:
+      - "logs"
+      summary: "place to send logs"
+      consumes:
+      - "application/json"
+      responses:
+        "200":
+          description: "log logged"
+        "400":
+          description: "log formatted wrong"
+        "500":
+          description: "unable to log log"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          type: object
 definitions:
   Phonon:
     type: object

@@ -208,7 +208,7 @@ paths:
         type: "array"
         items:
           $ref: "#/definitions/Phonon"
-      /cards/{sessionID}/phonon/create:
+  /cards/{sessionID}/phonon/create:
     post:
       tags:
       - "phonons"

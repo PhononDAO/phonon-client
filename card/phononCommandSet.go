@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/GridPlus/keycard-go"
 	"github.com/GridPlus/keycard-go/apdu"
@@ -62,11 +63,19 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 	var level = conf.LogLevel
 
 	if level == log.DebugLevel {
-		apduLogFile, err = os.Create("../apdu.log")
-		log.Info("created apdu.log")
+		//Create an apdu.log file in the current working directory
+		dir, err := os.Getwd()
 		if err != nil {
-			log.Error("failed to create apdu.log", err)
+			log.Error("could not fetch working directory")
+		} else {
+			apduLogFile, err = os.Create(filepath.FromSlash(dir + "/apdu.log"))
+			if err != nil {
+				log.Error("failed to create apdu.log", err)
+			} else {
+				log.Info("created apdu.log")
+			}
 		}
+
 	}
 	apduLogger = &log.Logger{
 		Out:       apduLogFile,
@@ -439,7 +448,7 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 	return cs.checkOK(resp, err)
 }
 
-func (cs *PhononCommandSet) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
+func (cs *PhononCommandSet) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey model.PhononPubKey, err error) {
 	log.Debug("sending CREATE_PHONON command")
 
 	cmd := NewCommandCreatePhonon(byte(curveType))
@@ -451,7 +460,12 @@ func (cs *PhononCommandSet) CreatePhonon(curveType model.CurveType) (keyIndex ui
 	if err = checkPhononTableErrors(resp.Sw); err != nil {
 		return 0, nil, err
 	}
-	keyIndex, pubKey, err = parseCreatePhononResponse(resp.Data)
+	keyIndex, pubKeyBytes, err := parseCreatePhononResponse(resp.Data)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	pubKey, err = model.NewPhononPubKey(pubKeyBytes, curveType)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -580,7 +594,7 @@ func checkContinuation(status uint16) (continues bool, err error) {
 	return false, ErrUnknown
 }
 
-func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
+func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubKey model.PhononPubKey, err error) {
 	log.Debug("sending GET_PHONON_PUB_KEY command")
 	data, err := tlv.NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
 	if err != nil {
@@ -597,7 +611,11 @@ func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.Publ
 		return nil, err
 	}
 
-	pubKey, err := parseGetPhononPubKeyResponse(resp.Data)
+	rawPubKey, err := parseGetPhononPubKeyResponse(resp.Data)
+	if err != nil {
+		return nil, err
+	}
+	pubKey, err = model.NewPhononPubKey(rawPubKey, crv)
 	if err != nil {
 		return nil, err
 	}
@@ -902,4 +920,19 @@ func (cs *PhononCommandSet) GetAvailableMemory() (persistentMem int, onResetMem 
 		return 0, 0, 0, err
 	}
 	return persistentMem, onResetMem, onDeselectMem, nil
+}
+
+func (cs *PhononCommandSet) MineNativePhonon(difficulty uint8) (keyIndex uint16, hash []byte, err error) {
+	log.Debug("sending MINE_NATIVE_PHONON command")
+	cmd := NewCommandMineNativePhonon(difficulty)
+	resp, err := cs.sc.Send(cmd)
+	if err != nil {
+		return 0, nil, err
+	}
+	keyIndex, hash, err = parseMineNativePhononResponse(resp.Data)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return keyIndex, hash, nil
 }

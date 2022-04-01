@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/util"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
@@ -52,7 +53,10 @@ func NewClient(url string, authToken string) *bcoinClient {
 // Currently: P2SH script and P2PKH addresses.
 func (b *BTCValidator) Validate(phonon *model.Phonon) (bool, error) {
 	// get the public key of the phonon
-	key := phonon.PubKey
+	key, err := util.ParseECCPubKey(phonon.PubKey.Bytes())
+	if err != nil {
+		return false, err
+	}
 
 	// turn it into an address
 	addresses, err := pubKeyToAddresses(key)

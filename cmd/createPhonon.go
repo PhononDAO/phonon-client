@@ -72,6 +72,5 @@ func createPhonon(n int) {
 			return
 		}
 		fmt.Println("created phonon:\n", p)
-		// fmt.Printf("created phonon with keyIndex %v and pubKey % X\n", keyIndex, append(pubKey.X.Bytes(), pubKey.Y.Bytes()...))
 	}
 }

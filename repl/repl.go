@@ -81,7 +81,7 @@ func Start() {
 	shell.AddCmd(&ishell.Cmd{
 		Name: "redeem",
 		Func: redeemPhonon,
-		Help: "Destroy the phonon at index on card at index and retrieve the priate key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
+		Help: "Destroy the phonon at index on card at index and retrieve the private key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
 	})
 
 	shell.AddCmd(&ishell.Cmd{

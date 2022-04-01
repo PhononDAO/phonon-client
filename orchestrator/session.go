@@ -206,7 +206,7 @@ func (s *Session) verified() bool {
 	return false
 }
 
-func (s *Session) CreatePhonon() (keyIndex uint16, pubkey *ecdsa.PublicKey, err error) {
+func (s *Session) CreatePhonon() (keyIndex uint16, pubkey model.PhononPubKey, err error) {
 	if !s.verified() {
 		return 0, nil, card.ErrPINNotEntered
 	}
@@ -235,14 +235,14 @@ func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue uin
 	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
 }
 
-func (s *Session) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
+func (s *Session) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
 	if !s.verified() {
 		return nil, card.ErrPINNotEntered
 	}
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 
-	return s.cs.GetPhononPubKey(keyIndex)
+	return s.cs.GetPhononPubKey(keyIndex, crv)
 }
 
 func (s *Session) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {

@@ -15,7 +15,6 @@ import (
 
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/GridPlus/phonon-client/util"
 	"github.com/getlantern/systray"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -136,7 +135,7 @@ func logsink(w http.ResponseWriter, r *http.Request) {
 	var msg map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&msg)
 	if err != nil {
-		log.Errorf("Unable to decode logs from frontend: %s", err.Error)
+		log.Errorf("Unable to decode logs from frontend: %s\n", err)
 		http.Error(w, "unable to decode logs", http.StatusBadRequest)
 		return
 	}
@@ -220,16 +219,15 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	index, pubkey, err := sess.CreatePhonon()
+	index, pubKey, err := sess.CreatePhonon()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	pub := util.ECCPubKeyToHexString(pubkey)
 
 	cache[sess.GetName()].phonons[index] = &model.Phonon{
 		KeyIndex: index,
-		PubKey:   pubkey,
+		PubKey:   pubKey,
 	}
 
 	enc := json.NewEncoder(w)
@@ -237,7 +235,7 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 		Index  uint16 `json:"index"`
 		PubKey string `json:"pubkey"`
 	}{Index: index,
-		PubKey: pub})
+		PubKey: pubKey.String()})
 }
 
 func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.Request) {
@@ -525,7 +523,7 @@ func (apiSession apiSession) listPhonons(w http.ResponseWriter, r *http.Request)
 		}
 
 		for _, p := range phonons {
-			p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex)
+			p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex, p.CurveType)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return

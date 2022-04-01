@@ -11,11 +11,12 @@ func _() {
 	_ = x[Unspecified-0]
 	_ = x[Bitcoin-1]
 	_ = x[Ethereum-2]
+	_ = x[Native-3]
 }
 
-const _CurrencyType_name = "UnspecifiedBitcoinEthereum"
+const _CurrencyType_name = "UnspecifiedBitcoinEthereumNative"
 
-var _CurrencyType_index = [...]uint8{0, 11, 18, 26}
+var _CurrencyType_index = [...]uint8{0, 11, 18, 26, 32}
 
 func (i CurrencyType) String() string {
 	if i >= CurrencyType(len(_CurrencyType_index)-1) {
@@ -28,11 +29,12 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[Secp256k1-0]
+	_ = x[NativeCurve-1]
 }
 
-const _CurveType_name = "Secp256k1"
+const _CurveType_name = "Secp256k1NativeCurve"
 
-var _CurveType_index = [...]uint8{0, 9}
+var _CurveType_index = [...]uint8{0, 9, 20}
 
 func (i CurveType) String() string {
 	if i >= CurveType(len(_CurveType_index)-1) {

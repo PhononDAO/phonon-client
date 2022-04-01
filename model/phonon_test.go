@@ -1,12 +1,12 @@
 package model
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"testing"
 
-	"github.com/GridPlus/phonon-client/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -110,11 +110,14 @@ func TestMarshalPhononJSON(t *testing.T) {
 	if err != nil {
 		t.Error("error setting denomination: ", d)
 	}
-	pubKey, err := util.ParseECCPubKey([]byte("041ecfecb19648bb85de8ee4d39b0d06ce5586da71e2e177e94ef98de24edf8eaef57fa76617033d145d7e5dd8b0965148a0825241e7983e0a40421f942492018b"))
+	pubKeyBytes, err := hex.DecodeString("041ecfecb19648bb85de8ee4d39b0d06ce5586da71e2e177e94ef98de24edf8eaef57fa76617033d145d7e5dd8b0965148a0825241e7983e0a40421f942492018b")
 	if err != nil {
-		t.Error("error parsing pubKey. err: ", err)
+		t.Fatal("error decoding hex pubKey")
 	}
-	// d, _ := NewDenomination()
+	pubKey, err := NewPhononPubKey(pubKeyBytes, Secp256k1)
+	if err != nil {
+		t.Fatal("error parsing pubKey. err: ", err)
+	}
 	p := &Phonon{
 		KeyIndex:     1,
 		PubKey:       pubKey,
@@ -126,7 +129,7 @@ func TestMarshalPhononJSON(t *testing.T) {
 	if err != nil {
 		t.Error("could not JSONMarshal phonon: ", err)
 	}
-	correctJSON := string([]byte(`{"KeyIndex":1,"PubKey":"041ecfecb19648bb85de8ee4d39b0d06ce5586da71e2e177e94ef98de24edf8eaef57fa76617033d145d7e5dd8b0965148a0825241e7983e0a40421f942492018b","Address":"","AddressType":0,"SchemaVersion":0,"ExtendedSchemaVersion":0,"Denomination":"1000000000000000","CurrencyType":2,"ChainID":1337}`))
+	correctJSON := string([]byte(`{"KeyIndex":1,"PubKey":"041ecfecb19648bb85de8ee4d39b0d06ce5586da71e2e177e94ef98de24edf8eaef57fa76617033d145d7e5dd8b0965148a0825241e7983e0a40421f942492018b","Address":"","AddressType":0,"SchemaVersion":0,"ExtendedSchemaVersion":0,"Denomination":"1000000000000000","CurrencyType":2,"ChainID":1337,"CurveType":0}`))
 
 	JSONstring := string(JSON)
 
@@ -137,7 +140,7 @@ func TestMarshalPhononJSON(t *testing.T) {
 }
 
 func TestMarshalAndUnmarshalPhonon(t *testing.T) {
-	testJSON := []byte(`{"KeyIndex":1,"PubKey":"041ecfecb19648bb85de8ee4d39b0d06ce5586da71e2e177e94ef98de24edf8eaef57fa76617033d145d7e5dd8b0965148a0825241e7983e0a40421f942492018b","Address":"","AddressType":0,"SchemaVersion":0,"ExtendedSchemaVersion":0,"Denomination":"1000000000000000","CurrencyType":2,"ChainID":1337}`)
+	testJSON := []byte(`{"KeyIndex":1,"PubKey":"041ecfecb19648bb85de8ee4d39b0d06ce5586da71e2e177e94ef98de24edf8eaef57fa76617033d145d7e5dd8b0965148a0825241e7983e0a40421f942492018b","Address":"","AddressType":0,"SchemaVersion":0,"ExtendedSchemaVersion":0,"Denomination":"1000000000000000","CurrencyType":2,"ChainID":1337,"CurveType":0}`)
 
 	p := &Phonon{}
 	err := json.Unmarshal(testJSON, p)

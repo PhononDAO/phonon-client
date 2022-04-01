@@ -9,6 +9,8 @@ import (
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/usb"
 	"github.com/google/go-cmp/cmp"
+
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -168,7 +170,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		var matchedPhononCount int
 
 		for _, received := range receivedPhonons {
-			received.PubKey, err = cs.GetPhononPubKey(uint16(received.KeyIndex))
+			received.PubKey, err = cs.GetPhononPubKey(uint16(received.KeyIndex), received.CurveType)
 			if err != nil {
 				t.Errorf("could not get phonon pubkey at index %v: %v\n", received.KeyIndex, err)
 				return
@@ -230,14 +232,14 @@ func TestDestroyPhonon(t *testing.T) {
 		return
 	}
 
-	resultPubKey := privKey.PublicKey
-	if !createdPubKey.Equal(&resultPubKey) {
+	resultPubKey, _ := model.NewPhononPubKey(ethcrypto.FromECDSAPub(&privKey.PublicKey), model.Secp256k1)
+	if !createdPubKey.Equal(resultPubKey) {
 		t.Errorf("createdPubKey: %+v", createdPubKey)
 		t.Errorf("derivedPubKey: %+v", resultPubKey)
 		t.Error("derived pubKey from destroyed phonon was not equivalent to created PubKey")
 		t.Error("privKey from destroy: % X", append(privKey.X.Bytes(), privKey.Y.Bytes()...))
-		t.Errorf("derived result: % X\n", append(resultPubKey.X.Bytes(), resultPubKey.Y.Bytes()...))
-		t.Errorf("created pubKey: % X\n", append(createdPubKey.X.Bytes(), createdPubKey.Y.Bytes()...))
+		t.Errorf("derived result: %v\n", resultPubKey)
+		t.Errorf("created pubKey: %v\n", createdPubKey)
 	}
 }
 

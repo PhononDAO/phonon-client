@@ -20,7 +20,7 @@ import (
 	"strconv"
 
 	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/util"
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/spf13/cobra"
 )
 
@@ -56,10 +56,22 @@ func getPhononPubKey(keyIndex uint16) {
 		fmt.Println(err)
 		return
 	}
-	pubKey, err := cs.GetPhononPubKey(keyIndex)
+	//List must be run beforehand to check the phonon's curveType
+	phonons, err := cs.ListPhonons(0, 0, 0)
+	if err != nil {
+		fmt.Println("error listing phonons: ", err)
+		return
+	}
+	var crv model.CurveType
+	for _, p := range phonons {
+		if p.KeyIndex == keyIndex {
+			crv = p.CurveType
+		}
+	}
+	pubKey, err := cs.GetPhononPubKey(keyIndex, crv)
 	if err != nil {
 		fmt.Println("error getting phonon public key: ", err)
 		return
 	}
-	fmt.Print("got pubkey: ", util.ECCPubKeyToHexString(pubKey))
+	fmt.Println("got pubkey: ", pubKey)
 }

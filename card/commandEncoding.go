@@ -162,7 +162,7 @@ func ParsePhononDescriptor(description []byte) (*model.Phonon, error) {
 	return phonon, nil
 }
 
-func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err error) {
+func parseGetPhononPubKeyResponse(resp []byte) (rawPubKey []byte, err error) {
 	collection, err := tlv.ParseTLVPacket(resp, TagTransferPhononPacket)
 	if err != nil {
 		return nil, err
@@ -178,15 +178,11 @@ func parseGetPhononPubKeyResponse(resp []byte) (pubKey *ecdsa.PublicKey, err err
 		return nil, err
 	}
 
-	rawPubKey, err := descriptionTLV.FindTag(TagPhononPubKey)
+	rawPubKey, err = descriptionTLV.FindTag(TagPhononPubKey)
 	if err != nil {
 		return nil, err
 	}
-	pubKey, err = util.ParseECCPubKey(rawPubKey)
-	if err != nil {
-		return nil, err
-	}
-	return pubKey, nil
+	return rawPubKey, nil
 }
 
 func parseDestroyPhononResponse(resp []byte) (privKey *ecdsa.PrivateKey, err error) {
@@ -205,7 +201,7 @@ func parseDestroyPhononResponse(resp []byte) (privKey *ecdsa.PrivateKey, err err
 	return privKey, nil
 }
 
-func parseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
+func parseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKeyBytes []byte, err error) {
 	collection, err := tlv.ParseTLVPacket(resp, TagPhononKeyCollection)
 	if err != nil {
 		return 0, nil, err
@@ -216,20 +212,14 @@ func parseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKey *ecdsa.Publ
 		return 0, nil, err
 	}
 
-	pubKeyBytes, err := collection.FindTag(TagPhononPubKey)
+	pubKeyBytes, err = collection.FindTag(TagPhononPubKey)
 	if err != nil {
 		return 0, nil, err
 	}
 
 	keyIndex = binary.BigEndian.Uint16(keyIndexBytes)
 
-	pubKey, err = util.ParseECCPubKey(pubKeyBytes)
-	if err != nil {
-		log.Error("could not parse pubkey from phonon response: ", err)
-		return keyIndex, nil, err
-	}
-
-	return keyIndex, pubKey, nil
+	return keyIndex, pubKeyBytes, nil
 }
 
 func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error) {
@@ -318,13 +308,31 @@ func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertifi
 	return salt, cardCert, pairingSig, nil
 }
 
-func parseGetAvailableMemoryResponse(data []byte) (persistentMem int, onResetMem int, onDeselectMem int, err error) {
-	if len(data) != 12 {
+func parseGetAvailableMemoryResponse(resp []byte) (persistentMem int, onResetMem int, onDeselectMem int, err error) {
+	if len(resp) != 12 {
 		return 0, 0, 0, errors.New("response invalid length")
 	}
-	persistentMem = int(binary.BigEndian.Uint32(data[0:4]))
-	onResetMem = int(binary.BigEndian.Uint32(data[4:8]))
-	onDeselectMem = int(binary.BigEndian.Uint32(data[8:12]))
+	persistentMem = int(binary.BigEndian.Uint32(resp[0:4]))
+	onResetMem = int(binary.BigEndian.Uint32(resp[4:8]))
+	onDeselectMem = int(binary.BigEndian.Uint32(resp[8:12]))
 
 	return persistentMem, onResetMem, onDeselectMem, nil
+}
+
+func parseMineNativePhononResponse(resp []byte) (keyIndex uint16, hash []byte, err error) {
+	collection, err := tlv.ParseTLVPacket(resp, TagPhononKeyCollection)
+	if err != nil {
+		return 0, nil, err
+	}
+	keyIndexBytes, err := collection.FindTag(TagKeyIndex)
+	if err != nil {
+		return 0, nil, err
+	}
+	keyIndex = binary.BigEndian.Uint16(keyIndexBytes)
+
+	hash, err = collection.FindTag(TagPhononPubKey)
+	if err != nil {
+		return 0, nil, err
+	}
+	return keyIndex, hash, nil
 }

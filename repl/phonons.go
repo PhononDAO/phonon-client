@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/util"
 	ishell "github.com/abiosoft/ishell/v2"
 )
 
@@ -20,7 +19,7 @@ func createPhonon(c *ishell.Context) {
 	}
 	c.Println("created phonon")
 	c.Println("Key Index: ", keyIndex)
-	c.Println("Public Key: ", util.ECCPubKeyToHexString(pubKey))
+	c.Println("Public Key: ", pubKey)
 }
 
 func listPhonons(c *ishell.Context) {
@@ -59,7 +58,7 @@ func listPhonons(c *ishell.Context) {
 		return
 	}
 	for _, p := range phonons {
-		p.PubKey, err = activeCard.GetPhononPubKey(p.KeyIndex)
+		p.PubKey, err = activeCard.GetPhononPubKey(p.KeyIndex, p.CurveType)
 		if err != nil {
 			c.Printf("error retrieving phonon pubKey at keyIndex %v. err: %v\n", p.KeyIndex, err)
 		}

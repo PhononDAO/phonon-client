@@ -16,10 +16,10 @@ type PhononCard interface {
 	IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error)
 	VerifyPIN(pin string) error
 	ChangePIN(pin string) error
-	CreatePhonon(curveType CurveType) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error)
+	CreatePhonon(curveType CurveType) (keyIndex uint16, pubKey PhononPubKey, err error)
 	SetDescriptor(phonon *Phonon) error
 	ListPhonons(currencyType CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*Phonon, error)
-	GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error)
+	GetPhononPubKey(keyIndex uint16, crv CurveType) (pubkey PhononPubKey, err error)
 	DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error)
 	SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error)
 	ReceivePhonons(phononTransfer []byte) error
@@ -35,4 +35,5 @@ type PhononCard interface {
 	SetFriendlyName(name string) error
 	GetFriendlyName() (string, error)
 	GetAvailableMemory() (persistentMem int, onResetMem int, onDeselectMem int, err error)
+	MineNativePhonon(difficulty uint8) (keyIndex uint16, hash []byte, err error)
 }

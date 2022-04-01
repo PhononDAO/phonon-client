@@ -2,6 +2,7 @@
 package model
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
@@ -10,21 +11,22 @@ import (
 	"math"
 	"math/big"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/GridPlus/phonon-client/tlv"
 	"github.com/GridPlus/phonon-client/util"
+	"github.com/ethereum/go-ethereum/crypto"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Phonon struct {
 	KeyIndex              uint16
-	PubKey                *ecdsa.PublicKey
+	PubKey                PhononPubKey
 	CurveType             CurveType
 	SchemaVersion         uint8
 	ExtendedSchemaVersion uint8
 	Denomination          Denomination
 	CurrencyType          CurrencyType
-	ChainID               int //Not currently stored on card
+	ChainID               int
 	ExtendedTLV           []tlv.TLV
 	Address               string //chain specific attribute not stored on card
 	AddressType           uint8  //chain specific address type identifier
@@ -35,7 +37,7 @@ func (p *Phonon) String() string {
 		p.KeyIndex,
 		p.Denomination,
 		p.CurrencyType,
-		util.ECCPubKeyToHexString(p.PubKey),
+		p.PubKey,
 		p.Address,
 		p.ChainID,
 		p.CurveType,
@@ -44,7 +46,7 @@ func (p *Phonon) String() string {
 		p.ExtendedTLV)
 }
 
-//Phonon data structured for display to the user an
+//Phonon data structured for display to the user and use in frontends
 type PhononJSON struct {
 	KeyIndex              uint16
 	PubKey                string //pubkey as hexstring
@@ -55,6 +57,7 @@ type PhononJSON struct {
 	Denomination          Denomination
 	CurrencyType          int
 	ChainID               int
+	CurveType             uint8
 }
 
 //Unmarshals a PhononUserView into an internal phonon representation
@@ -65,12 +68,14 @@ func (p *Phonon) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	p.KeyIndex = phJSON.KeyIndex
+	p.CurveType = CurveType(phJSON.CurveType)
+
 	//Convert hexstring pubkey to *ecdsa.PublicKey
 	pubKeyBytes, err := hex.DecodeString(phJSON.PubKey)
 	if err != nil {
 		return err
 	}
-	p.PubKey, err = util.ParseECCPubKey(pubKeyBytes)
+	p.PubKey, err = NewPhononPubKey(pubKeyBytes, p.CurveType)
 	if err != nil {
 		return err
 	}
@@ -89,7 +94,7 @@ func (p *Phonon) UnmarshalJSON(b []byte) error {
 func (p *Phonon) MarshalJSON() ([]byte, error) {
 	userReqPhonon := &PhononJSON{
 		KeyIndex:              p.KeyIndex,
-		PubKey:                util.ECCPubKeyToHexString(p.PubKey),
+		PubKey:                p.PubKey.String(),
 		Address:               p.Address,
 		SchemaVersion:         p.SchemaVersion,
 		ExtendedSchemaVersion: p.ExtendedSchemaVersion,
@@ -111,12 +116,15 @@ const (
 	Unspecified CurrencyType = 0x0000
 	Bitcoin     CurrencyType = 0x0001
 	Ethereum    CurrencyType = 0x0002
+	Native      CurrencyType = 0x0003
 )
 
 type CurveType uint8
 
 const (
 	Secp256k1 CurveType = iota
+	NativeCurve
+	Unknown = 0xFF
 )
 
 type Denomination struct {
@@ -172,6 +180,94 @@ func (d Denomination) Value() *big.Int {
 
 func (d Denomination) String() string {
 	return fmt.Sprint(d.Value())
+}
+
+type PhononPubKey interface {
+	Decode([]byte) (PhononPubKey, error)
+	String() string
+	Bytes() []byte
+	Equal(PhononPubKey) bool
+}
+
+type ECCPubKey struct {
+	PubKey *ecdsa.PublicKey
+}
+
+func (pubKey *ECCPubKey) Decode(data []byte) (pk PhononPubKey, err error) {
+	pubKey.PubKey, err = util.ParseECCPubKey(data)
+	if err != nil {
+		return nil, err
+	}
+	return pubKey, nil
+}
+
+func (pubKey *ECCPubKey) String() string {
+	return util.ECCPubKeyToHexString(pubKey.PubKey)
+}
+
+func (pubKey *ECCPubKey) Bytes() []byte {
+	return crypto.FromECDSAPub(pubKey.PubKey)
+}
+
+func (pubKey *ECCPubKey) Equal(x PhononPubKey) bool {
+	xx, ok := x.(*ECCPubKey)
+	if !ok {
+		return false
+	}
+	return pubKey.PubKey.Equal(xx.PubKey)
+}
+
+//Convenience function to easily convert PhononPublicKeys to their underyling concrete type when possible
+func PhononPubKeyToECDSA(pubKey PhononPubKey) (*ecdsa.PublicKey, error) {
+	ecc, ok := pubKey.(*ECCPubKey)
+	if !ok {
+		return nil, errors.New("cannot convert non-ECC pubkey to ECC")
+	}
+	return ecc.PubKey, nil
+}
+
+type NativePubKey struct {
+	Hash []byte
+}
+
+func (nat *NativePubKey) Decode(data []byte) (pk PhononPubKey, err error) {
+	if len(data) != 64 {
+		log.Error("native phonon pubkey data should have been 64 bytes but was", len(data))
+		return nil, errors.New("native phonon pubkey was invalid length != 64")
+	}
+	nat.Hash = data
+	return nat, nil
+}
+
+func (nat *NativePubKey) String() string {
+	return hex.EncodeToString(nat.Hash)
+}
+
+func (nat *NativePubKey) Bytes() []byte {
+	return nat.Hash
+}
+
+func (nat *NativePubKey) Equal(x PhononPubKey) bool {
+	xx, ok := x.(*NativePubKey)
+	if !ok {
+		return false
+	}
+	return bytes.Equal(nat.Hash, xx.Hash)
+}
+
+//NewPhononPubKey parses raw public key data into the assigned PhononPubKey interface based on the given CurveType
+func NewPhononPubKey(rawPubKey []byte, crv CurveType) (pubKey PhononPubKey, err error) {
+	//Switch pubkey interface based on given curveType
+	switch crv {
+	case Secp256k1:
+		pubKey = &ECCPubKey{}
+		return pubKey.Decode(rawPubKey)
+	case NativeCurve:
+		pubKey = &NativePubKey{}
+		return pubKey.Decode(rawPubKey)
+	default:
+		return nil, errors.New("unknown phonon public key curve type")
+	}
 }
 
 //Unmarshal Denominations from string to internal representation

@@ -74,14 +74,14 @@ func TestEthChainServiceRedeem(t *testing.T) {
 	eth.cl = sim
 	eth.clChainID = testChainID
 
-	//scrap
-	// privKey, err := util.ParseECCPrivKey(common.FromHex(privKeyHex))
-	// if err != nil {
-	// 	t.Error("could not parse hex privKey")
-	// }
+	pubKey, err := model.NewPhononPubKey(crypto.FromECDSAPub(&senderPrivKey.PublicKey), model.Secp256k1)
+	if err != nil {
+		t.Fatal("could not construct pubKey: ", err)
+	}
+
 	p := &model.Phonon{
 		KeyIndex:     1,
-		PubKey:       &senderPrivKey.PublicKey,
+		PubKey:       pubKey,
 		CurrencyType: model.Ethereum,
 		ChainID:      testChainID,
 	}

@@ -40,6 +40,9 @@ type MockCard struct {
 	outgoingInvoice Invoice
 	staticPairing   bool
 	friendlyName    string
+	mintLimit       int
+	mintRate        int
+	nativePhonons   []*NativePhonon
 }
 
 type MockPhonon struct {
@@ -94,6 +97,32 @@ func (phonon *MockPhonon) Encode() (tlv.TLV, error) {
 	return phononDescriptionTLV, nil
 }
 
+type NativePhonon struct {
+	originCert cert.CardCertificate
+	originSig  []byte   //representing an ECDSA signatures
+	hash       [32]byte //sha256 representing mint rarity
+	rarity     int      //human readable rarity representation
+}
+
+func (np *NativePhonon) String() string {
+	return fmt.Sprintf(
+		"Certificate: \n%v\nSignature: %x\nHash %x\nRarity: %v\n\n",
+		np.originCert,
+		np.originSig,
+		np.hash,
+		np.rarity,
+	)
+}
+
+func (c *MockCard) AddNativePhonon(np *NativePhonon) error {
+	c.nativePhonons = append(c.nativePhonons, np)
+	return nil
+}
+
+func (c *MockCard) OutputNativePhonons() []*NativePhonon {
+	return c.nativePhonons
+}
+
 func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 	phononTLV, err := tlv.ParseTLVPacket(privatePhononTLV, TagPhononPrivateDescription)
 	if err != nil {
@@ -114,11 +143,15 @@ func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 
 	phonon.Phonon = *publicPhonon
 
+	phonon.CurveType = model.Secp256k1
 	phonon.PrivateKey, err = util.ParseECCPrivKey(rawPrivKey)
 	if err != nil {
 		return phonon, err
 	}
-	phonon.PubKey = &phonon.PrivateKey.PublicKey
+	phonon.PubKey, err = model.NewPhononPubKey(ethcrypto.FromECDSAPub(&phonon.PrivateKey.PublicKey), phonon.CurveType)
+	if err != nil {
+		return phonon, err
+	}
 
 	return phonon, nil
 }
@@ -164,6 +197,8 @@ func NewMockCard(isInitialized bool, isStatic bool) (*MockCard, error) {
 		IdentityPubKey: &identityPrivKey.PublicKey,
 		invoices:       make(map[string][]byte),
 		staticPairing:  isStatic,
+		mintLimit:      100,
+		mintRate:       20,
 	}
 
 	//If card should be initialized, go ahead and install a mock cert and set the test pin
@@ -536,7 +571,7 @@ func (c *MockCard) Pair() (*cert.CardCertificate, error) {
 
 //Phonon Management Functions
 
-func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey *ecdsa.PublicKey, err error) {
+func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey model.PhononPubKey, err error) {
 	if !c.pinVerified {
 		return 0, nil, ErrPINNotEntered
 	}
@@ -547,9 +582,12 @@ func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pub
 	// generate key
 	private, err := ecdsa.GenerateKey(ethcrypto.S256(), rand.Reader)
 	if err != nil {
-		return 0, &ecdsa.PublicKey{}, err
+		return 0, nil, err
 	}
-	newp.PubKey = &private.PublicKey
+	newp.PubKey, err = model.NewPhononPubKey(ethcrypto.FromECDSAPub(&private.PublicKey), curveType)
+	if err != nil {
+		return 0, nil, err
+	}
 	newp.PrivateKey = private
 	newp.CurveType = curveType
 	//add it in the correct place
@@ -592,10 +630,10 @@ func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue ui
 	return ret, nil
 }
 
-func (c *MockCard) GetPhononPubKey(keyIndex uint16) (pubkey *ecdsa.PublicKey, err error) {
+func (c *MockCard) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
 	index := int(keyIndex)
 	if index > len(c.Phonons) || c.Phonons[index].deleted {
-		return &ecdsa.PublicKey{}, fmt.Errorf("No phonon at index %d", index)
+		return nil, fmt.Errorf("No phonon at index %d", index)
 	}
 	if c.Phonons[index].PubKey == nil {
 		return nil, errors.New("phonon pubkey not found. internal error")
@@ -851,4 +889,9 @@ func (c *MockCard) GetFriendlyName() (string, error) {
 func (c *MockCard) GetAvailableMemory() (int, int, int, error) {
 	//Command is irrelevant in the mock, so just return 0's
 	return 0, 0, 0, nil
+}
+
+func (c *MockCard) MineNativePhonon(difficulty uint8) (keyIndex uint16, hash []byte, err error) {
+	//command not currently needed in mock
+	return 0, nil, nil
 }

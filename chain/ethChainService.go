@@ -40,7 +40,11 @@ func NewEthChainService() (*EthChainService, error) {
 
 //Derives an ETH address from a phonon's ECDSA Public Key
 func (eth *EthChainService) DeriveAddress(p *model.Phonon) (address string, err error) {
-	return ethcrypto.PubkeyToAddress(*p.PubKey).Hex(), nil
+	eccPubKey, err := model.PhononPubKeyToECDSA(p.PubKey)
+	if err != nil {
+		return "", err
+	}
+	return ethcrypto.PubkeyToAddress(*eccPubKey).Hex(), nil
 }
 
 func (eth *EthChainService) RedeemPhonon(p *model.Phonon, privKey *ecdsa.PrivateKey, redeemAddress string) (transactionData string, err error) {
@@ -83,10 +87,14 @@ func (eth *EthChainService) RedeemPhonon(p *model.Phonon, privKey *ecdsa.Private
 //ReconcileRedeemData validates the input data to ensure it contains all that's needed for a successful redemption.
 //It will update the phonon data structure with a derived address if necessary
 func (eth *EthChainService) ValidateRedeemData(p *model.Phonon, privKey *ecdsa.PrivateKey, redeemAddress string) (err error) {
+	eccPubKey, err := model.PhononPubKeyToECDSA(p.PubKey)
+	if err != nil {
+		return err
+	}
 	//Check that pubkey listed in metadata matches pubKey derived from phonon's private key
-	if !p.PubKey.Equal(privKey.Public()) {
+	if !eccPubKey.Equal(privKey.Public()) {
 		log.Error("phonon pubkey metadata and pubkey derived from redemption privKey did not match. err: ", err)
-		log.Error("metadata pubkey: ", util.ECCPubKeyToHexString(p.PubKey))
+		log.Error("metadata pubkey: ", util.ECCPubKeyToHexString(eccPubKey))
 		log.Error("privKey derived key: ", util.ECCPubKeyToHexString(&privKey.PublicKey))
 		return errors.New("pubkey metadata and redemption private key did not match")
 	}

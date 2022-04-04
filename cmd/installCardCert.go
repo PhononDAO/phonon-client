@@ -28,6 +28,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 // installCardCert represents the installCardCert command
@@ -40,15 +42,17 @@ var installCardCert = &cobra.Command{
 }
 
 var (
-	useDemoKey  bool
-	yubikeySlot string
-	yubikeyPass string
+	useDemoKey    bool
+	provisionMode bool
+	yubikeySlot   string
+	yubikeyPass   string
 )
 
 func init() {
 	rootCmd.AddCommand(installCardCert)
 
 	installCardCert.Flags().BoolVarP(&useDemoKey, "demo", "d", false, "Use the demo key to sign -- insecure for demo purposes only")
+	installCardCert.Flags().BoolVarP(&provisionMode, "provision", "p", false, "suppress all output except for the cardID for automated provisioning")
 	installCardCert.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing yubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
 	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Yubikey Password")
 }
@@ -57,7 +61,9 @@ func InstallCardCert() {
 	var signKeyFunc func([]byte) ([]byte, error)
 	// Determine Signing Key
 	if useDemoKey {
-		fmt.Println("Using Demo Key!")
+		if !provisionMode {
+			fmt.Println("Using Demo Key!")
+		}
 		signKeyFunc = cert.SignWithDemoKey
 	} else {
 		//gather information for ubikey signing
@@ -69,13 +75,13 @@ func InstallCardCert() {
 			input, err := reader.ReadString('\n')
 			if err != nil {
 				fmt.Println(err)
-				return
+				os.Exit(1)
 			}
 			input = strings.TrimSuffix(input, "\n")
 			yubikeySlotInt, err = strconv.Atoi(input)
 			if err != nil {
 				fmt.Println(err)
-				return
+				os.Exit(1)
 			}
 		}
 		if yubikeyPass == "" {
@@ -100,13 +106,14 @@ func InstallCardCert() {
 	} else {
 		cs = baseCS
 	}
-	_, _, _, err = cs.Select()
+	_, cardPubKey, _, err := cs.Select()
 	if err != nil {
 		fmt.Println(err)
-		return
+		os.Exit(1)
 	}
 	err = cs.InstallCertificate(signKeyFunc)
 	if err != nil {
 		log.Fatalf("Unable to Install Certificate: %s", err.Error())
 	}
+	fmt.Printf("%x\n", ethcrypto.FromECDSAPub(cardPubKey))
 }

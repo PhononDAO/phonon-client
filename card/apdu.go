@@ -128,13 +128,17 @@ type CmdErrTable map[int]error
 func (cmd *Command) HumanReadableErr(res *apdu.Response) error {
 	var ret error
 	var err error
-	err, exists := cmd.PossibleErrs[int(res.Sw)]
-	if exists {
-		ret = err
-	} else if res.Sw != SW_NO_ERROR {
-		return errors.New("unspecified error for command")
+	if res.Sw1 != 0x90 {
+		var exists bool
+		err, exists = cmd.PossibleErrs[int(res.Sw)]
+		if exists {
+			ret = err
+		} else if res.Sw != SW_NO_ERROR {
+			return errors.New("unspecified error for command")
+		}
 	}
 	return ret
+
 }
 
 //NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU

@@ -521,7 +521,7 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 	log.Debugf("p2: % X", p2)
 	cmd := NewCommandListPhonons(0x00, p2, cmdData)
 	resp, err := cs.sc.Send(cmd)
-	if err != nil {
+	if err != nil && err != ErrDefault {
 		return nil, err
 	}
 
@@ -588,7 +588,7 @@ func checkContinuation(status uint16) (continues bool, err error) {
 	if status == 0x9000 {
 		return false, nil
 	}
-	if status > 0x9000 {
+	if status > 0x9000 && status < 0x9100 {
 		return true, nil
 	}
 	return false, ErrUnknown

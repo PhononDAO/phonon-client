@@ -116,6 +116,7 @@ const (
 
 var (
 	ErrMiningFailed = errors.New("native phonon mine attempt failed")
+	ErrDefault      = errors.New("unspecified error for command")
 )
 
 type Command struct {
@@ -126,19 +127,14 @@ type Command struct {
 type CmdErrTable map[int]error
 
 func (cmd *Command) HumanReadableErr(res *apdu.Response) error {
-	var ret error
-	var err error
-	if res.Sw1 != 0x90 {
-		var exists bool
-		err, exists = cmd.PossibleErrs[int(res.Sw)]
-		if exists {
-			ret = err
-		} else if res.Sw != SW_NO_ERROR {
-			return errors.New("unspecified error for command")
-		}
+	err, exists := cmd.PossibleErrs[int(res.Sw)]
+	if exists {
+		return err
+		//Return unspecified error if code is not listed in command and is != 0x9000
+	} else if res.Sw != SW_NO_ERROR {
+		return ErrDefault
 	}
-	return ret
-
+	return nil
 }
 
 //NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU

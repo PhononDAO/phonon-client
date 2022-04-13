@@ -47,7 +47,7 @@ type MockCard struct {
 
 type MockPhonon struct {
 	model.Phonon
-	PrivateKey *ecdsa.PrivateKey
+	PrivateKey []byte
 	deleted    bool
 }
 
@@ -70,7 +70,7 @@ func (c *MockCard) deletePhonon(index int) {
 }
 
 func (phonon *MockPhonon) Encode() (tlv.TLV, error) {
-	privKeyTLV, err := tlv.NewTLV(TagPhononPrivKey, phonon.PrivateKey.D.Bytes())
+	privKeyTLV, err := tlv.NewTLV(TagPhononPrivKey, phonon.PrivateKey)
 	if err != nil {
 		log.Error("could not encode mockPhonon privKey: ", err)
 		return tlv.TLV{}, err
@@ -130,7 +130,7 @@ func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 	}
 
 	//Parse private key for later
-	rawPrivKey, err := phononTLV.FindTag(TagPhononPrivKey)
+	phonon.PrivateKey, err = phononTLV.FindTag(TagPhononPrivKey)
 	if err != nil {
 		log.Debug("could not parse phonon private key tlv")
 		return phonon, err
@@ -144,14 +144,10 @@ func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 	phonon.Phonon = *publicPhonon
 
 	phonon.CurveType = model.Secp256k1
-	phonon.PrivateKey, err = util.ParseECCPrivKey(rawPrivKey)
-	if err != nil {
-		return phonon, err
-	}
-	phonon.PubKey, err = model.NewPhononPubKey(ethcrypto.FromECDSAPub(&phonon.PrivateKey.PublicKey), phonon.CurveType)
-	if err != nil {
-		return phonon, err
-	}
+	// phonon.PubKey, err = model.NewPhononPubKey(ethcrypto.FromECDSAPub(&phonon.PrivateKey.PublicKey), phonon.CurveType)
+	// if err != nil {
+	// 	return phonon, err
+	// }
 
 	return phonon, nil
 }
@@ -588,7 +584,7 @@ func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pub
 	if err != nil {
 		return 0, nil, err
 	}
-	newp.PrivateKey = private
+	newp.PrivateKey = private.D.Bytes()
 	newp.CurveType = curveType
 	//add it in the correct place
 	index := c.addPhonon(&newp)
@@ -823,7 +819,11 @@ func (c *MockCard) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, er
 	index := int(keyIndex)
 	c.deletedPhonons = append(c.deletedPhonons, index)
 	c.Phonons[index].deleted = true
-	return c.Phonons[index].PrivateKey, nil
+	ecdsaPrivKey, err := util.ParseECCPrivKey(c.Phonons[index].PrivateKey)
+	if err != nil {
+		return nil, err
+	}
+	return ecdsaPrivKey, nil
 }
 
 func (c *MockCard) GenerateInvoice() (invoiceData []byte, err error) {

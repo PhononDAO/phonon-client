@@ -299,5 +299,3 @@ func (d *Denomination) MarshalJSON() ([]byte, error) {
 	}
 	return data, nil
 }
-
-//TODO: Denomination JSON Marshalling

@@ -49,9 +49,10 @@ func LoadConfig() (config Config, err error) {
 	err = viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 		log.Debug("config file not found, using default config")
+		return DefaultConfig(), nil
 	}
 	if err != nil {
-		log.Error("unable to set configuration. err: ", err)
+		log.Error("unable to read configuration file, using default config. err: ", err)
 		return DefaultConfig(), err
 	}
 

@@ -566,7 +566,9 @@ func NewCommandGetFriendlyName() *Command {
 			[]byte{0x00},
 		),
 		//TODO: Errors
-		PossibleErrs: CmdErrTable{},
+		PossibleErrs: CmdErrTable{
+			SW_DATA_INVALID: errors.New("friendly name not set"),
+		},
 	}
 }
 

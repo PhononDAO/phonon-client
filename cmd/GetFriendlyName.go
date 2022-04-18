@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/util"
 	"github.com/spf13/cobra"
 )
 
@@ -51,9 +52,47 @@ func getFriendlyName() {
 		fmt.Println(err)
 		return
 	}
+	err = cs.VerifyPIN("111111")
+	if err != nil {
+		fmt.Println("unable to verify pin: ", err)
+		return
+	}
+	fmt.Println("setting 160 byte name")
+	tooLongString := "AAAAAalsdkfja;lihnkjanhgpioauhrtoewknvkzngasoitruewaonkngvsadtuihewopirfjfkvndsaklfhaiulorhewpirjkfnjasdf;sdnf;lasdfjpoewirwnvnvgaotiweprouwr"
+	err = cs.SetFriendlyName(tooLongString)
+	if err == nil {
+		fmt.Println("first set should have failed but did not")
+		return
+	}
 	friendlyName, err := cs.GetFriendlyName()
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("error in first getFriendlyName: ", err)
+	} else {
+		fmt.Println("got name: ", friendlyName)
 	}
-	fmt.Println(friendlyName)
+	nameLength33 := util.RandomKey(33)
+
+	fmt.Println("setting 33 byte name")
+	err = cs.SetFriendlyName(string(nameLength33))
+	if err != nil {
+		fmt.Println("33 bytes SetFriendlyName failed: ", err)
+	}
+
+	friendlyName, err = cs.GetFriendlyName()
+	if err != nil {
+		fmt.Println("error getting name after setting 33 bytes: ", err)
+	} else {
+		fmt.Println("got name: ", friendlyName)
+	}
+	fmt.Println("setting 8 byte name")
+	err = cs.SetFriendlyName("testName")
+	if err != nil {
+		fmt.Println("setFriendly failed: ", err)
+	}
+	friendlyName, err = cs.GetFriendlyName()
+	if err != nil {
+		fmt.Println("error in second getFriendlyName: ", err)
+	} else {
+		fmt.Println("got name: ", friendlyName)
+	}
 }

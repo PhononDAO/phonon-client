@@ -892,7 +892,7 @@ func (cs *PhononCommandSet) ReceiveInvoice(invoiceData []byte) (err error) {
 func (cs *PhononCommandSet) GetFriendlyName() (string, error) {
 	log.Debug("sending GET_FRIENDLY_NAME command")
 	cmd := NewCommandGetFriendlyName()
-	resp, err := cs.Send(cmd)
+	resp, err := cs.sc.Send(cmd)
 	if err != nil {
 		return "", err
 	}

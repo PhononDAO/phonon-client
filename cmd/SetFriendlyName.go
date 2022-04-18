@@ -54,5 +54,4 @@ func setFriendlyName() {
 		return
 	}
 	cs.SetFriendlyName(name)
-
 }

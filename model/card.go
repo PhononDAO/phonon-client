@@ -18,7 +18,7 @@ type PhononCard interface {
 	ChangePIN(pin string) error
 	CreatePhonon(curveType CurveType) (keyIndex uint16, pubKey PhononPubKey, err error)
 	SetDescriptor(phonon *Phonon) error
-	ListPhonons(currencyType CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*Phonon, error)
+	ListPhonons(currencyType CurrencyType, lessThanValue uint64, greaterThanValue uint64, continuation bool) ([]*Phonon, error)
 	GetPhononPubKey(keyIndex uint16, crv CurveType) (pubkey PhononPubKey, err error)
 	DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error)
 	SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error)

@@ -160,7 +160,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 
 	for _, f := range filters {
 		// fmt.Printf("listing phonons with filter: %+v\n", f)
-		receivedPhonons, err := cs.ListPhonons(f.currencyType, f.lessThanValue, f.greaterThanValue)
+		receivedPhonons, err := cs.ListPhonons(f.currencyType, f.lessThanValue, f.greaterThanValue, false)
 		if err != nil {
 			t.Error("err listing all phonons: ", err)
 			return

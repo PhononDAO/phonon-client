@@ -57,7 +57,7 @@ func getPhononPubKey(keyIndex uint16) {
 		return
 	}
 	//List must be run beforehand to check the phonon's curveType
-	phonons, err := cs.ListPhonons(0, 0, 0)
+	phonons, err := cs.ListPhonons(0, 0, 0, false)
 	if err != nil {
 		fmt.Println("error listing phonons: ", err)
 		return

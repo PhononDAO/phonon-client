@@ -59,7 +59,7 @@ func listPhonons() {
 		return
 	}
 
-	phonons, err := cs.ListPhonons(model.CurrencyType(currency), 0, 0)
+	phonons, err := cs.ListPhonons(model.CurrencyType(currency), 0, 0, false)
 	if err != nil {
 		fmt.Println("error listing phonons: ", err)
 		return

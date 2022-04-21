@@ -613,7 +613,7 @@ func (c *MockCard) OpenSecureChannel() error {
 	return nil
 }
 
-func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
+func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64, continues bool) ([]*model.Phonon, error) {
 	var ret []*model.Phonon
 	for _, phonon := range c.Phonons {
 		if !phonon.deleted &&

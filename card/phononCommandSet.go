@@ -510,7 +510,7 @@ func (cs *PhononCommandSet) SetDescriptor(p *model.Phonon) error {
 //ListPhonons takes a currency type and range bounds and returns a listing of the phonons currently stored on the card
 //Set lessThanValue or greaterThanValue to 0 to ignore the parameter. Returned phonons omit the public key to reduce data transmission
 //After processing, the list client should send GET_PHONON_PUB_KEY to retrieve the corresponding pubkeys if necessary.
-func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
+func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64, continuation bool) ([]*model.Phonon, error) {
 	log.Debug("sending LIST_PHONONS command")
 	p2, cmdData, err := encodeListPhononsData(currencyType, lessThanValue, greaterThanValue)
 	if err != nil {
@@ -519,19 +519,28 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 	log.Debug("List phonons command data: ")
 	log.Debugf("% X", cmdData)
 	log.Debugf("p2: % X", p2)
-	cmd := NewCommandListPhonons(0x00, p2, cmdData)
+	var p1 byte
+	if continuation {
+		p1 = 0x01
+	} else {
+		p1 = 0x00
+	}
+	cmd := NewCommandListPhonons(p1, p2, cmdData)
 	resp, err := cs.sc.Send(cmd)
 	if err != nil && err != ErrDefault {
+		log.Error("error in sending listPhonons. err: ", err)
 		return nil, err
 	}
 
 	err = checkPhononTableErrors(resp.Sw)
 	if err != nil {
+		log.Error("phonon table error detected: ", err)
 		return nil, err
 	}
 
-	continues, err := checkContinuation(resp.Sw)
+	continuation, err = checkContinuation(resp.Sw)
 	if err != nil {
+		log.Error("error detected while checking for list continuation. err: ", err)
 		return nil, err
 	}
 
@@ -540,42 +549,10 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 		log.Error("could not parse list phonons response: ", err)
 		return nil, err
 	}
-	if continues {
-		extendedPhonons, err := cs.listPhononsExtended()
+	if continuation {
+		extendedPhonons, err := cs.ListPhonons(currencyType, lessThanValue, greaterThanValue, continuation)
 		if err != nil {
 			log.Error("could not read extended phonons list: ", err)
-			return nil, err
-		}
-		phonons = append(phonons, extendedPhonons...)
-	}
-	return phonons, nil
-}
-
-//Makes an additional list phonons command with p1 set to 0x01, indicating the card should return the remainder
-//of the last requested list. listPhononsExtended will run recursively until the card indicates there are no additional
-//phonons in the list
-func (cs *PhononCommandSet) listPhononsExtended() (phonons []*model.Phonon, err error) {
-	log.Debug("sending LIST_PHONONS extended request")
-	cmd := NewCommandListPhonons(0x01, 0x00, nil)
-	resp, err := cs.sc.Send(cmd)
-	if err != nil {
-		return nil, err
-	}
-	continues, err := checkContinuation(resp.Sw)
-	if err != nil {
-		return nil, err
-	}
-
-	phonons, err = parseListPhononsResponse(resp.Data)
-	if err != nil {
-		log.Error("could not parse extended list phonons response: ", err)
-		return nil, err
-	}
-
-	if continues {
-		extendedPhonons, err := cs.listPhononsExtended()
-		if err != nil {
-			log.Error("could not read additional extendend phonons list: ", err)
 			return nil, err
 		}
 		phonons = append(phonons, extendedPhonons...)

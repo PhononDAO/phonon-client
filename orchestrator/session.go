@@ -232,7 +232,7 @@ func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue uin
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 
-	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue)
+	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue, false)
 }
 
 func (s *Session) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubkey model.PhononPubKey, err error) {

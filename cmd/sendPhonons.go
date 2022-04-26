@@ -45,6 +45,8 @@ func init() {
 }
 
 func sendPhonons() {
+	term := orchestrator.NewPhononTerminal()
+
 	fmt.Println("opening session with sender Card")
 	var senderCard model.PhononCard
 	var err error
@@ -62,6 +64,8 @@ func sendPhonons() {
 		}
 	}
 	sender, _ := orchestrator.NewSession(senderCard)
+	term.AddSession(sender)
+
 	err = sender.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)
@@ -111,18 +115,33 @@ func sendPhonons() {
 	}
 
 	fmt.Println("opening receiver session")
-	receiverSession, _ := orchestrator.NewSession(receiverCard)
-	err = receiverSession.VerifyPIN("111111")
+	receiver, _ := orchestrator.NewSession(receiverCard)
+	term.AddSession(receiver)
+	err = receiver.VerifyPIN("111111")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	err = sender.ConnectToLocalProvider()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = receiver.ConnectToLocalProvider()
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	fmt.Println("starting card to card pairing")
-	err = sender.ConnectToCounterparty(receiverSession.GetName())
+	err = sender.ConnectToCounterparty(receiver.GetName())
 	if err != nil {
-		fmt.Println("error during pairing with counterparty")
+		fmt.Println("error pairing sender to receiver")
 		fmt.Println(err)
+		return
+	}
+	err = receiver.ConnectToCounterparty(sender.GetName())
+	if err != nil {
+		fmt.Println("error pairing receiver to sender")
 		return
 	}
 	fmt.Println("cards paired succesfully!")
@@ -135,7 +154,7 @@ func sendPhonons() {
 	}
 
 	fmt.Println("sent phonons without error")
-	phonons, err = receiverSession.ListPhonons(model.Ethereum, 0, 0)
+	phonons, err = receiver.ListPhonons(model.Ethereum, 0, 0)
 	if err != nil {
 		fmt.Println("unable to list receiver phonons: ", err)
 		return

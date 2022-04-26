@@ -265,7 +265,7 @@ func TestFillPhononTable(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	initialList, err := cs.ListPhonons(model.Unspecified, 0, 0)
+	initialList, err := cs.ListPhonons(model.Unspecified, 0, 0, false)
 	if err != nil {
 		t.Error(err)
 		return
@@ -281,7 +281,7 @@ func TestFillPhononTable(t *testing.T) {
 		}
 		createdIndices = append(createdIndices, keyIndex)
 	}
-	list, err := cs.ListPhonons(model.Unspecified, 0, 0)
+	list, err := cs.ListPhonons(model.Unspecified, 0, 0, false)
 	if err != nil {
 		t.Error(err)
 		return

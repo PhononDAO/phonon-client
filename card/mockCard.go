@@ -42,7 +42,6 @@ type MockCard struct {
 	friendlyName    string
 	mintLimit       int
 	mintRate        int
-	nativePhonons   []*NativePhonon
 }
 
 type MockPhonon struct {
@@ -97,32 +96,6 @@ func (phonon *MockPhonon) Encode() (tlv.TLV, error) {
 	return phononDescriptionTLV, nil
 }
 
-type NativePhonon struct {
-	originCert cert.CardCertificate
-	originSig  []byte   //representing an ECDSA signatures
-	hash       [32]byte //sha256 representing mint rarity
-	rarity     int      //human readable rarity representation
-}
-
-func (np *NativePhonon) String() string {
-	return fmt.Sprintf(
-		"Certificate: \n%v\nSignature: %x\nHash %x\nRarity: %v\n\n",
-		np.originCert,
-		np.originSig,
-		np.hash,
-		np.rarity,
-	)
-}
-
-func (c *MockCard) AddNativePhonon(np *NativePhonon) error {
-	c.nativePhonons = append(c.nativePhonons, np)
-	return nil
-}
-
-func (c *MockCard) OutputNativePhonons() []*NativePhonon {
-	return c.nativePhonons
-}
-
 func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 	phononTLV, err := tlv.ParseTLVPacket(privatePhononTLV, TagPhononPrivateDescription)
 	if err != nil {
@@ -143,11 +116,19 @@ func decodePhononTLV(privatePhononTLV []byte) (phonon MockPhonon, err error) {
 
 	phonon.Phonon = *publicPhonon
 
-	phonon.CurveType = model.Secp256k1
-	// phonon.PubKey, err = model.NewPhononPubKey(ethcrypto.FromECDSAPub(&phonon.PrivateKey.PublicKey), phonon.CurveType)
-	// if err != nil {
-	// 	return phonon, err
-	// }
+	switch phonon.CurveType {
+	case model.Secp256k1:
+		eccPrivKey, err := util.ParseECCPrivKey(phonon.PrivateKey)
+		if err != nil {
+			return phonon, err
+		}
+		phonon.PubKey, err = model.NewPhononPubKey(ethcrypto.FromECDSAPub(&eccPrivKey.PublicKey), model.Secp256k1)
+		if err != nil {
+			return phonon, err
+		}
+	case model.NativeCurve:
+		phonon.PubKey = DeriveNativePhononPubKey(phonon.PrivateKey)
+	}
 
 	return phonon, nil
 }
@@ -891,7 +872,35 @@ func (c *MockCard) GetAvailableMemory() (int, int, int, error) {
 	return 0, 0, 0, nil
 }
 
-func (c *MockCard) MineNativePhonon(difficulty uint8) (keyIndex uint16, hash []byte, err error) {
-	//command not currently needed in mock
-	return 0, nil, nil
+func (c *MockCard) MineNativePhonon(difficulty uint8) (uint16, []byte, error) {
+	buf := make([]byte, 64)
+	rand.Reader.Read(buf)
+	fmt.Println("generated salt for native private key" + string(buf))
+	pubKey := DeriveNativePhononPubKey(buf)
+	sig, err := ethcrypto.Sign(pubKey.Bytes(), c.identityKey)
+	if err != nil {
+		return 0, nil, err
+	}
+	TagNativeSignature := 0x94
+	sigTLV, err := tlv.NewTLV(byte(TagNativeSignature), sig)
+	if err != nil {
+		return 0, nil, err
+	}
+	index := c.addPhonon(&MockPhonon{
+		model.Phonon{
+			PubKey:      pubKey,
+			CurveType:   model.NativeCurve,
+			ExtendedTLV: []tlv.TLV{sigTLV},
+		},
+		buf,
+		false,
+	})
+	return index, pubKey.Bytes(), nil
+}
+
+/*Takes a 32 byte salt as input to generate and return a sha512 hash of it.
+This is the process for deriving a native phonon hash, which is stored as its pubKey in the phonon table*/
+func DeriveNativePhononPubKey(salt []byte) *model.NativePubKey {
+	hash := sha512.Sum512(salt)
+	return &model.NativePubKey{Hash: hash[:]}
 }

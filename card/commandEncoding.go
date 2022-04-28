@@ -194,6 +194,8 @@ func parseDestroyPhononResponse(resp []byte) (privKey *ecdsa.PrivateKey, err err
 	if err != nil {
 		return nil, err
 	}
+
+	log.Debug("raw PrivateKey: " + string(rawPrivKey))
 	privKey, err = util.ParseECCPrivKey(rawPrivKey)
 	if err != nil {
 		return nil, err

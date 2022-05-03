@@ -575,7 +575,7 @@ func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pub
 
 func (c *MockCard) SetDescriptor(phonon *model.Phonon) error {
 	if int(phonon.KeyIndex) >= len(c.Phonons) || c.Phonons[phonon.KeyIndex].deleted {
-		return fmt.Errorf("No phonon at index %d", phonon.KeyIndex)
+		return fmt.Errorf("no phonon at index %d", phonon.KeyIndex)
 	}
 
 	storedPhonon := &c.Phonons[phonon.KeyIndex].Phonon
@@ -610,7 +610,7 @@ func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue ui
 func (c *MockCard) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
 	index := int(keyIndex)
 	if index > len(c.Phonons) || c.Phonons[index].deleted {
-		return nil, fmt.Errorf("No phonon at index %d", index)
+		return nil, fmt.Errorf("no phonon at index %d", index)
 	}
 	if c.Phonons[index].PubKey == nil {
 		return nil, errors.New("phonon pubkey not found. internal error")
@@ -677,7 +677,8 @@ func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (trans
 		if c.Phonons[k].deleted {
 			return nil, errors.New("cannot access deleted phonon")
 		}
-		phononTLV, err := c.Phonons[k].Encode()
+		var phononTLV tlv.TLV
+		phononTLV, err = c.Phonons[k].Encode()
 		if err != nil {
 			return nil, errors.New("could not encode phonon TLV")
 		}
@@ -875,22 +876,22 @@ func (c *MockCard) GetAvailableMemory() (int, int, int, error) {
 func (c *MockCard) MineNativePhonon(difficulty uint8) (uint16, []byte, error) {
 	buf := make([]byte, 32)
 	rand.Reader.Read(buf)
-	fmt.Println("generated salt for native private key" + string(buf))
+	fmt.Printf("generated salt for native private key: % X\n", string(buf))
 	pubKey := DeriveNativePhononPubKey(buf)
-	/*sig, err := ethcrypto.Sign(pubKey.Bytes(), c.identityKey)
+	r, s, err := ecdsa.Sign(rand.Reader, c.identityKey, pubKey.Bytes())
 	if err != nil {
 		return 0, nil, err
 	}
 	TagNativeSignature := 0x94
-	sigTLV, err := tlv.NewTLV(byte(TagNativeSignature), sig)
+	sigTLV, err := tlv.NewTLV(byte(TagNativeSignature), append(r.Bytes(), s.Bytes()...))
 	if err != nil {
 		return 0, nil, err
-	}*/
+	}
 	index := c.addPhonon(&MockPhonon{
 		model.Phonon{
-			PubKey:    pubKey,
-			CurveType: model.NativeCurve,
-			//ExtendedTLV: []tlv.TLV{sigTLV},
+			PubKey:      pubKey,
+			CurveType:   model.NativeCurve,
+			ExtendedTLV: []tlv.TLV{sigTLV},
 		},
 		buf,
 		false,

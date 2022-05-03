@@ -117,7 +117,7 @@ func receiveNativePhonon() {
 		if err != nil {
 			panic(err.Error)
 		}
-		fmt.Println("recieved public Key: " + string(k.Bytes()))
+		fmt.Printf("recieved public Key:% X \n", k.Bytes())
 	}
 
 }

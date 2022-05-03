@@ -873,11 +873,11 @@ func (c *MockCard) GetAvailableMemory() (int, int, int, error) {
 }
 
 func (c *MockCard) MineNativePhonon(difficulty uint8) (uint16, []byte, error) {
-	buf := make([]byte, 64)
+	buf := make([]byte, 32)
 	rand.Reader.Read(buf)
 	fmt.Println("generated salt for native private key" + string(buf))
 	pubKey := DeriveNativePhononPubKey(buf)
-	sig, err := ethcrypto.Sign(pubKey.Bytes(), c.identityKey)
+	/*sig, err := ethcrypto.Sign(pubKey.Bytes(), c.identityKey)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -885,12 +885,12 @@ func (c *MockCard) MineNativePhonon(difficulty uint8) (uint16, []byte, error) {
 	sigTLV, err := tlv.NewTLV(byte(TagNativeSignature), sig)
 	if err != nil {
 		return 0, nil, err
-	}
+	}*/
 	index := c.addPhonon(&MockPhonon{
 		model.Phonon{
-			PubKey:      pubKey,
-			CurveType:   model.NativeCurve,
-			ExtendedTLV: []tlv.TLV{sigTLV},
+			PubKey:    pubKey,
+			CurveType: model.NativeCurve,
+			//ExtendedTLV: []tlv.TLV{sigTLV},
 		},
 		buf,
 		false,

@@ -86,7 +86,7 @@ func receiveNativePhonon() {
 	}
 	receiver, _ := orchestrator.NewSession(receiverCard)
 	err = receiver.VerifyPIN("111111")
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -113,8 +113,8 @@ func receiveNativePhonon() {
 	}
 	fmt.Printf("%+v\n", phonons)
 	for _, phonon := range phonons {
-		k, err := receiver.GetPhononPubKey(phonon.KeyIndex,phonon.CurveType)
-		if err != nil{
+		k, err := receiver.GetPhononPubKey(phonon.KeyIndex, phonon.CurveType)
+		if err != nil {
 			panic(err.Error)
 		}
 		fmt.Println("recieved public Key: " + string(k.Bytes()))

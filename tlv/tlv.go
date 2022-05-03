@@ -3,6 +3,7 @@ package tlv
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 )
 
@@ -13,6 +14,8 @@ type TLV struct {
 }
 
 type TLVCollection map[byte][][]byte
+
+type TLVList []TLV
 
 const MaxValueBytes = 256
 
@@ -87,9 +90,7 @@ func mergeTLVCollections(collections ...TLVCollection) TLVCollection {
 	result := TLVCollection{}
 	for _, coll := range collections {
 		for tag, entries := range coll {
-			for _, entry := range entries {
-				result[tag] = append(result[tag], entry)
-			}
+			result[tag] = append(result[tag], entries...)
 		}
 	}
 	return result
@@ -141,4 +142,16 @@ func (coll TLVCollection) GetRemainingTLVs(tags []byte) (remaining []TLV) {
 		remaining = append(remaining, remainingTLV)
 	}
 	return
+}
+
+func (tlv TLV) String() string {
+	return fmt.Sprintf("Tag: % X, Length: %v, Value: % X", tlv.Tag, tlv.Length, tlv.Value)
+}
+
+func (tlvlist TLVList) String() string {
+	ret := ""
+	for _, tlv := range tlvlist {
+		ret = ret + " " + tlv.String()
+	}
+	return ret
 }

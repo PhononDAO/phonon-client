@@ -27,7 +27,7 @@ type Phonon struct {
 	Denomination          Denomination
 	CurrencyType          CurrencyType
 	ChainID               int
-	ExtendedTLV           []tlv.TLV
+	ExtendedTLV           tlv.TLVList
 	Address               string //chain specific attribute not stored on card
 	AddressType           uint8  //chain specific address type identifier
 }

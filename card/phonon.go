@@ -70,6 +70,21 @@ func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 //Excludes PubKey and KeyIndex
 func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, error) {
 	phonon := &model.Phonon{}
+
+	//Optionally parse KeyIndex, present in ListPhonons but not during mock's ReceivePhonons
+	keyIndexBytes, err := phononTLV.FindTag(TagKeyIndex)
+	if err != nil && err != tlv.ErrTagNotFound {
+		return nil, err
+	}
+	if err == nil {
+		phonon.KeyIndex = binary.BigEndian.Uint16(keyIndexBytes)
+	} else if err == tlv.ErrTagNotFound {
+		log.Debug("phonon keyIndex not found during tlv parsing, skipping...")
+		//move on, missing KeyIndex is OK
+	} else {
+		return nil, err
+	}
+
 	//CurveType
 	rawCurveType, err := phononTLV.FindTag(TagCurveType)
 	if err != nil {
@@ -139,7 +154,7 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 	//Extended Schema
 
 	//Standard Schema Tags
-	standardTags := []byte{TagPhononPrivKey, TagCurveType, TagSchemaVersion, TagExtendedSchemaVersion,
+	standardTags := []byte{TagKeyIndex, TagPhononPrivKey, TagCurveType, TagSchemaVersion, TagExtendedSchemaVersion,
 		TagPhononDenomBase, TagPhononDenomExp, TagCurrencyType}
 	phonon.ExtendedTLV = phononTLV.GetRemainingTLVs(standardTags)
 

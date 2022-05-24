@@ -19,7 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ErrPhononCompromised error = errors.New("Transaction with phonon as sender detected")
+var ErrPhononCompromised error = errors.New("transaction with phonon as sender detected")
 
 type BTCValidator struct {
 	bclient *bcoinClient
@@ -126,6 +126,9 @@ func pubKeyToAddresses(key *ecdsa.PublicKey) ([]string, error) {
 func (b *BTCValidator) getBalance(addresses []string) (int64, error) {
 	//get transactions
 	transactions, err := b.bclient.GetTransactions(context.Background(), addresses)
+	if err != nil {
+		return 0, err
+	}
 	//aggregate transactions into a running balance
 	balance, err := aggregateTransactions(transactions, addresses)
 	if err != nil {

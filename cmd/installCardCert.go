@@ -116,5 +116,5 @@ func InstallCardCert() {
 		log.Fatalf("Unable to Install Certificate: %s", err.Error())
 	}
 
-	fmt.Printf("%x\n", util.CardIDFromPubKey(cardPubKey))
+	fmt.Printf("%s\n", util.CardIDFromPubKey(cardPubKey))
 }

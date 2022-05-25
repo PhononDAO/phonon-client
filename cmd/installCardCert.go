@@ -18,18 +18,18 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/cert"
-	"github.com/GridPlus/phonon-client/model"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/model"
+	"github.com/GridPlus/phonon-client/util"
+
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 // installCardCert represents the installCardCert command
@@ -115,5 +115,6 @@ func InstallCardCert() {
 	if err != nil {
 		log.Fatalf("Unable to Install Certificate: %s", err.Error())
 	}
-	fmt.Printf("%x\n", ethcrypto.FromECDSAPub(cardPubKey))
+
+	fmt.Printf("%x\n", util.CardIDFromPubKey(cardPubKey))
 }

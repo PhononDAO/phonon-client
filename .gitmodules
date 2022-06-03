@@ -1,0 +1,3 @@
+[submodule "frontend"]
+	path = gui/frontend
+	url = https://github.com/GridPlus/phonon-app

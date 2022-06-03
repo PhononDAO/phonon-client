@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -20,6 +21,9 @@ import (
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 )
+
+//go:embed frontend/build/*
+var frontend embed.FS
 
 //go:embed swagger.yaml
 var swaggeryaml []byte
@@ -88,7 +92,6 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 		AllowCredentials: true,
 	})
 	handler := c.Handler(r)
-
 	// sessions
 	r.HandleFunc("/genMock", session.generatemock)
 	r.HandleFunc("/listSessions", session.listSessions)
@@ -111,6 +114,12 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 
 	// log sink
 	r.HandleFunc("/logs", logsink)
+	// frontend
+	stripped, err := fs.Sub(frontend, "frontend/build")
+	if err != nil {
+		log.Fatal("Unable to setup filesystem to serve frontend: " + err.Error())
+	}
+	r.PathPrefix("/").Handler(http.FileServer(http.FS(stripped)))
 
 	http.Handle("/", r)
 	log.Debug("Listening for incoming connections on " + port)

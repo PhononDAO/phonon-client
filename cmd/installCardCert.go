@@ -36,7 +36,7 @@ import (
 var installCardCert = &cobra.Command{
 	Use:   "installCardCert",
 	Short: "This is to sign and install an identity certificate to the card",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		InstallCardCert()
 	},
 }
@@ -106,7 +106,7 @@ func InstallCardCert() {
 	} else {
 		cs = baseCS
 	}
-	_, cardPubKey, _, err := cs.Select()
+	_, _, _, err = cs.Select()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -115,6 +115,9 @@ func InstallCardCert() {
 	if err != nil {
 		log.Fatalf("Unable to Install Certificate: %s", err.Error())
 	}
-
-	fmt.Printf("%s\n", util.CardIDFromPubKey(cardPubKey))
+	key, _, err := cs.IdentifyCard([]byte{0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03})
+	if err != nil {
+		log.Fatal("Unable to connect to card: " + err.Error())
+	}
+	fmt.Printf("%s\n", util.CardIDFromPubKey(key))
 }

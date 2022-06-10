@@ -1,3 +1,2 @@
 #Sample Config File (Fill in values and store in $HOME/.phonon/phonon.yml)
-
-EthChainServiceApiKey:
+Certificate: "alpha" #dev or alpha

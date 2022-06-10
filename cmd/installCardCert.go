@@ -66,7 +66,7 @@ func InstallCardCert() {
 		}
 		signKeyFunc = cert.SignWithDemoKey
 	} else {
-		//gather information for ubikey signing
+		//gather information for yubikey signing
 		var yubikeySlotInt int
 		yubikeySlotInt, err := strconv.Atoi(yubikeySlot)
 		if err != nil {

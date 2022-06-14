@@ -4,9 +4,6 @@ else
 	Win-CC = x86_64-w64-mingw32-gcc
 endif
 
-run: generate frontend
-	go run main/phonon.go
-
 build: generate frontend
 	go build main/phonon.go
 

@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/hooks"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -15,6 +16,8 @@ type Config struct {
 	//EthChainService
 	EthChainServiceApiKey string
 	EthNodeURL            string
+	// logg exporting
+	TelemetryKey string
 }
 
 type EthChainServiceConfig struct {
@@ -60,5 +63,11 @@ func LoadConfig() (config Config, err error) {
 	if err != nil {
 		return DefaultConfig(), err
 	}
+	// Possibly not the best place to put this, but it does a good job of setting this up before an interactive session
+	if config.TelemetryKey != "" {
+		log.Debug("setting up logging hook")
+		log.AddHook(hooks.NewLoggingHook(config.TelemetryKey))
+	}
+
 	return config, nil
 }

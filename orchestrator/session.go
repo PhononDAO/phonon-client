@@ -115,7 +115,7 @@ func (s *Session) GetName() string {
 
 func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
 	if s.Cert != nil {
-		log.Debugf("GetCertificate returning cert: % X", s.Cert)
+		log.Debugf("GetCertificate returning cert: %v", s.Cert)
 		return s.Cert, nil
 	}
 

@@ -15,7 +15,7 @@ type Config struct {
 	//PhononCommandSet
 	AppletCACert []byte //One of the CA certificates listed in the cert package. Used as default if Certificate not set
 	Certificate  string //string ID to select a certificate
-	// logg exporting
+	// log exporting
 	TelemetryKey string
 }
 
@@ -61,7 +61,7 @@ func LoadConfig() (config Config, err error) {
 	}
 	// Possibly not the best place to put this, but it does a good job of setting this up before an interactive session
 	if config.TelemetryKey != "" {
-		log.Debug("setting up logging hook")
+		log.Debug("setting up loging hook")
 		log.AddHook(hooks.NewLoggingHook(config.TelemetryKey))
 	}
 

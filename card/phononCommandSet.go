@@ -57,7 +57,6 @@ type PhononCommandSet struct {
 func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 	var err error
 	conf, err := config.LoadConfig()
-	fmt.Println("config loaded")
 	if err != nil {
 		log.Fatal("could not configure PhononCommandSet")
 	}

@@ -61,7 +61,7 @@ func LoadConfig() (config Config, err error) {
 	}
 	// Possibly not the best place to put this, but it does a good job of setting this up before an interactive session
 	if config.TelemetryKey != "" {
-		log.Debug("setting up loging hook")
+		log.Debug("setting up logging hook")
 		log.AddHook(hooks.NewLoggingHook(config.TelemetryKey))
 	}
 

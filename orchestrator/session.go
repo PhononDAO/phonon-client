@@ -389,6 +389,13 @@ func (s *Session) ConnectToRemoteProvider(RemoteURL string) error {
 	return nil
 }
 
+func (s *Session) RemoteConnectionStatus() model.RemotePairingStatus {
+	if s.RemoteCard == nil {
+		return model.StatusUnconnected
+	}
+	return s.RemoteCard.PairingStatus()
+}
+
 func (s *Session) ConnectToLocalProvider() error {
 	lcp := &localCounterParty{
 		localSession:  s,

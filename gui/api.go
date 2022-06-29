@@ -107,6 +107,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/phonon/initDeposit", session.initDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/finalizeDeposit", session.finalizeDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
+	r.HandleFunc("/cards/{sessionID}/connectionStatus", session.RemoteConnectionStatus)
 	r.HandleFunc("/cards/{sessionID}/connectLocal", session.ConnectLocal)
 	// api docs
 	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/", http.FileServer(http.FS(swagger))))
@@ -455,6 +456,31 @@ func (apiSession apiSession) ConnectRemote(w http.ResponseWriter, r *http.Reques
 	err = sess.ConnectToRemoteProvider(ConnectionReq.URL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func (apiSession apiSession) RemoteConnectionStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	//Fetch connection status from session and encode response object
+	type connectionStatusResp struct {
+		ConnectionStatus model.RemotePairingStatus
+	}
+	resp := &connectionStatusResp{
+		ConnectionStatus: sess.RemoteConnectionStatus(),
+	}
+
+	enc := json.NewEncoder(w)
+	err = enc.Encode(resp)
+	if err != nil {
+		log.Error("unable to encode outgoing RemoteConnectionStatus response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }

@@ -86,6 +86,28 @@ paths:
           properties:
             url:
               type: "string"
+  /cards/{sessionID}/connectionStatus:
+    get:
+      tags:
+      - "sessions"
+      responses:
+        "500":
+          description: "internal error retrieving connection status"
+        "200":
+          description: "connection status returned"
+          schema:
+            type: "object"
+            properties:
+              ConnectionStatus:
+                type: "integer"
+                description: "0: unconnected, 1: connectedToBridge, 2: connectedToCard, 3: CardPair1Complete, 4: CardPair2Complete, 5: CardPairingComplete"
+    parameters:
+      - in: path
+        required: true
+        name: sessionID
+        type: string
+        description: sessionID of connected card
+
   /cards/{sessionID}/connectLocal:
     post:
       tags:

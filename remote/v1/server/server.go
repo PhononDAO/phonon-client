@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/GridPlus/phonon-client/cert"
 	v1 "github.com/GridPlus/phonon-client/remote/v1"
@@ -41,11 +42,11 @@ type clientSession struct {
 
 var clientSessions map[string]*clientSession
 
-func index(w http.ResponseWriter, r *http.Request) {
+func index(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("hello there"))
 }
 
-func listConnected(w http.ResponseWriter, r *http.Request) {
+func listConnected(w http.ResponseWriter, _ *http.Request) {
 	ret, _ := json.Marshal(clientSessions)
 	w.Write(ret)
 }
@@ -174,7 +175,7 @@ func (c *clientSession) ValidateClient() (bool, error) {
 	//Cert has been validated, register clientSession with server and grab card name
 	c.validated = true
 	name := util.CardIDFromPubKey(key)
-	c.Name = name
+	c.Name = strings.ToLower(name)
 	clientSessions[name] = c
 	c.out.Encode(v1.Message{
 		Name:    v1.MessageIdentifiedWithServer,
@@ -247,7 +248,6 @@ func (c *clientSession) provideCertificate() {
 		log.Error("error encoding provideCertificate reply: ", err)
 		return
 	}
-	return
 }
 
 //Start of alternate implementation using pairing map
@@ -284,7 +284,7 @@ func (c *clientSession) provideCertificate() {
 
 func (c *clientSession) ConnectCard2Card(msg v1.Message) {
 	log.Infof("attempting to connect card %s to card %s\n", c.Name, string(msg.Payload))
-	counterparty, ok := clientSessions[string(msg.Payload)]
+	counterparty, ok := clientSessions[strings.ToLower(string(msg.Payload))]
 	if !ok {
 		c.out.Encode(v1.Message{
 			Name:    v1.MessageError,

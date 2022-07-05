@@ -30,3 +30,5 @@ frontend:
 release-mac: build
 	cp phonon ./release/MacOS/Phonon.app/Contents/MacOS/phonon
 	
+checkout-submodules:
+	git submodule update --init

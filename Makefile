@@ -7,6 +7,9 @@ endif
 build: generate frontend
 	go build main/phonon.go
 
+client-build: generate #build just the golang code without the frontend
+	go build main/phonon.go
+
 windows-build: generate
 	GOOS=windows CGO_ENABLED=1 CC=$(Win-CC) go build main/phonon.go
 
@@ -29,6 +32,6 @@ frontend:
 
 release-mac: build
 	cp phonon ./release/MacOS/Phonon.app/Contents/MacOS/phonon
-	
+
 checkout-submodules:
 	git submodule update --init

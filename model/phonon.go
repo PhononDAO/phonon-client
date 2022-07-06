@@ -143,11 +143,9 @@ func NewDenomination(i *big.Int) (Denomination, error) {
 	var m *big.Int
 	for i.Cmp(maxUint8) > 0 {
 		m = new(big.Int).Mod(i, big.NewInt(10))
-		log.Debug("m = ", m)
 		if m.Cmp(big.NewInt(0)) == 0 {
 			exponent += 1
 			i.Div(i, big.NewInt(10))
-			log.Debugf("i = %v, exponent = %v", i, exponent)
 		} else {
 			return Denomination{}, ErrInvalidDenomination
 		}

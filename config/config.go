@@ -1,6 +1,7 @@
 package config
 
 import (
+	"runtime"
 	"strings"
 
 	"github.com/GridPlus/phonon-client/cert"
@@ -36,6 +37,9 @@ func SetDefaultConfig() {
 
 func LoadConfig() (config Config, err error) {
 	SetDefaultConfig()
+	if runtime.GOOS == "windows" {
+		viper.AddConfigPath("$HOME\\.phonon\\")
+	}
 	viper.AddConfigPath("$HOME/.phonon/")
 	viper.AddConfigPath("$XDG_CONFIG_HOME/.phonon/phonon.yml")
 	viper.AddConfigPath("/usr/var/phonon/phonon.yml")

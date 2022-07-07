@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ErrorRequestNotRecognized = errors.New("Unrecognized request sent to session")
+var ErrorRequestNotRecognized = errors.New("unrecognized request sent to session")
 
 /*The session struct handles a local connection with a card
 Keeps a client side cache of the card state to make interaction
@@ -156,18 +156,20 @@ func (s *Session) Connect() error {
 //Initializes the card with a PIN
 //Also creates a secure channel and verifies the PIN that was just set
 func (s *Session) Init(pin string) error {
-	s.ElementUsageMtex.Lock()
-	defer s.ElementUsageMtex.Unlock()
 
 	if s.pinInitialized {
 		return ErrAlreadyInitialized
 	}
+
+	s.ElementUsageMtex.Lock()
 	err := s.cs.Init(pin)
+	s.ElementUsageMtex.Unlock()
 	if err != nil {
 		return err
 	}
 	s.pinInitialized = true
 	//Open new secure connection now that card is initialized
+
 	err = s.Connect()
 	if err != nil {
 		return err

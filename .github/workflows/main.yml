@@ -34,7 +34,7 @@ jobs:
           go-version: 1.17.0
 
       - name: Install go stringer
-        run: go get golang.org/x/tools/cmd/stringer
+        run: go get -u -a golang.org/x/tools/cmd/stringer@latest
 
       # Runs a single command using the runners shell
       - name: Build Linux

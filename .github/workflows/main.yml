@@ -34,7 +34,7 @@ jobs:
           go-version: 1.17.0
 
       - name: Install go stringer
-        run: go get -u -a golang.org/x/tools/cmd/stringer@latest
+        run: go get golang.org/x/tools/cmd/stringer@latest
 
       # Runs a single command using the runners shell
       - name: Build Linux
@@ -88,7 +88,7 @@ jobs:
           choco install mingw
       - name: Install go stringer
         run: |
-          go get golang.org/x/tools/cmd/stringer
+          go install golang.org/x/tools/cmd/stringer@latest
           export PATH=${PATH}:`go env GOPATH`/bin
       - name: Build Windows
         run: make windows-build

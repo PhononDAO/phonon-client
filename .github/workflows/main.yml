@@ -87,7 +87,9 @@ jobs:
         run: |
           choco install mingw
       - name: Install go stringer
-        run: go get golang.org/x/tools/cmd/stringer
+        run: |
+          go get golang.org/x/tools/cmd/stringer
+          export PATH=${PATH}:`go env GOPATH`/bin
       - name: Build Windows
         run: make windows-build
       - name: Upload Windows Release Asset

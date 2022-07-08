@@ -85,7 +85,7 @@ jobs:
           submodules: recursive
       - name: install mingw
         run: |
-          choco install mingw-w64
+          choco install mingw
       - name: Install go stringer
         run: go get golang.org/x/tools/cmd/stringer
       - name: Build Windows

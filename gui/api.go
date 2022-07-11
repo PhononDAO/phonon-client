@@ -18,6 +18,7 @@ import (
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/getlantern/systray"
 	"github.com/gorilla/mux"
+	"github.com/pkg/browser"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 )
@@ -138,6 +139,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 			}
 		}
 	}()
+	browser.OpenURL("http://localhost:" + port + "/")
 	systray.Run(onReady, onExit)
 }
 
@@ -190,17 +192,17 @@ const (
 func parseJSLogLevel(input interface{}) (int, error) {
 	var levelMap map[string]interface{}
 	if reflect.TypeOf(input) != reflect.TypeOf(map[string]interface{}{}) {
-		return 0, fmt.Errorf("Unable to parse level data from map")
+		return 0, fmt.Errorf("unable to parse level data from map")
 	} else {
 		levelMap = input.(map[string]interface{})
 	}
 	lvlraw, ok := levelMap["value"]
 	if !ok {
-		return 0, fmt.Errorf("Unable to find value key within level object")
+		return 0, fmt.Errorf("unable to find value key within level object")
 	}
 	lvlFloat64, ok := lvlraw.(float64)
 	if !ok {
-		return 0, fmt.Errorf("Unable to parse level value: %v into number", lvlraw)
+		return 0, fmt.Errorf("unable to parse level value: %v into number", lvlraw)
 	}
 	lvlInt := int(lvlFloat64)
 	return lvlInt, nil
@@ -350,7 +352,9 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 	var resps []*redeemPhononResp
 	for _, req := range reqs {
 		var respErr string
-		transactionData, privKeyString, err := sess.RedeemPhonon(req.P, req.RedeemAddress)
+		var transactionData string
+		var privKeyString string
+		transactionData, privKeyString, err = sess.RedeemPhonon(req.P, req.RedeemAddress)
 		//If err capture the error message as a string, else return string value ""
 		if err != nil {
 			respErr = err.Error()
@@ -546,7 +550,6 @@ func (apiSession apiSession) listPhonons(w http.ResponseWriter, r *http.Request)
 
 	phonons := []*model.Phonon{}
 	if cache[sess.GetName()].cachePopulated {
-		phonons = []*model.Phonon{}
 		for _, phonon := range cache[sess.GetName()].phonons {
 			phonons = append(phonons, phonon)
 		}

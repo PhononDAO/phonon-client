@@ -96,6 +96,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	// sessions
 	r.HandleFunc("/genMock", session.generatemock)
 	r.HandleFunc("/listSessions", session.listSessions)
+	r.HandleFunc("/cards/{sessionID}/init", session.init)
 	r.HandleFunc("/cards/{sessionID}/unlock", session.unlock)
 	r.HandleFunc("/cards/{sessionID}/pair", session.pair)
 	// phonons
@@ -397,19 +398,72 @@ func serveAPIFunc(port string) func(w http.ResponseWriter, r *http.Request) {
 
 func (apiSession apiSession) listSessions(w http.ResponseWriter, r *http.Request) {
 	sessions := apiSession.t.ListSessions()
-	names := []string{}
 	if len(sessions) == 0 {
-		http.Error(w, "no cards found", http.StatusNotFound)
+		http.Error(w, "no card sessions found", http.StatusNotFound)
 		return
 	}
+	log.Debug("listSessions endpoint found sessions: ", sessions)
+	type SessionStatus struct {
+		Name           string
+		Initialized    bool
+		TerminalPaired bool
+		PinVerified    bool
+	}
+	sessionStatuses := make([]*SessionStatus, 0)
 
 	for _, v := range sessions {
-		names = append(names, v.GetName())
+		sessionStatuses = append(sessionStatuses,
+			&SessionStatus{
+				Name:           v.GetName(),
+				Initialized:    v.IsInitialized(),
+				TerminalPaired: v.IsPairedToTerminal(),
+				PinVerified:    v.IsUnlocked(),
+			})
 	}
+
+	log.Debug("listSessions sessionStatuses: ", sessionStatuses)
 	enc := json.NewEncoder(w)
-	enc.Encode(struct {
-		Sessions []string
-	}{Sessions: names})
+	enc.Encode(sessionStatuses)
+}
+
+func (apiSession apiSession) init(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	if sess.IsInitialized() {
+		http.Error(w, "card is already initialized", http.StatusBadRequest)
+		return
+	}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Unable to read body", http.StatusBadRequest)
+		return
+	}
+	initReq := struct {
+		Pin string
+	}{}
+	err = json.Unmarshal(body, &initReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = sess.Init(initReq.Pin)
+	if err != nil && err.Error() != "bad response 6983: unexpected sw in secure channel" {
+		http.Error(w, fmt.Errorf("unable to initialize card with given PIN. err: %v", err).Error(), http.StatusInternalServerError)
+		return
+	}
+	/*Workaround for error in mutual auth that occurs in rest of session after INIT
+	  Blows away all sessions, but shouldn't cause problems except when a mock is configured
+	  or another card is already unlocked, which should generally not come up when
+	  Initializing a real card
+	*/
+	_, err = apiSession.t.RefreshSessions()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (apiSession apiSession) unlock(w http.ResponseWriter, r *http.Request) {

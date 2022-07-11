@@ -30,14 +30,37 @@ paths:
         "404":
           description: "No connected cards"
         "200":
-          description: "list of attached cards"
+          description: "list of attached card's session info"
           schema:
-            type: "object"
-            properties:
-              Sessions:
-                type: "array"
-                items:
-                  type: "string"
+            type: "array"
+            items:
+              $ref: "#/definitions/SessionStatus"
+  /cards/{sessionID}/init:
+    post:
+      tags:
+      - "sessions"
+      responses:
+        "400":
+          description: "card already initialized"
+        "500":
+          description: "unable to set PIN"
+        "200":
+          description: "card initialized succesfully"
+      parameters:
+      - in: path
+        required: true
+        name: sessionID
+        type: string
+        description: sessionID of connected card
+      - in: "body"
+        name: "body"
+        description: "Pin to unlock the card"
+        required: true
+        schema:
+          type: object
+          properties:
+            pin:
+              type: "string"
   /cards/{sessionID}/unlock:
     post:
       tags:
@@ -445,4 +468,14 @@ definitions:
       TransactionData: "string"
       PrivKey: "string"
       err: "string"
-
+  SessionStatus:
+    type: object
+    properties:
+      Name:
+        type: "string"
+      Initialized:
+        type: "boolean"
+      TerminalPaired:
+        type: "boolean"
+      PinVerified:
+        type: "boolean"

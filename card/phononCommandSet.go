@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -400,7 +399,6 @@ func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.Public
 		log.Error("could not send identify card command", err)
 		return nil, nil, err
 	}
-	log.Debug("identify card resp:\n", hex.Dump(resp.Data))
 
 	cardPubKey, cardSig, err = ParseIdentifyCardResponse(resp.Data)
 	if err != nil {

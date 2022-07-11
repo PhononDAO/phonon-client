@@ -166,7 +166,6 @@ func NewDenomination(i *big.Int) (Denomination, error) {
 }
 
 func (d Denomination) Value() *big.Int {
-	//TODO: Convert to *big.Int
 	output := big.NewInt(int64(d.Base))
 	exponent := d.Exponent
 	for exponent != 0 {

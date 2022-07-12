@@ -89,7 +89,7 @@ jobs:
       - name: Install go stringer
         run: |
           echo "$PATH"
-          GOBIN=/usr/local/bin go install golang.org/x/tools/cmd/stringer@latest
+          GOBIN=/usr/bin go install golang.org/x/tools/cmd/stringer@latest
       - name: Build Windows
         run: make windows-build
       - name: Upload Windows Release Asset

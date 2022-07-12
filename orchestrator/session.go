@@ -114,7 +114,8 @@ func (s *Session) GetName() string {
 			log.Error("error identifying card via GetName(). err: ", err)
 			return "unknown"
 		}
-		return util.CardIDFromPubKey(pubKey)
+		s.identityPubKey = pubKey
+		return util.CardIDFromPubKey(s.identityPubKey)
 	}
 }
 

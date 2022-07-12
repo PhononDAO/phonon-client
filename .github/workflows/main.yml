@@ -88,6 +88,7 @@ jobs:
           choco install mingw
       - name: Install go stringer
         run: |
+          echo "$PATH"
           GOBIN=/usr/local/bin go install golang.org/x/tools/cmd/stringer@latest
       - name: Build Windows
         run: make windows-build

@@ -11,7 +11,7 @@ client-build: generate #build just the golang code without the frontend
 	go build main/phonon.go
 
 windows-build: generate frontend
-	GOOS=windows CGO_ENABLED=1 go build main/phonon.go
+	GOOS=windows CGO_ENABLED=1 go build -ldflags "-H=windowsgui" main/phonon.go
 
 test:
 	go test -v -count=1 ./...

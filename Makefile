@@ -27,8 +27,8 @@ android-sdk:
 	cd session && gomobile bind  -target android -o ../androidSDK/phononAndroid.aar
 
 frontend:
-	npm --prefix gui/frontend install
-	npm --prefix gui/frontend run build
+	(cd gui/frontend && npm install)
+	(cd gui/frontend && npm run build)
 
 release-mac: build
 	cp phonon ./release/MacOS/Phonon.app/Contents/MacOS/phonon

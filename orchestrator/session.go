@@ -52,7 +52,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 	s = &Session{
 		cs:                    storage,
 		RemoteCard:            nil,
-		identityPubKey:        &ecdsa.PublicKey{},
+		identityPubKey:        nil,
 		remoteMessageChan:     make(chan model.SessionRequest),
 		remoteMessageKillChan: make(chan interface{}),
 		active:                true,
@@ -104,13 +104,19 @@ func (s *Session) SetPaired(status bool) {
 }
 
 func (s *Session) GetName() string {
-	if s.Cert == nil {
-		return "unknown"
-	}
-	if s.Cert.PubKey != nil {
+	//If identity public key has already been cached by pairing, return it
+	if s.identityPubKey != nil {
+		return util.CardIDFromPubKey(s.identityPubKey)
+	} else {
+		//else fetch identity public key directly through identify card
+		pubKey, _, err := s.IdentifyCard(util.RandomKey(32))
+		if err != nil {
+			log.Error("error identifying card via GetName(). err: ", err)
+			return "unknown"
+		}
+		s.identityPubKey = pubKey
 		return util.CardIDFromPubKey(s.identityPubKey)
 	}
-	return "unknown"
 }
 
 func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
@@ -125,6 +131,10 @@ func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
 func (s *Session) IsUnlocked() bool {
 
 	return s.pinVerified
+}
+
+func (s *Session) IsPairedToTerminal() bool {
+	return s.terminalPaired
 }
 
 func (s *Session) IsInitialized() bool {

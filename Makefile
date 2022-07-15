@@ -10,8 +10,8 @@ build: generate frontend
 client-build: generate #build just the golang code without the frontend
 	go build main/phonon.go
 
-windows-build: generate
-	GOOS=windows CGO_ENABLED=1 CC=$(Win-CC) go build main/phonon.go
+windows-build: generate frontend
+	GOOS=windows CGO_ENABLED=1 go build -ldflags "-H=windowsgui" main/phonon.go
 
 test:
 	go test -v -count=1 ./...
@@ -27,8 +27,8 @@ android-sdk:
 	cd session && gomobile bind  -target android -o ../androidSDK/phononAndroid.aar
 
 frontend:
-	npm --prefix gui/frontend install
-	npm --prefix gui/frontend run build
+	(cd gui/frontend && npm install)
+	(cd gui/frontend && npm run build)
 
 release-mac: build
 	cp phonon ./release/MacOS/Phonon.app/Contents/MacOS/phonon

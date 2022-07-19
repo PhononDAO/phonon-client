@@ -41,6 +41,7 @@ type Session struct {
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
 var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
 var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
+var ErrNameCannotBeEmpty = errors.New("requested name cannot be empty.")
 
 //Creates a new card session, automatically connecting if the card is already initialized with a PIN
 //The next step is to run VerifyPIN to gain access to the secure commands on the card
@@ -119,17 +120,17 @@ func (s *Session) GetCardId() string {
 	}
 }
 
-func (s *Session) GetFriendlyName() (string, error) {
-	if !s.verified() {
-		return "", card.ErrPINNotEntered
-	}
-
+func (s *Session) GetName() (string, error) {
 	return s.cs.GetFriendlyName()
 }
 
-func (s *Session) SetFriendlyName(name string) error {
+func (s *Session) SetName(name string) error {
 	if !s.verified() {
 		return card.ErrPINNotEntered
+	}
+
+	if name == "" {
+		return ErrNameCannotBeEmpty
 	}
 
 	return s.cs.SetFriendlyName(name)

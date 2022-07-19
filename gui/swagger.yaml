@@ -198,7 +198,6 @@ paths:
       name: sessionID
       type: string
       description: sessionID of connected card
-
   /cards/{sessionID}/name:
     get:
       tags:
@@ -208,14 +207,17 @@ paths:
           description: "internal error retrieving connection status"
         "200":
           description: "session name is returned"
-    parameters:
-      - in: path
-        required: true
-        name: sessionID
-        type: string
-        description: sessionID of connected card
-
-  /cards/{sessionID}/name/create:
+          schema:
+              type: object
+              properties:
+                name:
+                  type: "string"
+      parameters:
+        - in: path
+          required: true
+          name: sessionID
+          type: string
+          description: sessionID of connected card
     post:
       tags:
       - "sessions"
@@ -224,21 +226,21 @@ paths:
           description: "internal error retrieving connection status"
         "200":
           description: "session name is created"
-    parameters:
-      - in: path
-        required: true
-        name: sessionID
-        type: string
-        description: sessionID of connected card
-      - in: "body"
-        name: "body"
-        description: "name of the session to be renammed"
-        required: true
-        schema:
-          type: object
-          properties:
-            name:
-              type: "string"
+      parameters:
+        - in: path
+          required: true
+          name: sessionID
+          type: string
+          description: sessionID of connected card
+        - in: "body"
+          name: "body"
+          description: "name of the session to be renammed"
+          required: true
+          schema:
+            type: object
+            properties:
+              name:
+                type: "string"
   /cards/{sessionID}/phonon/{phononIndex}/setDescriptor:
     post:
       tags:

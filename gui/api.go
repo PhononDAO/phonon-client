@@ -99,8 +99,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/init", session.init)
 	r.HandleFunc("/cards/{sessionID}/unlock", session.unlock)
 	r.HandleFunc("/cards/{sessionID}/pair", session.pair)
-	r.HandleFunc("/cards/{sessionID}/name", session.name)
-	r.HandleFunc("/cards/{sessionID}/name/create", session.createName)
+	r.HandleFunc("/cards/{sessionID}/name", session.getName)
 	// phonons
 	r.HandleFunc("/cards/{sessionID}/listPhonons", session.listPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/setDescriptor", session.setDescriptor)
@@ -589,56 +588,52 @@ func (apiSession apiSession) pair(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (apiSession apiSession) createName(w http.ResponseWriter, r *http.Request) {
+func (apiSession apiSession) getName(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sess, err := apiSession.sessionFromMuxVars(vars)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Unable to read body", http.StatusBadRequest)
-		return
-	}
-	nameReq := struct {
-		Name string
-	}{}
-	err = json.Unmarshal(body, &nameReq)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	if r.Method == "POST" {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Unable to read body", http.StatusBadRequest)
+			return
+		}
+		nameReq := struct {
+			Name string
+		}{}
+		err = json.Unmarshal(body, &nameReq)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		err = sess.SetName(nameReq.Name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
-	err = sess.SetFriendlyName(nameReq.Name)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
+	if r.Method == "GET" {
+		name, err := sess.GetName()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if name == "" {
+			http.Error(w, "No name found", http.StatusNotFound)
+			return
+		}
+		nameReq := struct {
+			Name string
+		}{
+			Name: name,
+		}
+		enc := json.NewEncoder(w)
+		enc.Encode(nameReq)
 	}
-}
-
-func (apiSession apiSession) name(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	sess, err := apiSession.sessionFromMuxVars(vars)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-	name, err := sess.GetFriendlyName()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-	if name == "" {
-		http.Error(w, "No friendly name found", http.StatusNotFound)
-		return
-	}
-	nameReq := struct {
-		Name string
-	}{
-		Name: name,
-	}
-	enc := json.NewEncoder(w)
-	enc.Encode(nameReq)
 }
 
 type phonRet struct {

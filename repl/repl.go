@@ -128,7 +128,7 @@ func Start() {
 func setActiveCard(c *ishell.Context, s *orchestrator.Session) {
 	activeCard = s
 	updatePrompt()
-	c.Printf("%v selected\n", activeCard.GetName())
+	c.Printf("%v selected\n", activeCard.GetCardId())
 }
 
 //Updates the prompt to display the status of the active card
@@ -136,7 +136,7 @@ func updatePrompt() {
 	if activeCard == nil {
 		shell.SetPrompt(standardPrompt)
 	}
-	cardName := activeCard.GetName()
+	cardName := activeCard.GetCardId()
 	var status string
 	if !activeCard.IsInitialized() {
 		status = "-uninitialized"
@@ -190,7 +190,7 @@ func listCards(c *ishell.Context) {
 	}
 	c.Println("available cards: ")
 	for _, s := range sessions {
-		c.Println(s.GetName())
+		c.Println(s.GetCardId())
 	}
 }
 
@@ -198,7 +198,7 @@ func activateCard(c *ishell.Context) {
 	sessions := t.ListSessions()
 	var sessionNames []string
 	for _, session := range sessions {
-		sessionNames = append(sessionNames, session.GetName())
+		sessionNames = append(sessionNames, session.GetCardId())
 	}
 
 	selection := c.MultiChoice(sessionNames, "please select an available card")

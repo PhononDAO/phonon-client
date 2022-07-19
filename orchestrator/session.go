@@ -64,7 +64,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		logger:                log.WithField("CardID", "unknown"),
 		chainSrv:              chainSrv,
 	}
-	s.logger = log.WithField("cardID", s.GetName())
+	s.logger = log.WithField("cardID", s.GetCardId())
 
 	s.ElementUsageMtex.Lock()
 	_, _, s.pinInitialized, err = s.cs.Select()
@@ -103,7 +103,7 @@ func (s *Session) handleIncomingSessionRequests() {
 func (s *Session) SetPaired(status bool) {
 }
 
-func (s *Session) GetName() string {
+func (s *Session) GetCardId() string {
 	//If identity public key has already been cached by pairing, return it
 	if s.identityPubKey != nil {
 		return util.CardIDFromPubKey(s.identityPubKey)
@@ -117,6 +117,22 @@ func (s *Session) GetName() string {
 		s.identityPubKey = pubKey
 		return util.CardIDFromPubKey(s.identityPubKey)
 	}
+}
+
+func (s *Session) GetFriendlyName() (string, error) {
+	if !s.verified() {
+		return "", card.ErrPINNotEntered
+	}
+
+	return s.cs.GetFriendlyName()
+}
+
+func (s *Session) SetFriendlyName(name string) error {
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+
+	return s.cs.SetFriendlyName(name)
 }
 
 func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
@@ -591,7 +607,7 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 			panic("this shouldn't happen.")
 		}
 		var resp model.ResponseGetName
-		resp.Name = s.GetName()
+		resp.Name = s.GetCardId()
 		resp.Err = nil
 		req.Ret <- resp
 	case "RequestPairWithRemote":

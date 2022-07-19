@@ -320,10 +320,13 @@ func (cs *PhononCommandSet) mutualAuthenticate() error {
 /*OpenSecureChannel is a convenience function to perform all of the necessary options to open a card
 to terminal secure channel in sequence. Runs SELECT, PAIR, OPEN_SECURE_CHANNEL*/
 func (cs *PhononCommandSet) OpenSecureConnection() error {
-	_, _, _, err := cs.Select()
+	_, _, initialized, err := cs.Select()
 	if err != nil {
 		log.Error("could not select phonon applet: ", err)
 		return err
+	}
+	if !initialized {
+		return ErrCardUninitialized
 	}
 	_, err = cs.Pair()
 	if err != nil {

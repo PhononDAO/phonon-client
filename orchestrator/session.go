@@ -26,6 +26,7 @@ type Session struct {
 	cs                    model.PhononCard
 	RemoteCard            model.CounterpartyPhononCard
 	identityPubKey        *ecdsa.PublicKey
+	friendlyName          string
 	remoteMessageChan     chan (model.SessionRequest)
 	remoteMessageKillChan chan interface{}
 	active                bool
@@ -54,6 +55,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		cs:                    storage,
 		RemoteCard:            nil,
 		identityPubKey:        nil,
+		friendlyName:          "",
 		remoteMessageChan:     make(chan model.SessionRequest),
 		remoteMessageKillChan: make(chan interface{}),
 		active:                true,
@@ -120,8 +122,8 @@ func (s *Session) GetCardId() string {
 	}
 }
 
-func (s *Session) GetName() (string, error) {
-	return s.cs.GetFriendlyName()
+func (s *Session) GetName() string {
+	return s.friendlyName
 }
 
 func (s *Session) SetName(name string) error {
@@ -133,6 +135,7 @@ func (s *Session) SetName(name string) error {
 		return ErrNameCannotBeEmpty
 	}
 
+	s.friendlyName = name
 	return s.cs.SetFriendlyName(name)
 }
 

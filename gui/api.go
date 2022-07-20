@@ -414,16 +414,10 @@ func (apiSession apiSession) listSessions(w http.ResponseWriter, r *http.Request
 	sessionStatuses := make([]*SessionStatus, 0)
 
 	for _, v := range sessions {
-		getName, err := v.GetName()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		sessionStatuses = append(sessionStatuses,
 			&SessionStatus{
 				Id:             v.GetCardId(),
-				Name:           getName,
+				Name:           v.GetName(),
 				Initialized:    v.IsInitialized(),
 				TerminalPaired: v.IsPairedToTerminal(),
 				PinVerified:    v.IsUnlocked(),

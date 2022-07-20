@@ -99,7 +99,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/init", session.init)
 	r.HandleFunc("/cards/{sessionID}/unlock", session.unlock)
 	r.HandleFunc("/cards/{sessionID}/pair", session.pair)
-	r.HandleFunc("/cards/{sessionID}/name", session.getName)
+	r.HandleFunc("/cards/{sessionID}/name", session.setName)
 	// phonons
 	r.HandleFunc("/cards/{sessionID}/listPhonons", session.listPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/setDescriptor", session.setDescriptor)
@@ -405,6 +405,7 @@ func (apiSession apiSession) listSessions(w http.ResponseWriter, r *http.Request
 	}
 	log.Debug("listSessions endpoint found sessions: ", sessions)
 	type SessionStatus struct {
+		Id             string
 		Name           string
 		Initialized    bool
 		TerminalPaired bool
@@ -413,9 +414,16 @@ func (apiSession apiSession) listSessions(w http.ResponseWriter, r *http.Request
 	sessionStatuses := make([]*SessionStatus, 0)
 
 	for _, v := range sessions {
+		getName, err := v.GetName()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		sessionStatuses = append(sessionStatuses,
 			&SessionStatus{
-				Name:           v.GetCardId(),
+				Id:             v.GetCardId(),
+				Name:           getName,
 				Initialized:    v.IsInitialized(),
 				TerminalPaired: v.IsPairedToTerminal(),
 				PinVerified:    v.IsUnlocked(),
@@ -588,7 +596,7 @@ func (apiSession apiSession) pair(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (apiSession apiSession) getName(w http.ResponseWriter, r *http.Request) {
+func (apiSession apiSession) setName(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sess, err := apiSession.sessionFromMuxVars(vars)
 	if err != nil {
@@ -596,43 +604,22 @@ func (apiSession apiSession) getName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == "POST" {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Unable to read body", http.StatusBadRequest)
-			return
-		}
-		nameReq := struct {
-			Name string
-		}{}
-		err = json.Unmarshal(body, &nameReq)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-		err = sess.SetName(nameReq.Name)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Unable to read body", http.StatusBadRequest)
+		return
 	}
-
-	if r.Method == "GET" {
-		name, err := sess.GetName()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if name == "" {
-			http.Error(w, "No name found", http.StatusNotFound)
-			return
-		}
-		nameReq := struct {
-			Name string
-		}{
-			Name: name,
-		}
-		enc := json.NewEncoder(w)
-		enc.Encode(nameReq)
+	nameReq := struct {
+		Name string
+	}{}
+	err = json.Unmarshal(body, &nameReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	err = sess.SetName(nameReq.Name)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 

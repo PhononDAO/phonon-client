@@ -199,25 +199,6 @@ paths:
       type: string
       description: sessionID of connected card
   /cards/{sessionID}/name:
-    get:
-      tags:
-      - "sessions"
-      responses:
-        "500":
-          description: "internal error retrieving connection status"
-        "200":
-          description: "session name is returned"
-          schema:
-              type: object
-              properties:
-                name:
-                  type: "string"
-      parameters:
-        - in: path
-          required: true
-          name: sessionID
-          type: string
-          description: sessionID of connected card
     post:
       tags:
       - "sessions"

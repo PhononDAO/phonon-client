@@ -230,7 +230,7 @@ paths:
             type: "integer"
           value:
             type: "integer"
-  /cards/{sessionID}/phonon/{phononIndex}/send:
+  /cards/{sessionID}/phonon/send:
     post:
       tags:
       - "phonons"
@@ -245,11 +245,14 @@ paths:
       name: sessionID
       type: string
       description: sessionID of connected card
-    - in: path
+    - in: "body"
+      name: "body"
+      description: array of phonons to be deleted
       required: true
-      name: phononIndex
-      type: string
-      description: index of phonon to send
+      schema:
+        type: "array"
+        items:
+          $ref: "#/definitions/Phonon"
   /cards/{sessionID}/phonon/create:
     post:
       tags:

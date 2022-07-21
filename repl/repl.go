@@ -119,6 +119,12 @@ func Start() {
 		Func: addMock,
 		Help: "make a mock card and add it to the session",
 	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "setName",
+		Func: setName,
+		Help: "set the name of the active card",
+	})
 	//Automatically refresh connections as the user is dropped into the shell
 	shell.Process("refresh")
 	shell.Run()
@@ -128,7 +134,11 @@ func Start() {
 func setActiveCard(c *ishell.Context, s *orchestrator.Session) {
 	activeCard = s
 	updatePrompt()
-	c.Printf("%v selected\n", activeCard.GetCardId())
+	if activeCard.GetName() != "" {
+		c.Printf("%v selected\n", activeCard.GetName())
+	} else {
+		c.Printf("%v selected\n", activeCard.GetCardId())
+	}
 }
 
 //Updates the prompt to display the status of the active card
@@ -137,6 +147,10 @@ func updatePrompt() {
 		shell.SetPrompt(standardPrompt)
 	}
 	cardName := activeCard.GetCardId()
+	if activeCard.GetName() != "" {
+		cardName = activeCard.GetName()
+	}
+
 	var status string
 	if !activeCard.IsInitialized() {
 		status = "-uninitialized"
@@ -187,18 +201,64 @@ func listCards(c *ishell.Context) {
 	sessions := t.ListSessions()
 	if len(sessions) == 0 {
 		c.Println("no cards found")
+	} else {
+		// If there are multiple cards, print them out.
+		// If there is a card with a name, print it out.
+		// If there is a card with no name, print the card ID.
+		for _, s := range sessions {
+			if s.GetName() != "" {
+				c.Printf("%v\n", s.GetName())
+			} else {
+				c.Printf("%v\n", s.GetCardId())
+			}
+		}
 	}
-	c.Println("available cards: ")
-	for _, s := range sessions {
-		c.Println(s.GetCardId())
+}
+
+func setName(c *ishell.Context) {
+	if ready := checkActiveCard(c); !ready {
+		return
 	}
+
+	numCorrectArgs := 1
+	if len(c.Args) != numCorrectArgs {
+		c.Printf("setName requires %v args\n", numCorrectArgs)
+		return
+	}
+
+	name := c.Args[0]
+	err := activeCard.SetName(name)
+	if err != nil {
+		c.Printf("error setting name: %v", err)
+	} else {
+		updatePrompt()
+		c.Printf("name set to %v", name)
+	}
+}
+
+func setActiveCardName(c *ishell.Context, s *orchestrator.Session) {
+	if ready := checkActiveCard(c); !ready {
+		return
+	}
+	name := 3
+	if len(c.Args) != name {
+		c.Printf("setName requires %v args\n", name)
+		return
+	}
+
+	updatePrompt()
+	c.Printf("%v name set\n", activeCard.GetName())
 }
 
 func activateCard(c *ishell.Context) {
 	sessions := t.ListSessions()
 	var sessionNames []string
 	for _, session := range sessions {
-		sessionNames = append(sessionNames, session.GetCardId())
+		if session.GetName() == "" {
+			sessionNames = append(sessionNames, session.GetCardId())
+		} else {
+			sessionNames = append(sessionNames, session.GetName())
+		}
 	}
 
 	selection := c.MultiChoice(sessionNames, "please select an available card")

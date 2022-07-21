@@ -202,12 +202,17 @@ func listCards(c *ishell.Context) {
 	if len(sessions) == 0 {
 		c.Println("no cards found")
 	} else {
-		// If there are multiple cards, print them out.
-		// If there is a card with a name, print it out.
-		// If there is a card with no name, print the card ID.
 		for _, s := range sessions {
+			// TODO: Find a better way to display the card name and card id.
 			if s.GetName() != "" {
-				c.Printf("%v\n", s.GetName())
+				if len(c.Args) > 0 {
+					if c.Args[0] == "ids" {
+						c.Printf("%v\n", s.GetCardId())
+					}
+				} else {
+					c.Printf("%v\n", s.GetName())
+				}
+
 			} else {
 				c.Printf("%v\n", s.GetCardId())
 			}

@@ -103,7 +103,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	// phonons
 	r.HandleFunc("/cards/{sessionID}/listPhonons", session.listPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/setDescriptor", session.setDescriptor)
-	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/send", session.send)
+	r.HandleFunc("/cards/{sessionID}/phonon/send", session.send)
 	r.HandleFunc("/cards/{sessionID}/phonon/create", session.createPhonon)
 	r.HandleFunc("/cards/{sessionID}/phonon/redeem", session.redeemPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/export", session.exportPhonon)
@@ -719,24 +719,26 @@ func (apiSession apiSession) send(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	phononIndex, ok := vars["PhononIndex"]
-	if !ok {
-		http.Error(w, "Phonon not found", http.StatusNotFound)
-		return
-	}
-	index, err := strconv.ParseUint(phononIndex, 10, 16)
+	inputs := []model.Phonon{}
+	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Unable to convert index to int:"+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	err = sess.SendPhonons([]uint16{uint16(index)})
+	json.Unmarshal(bodyBytes, &inputs)
+	toSend := []uint16{}
+	for _, phonon2send := range inputs {
+		toSend = append(toSend, phonon2send.KeyIndex)
+	}
+	err = sess.SendPhonons(toSend)
 
 	if err != nil {
 		http.Error(w, "unable to send phonons: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	delete(cache[sess.GetCardId()].phonons, uint16(index))
+	for _, index := range toSend {
+		delete(cache[sess.GetName()].phonons, uint16(index))
+	}
 }
 
 func (apiSession apiSession) exportPhonon(w http.ResponseWriter, r *http.Request) {

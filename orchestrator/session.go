@@ -26,6 +26,7 @@ type Session struct {
 	cs                    model.PhononCard
 	RemoteCard            model.CounterpartyPhononCard
 	identityPubKey        *ecdsa.PublicKey
+	friendlyName          string
 	remoteMessageChan     chan (model.SessionRequest)
 	remoteMessageKillChan chan interface{}
 	active                bool
@@ -41,6 +42,7 @@ type Session struct {
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
 var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
 var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
+var ErrNameCannotBeEmpty = errors.New("requested name cannot be empty.")
 
 //Creates a new card session, automatically connecting if the card is already initialized with a PIN
 //The next step is to run VerifyPIN to gain access to the secure commands on the card
@@ -53,6 +55,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		cs:                    storage,
 		RemoteCard:            nil,
 		identityPubKey:        nil,
+		friendlyName:          "",
 		remoteMessageChan:     make(chan model.SessionRequest),
 		remoteMessageKillChan: make(chan interface{}),
 		active:                true,
@@ -64,7 +67,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		logger:                log.WithField("CardID", "unknown"),
 		chainSrv:              chainSrv,
 	}
-	s.logger = log.WithField("cardID", s.GetName())
+	s.logger = log.WithField("cardID", s.GetCardId())
 
 	s.ElementUsageMtex.Lock()
 	_, _, s.pinInitialized, err = s.cs.Select()
@@ -103,7 +106,7 @@ func (s *Session) handleIncomingSessionRequests() {
 func (s *Session) SetPaired(status bool) {
 }
 
-func (s *Session) GetName() string {
+func (s *Session) GetCardId() string {
 	//If identity public key has already been cached by pairing, return it
 	if s.identityPubKey != nil {
 		return util.CardIDFromPubKey(s.identityPubKey)
@@ -117,6 +120,23 @@ func (s *Session) GetName() string {
 		s.identityPubKey = pubKey
 		return util.CardIDFromPubKey(s.identityPubKey)
 	}
+}
+
+func (s *Session) GetName() string {
+	return s.friendlyName
+}
+
+func (s *Session) SetName(name string) error {
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+
+	if name == "" {
+		return ErrNameCannotBeEmpty
+	}
+
+	s.friendlyName = name
+	return s.cs.SetFriendlyName(name)
 }
 
 func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
@@ -591,7 +611,7 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 			panic("this shouldn't happen.")
 		}
 		var resp model.ResponseGetName
-		resp.Name = s.GetName()
+		resp.Name = s.GetCardId()
 		resp.Err = nil
 		req.Ret <- resp
 	case "RequestPairWithRemote":

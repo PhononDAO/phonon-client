@@ -18,7 +18,7 @@ func cardPairLocal(c *ishell.Context) {
 	for _, session := range sessions {
 		if session != activeCard {
 			otherCards = append(otherCards, session)
-			otherCardNames = append(otherCardNames, session.GetName())
+			otherCardNames = append(otherCardNames, session.GetCardId())
 		}
 	}
 	if len(otherCards) == 0 {
@@ -31,13 +31,13 @@ func cardPairLocal(c *ishell.Context) {
 		return
 	}
 	pairingCard := otherCards[selection]
-	c.Println("starting pairing with ", pairingCard.GetName())
+	c.Println("starting pairing with ", pairingCard.GetCardId())
 	err := activeCard.ConnectToLocalProvider()
 	if err != nil {
 		c.Printf("Error occured in pairing: %s", err.Error())
 		return
 	}
-	err = activeCard.ConnectToCounterparty(otherCards[selection].GetName())
+	err = activeCard.ConnectToCounterparty(otherCards[selection].GetCardId())
 	if err != nil {
 		c.Printf("Error occured in pairing process: %s", err.Error())
 		return

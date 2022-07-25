@@ -47,7 +47,7 @@ func (t *PhononTerminal) GenerateMock() (string, error) {
 	}
 
 	t.sessions = append(t.sessions, sess)
-	return sess.GetName(), nil
+	return sess.GetCardId(), nil
 }
 
 func (t *PhononTerminal) RefreshSessions() ([]*Session, error) {
@@ -76,7 +76,7 @@ func (t *PhononTerminal) ListSessions() []*Session {
 
 func (t *PhononTerminal) SessionFromID(id string) *Session {
 	for _, session := range t.sessions {
-		if session.GetName() == id {
+		if session.GetCardId() == id {
 			return session
 		}
 	}
@@ -85,7 +85,7 @@ func (t *PhononTerminal) SessionFromID(id string) *Session {
 
 func (t *PhononTerminal) AddSession(sess *Session) {
 	for _, session := range t.sessions {
-		if session.GetName() == sess.GetName() {
+		if session.GetCardId() == sess.GetCardId() {
 			return
 		}
 	}
@@ -94,7 +94,7 @@ func (t *PhononTerminal) AddSession(sess *Session) {
 
 func (t *PhononTerminal) RemoveSession(sessID string) {
 	for index, session := range t.sessions {
-		if session.GetName() == sessID {
+		if session.GetCardId() == sessID {
 			t.sessions = append(t.sessions[:index], t.sessions[index+1:]...)
 			return
 		}

@@ -102,7 +102,7 @@ func receiveNativePhonon() {
 	sender.ConnectToLocalProvider()
 	receiver.ConnectToLocalProvider()
 
-	err = sender.ConnectToCounterparty(receiver.GetName())
+	err = sender.ConnectToCounterparty(receiver.GetCardId())
 	if err != nil {
 		panic(err.Error())
 	}

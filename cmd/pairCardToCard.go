@@ -132,7 +132,7 @@ func PairCardToCard() {
 		return
 	}
 
-	err = sender.ConnectToCounterparty(receiverSession.GetName())
+	err = sender.ConnectToCounterparty(receiverSession.GetCardId())
 	if err != nil {
 		fmt.Println("error during pairing with counterparty")
 		fmt.Println(err)

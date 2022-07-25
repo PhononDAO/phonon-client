@@ -10,8 +10,8 @@ build: generate frontend
 client-build: generate #build just the golang code without the frontend
 	go build main/phonon.go
 
-windows-build: generate
-	GOOS=windows CGO_ENABLED=1 CC=$(Win-CC) go build main/phonon.go
+windows-build: generate frontend
+	GOOS=windows CGO_ENABLED=1 go build -ldflags "-H=windowsgui" main/phonon.go
 
 test:
 	go test -v -count=1 ./...
@@ -27,11 +27,15 @@ android-sdk:
 	cd session && gomobile bind  -target android -o ../androidSDK/phononAndroid.aar
 
 frontend:
-	npm --prefix gui/frontend install
-	npm --prefix gui/frontend run build
+	(cd gui/frontend && npm install)
+	(cd gui/frontend && npm run build)
 
-release-mac: build
-	cp phonon ./release/MacOS/Phonon.app/Contents/MacOS/phonon
+release-mac: generate frontend
+	CGO_ENABLED=1 CC="clang -target arm64v8-apple-darwin-macho" GOOS=darwin GOARCH=arm64 go build -o phonon_arm64 main/phonon.go
+	CGO_ENABLED=1 CC="clang -target x86_64-apple-darwin-macho" GOOS=darwin GOARCH=amd64 go build -o phonon_x86_64 main/phonon.go
+	cp phonon_arm64 ./release/MacOS/Phonon.app/Contents/MacOS/phonon_arm64
+	cp phonon_x86_64 ./release/MacOS/Phonon.app/Contents/MacOS/phonon_x86_64
+	create-dmg --app-drop-link 200 200 phonon.dmg ./release/MacOS/Phonon.app
 
 checkout-submodules:
 	git submodule update --init

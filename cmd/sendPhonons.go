@@ -133,13 +133,13 @@ func sendPhonons() {
 	}
 
 	fmt.Println("starting card to card pairing")
-	err = sender.ConnectToCounterparty(receiver.GetName())
+	err = sender.ConnectToCounterparty(receiver.GetCardId())
 	if err != nil {
 		fmt.Println("error pairing sender to receiver")
 		fmt.Println(err)
 		return
 	}
-	err = receiver.ConnectToCounterparty(sender.GetName())
+	err = receiver.ConnectToCounterparty(sender.GetCardId())
 	if err != nil {
 		fmt.Println("error pairing receiver to sender")
 		return

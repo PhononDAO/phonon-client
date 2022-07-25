@@ -29,7 +29,7 @@ var changePinCmd = &cobra.Command{
 	Short: "Change card's 6 digit PIN",
 	Long: `Change the card's existing 6 digit PIN to a new one.
 command will prompt you securely for the existing PIN as well as the new one.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		changePin()
 	},
 }

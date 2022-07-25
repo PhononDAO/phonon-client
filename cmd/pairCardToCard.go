@@ -30,7 +30,7 @@ var pairCardToCardCmd = &cobra.Command{
 	Short: "Establish a pairing between 2 phonon cards",
 	Long: `Establish a local pairing between 2 phonon cards connected via
 	2 different card readers attached to the the same phonon-client terminal`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		PairCardToCard()
 	},
 }
@@ -83,7 +83,8 @@ func PairCardToCard() {
 	}
 
 	if useMockSender {
-		senderCardID, err := terminal.GenerateMock()
+		var senderCardID string
+		senderCardID, err = terminal.GenerateMock()
 		if err != nil {
 			log.Fatal("Unable to generate mock sender: " + err.Error())
 		}
@@ -99,7 +100,8 @@ func PairCardToCard() {
 	}
 	var receiverSession *orchestrator.Session
 	if useMockReceiver {
-		receiverCardID, err := terminal.GenerateMock()
+		var receiverCardID string
+		receiverCardID, err = terminal.GenerateMock()
 		if err != nil {
 			log.Fatal("Unable to generate mock receiver: " + err.Error())
 		}

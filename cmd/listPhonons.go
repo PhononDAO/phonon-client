@@ -30,7 +30,7 @@ var listPhononsCmd = &cobra.Command{
 	Long: `Lists all phonons on card matching the given filter, and returning the available phonon descriptor
 	`,
 	Args: cobra.ExactValidArgs(0),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		listPhonons()
 	},
 }

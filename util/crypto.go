@@ -33,7 +33,8 @@ func ParseECCPubKey(rawPubKey []byte) (pubKey *ecdsa.PublicKey, err error) {
 	if len(rawPubKey) == 0 {
 		return nil, errors.New("pubKey was zero length")
 	}
-	if rawPubKey[0] == 0x04 {
+	switch rawPubKey[0] {
+	case 0x04:
 		//Unmarshal uncompressed pubkey format
 		pubKey, err = ethcrypto.UnmarshalPubkey(rawPubKey)
 		if err != nil {
@@ -41,16 +42,17 @@ func ParseECCPubKey(rawPubKey []byte) (pubKey *ecdsa.PublicKey, err error) {
 			log.Error("raw pubkey:\n", hex.Dump(rawPubKey))
 			return nil, err
 		}
-	} else if rawPubKey[0] == 0x02 || rawPubKey[0] == 0x03 {
+	case 0x02, 0x03:
 		//Unmarshal compressed pubkey format
 		pubKey, err = ethcrypto.DecompressPubkey(rawPubKey)
 		if err != nil {
 			log.Error("could not unmarshal compressed ecdsa pub key from raw: ", err)
 			return nil, err
 		}
-	} else {
+	default:
 		log.Debugf("could not detect ECC pubkey format from key: % X\n", rawPubKey)
 		return nil, ErrInvalidECCPubKeyFormat
+
 	}
 
 	return pubKey, nil

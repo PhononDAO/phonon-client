@@ -18,7 +18,7 @@ type remoteSession struct {
 }
 
 var ErrRemoteNotPaired error = errors.New("no remote card paired")
-var ErrNoSession error = errors.New("No connected session with id found")
+var ErrNoSession error = errors.New("no connected session with id found")
 
 var globalTerminal *PhononTerminal
 

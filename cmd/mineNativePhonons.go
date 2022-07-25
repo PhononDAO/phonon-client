@@ -17,9 +17,10 @@ package cmd
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 // mineNativePhononsCmd represents the mineNativePhonons command
@@ -29,7 +30,7 @@ var mineNativePhononsCmd = &cobra.Command{
 	Long: `Begin mining native phonons.
 	If called with no arguments command will repeatedly mine for phonons until cancelled.
 	Pass a duration in go time syntax to mine for a specific duration instead.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		mineNativePhonons()
 	},
 }

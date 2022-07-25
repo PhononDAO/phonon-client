@@ -140,8 +140,8 @@ func SignWithDemoKey(cert []byte) ([]byte, error) {
 
 	// print("signing with demo key")
 	key.D = new(big.Int).SetBytes(demoKey)
-	key.PublicKey.Curve = secp256k1.S256()
-	key.PublicKey.X, key.PublicKey.Y = key.PublicKey.Curve.ScalarBaseMult(key.D.Bytes())
+	key.Curve = secp256k1.S256()
+	key.X, key.Y = key.ScalarBaseMult(key.D.Bytes())
 	digest := sha256.Sum256(cert)
 	ret, err := key.Sign(rand.Reader, digest[:], nil)
 	if err != nil {
@@ -198,7 +198,7 @@ func ParseRawCardCertificate(cardCertificateRaw []byte) (cert CardCertificate, e
 
 	if cert.Permissions.certLen == 0 || cert.Permissions.permLen == 0 {
 		log.Debugf("invalid certificate found: % X", cardCertificateRaw)
-		return CardCertificate{}, errors.New("Card Certificate Invalid")
+		return CardCertificate{}, errors.New("card Certificate Invalid")
 	}
 	permsLen := int(cert.Permissions.permLen)
 	if len(cardCertificateRaw) < 5+permsLen {

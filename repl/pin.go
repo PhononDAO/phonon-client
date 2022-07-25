@@ -2,6 +2,7 @@ package repl
 
 import (
 	"fmt"
+
 	ishell "github.com/abiosoft/ishell/v2"
 )
 
@@ -32,7 +33,7 @@ func unlockCard(c *ishell.Context) {
 	//TODO: update chain of functions to return triesRemaining to callers
 	err = activeCard.VerifyPIN(pin)
 	if err != nil {
-		c.Err(fmt.Errorf("Unable to unlock card %s", err.Error()))
+		c.Err(fmt.Errorf("unable to unlock card %s", err.Error()))
 		return
 	}
 	c.Println("card successfully unlocked")

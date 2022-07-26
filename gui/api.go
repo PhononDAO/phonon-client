@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"math/big"
@@ -112,6 +113,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
 	r.HandleFunc("/cards/{sessionID}/connectionStatus", session.RemoteConnectionStatus)
 	r.HandleFunc("/cards/{sessionID}/connectLocal", session.ConnectLocal)
+	r.HandleFunc("/checkDenomination", verifyDenomination)
 	// api docs
 	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/", http.FileServer(http.FS(swagger))))
 	r.HandleFunc("/swagger.json", serveAPIFunc(port))
@@ -143,6 +145,27 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	}()
 	browser.OpenURL("http://localhost:" + port + "/")
 	systray.Run(onReady, onExit)
+}
+
+func verifyDenomination(w http.ResponseWriter, r *http.Request) {
+	tocheckBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "unable to parse request", http.StatusBadRequest)
+		return
+	}
+	toCheckString := string(tocheckBytes)
+	toCheck := new(big.Int)
+	toCheck, ok := toCheck.SetString(toCheckString, 10)
+	if !ok {
+		http.Error(w, "unable to coerce request string to integer", http.StatusBadRequest)
+		return
+	}
+	_, err = model.NewDenomination(toCheck)
+	if err != nil {
+		http.Error(w, "cannot make phonon denomination from value: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	// return 200 if it works
 }
 
 func logsink(w http.ResponseWriter, r *http.Request) {

@@ -142,6 +142,8 @@ func (s *Session) GetName() (string, error) {
 		if err != nil {
 			return "", err
 		}
+
+		s.cachedFriendlyName = s.friendlyName
 	}
 	return s.friendlyName, nil
 }

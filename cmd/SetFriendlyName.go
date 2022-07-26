@@ -28,7 +28,7 @@ var name string
 var setFriendlyNameCmd = &cobra.Command{
 	Use:   "setFriendlyName",
 	Short: "Set friendly name for phonon card",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		setFriendlyName()
 	},
 }

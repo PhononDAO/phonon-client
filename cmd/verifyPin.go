@@ -28,7 +28,7 @@ var verifyPinCmd = &cobra.Command{
 	Use:   "verifyPin",
 	Short: "Test pin verification",
 	Long:  `Tests pin verification. Accepts PIN via secure cprompt`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		verifyPin()
 	},
 }

@@ -18,7 +18,7 @@ var webUICmd = &cobra.Command{
 	Long: `Start a rest api to handle operations with the card.
 	Meant to be paired with a graphical frontend. Not for production
 	use as there is currently no security beyond the pin of the card.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		gui.Server(guiPort, guiCert, guiKey, useMock)
 	},
 }

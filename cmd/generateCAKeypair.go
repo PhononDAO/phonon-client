@@ -30,7 +30,7 @@ var generateCAKeypairCmd = &cobra.Command{
 	Long: `Generates a keypair for us as a phonon card certificate authority.
 	Prints the public and private key details in the string formats needed for inclusion
 	in the phonon-card and phonon-client source code. `,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		generateCAKeypair()
 	},
 }
@@ -96,7 +96,7 @@ func printJavacardfmt(key []byte) string {
 			width = 0
 		}
 		if b >= 0x80 {
-			result += fmt.Sprint("(byte) ")
+			result += "(byte) "
 		}
 		result += fmt.Sprintf("0x%02X, ", b)
 		width += 1

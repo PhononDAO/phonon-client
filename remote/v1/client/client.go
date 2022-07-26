@@ -137,7 +137,7 @@ func Connect(sessReqChan chan model.SessionRequest, url string, ignoreTLS bool) 
 
 	conn, resp, err := d.Connect(context.Background(), url) //url)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to connect to remote server %e,", err)
+		return nil, fmt.Errorf("unable to connect to remote server %e,", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		log.Error("received bad status from jumpbox. err: ", resp.Status)
@@ -193,7 +193,7 @@ func Connect(sessReqChan chan model.SessionRequest, url string, ignoreTLS bool) 
 	select {
 	case <-client.identifiedWithServerChan:
 	case <-time.After(time.Second * 10):
-		return nil, fmt.Errorf("Verification with server timed out")
+		return nil, fmt.Errorf("verification with server timed out")
 	}
 
 	client.pairingStatus = model.StatusConnectedToBridge

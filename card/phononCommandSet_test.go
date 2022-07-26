@@ -95,12 +95,12 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		value        model.Denomination
 	}
 	phononTable := []phononDescription{
-		{model.Bitcoin, model.Denomination{1, 0}},
-		{model.Bitcoin, model.Denomination{1, 8}},
-		{model.Bitcoin, model.Denomination{99, 6}},
-		{model.Ethereum, model.Denomination{1, 18}},
-		{model.Ethereum, model.Denomination{9, 18}},
-		{model.Ethereum, model.Denomination{1, 0}},
+		{model.Bitcoin, model.Denomination{Base: 1, Exponent: 0}},
+		{model.Bitcoin, model.Denomination{Base: 1, Exponent: 8}},
+		{model.Bitcoin, model.Denomination{Base: 99, Exponent: 6}},
+		{model.Ethereum, model.Denomination{Base: 1, Exponent: 18}},
+		{model.Ethereum, model.Denomination{Base: 9, Exponent: 18}},
+		{model.Ethereum, model.Denomination{Base: 1, Exponent: 0}},
 	}
 
 	type phononFilter struct {
@@ -219,7 +219,7 @@ func TestDestroyPhonon(t *testing.T) {
 	p := &model.Phonon{
 		KeyIndex:     keyIndex,
 		CurrencyType: model.Ethereum,
-		Denomination: model.Denomination{57, 0},
+		Denomination: model.Denomination{Base: 57, Exponent: 0},
 	}
 	err = cs.SetDescriptor(p)
 	if err != nil {
@@ -274,7 +274,8 @@ func TestFillPhononTable(t *testing.T) {
 	maxPhononCount := 256
 	var createdIndices []uint16
 	for i := 0; i < maxPhononCount-initialCount; i++ {
-		keyIndex, _, err := cs.CreatePhonon(model.Secp256k1)
+		var keyIndex uint16
+		keyIndex, _, err = cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			t.Error(err)
 			return

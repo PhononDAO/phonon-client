@@ -198,7 +198,7 @@ func ParseRawCardCertificate(cardCertificateRaw []byte) (cert CardCertificate, e
 
 	if cert.Permissions.certLen == 0 || cert.Permissions.permLen == 0 {
 		log.Debugf("invalid certificate found: % X", cardCertificateRaw)
-		return CardCertificate{}, errors.New("card Certificate Invalid")
+		return CardCertificate{}, errors.New("card certificate invalid")
 	}
 	permsLen := int(cert.Permissions.permLen)
 	if len(cardCertificateRaw) < 5+permsLen {

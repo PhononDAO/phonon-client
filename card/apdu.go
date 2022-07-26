@@ -243,7 +243,7 @@ func NewCommandListPhonons(p1 byte, p2 byte, data []byte) *Command {
 			SW_WRONG_DATA + 3:           errors.New("unable to decode less than TLV"),
 			SW_WRONG_DATA + 4:           errors.New("unable to decode greater than TLV"),
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_INCORRECT_P1P2:           errors.New("incorrect Parameters received"),
+			SW_INCORRECT_P1P2:           errors.New("incorrect parameters received"),
 		},
 	}
 }
@@ -329,7 +329,7 @@ func NewCommandReceivePhonons(phononTransferPacket []byte) *Command {
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED: errors.New("phonon recipt conditions not met"),
 			SW_FILE_FULL:                errors.New("maximum number of phonons exceeded"),
-			SW_WRONG_DATA:               errors.New("unable to decode Phonon key list TLV"),
+			SW_WRONG_DATA:               errors.New("unable to decode phonon key list TLV"),
 		},
 	}
 }
@@ -415,7 +415,7 @@ func NewCommandCardPair2(data []byte) *Command {
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
 			SW_WRONG_DATA:               errors.New("unable to read salt"),
 			SW_WRONG_DATA + 1:           errors.New("unable to read AES TLV"),
-			SW_WRONG_DATA + 2:           errors.New("unable to read Signature TLV"),
+			SW_WRONG_DATA + 2:           errors.New("unable to read signature TLV"),
 		},
 	}
 }
@@ -432,7 +432,7 @@ func NewCommandFinalizeCardPair(data []byte) *Command {
 		PossibleErrs: CmdErrTable{
 			// No idea how you can get this far without validating a pin
 			SW_CONDITIONS_NOT_SATISFIED:      ErrPINNotEntered,
-			SW_WRONG_DATA:                    errors.New("unable to read Receiver signature TLV"),
+			SW_WRONG_DATA:                    errors.New("unable to read receiver signature TLV"),
 			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("unable to verify signature"),
 		},
 	}
@@ -513,7 +513,7 @@ func NewCommandMutualAuthenticate(data []byte) *Command {
 		ApduCmd: keycard.NewCommandMutuallyAuthenticate(data),
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED:      errors.New("authentication key not initialized"),
-			SW_LOGICAL_CHANNEL_NOT_SUPPORTED: errors.New("already Mutually Authenticated"),
+			SW_LOGICAL_CHANNEL_NOT_SUPPORTED: errors.New("already mutually authenticated"),
 			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("secret length invalid"),
 		},
 	}

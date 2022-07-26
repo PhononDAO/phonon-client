@@ -37,7 +37,6 @@ type Session struct {
 	ElementUsageMtex      sync.Mutex
 	logger                *log.Entry
 	chainSrv              chain.ChainService
-	cachedFriendlyName    string
 	cache                 map[uint16]cachedPhonon
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
 	cachePopulated bool
@@ -135,15 +134,13 @@ func (s *Session) GetCardId() string {
 
 func (s *Session) GetName() (string, error) {
 	if s.friendlyName != "" {
-		return s.cachedFriendlyName, nil
+		return s.friendlyName, nil
 	} else {
 		var err error
 		s.friendlyName, err = s.cs.GetFriendlyName()
 		if err != nil {
 			return "", err
 		}
-
-		s.cachedFriendlyName = s.friendlyName
 	}
 	return s.friendlyName, nil
 }

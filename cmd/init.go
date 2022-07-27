@@ -29,7 +29,7 @@ var initCmd = &cobra.Command{
 	Use:   "init [pin]",
 	Short: "Initialize phonon card with PIN.",
 	Long:  `Initialize phonon card with PIN. Defaults to 111111 if no argument is given`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		var pin string
 		if len(args) > 0 {
 			pin = args[0]

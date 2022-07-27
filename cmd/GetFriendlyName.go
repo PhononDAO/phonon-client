@@ -27,7 +27,7 @@ import (
 var getFriendlyNameCmd = &cobra.Command{
 	Use:   "getFriendlyName",
 	Short: "retrieve the card's previously set Friendly Name",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		getFriendlyName()
 	},
 }

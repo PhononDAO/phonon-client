@@ -6,9 +6,9 @@ import (
 	"github.com/abiosoft/ishell/v2"
 )
 
-func addMock(c *ishell.Context){
+func addMock(_ *ishell.Context) {
 	_, err := t.GenerateMock()
-	if err != nil{
+	if err != nil {
 		fmt.Println("Error generating mock phonon card")
 	}
 

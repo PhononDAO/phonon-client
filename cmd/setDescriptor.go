@@ -30,7 +30,7 @@ var setDescriptorCmd = &cobra.Command{
 	Short: "Set a description of a phonon",
 	Long: `Set a phonon description in order to store metadata that identifies which blockchain assets
 the phonon corresponds to, so that they can later be retrieved for use in transactions.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		setDescriptor()
 	},
 }

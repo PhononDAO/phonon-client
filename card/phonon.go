@@ -77,15 +77,15 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 	if err != nil && err != tlv.ErrTagNotFound {
 		return nil, err
 	}
-	if err == nil {
+	switch err {
+	case nil:
 		phonon.KeyIndex = model.KeyIndexFromBytes(keyIndexBytes)
-	} else if err == tlv.ErrTagNotFound {
+	case tlv.ErrTagNotFound:
 		log.Debug("phonon keyIndex not found during tlv parsing, skipping...")
-		//move on, missing KeyIndex is OK
-	} else {
+	default:
 		return nil, err
-	}
 
+	}
 	//CurveType
 	rawCurveType, err := phononTLV.FindTag(TagCurveType)
 	if err != nil {

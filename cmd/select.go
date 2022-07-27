@@ -27,7 +27,7 @@ var selectCmd = &cobra.Command{
 	Use:   "select",
 	Short: "Test SELECT command",
 	Long:  `Test SELECT command`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		cs, err := card.Connect(readerIndex)
 		if err != nil {
 			return

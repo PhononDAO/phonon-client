@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"errors"
+	"strings"
+
 	"github.com/GridPlus/keycard-go/apdu"
 	"github.com/GridPlus/keycard-go/crypto"
 	"github.com/GridPlus/keycard-go/globalplatform"
@@ -11,7 +13,6 @@ import (
 	"github.com/GridPlus/keycard-go/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
-	"strings"
 )
 
 var ErrInvalidResponseMAC = errors.New("invalid response MAC")
@@ -105,7 +106,8 @@ func (sc *SecureChannel) Send(cmd *Command) (resp *apdu.Response, err error) {
 		}
 	}()
 	if sc.open {
-		encData, err := crypto.EncryptData(cmd.ApduCmd.Data, sc.encKey, sc.iv)
+		var encData []byte
+		encData, err = crypto.EncryptData(cmd.ApduCmd.Data, sc.encKey, sc.iv)
 		if err != nil {
 			return nil, err
 		}

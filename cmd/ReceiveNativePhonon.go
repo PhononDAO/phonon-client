@@ -106,7 +106,7 @@ func receiveNativePhonon() {
 	if err != nil {
 		panic(err.Error())
 	}
-	sender.SendPhonons([]uint16{index})
+	sender.SendPhonons([]model.PhononKeyIndex{index})
 
 	phonons, err := receiver.ListPhonons(0, 0, 0)
 	if err != nil {

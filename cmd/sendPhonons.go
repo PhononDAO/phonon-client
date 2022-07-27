@@ -146,7 +146,7 @@ func sendPhonons() {
 	}
 	fmt.Println("cards paired succesfully!")
 
-	err = sender.SendPhonons([]uint16{keyIndex})
+	err = sender.SendPhonons([]model.PhononKeyIndex{keyIndex})
 	if err != nil {
 		fmt.Println("error sending phonons")
 		fmt.Println(err)

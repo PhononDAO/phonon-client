@@ -238,7 +238,7 @@ func (s *Session) verified() bool {
 	return false
 }
 
-func (s *Session) CreatePhonon() (keyIndex uint16, pubkey model.PhononPubKey, err error) {
+func (s *Session) CreatePhonon() (keyIndex model.PhononKeyIndex, pubkey model.PhononPubKey, err error) {
 	if !s.verified() {
 		return 0, nil, card.ErrPINNotEntered
 	}
@@ -267,7 +267,7 @@ func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue uin
 	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue, false)
 }
 
-func (s *Session) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
+func (s *Session) GetPhononPubKey(keyIndex model.PhononKeyIndex, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
 	if !s.verified() {
 		return nil, card.ErrPINNotEntered
 	}
@@ -277,7 +277,7 @@ func (s *Session) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubkey 
 	return s.cs.GetPhononPubKey(keyIndex, crv)
 }
 
-func (s *Session) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
+func (s *Session) DestroyPhonon(keyIndex model.PhononKeyIndex) (privKey *ecdsa.PrivateKey, err error) {
 	if !s.verified() {
 		return nil, card.ErrPINNotEntered
 	}
@@ -343,7 +343,7 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 	return nil
 }
 
-func (s *Session) SendPhonons(keyIndices []uint16) error {
+func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
 	log.Debug("Sending phonons")
 	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard

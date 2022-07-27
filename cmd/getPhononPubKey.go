@@ -37,7 +37,7 @@ a list command, as LIST_PHONONS does not return public keys in order to conserve
 			fmt.Println(err)
 			return
 		}
-		getPhononPubKey(uint16(keyIndex))
+		getPhononPubKey(model.PhononKeyIndex(keyIndex))
 	},
 }
 
@@ -45,7 +45,7 @@ func init() {
 	rootCmd.AddCommand(getPhononPubKeyCmd)
 }
 
-func getPhononPubKey(keyIndex uint16) {
+func getPhononPubKey(keyIndex model.PhononKeyIndex) {
 	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)

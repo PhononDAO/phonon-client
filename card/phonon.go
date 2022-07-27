@@ -3,6 +3,7 @@ package card
 import (
 	"encoding/binary"
 	"errors"
+
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/tlv"
 
@@ -77,7 +78,7 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 		return nil, err
 	}
 	if err == nil {
-		phonon.KeyIndex = binary.BigEndian.Uint16(keyIndexBytes)
+		phonon.KeyIndex = model.KeyIndexFromBytes(keyIndexBytes)
 	} else if err == tlv.ErrTagNotFound {
 		log.Debug("phonon keyIndex not found during tlv parsing, skipping...")
 		//move on, missing KeyIndex is OK

@@ -4,6 +4,7 @@ package model
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -19,7 +20,7 @@ import (
 )
 
 type Phonon struct {
-	KeyIndex              uint16
+	KeyIndex              PhononKeyIndex
 	PubKey                PhononPubKey
 	CurveType             CurveType
 	SchemaVersion         uint8
@@ -48,7 +49,7 @@ func (p *Phonon) String() string {
 
 //Phonon data structured for display to the user and use in frontends
 type PhononJSON struct {
-	KeyIndex              uint16
+	KeyIndex              PhononKeyIndex
 	PubKey                string //pubkey as hexstring
 	Address               string //Chain specific address as hexstring
 	AddressType           uint8
@@ -111,6 +112,16 @@ func (p *Phonon) MarshalJSON() ([]byte, error) {
 }
 
 type CurrencyType uint16
+type PhononKeyIndex uint16
+
+func KeyIndexFromBytes(keyIndexBytes []byte) PhononKeyIndex {
+	return PhononKeyIndex(binary.BigEndian.Uint16(keyIndexBytes))
+}
+func (i PhononKeyIndex) ToBytes() []byte {
+	b := make([]byte, 0)
+	binary.BigEndian.PutUint16(b, uint16(i))
+	return b
+}
 
 const (
 	Unspecified CurrencyType = 0x0000

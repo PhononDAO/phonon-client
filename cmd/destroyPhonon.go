@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +39,7 @@ but the phonon will no longer be retrievable via the card.`,
 			fmt.Println("couldn't parse keyIndex value as uint16: ", err)
 			return
 		}
-		destroyPhonon(uint16(keyIndex))
+		destroyPhonon(model.PhononKeyIndex(keyIndex))
 	},
 }
 
@@ -46,7 +47,7 @@ func init() {
 	rootCmd.AddCommand(destroyPhononCmd)
 }
 
-func destroyPhonon(keyIndex uint16) {
+func destroyPhonon(keyIndex model.PhononKeyIndex) {
 	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)

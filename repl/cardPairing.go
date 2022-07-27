@@ -3,6 +3,7 @@ package repl
 import (
 	"strconv"
 
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/abiosoft/ishell/v2"
 )
@@ -52,7 +53,7 @@ func sendPhonons(c *ishell.Context) {
 	if paired := checkCardPaired(c); !paired {
 		return
 	}
-	var keyIndices []uint16
+	var keyIndices []model.PhononKeyIndex
 	for _, i := range c.Args {
 		keyIndex, err := strconv.ParseUint(i, 10, 16)
 		if err != nil {
@@ -60,7 +61,7 @@ func sendPhonons(c *ishell.Context) {
 			c.Println("aborting send operation...")
 			return
 		}
-		keyIndices = append(keyIndices, uint16(keyIndex))
+		keyIndices = append(keyIndices, model.PhononKeyIndex(keyIndex))
 	}
 
 	err := activeCard.SendPhonons(keyIndices)

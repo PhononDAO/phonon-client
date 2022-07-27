@@ -450,7 +450,7 @@ func (cs *PhononCommandSet) ChangePIN(pin string) error {
 	return cs.checkOK(resp, err)
 }
 
-func (cs *PhononCommandSet) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey model.PhononPubKey, err error) {
+func (cs *PhononCommandSet) CreatePhonon(curveType model.CurveType) (keyIndex model.PhononKeyIndex, pubKey model.PhononPubKey, err error) {
 	log.Debug("sending CREATE_PHONON command")
 
 	cmd := NewCommandCreatePhonon(byte(curveType))
@@ -573,9 +573,9 @@ func checkContinuation(status uint16) (continues bool, err error) {
 	return false, ErrUnknown
 }
 
-func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubKey model.PhononPubKey, err error) {
+func (cs *PhononCommandSet) GetPhononPubKey(keyIndex model.PhononKeyIndex, crv model.CurveType) (pubKey model.PhononPubKey, err error) {
 	log.Debug("sending GET_PHONON_PUB_KEY command")
-	data, err := tlv.NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
+	data, err := tlv.NewTLV(TagKeyIndex, util.Uint16ToBytes(uint16(keyIndex)))
 	if err != nil {
 		return nil, err
 	}
@@ -601,9 +601,9 @@ func (cs *PhononCommandSet) GetPhononPubKey(keyIndex uint16, crv model.CurveType
 	return pubKey, nil
 }
 
-func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
+func (cs *PhononCommandSet) DestroyPhonon(keyIndex model.PhononKeyIndex) (privKey *ecdsa.PrivateKey, err error) {
 	log.Debug("sending DESTROY_PHONON command")
-	data, err := tlv.NewTLV(TagKeyIndex, util.Uint16ToBytes(keyIndex))
+	data, err := tlv.NewTLV(TagKeyIndex, util.Uint16ToBytes(uint16(keyIndex)))
 	if err != nil {
 		return nil, err
 	}
@@ -624,7 +624,7 @@ func (cs *PhononCommandSet) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.Priva
 	return privKey, nil
 }
 
-func (cs *PhononCommandSet) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error) {
+func (cs *PhononCommandSet) SendPhonons(keyIndices []model.PhononKeyIndex, extendedRequest bool) (transferPhononPackets []byte, err error) {
 	log.Debug("sending SEND_PHONONS command")
 	//Save this for extended requests
 	// tlvLength := 2
@@ -710,7 +710,7 @@ func (cs *PhononCommandSet) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) err
 	return nil
 }
 
-func (cs *PhononCommandSet) TransactionAck(keyIndices []uint16) error {
+func (cs *PhononCommandSet) TransactionAck(keyIndices []model.PhononKeyIndex) error {
 	log.Debug("sending TRANSACTION_ACK command")
 
 	data := encodeKeyIndexList(keyIndices)
@@ -901,7 +901,7 @@ func (cs *PhononCommandSet) GetAvailableMemory() (persistentMem int, onResetMem 
 	return persistentMem, onResetMem, onDeselectMem, nil
 }
 
-func (cs *PhononCommandSet) MineNativePhonon(difficulty uint8) (keyIndex uint16, hash []byte, err error) {
+func (cs *PhononCommandSet) MineNativePhonon(difficulty uint8) (keyIndex model.PhononKeyIndex, hash []byte, err error) {
 	log.Debug("sending MINE_NATIVE_PHONON command")
 	cmd := NewCommandMineNativePhonon(difficulty)
 	resp, err := cs.sc.Send(cmd)

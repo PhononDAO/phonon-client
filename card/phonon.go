@@ -79,7 +79,7 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 	}
 	switch err {
 	case nil:
-		phonon.KeyIndex = binary.BigEndian.Uint16(keyIndexBytes)
+		phonon.KeyIndex = model.KeyIndexFromBytes(keyIndexBytes)
 	case tlv.ErrTagNotFound:
 		log.Debug("phonon keyIndex not found during tlv parsing, skipping...")
 	default:

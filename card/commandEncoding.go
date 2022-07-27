@@ -14,11 +14,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func encodeKeyIndexList(keyIndices []uint16) []byte {
+func encodeKeyIndexList(keyIndices []model.PhononKeyIndex) []byte {
 	var keyIndexBytes []byte
-	b := make([]byte, 2)
 	for _, keyIndex := range keyIndices {
-		binary.BigEndian.PutUint16(b, keyIndex)
+		b := keyIndex.ToBytes()
 		keyIndexBytes = append(keyIndexBytes, b...)
 	}
 	data, _ := tlv.NewTLV(TagPhononKeyIndexList, keyIndexBytes)
@@ -26,8 +25,7 @@ func encodeKeyIndexList(keyIndices []uint16) []byte {
 }
 
 func encodeSetDescriptorData(p *model.Phonon) ([]byte, error) {
-	keyIndexBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(keyIndexBytes, p.KeyIndex)
+	keyIndexBytes := p.KeyIndex.ToBytes()
 	keyIndexTLV, err := tlv.NewTLV(TagKeyIndex, keyIndexBytes)
 	if err != nil {
 		return nil, err
@@ -111,7 +109,7 @@ func encodeSetReceiveListData(phononPubKeys []*ecdsa.PublicKey) ([]byte, error) 
 	return data.Encode(), nil
 }
 
-func encodeSendPhononsData(keyIndices []uint16) (data []byte, p2Length byte) {
+func encodeSendPhononsData(keyIndices []model.PhononKeyIndex) (data []byte, p2Length byte) {
 	p2Length = byte(len(keyIndices))
 
 	data = encodeKeyIndexList(keyIndices)
@@ -197,7 +195,7 @@ func parseDestroyPhononResponse(resp []byte) (privKey *ecdsa.PrivateKey, err err
 	return privKey, nil
 }
 
-func parseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKeyBytes []byte, err error) {
+func parseCreatePhononResponse(resp []byte) (keyIndex model.PhononKeyIndex, pubKeyBytes []byte, err error) {
 	collection, err := tlv.ParseTLVPacket(resp, TagPhononKeyCollection)
 	if err != nil {
 		return 0, nil, err
@@ -213,7 +211,7 @@ func parseCreatePhononResponse(resp []byte) (keyIndex uint16, pubKeyBytes []byte
 		return 0, nil, err
 	}
 
-	keyIndex = binary.BigEndian.Uint16(keyIndexBytes)
+	keyIndex = model.KeyIndexFromBytes(keyIndexBytes)
 
 	return keyIndex, pubKeyBytes, nil
 }
@@ -315,7 +313,7 @@ func parseGetAvailableMemoryResponse(resp []byte) (persistentMem int, onResetMem
 	return persistentMem, onResetMem, onDeselectMem, nil
 }
 
-func parseMineNativePhononResponse(resp []byte) (keyIndex uint16, hash []byte, err error) {
+func parseMineNativePhononResponse(resp []byte) (keyIndex model.PhononKeyIndex, hash []byte, err error) {
 	collection, err := tlv.ParseTLVPacket(resp, TagPhononKeyCollection)
 	if err != nil {
 		return 0, nil, err
@@ -324,7 +322,7 @@ func parseMineNativePhononResponse(resp []byte) (keyIndex uint16, hash []byte, e
 	if err != nil {
 		return 0, nil, err
 	}
-	keyIndex = binary.BigEndian.Uint16(keyIndexBytes)
+	keyIndex = model.KeyIndexFromBytes(keyIndexBytes)
 
 	hash, err = collection.FindTag(TagPhononPubKey)
 	if err != nil {

@@ -103,7 +103,7 @@ func setDescriptor(c *ishell.Context) {
 	}
 	c.Println("setting descriptor with values: ", uint16(keyIndex), currencyType, denomination)
 	p := &model.Phonon{
-		KeyIndex:     uint16(keyIndex),
+		KeyIndex:     model.PhononKeyIndex(keyIndex),
 		CurrencyType: currencyType,
 		Denomination: denomination,
 	}
@@ -140,7 +140,7 @@ func redeemPhonon(c *ishell.Context) {
 		c.Println("phonon redemption canceled")
 		return
 	}
-	privKey, err := activeCard.DestroyPhonon(uint16(keyIndex))
+	privKey, err := activeCard.DestroyPhonon(model.PhononKeyIndex(keyIndex))
 	if err != nil {
 		c.Printf("unable to redeem and destroy phonon at keyIndex %v, err: %v\n", keyIndex, err)
 		return

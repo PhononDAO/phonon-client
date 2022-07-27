@@ -50,16 +50,16 @@ type MockPhonon struct {
 	deleted    bool
 }
 
-func (c *MockCard) addPhonon(p *MockPhonon) (index uint16) {
+func (c *MockCard) addPhonon(p *MockPhonon) (index model.PhononKeyIndex) {
 	if len(c.deletedPhonons) > 0 {
 		index := c.deletedPhonons[len(c.deletedPhonons)-1]
 		c.Phonons[index] = p
 		c.deletedPhonons = c.deletedPhonons[:len(c.deletedPhonons)-1]
 	} else {
 		c.Phonons = append(c.Phonons, p)
-		index = uint16(len(c.Phonons) - 1)
+		index = model.PhononKeyIndex(len(c.Phonons) - 1)
 	}
-	p.KeyIndex = index
+	p.KeyIndex = model.PhononKeyIndex(index)
 	return
 }
 
@@ -548,7 +548,7 @@ func (c *MockCard) Pair() (*cert.CardCertificate, error) {
 
 //Phonon Management Functions
 
-func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex uint16, pubKey model.PhononPubKey, err error) {
+func (c *MockCard) CreatePhonon(curveType model.CurveType) (keyIndex model.PhononKeyIndex, pubKey model.PhononPubKey, err error) {
 	if !c.pinVerified {
 		return 0, nil, ErrPINNotEntered
 	}
@@ -607,7 +607,7 @@ func (c *MockCard) ListPhonons(currencyType model.CurrencyType, lessThanValue ui
 	return ret, nil
 }
 
-func (c *MockCard) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
+func (c *MockCard) GetPhononPubKey(keyIndex model.PhononKeyIndex, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
 	index := int(keyIndex)
 	if index > len(c.Phonons) || c.Phonons[index].deleted {
 		return nil, fmt.Errorf("no phonon at index %d", index)
@@ -667,7 +667,7 @@ func (c *MockCard) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 // 	return response, nil
 // }
 
-func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error) {
+func (c *MockCard) SendPhonons(keyIndices []model.PhononKeyIndex, extendedRequest bool) (transferPhononPackets []byte, err error) {
 	log.Debug("mock SEND_PHONONS command")
 	var outgoingPhonons []byte
 	for _, k := range keyIndices {
@@ -793,11 +793,11 @@ func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
 	return nil
 }
 
-func (c *MockCard) TransactionAck(keyIndices []uint16) error {
+func (c *MockCard) TransactionAck(keyIndices []model.PhononKeyIndex) error {
 	return nil
 }
 
-func (c *MockCard) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
+func (c *MockCard) DestroyPhonon(keyIndex model.PhononKeyIndex) (privKey *ecdsa.PrivateKey, err error) {
 	index := int(keyIndex)
 	c.deletedPhonons = append(c.deletedPhonons, index)
 	c.Phonons[index].deleted = true
@@ -873,7 +873,7 @@ func (c *MockCard) GetAvailableMemory() (int, int, int, error) {
 	return 0, 0, 0, nil
 }
 
-func (c *MockCard) MineNativePhonon(difficulty uint8) (uint16, []byte, error) {
+func (c *MockCard) MineNativePhonon(difficulty uint8) (model.PhononKeyIndex, []byte, error) {
 	buf := make([]byte, 32)
 	rand.Reader.Read(buf)
 	fmt.Printf("generated salt for native private key: % X\n", string(buf))

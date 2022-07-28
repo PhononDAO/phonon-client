@@ -156,7 +156,7 @@ func (s *Session) SetName(name string) error {
 	if err == nil {
 		s.friendlyName = name
 	}
-	return nil
+	return err
 }
 
 func (s *Session) GetCertificate() (*cert.CardCertificate, error) {

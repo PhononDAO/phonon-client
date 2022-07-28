@@ -248,9 +248,10 @@ func checkPairingErrors(pairingStep int, status uint16) (err error) {
 	case 0x6882:
 		err = errors.New("certificate not loaded")
 	case 0x6982:
-		if pairingStep == 1 {
+		switch pairingStep {
+		case 1:
 			err = errors.New("unable to generate secret")
-		} else if pairingStep == 2 {
+		case 2:
 			err = errors.New("client cryptogram verification failed")
 		}
 	case 0x6A84:

@@ -24,7 +24,7 @@ import (
 var replCmd = &cobra.Command{
 	Use:   "repl",
 	Short: "Start the phonon repl frontend",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		repl.Start()
 	},
 }

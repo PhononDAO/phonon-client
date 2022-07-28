@@ -33,7 +33,7 @@ var identifyCardCmd = &cobra.Command{
 	Short: "Request card identity information",
 	Long: `Requests the card return it's identity public key along with a signature over
 	a supplied nonce, proving it's possession of the correcsponding private key`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		identifyCard()
 	},
 }

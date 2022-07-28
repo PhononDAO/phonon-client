@@ -27,7 +27,7 @@ var openSecureChannelCmd = &cobra.Command{
 	Use:   "openSecureChannel",
 	Short: "Tests opening a secure channel",
 	Long:  `Tests opening a secure channel between terminal and card`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		openSecureChannel()
 	},
 }

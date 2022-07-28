@@ -30,7 +30,7 @@ var getCertificateCmd = &cobra.Command{
 	Use:   "getCertificate",
 	Short: "Gets the card certificate and validates it's signature with the configured CA",
 	Long:  `Gets the card certificate and validates it's signature with the configured CA`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		getCertificate()
 	},
 }

@@ -14,13 +14,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/getlantern/systray"
 	"github.com/gorilla/mux"
 	"github.com/pkg/browser"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
+	"gthub.com/GridPlus/phonon-client/model"
 )
 
 //go:embed frontend/build/*
@@ -141,10 +140,16 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 			}
 		}
 	}()
-	browser.OpenURL("http://localhost:" + port + "/")
-	systray.Run(onReady, onExit)
-}
+	// setup channel to end the application
+	kill := make(chan struct{}, 1)
 
+	// start the systray Icon
+	endSystray := SystrayIcon(kill)
+	setupGUI(kill)
+	endSystray()
+	browser.OpenURL("http://localhost:" + port + "/")
+	<-kill
+}
 func logsink(w http.ResponseWriter, r *http.Request) {
 	var msg map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&msg)
@@ -208,22 +213,6 @@ func parseJSLogLevel(input interface{}) (int, error) {
 	}
 	lvlInt := int(lvlFloat64)
 	return lvlInt, nil
-}
-
-func onReady() {
-	systray.SetIcon(phononLogo)
-	systray.SetTitle("")
-	systray.SetTooltip("Phonon UI backend is currently running")
-	mQuit := systray.AddMenuItem("Quit", "Exit PhononUI")
-	mQuit.SetIcon(xIcon)
-	go func() {
-		<-mQuit.ClickedCh
-		systray.Quit()
-	}()
-}
-
-func onExit() {
-	log.Println("Server killed by systray interaction")
 }
 
 func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request) {

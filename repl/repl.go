@@ -234,20 +234,6 @@ func setName(c *ishell.Context) {
 	}
 }
 
-func setActiveCardName(c *ishell.Context, s *orchestrator.Session) {
-	if ready := checkActiveCard(c); !ready {
-		return
-	}
-	name := 3
-	if len(c.Args) != name {
-		c.Printf("setName requires %v args\n", name)
-		return
-	}
-
-	updatePrompt()
-	c.Printf("%v name set\n", activeCard.GetName())
-}
-
 func activateCard(c *ishell.Context) {
 	sessions := t.ListSessions()
 	var sessionNames []string

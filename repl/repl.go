@@ -130,25 +130,25 @@ func Start() {
 	shell.Run()
 }
 
+func getDisplayName(activeCard *orchestrator.Session) string {
+	var name = activeCard.GetName()
+	if name != "" {
+		return activeCard.GetName()
+	}
+	return activeCard.GetCardId()
+}
+
 //internal bookkeeping method to set a card to receive subsequent commands
 func setActiveCard(c *ishell.Context, s *orchestrator.Session) {
 	activeCard = s
 	updatePrompt()
-	if activeCard.GetName() != "" {
-		c.Printf("%v selected\n", activeCard.GetName())
-	} else {
-		c.Printf("%v selected\n", activeCard.GetCardId())
-	}
+	c.Printf("%v selected\n", getDisplayName(activeCard))
 }
 
 //Updates the prompt to display the status of the active card
 func updatePrompt() {
 	if activeCard == nil {
 		shell.SetPrompt(standardPrompt)
-	}
-	cardName := activeCard.GetCardId()
-	if activeCard.GetName() != "" {
-		cardName = activeCard.GetName()
 	}
 
 	var status string
@@ -159,7 +159,7 @@ func updatePrompt() {
 	} else {
 		status = ""
 	}
-	shell.SetPrompt(cardName + status + ">")
+	shell.SetPrompt(fmt.Sprintf("%v%v>", getDisplayName(activeCard), status))
 }
 
 //checkActiveCard provides a guard function for shell commands to check that there is a card ready to use before proceeding
@@ -203,16 +203,9 @@ func listCards(c *ishell.Context) {
 		c.Println("no cards found")
 	} else {
 		for _, s := range sessions {
-			// TODO: Find a better way to display the card name and card id.
-			if s.GetName() != "" {
-				if len(c.Args) > 0 {
-					if c.Args[0] == "ids" {
-						c.Printf("%v\n", s.GetCardId())
-					}
-				} else {
-					c.Printf("%v\n", s.GetName())
-				}
-
+			var name = s.GetName()
+			if name != "" {
+				c.Printf("%v - %v\n", s.GetCardId(), name)
 			} else {
 				c.Printf("%v\n", s.GetCardId())
 			}
@@ -259,11 +252,7 @@ func activateCard(c *ishell.Context) {
 	sessions := t.ListSessions()
 	var sessionNames []string
 	for _, session := range sessions {
-		if session.GetName() == "" {
-			sessionNames = append(sessionNames, session.GetCardId())
-		} else {
-			sessionNames = append(sessionNames, session.GetName())
-		}
+		sessionNames = append(sessionNames, getDisplayName(session))
 	}
 
 	selection := c.MultiChoice(sessionNames, "please select an available card")

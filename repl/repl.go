@@ -133,7 +133,7 @@ func Start() {
 func getDisplayName(activeCard *orchestrator.Session) string {
 	var name = activeCard.GetName()
 	if name != "" {
-		return activeCard.GetName()
+		return name
 	}
 	return activeCard.GetCardId()
 }

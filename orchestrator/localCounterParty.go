@@ -71,7 +71,7 @@ func (lcp *localCounterParty) VerifyPaired() error {
 	if lcp.pairingStatus == model.StatusPaired {
 		return nil
 	} else {
-		return fmt.Errorf("Not paired to local counterparty")
+		return fmt.Errorf("not paired to local counterparty")
 	}
 }
 

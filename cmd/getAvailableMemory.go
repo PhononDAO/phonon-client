@@ -28,7 +28,7 @@ var getAvailableMemoryCmd = &cobra.Command{
 	Short: "Retrieve the card's available memory statistics",
 	Long: `Retrieve the card's available memory statistics.
 	Returns persistent memory, transient memory on reset, then transient memory on deselect`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 		if err != nil {
 			fmt.Println(err)

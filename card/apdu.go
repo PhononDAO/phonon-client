@@ -238,12 +238,12 @@ func NewCommandListPhonons(p1 byte, p2 byte, data []byte) *Command {
 		),
 		PossibleErrs: CmdErrTable{
 			SW_WRONG_DATA:               errors.New("no remaining phonons to list"),
-			SW_WRONG_DATA + 1:           errors.New("Unable to decode phonon filter TLV"),
+			SW_WRONG_DATA + 1:           errors.New("unable to decode phonon filter TLV"),
 			SW_WRONG_DATA + 2:           errors.New("unable to decode phonon currency TLV"),
-			SW_WRONG_DATA + 3:           errors.New("Unable to decode less than TLV"),
-			SW_WRONG_DATA + 4:           errors.New("Unable to decode greater than TLV"),
+			SW_WRONG_DATA + 3:           errors.New("unable to decode less than TLV"),
+			SW_WRONG_DATA + 4:           errors.New("unable to decode greater than TLV"),
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_INCORRECT_P1P2:           errors.New("Incorrect Parameters received"),
+			SW_INCORRECT_P1P2:           errors.New("incorrect parameters received"),
 		},
 	}
 }
@@ -259,12 +259,12 @@ func NewCommandGetPhononPubKey(data []byte) *Command {
 		),
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_WRONG_LENGTH:             errors.New("Data length incorrect"),
-			SW_WRONG_DATA:               errors.New("Phonon index invalid"),
+			SW_WRONG_LENGTH:             errors.New("data length incorrect"),
+			SW_WRONG_DATA:               errors.New("phonon index invalid"),
 			SW_FILE_INVALID:             ErrInvalidPhononIndex,
-			SW_FILE_INVALID + 1:         errors.New("Phonon at index exceeds available phonon list"),
+			SW_FILE_INVALID + 1:         errors.New("phonon at index exceeds available phonon list"),
 			SW_FILE_INVALID + 3:         errors.New("phonon at index is null"),
-			SW_FILE_NOT_FOUND:           errors.New("Phonon not initialized"),
+			SW_FILE_NOT_FOUND:           errors.New("phonon not initialized"),
 		},
 	}
 }
@@ -280,12 +280,12 @@ func NewCommandDestroyPhonon(data []byte) *Command {
 		),
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_WRONG_LENGTH:             errors.New("Incoming length wrong"),
-			SW_WRONG_DATA:               errors.New("Invalid phonon index"),
+			SW_WRONG_LENGTH:             errors.New("incoming length wrong"),
+			SW_WRONG_DATA:               errors.New("invalid phonon index"),
 			SW_FILE_INVALID:             ErrInvalidPhononIndex,
-			SW_FILE_INVALID + 1:         errors.New("Phononon doesn't exist"),
+			SW_FILE_INVALID + 1:         errors.New("phononon doesn't exist"),
 			// adding 2 doesn't work because it conflicts with another error
-			SW_FILE_INVALID + 3: errors.New("Phonon already deleted"),
+			SW_FILE_INVALID + 3: errors.New("phonon already deleted"),
 		},
 	}
 }
@@ -308,9 +308,9 @@ func NewCommandSendPhonons(data []byte, p2Length byte, extendedRequest bool) *Co
 		),
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_INCORRECT_P1P2:           errors.New("PhononList continue greater than 1"),
-			SW_INCORRECT_P1P2 + 1:       errors.New("No Phonons Requested"),
-			SW_WRONG_DATA:               errors.New("Incorrect phonon index"),
+			SW_INCORRECT_P1P2:           errors.New("phononList continue greater than 1"),
+			SW_INCORRECT_P1P2 + 1:       errors.New("no Phonons Requested"),
+			SW_WRONG_DATA:               errors.New("incorrect phonon index"),
 		},
 	}
 }
@@ -327,9 +327,9 @@ func NewCommandReceivePhonons(phononTransferPacket []byte) *Command {
 			phononTransferPacket,
 		),
 		PossibleErrs: CmdErrTable{
-			SW_CONDITIONS_NOT_SATISFIED: errors.New("Phonon recipt conditions not met"),
-			SW_FILE_FULL:                errors.New("Maximum number of phonons exceeded"),
-			SW_WRONG_DATA:               errors.New("Unable to decode Phonon key list TLV"),
+			SW_CONDITIONS_NOT_SATISFIED: errors.New("phonon recipt conditions not met"),
+			SW_FILE_FULL:                errors.New("maximum number of phonons exceeded"),
+			SW_WRONG_DATA:               errors.New("unable to decode phonon key list TLV"),
 		},
 	}
 }
@@ -346,9 +346,9 @@ func NewCommandSetReceiveList(data []byte) *Command {
 		),
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_FILE_FULL:                errors.New("No phonon with index passed"),
-			SW_WRONG_DATA:               errors.New("Unable to decode Phonon key list TLV"),
-			SW_WRONG_DATA + 1:           errors.New("Unable to decode phonon key TLV"),
+			SW_FILE_FULL:                errors.New("no phonon with index passed"),
+			SW_WRONG_DATA:               errors.New("unable to decode Phonon key list TLV"),
+			SW_WRONG_DATA + 1:           errors.New("unable to decode phonon key TLV"),
 		},
 	}
 }
@@ -364,7 +364,7 @@ func NewCommandTransactionAck(data []byte) *Command {
 		),
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_WRONG_DATA:               errors.New("Unable to decode TLV tag")},
+			SW_WRONG_DATA:               errors.New("unable to decode TLV tag")},
 	}
 }
 
@@ -379,8 +379,8 @@ func NewCommandInitCardPairing(data []byte) *Command {
 		),
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_WRONG_DATA:               errors.New("Unable to decode certificate TLV"),
-			SW_COMMAND_NOT_ALLOWED:      errors.New("Card certificate not initialized"),
+			SW_WRONG_DATA:               errors.New("unable to decode certificate TLV"),
+			SW_COMMAND_NOT_ALLOWED:      errors.New("card certificate not initialized"),
 		},
 	}
 }
@@ -396,8 +396,8 @@ func NewCommandCardPair(data []byte) *Command {
 		),
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_WRONG_DATA:               errors.New("Unable to decode card certificate TLV"),
-			SW_WRONG_DATA + 1:           errors.New("Unable to decode salt TLV"),
+			SW_WRONG_DATA:               errors.New("unable to decode card certificate TLV"),
+			SW_WRONG_DATA + 1:           errors.New("unable to decode salt TLV"),
 		},
 	}
 }
@@ -413,9 +413,9 @@ func NewCommandCardPair2(data []byte) *Command {
 		),
 		PossibleErrs: CmdErrTable{
 			SW_CONDITIONS_NOT_SATISFIED: ErrPINNotEntered,
-			SW_WRONG_DATA:               errors.New("Unable to read salt"),
-			SW_WRONG_DATA + 1:           errors.New("Unable to read AES TLV"),
-			SW_WRONG_DATA + 2:           errors.New("Unable to read Signature TLV"),
+			SW_WRONG_DATA:               errors.New("unable to read salt"),
+			SW_WRONG_DATA + 1:           errors.New("unable to read AES TLV"),
+			SW_WRONG_DATA + 2:           errors.New("unable to read signature TLV"),
 		},
 	}
 }
@@ -432,8 +432,8 @@ func NewCommandFinalizeCardPair(data []byte) *Command {
 		PossibleErrs: CmdErrTable{
 			// No idea how you can get this far without validating a pin
 			SW_CONDITIONS_NOT_SATISFIED:      ErrPINNotEntered,
-			SW_WRONG_DATA:                    errors.New("Unable to read Receiver signature TLV"),
-			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("Unable to verify signature"),
+			SW_WRONG_DATA:                    errors.New("unable to read receiver signature TLV"),
+			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("unable to verify signature"),
 		},
 	}
 }
@@ -448,8 +448,8 @@ func NewCommandInstallCert(data []byte) *Command {
 			data,
 		),
 		PossibleErrs: CmdErrTable{
-			SW_COMMAND_NOT_ALLOWED: errors.New("Certificate already loaded"),
-			SW_DATA_INVALID:        errors.New("Unable to save certificate"),
+			SW_COMMAND_NOT_ALLOWED: errors.New("certificate already loaded"),
+			SW_DATA_INVALID:        errors.New("unable to save certificate"),
 		},
 	}
 }
@@ -469,9 +469,9 @@ func NewCommandPairStep1(salt []byte, pairingPubKey *ecdsa.PublicKey) *Command {
 	return &Command{
 		ApduCmd: gridplus.NewAPDUPairStep1(salt, pairingPubKey),
 		PossibleErrs: CmdErrTable{
-			SW_WRONG_DATA:                     errors.New("Data incorrect size"),
-			SW_SECURE_MESSAGING_NOT_SUPPORTED: errors.New("No certificate loaded"),
-			SW_SECURITY_STATUS_NOT_SATISFIED:  errors.New("Unable to compute ECDH secrets"),
+			SW_WRONG_DATA:                     errors.New("data incorrect size"),
+			SW_SECURE_MESSAGING_NOT_SUPPORTED: errors.New("no certificate loaded"),
+			SW_SECURITY_STATUS_NOT_SATISFIED:  errors.New("unable to compute ECDH secrets"),
 		},
 	}
 
@@ -481,8 +481,8 @@ func NewCommandPairStep2(cryptogram [32]byte) *Command {
 	return &Command{
 		ApduCmd: gridplus.NewAPDUPairStep2(cryptogram[0:]),
 		PossibleErrs: CmdErrTable{
-			SW_WRONG_DATA:                    errors.New("Wrong secret length"),
-			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("Client cryptogram differs from expected"),
+			SW_WRONG_DATA:                    errors.New("wrong secret length"),
+			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("client cryptogram differs from expected"),
 		},
 	}
 
@@ -501,8 +501,8 @@ func NewCommandOpenSecureChannel(index uint8, publicKey []byte) *Command {
 	return &Command{
 		ApduCmd: keycard.NewCommandOpenSecureChannel(index, publicKey),
 		PossibleErrs: CmdErrTable{
-			SW_INCORRECT_P1P2:                errors.New("Incorrect parameters"),
-			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("Unable to generate secret"),
+			SW_INCORRECT_P1P2:                errors.New("incorrect parameters"),
+			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("unable to generate secret"),
 		},
 	}
 
@@ -512,9 +512,9 @@ func NewCommandMutualAuthenticate(data []byte) *Command {
 	return &Command{
 		ApduCmd: keycard.NewCommandMutuallyAuthenticate(data),
 		PossibleErrs: CmdErrTable{
-			SW_CONDITIONS_NOT_SATISFIED:      errors.New("Authentication key not initialized"),
-			SW_LOGICAL_CHANNEL_NOT_SUPPORTED: errors.New("Already Mutually Authenticated"),
-			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("Secret length invalid"),
+			SW_CONDITIONS_NOT_SATISFIED:      errors.New("authentication key not initialized"),
+			SW_LOGICAL_CHANNEL_NOT_SUPPORTED: errors.New("already mutually authenticated"),
+			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("secret length invalid"),
 		},
 	}
 

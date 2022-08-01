@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/spf13/cobra"
 )
 
@@ -32,13 +33,13 @@ var destroyPhononCmd = &cobra.Command{
 This allows one to utilize the phonon's private key outside of the phonon system,
 but the phonon will no longer be retrievable via the card.`,
 	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		keyIndex, err := strconv.ParseUint(args[0], 10, 16)
 		if err != nil {
 			fmt.Println("couldn't parse keyIndex value as uint16: ", err)
 			return
 		}
-		destroyPhonon(uint16(keyIndex))
+		destroyPhonon(model.PhononKeyIndex(keyIndex))
 	},
 }
 
@@ -46,7 +47,7 @@ func init() {
 	rootCmd.AddCommand(destroyPhononCmd)
 }
 
-func destroyPhonon(keyIndex uint16) {
+func destroyPhonon(keyIndex model.PhononKeyIndex) {
 	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)

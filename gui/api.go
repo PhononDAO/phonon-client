@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"math/big"
@@ -91,6 +92,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
 	r.HandleFunc("/cards/{sessionID}/connectionStatus", session.RemoteConnectionStatus)
 	r.HandleFunc("/cards/{sessionID}/connectLocal", session.ConnectLocal)
+	r.HandleFunc("/checkDenomination", verifyDenomination)
 	// api docs
 	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/", http.FileServer(http.FS(swagger))))
 	r.HandleFunc("/swagger.json", serveAPIFunc(port))
@@ -122,6 +124,27 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	}()
 	browser.OpenURL("http://localhost:" + port + "/")
 	systray.Run(onReady, onExit)
+}
+
+func verifyDenomination(w http.ResponseWriter, r *http.Request) {
+	tocheckBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "unable to parse request", http.StatusBadRequest)
+		return
+	}
+	toCheckString := string(tocheckBytes)
+	toCheck := new(big.Int)
+	toCheck, ok := toCheck.SetString(toCheckString, 10)
+	if !ok {
+		http.Error(w, "unable to coerce request string to integer", http.StatusBadRequest)
+		return
+	}
+	_, err = model.NewDenomination(toCheck)
+	if err != nil {
+		http.Error(w, "cannot make phonon denomination from value: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	// return 200 if it works
 }
 
 func logsink(w http.ResponseWriter, r *http.Request) {
@@ -220,8 +243,8 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 
 	enc := json.NewEncoder(w)
 	enc.Encode(struct {
-		Index  uint16 `json:"index"`
-		PubKey string `json:"pubkey"`
+		Index  model.PhononKeyIndex `json:"index"`
+		PubKey string               `json:"pubkey"`
 	}{Index: index,
 		PubKey: pubKey.String()})
 }
@@ -664,11 +687,11 @@ func (apiSession apiSession) setDescriptor(w http.ResponseWriter, r *http.Reques
 	}
 
 	p := &model.Phonon{
-		KeyIndex:     uint16(index),
+		KeyIndex:     model.PhononKeyIndex(index),
 		Denomination: den,
 		CurrencyType: model.CurrencyType(inputs.CurrencyType),
 	}
-	p.KeyIndex = uint16(index)
+	p.KeyIndex = model.PhononKeyIndex(index)
 	err = sess.SetDescriptor(p)
 	if err != nil {
 		http.Error(w, "Unable to set descriptor", http.StatusBadRequest)
@@ -690,7 +713,7 @@ func (apiSession apiSession) send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.Unmarshal(bodyBytes, &inputs)
-	toSend := []uint16{}
+	toSend := []model.PhononKeyIndex{}
 	for _, phonon2send := range inputs {
 		toSend = append(toSend, phonon2send.KeyIndex)
 	}
@@ -719,7 +742,7 @@ func (apiSession apiSession) exportPhonon(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Unable to convert index to int:"+err.Error(), http.StatusBadRequest)
 		return
 	}
-	privkey, err := sess.DestroyPhonon(uint16(index))
+	privkey, err := sess.DestroyPhonon(model.PhononKeyIndex(index))
 	if err != nil {
 		http.Error(w, "Unable to redeem phonon: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -37,7 +37,7 @@ type Session struct {
 	ElementUsageMtex      sync.Mutex
 	logger                *log.Entry
 	chainSrv              chain.ChainService
-	cache                 map[uint16]cachedPhonon
+	cache                 map[model.PhononKeyIndex]cachedPhonon
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
 	cachePopulated bool
 }
@@ -75,7 +75,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
 		chainSrv:              chainSrv,
-		cache:                 make(map[uint16]cachedPhonon),
+		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
 
@@ -258,7 +258,7 @@ func (s *Session) verified() bool {
 	return false
 }
 
-func (s *Session) CreatePhonon() (keyIndex uint16, pubkey model.PhononPubKey, err error) {
+func (s *Session) CreatePhonon() (keyIndex model.PhononKeyIndex, pubkey model.PhononPubKey, err error) {
 	if !s.verified() {
 		return 0, nil, card.ErrPINNotEntered
 	}
@@ -319,7 +319,7 @@ func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue uin
 	return phonons, err
 }
 
-func (s *Session) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
+func (s *Session) GetPhononPubKey(keyIndex model.PhononKeyIndex, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
 	if !s.verified() {
 		return nil, card.ErrPINNotEntered
 	}
@@ -333,7 +333,7 @@ func (s *Session) GetPhononPubKey(keyIndex uint16, crv model.CurveType) (pubkey 
 	return k, err
 }
 
-func (s *Session) DestroyPhonon(keyIndex uint16) (privKey *ecdsa.PrivateKey, err error) {
+func (s *Session) DestroyPhonon(keyIndex model.PhononKeyIndex) (privKey *ecdsa.PrivateKey, err error) {
 	if !s.verified() {
 		return nil, card.ErrPINNotEntered
 	}
@@ -403,7 +403,7 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 	return nil
 }
 
-func (s *Session) SendPhonons(keyIndices []uint16) error {
+func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
 	log.Debug("Sending phonons")
 	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
@@ -722,7 +722,7 @@ func (s *Session) RedeemPhonon(p *model.Phonon, redeemAddress string) (transacti
 /*addPubKeyToCache adds the pubkey to an already cached phonon. This is done differently from the addInfoToCache because there are only two
 instances where we add information to a preexisting cached phonon, and they need to be handled differently without going through the trouble
 of making a fully generic updater that handles all fields*/
-func (s *Session) addPubKeyToCache(i uint16, k model.PhononPubKey) {
+func (s *Session) addPubKeyToCache(i model.PhononKeyIndex, k model.PhononPubKey) {
 	cached, ok := s.cache[i]
 	// if it didn't already exist, create it
 	if !ok {

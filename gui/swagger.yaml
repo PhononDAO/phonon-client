@@ -443,6 +443,24 @@ paths:
         required: true
         schema:
           type: object
+  /checkDenomination:
+    post:
+      tags:
+      - "general"
+      summary: "check denomination before attempting to set on card"
+      consumes:
+      - "application/text"
+      responses:
+        "200":
+          description: "valid denomination"
+        "400":
+          description: "unable to determine denomination value"
+      parameters:
+      - in: "body"
+        name: "value"
+        required: true
+        schema:
+          type: string
 definitions:
   Phonon:
     type: object

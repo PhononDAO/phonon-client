@@ -31,13 +31,13 @@ var getPhononPubKeyCmd = &cobra.Command{
 	Long: `Retrieves a phonon's public key by keyIndex. This may be necessary to follow up
 a list command, as LIST_PHONONS does not return public keys in order to conserve space.`,
 	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		keyIndex, err := strconv.Atoi(args[0])
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		getPhononPubKey(uint16(keyIndex))
+		getPhononPubKey(model.PhononKeyIndex(keyIndex))
 	},
 }
 
@@ -45,7 +45,7 @@ func init() {
 	rootCmd.AddCommand(getPhononPubKeyCmd)
 }
 
-func getPhononPubKey(keyIndex uint16) {
+func getPhononPubKey(keyIndex model.PhononKeyIndex) {
 	cs, err := card.QuickSecureConnection(readerIndex, staticPairing)
 	if err != nil {
 		fmt.Println(err)

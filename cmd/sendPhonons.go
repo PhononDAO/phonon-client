@@ -29,7 +29,7 @@ var sendPhononsCmd = &cobra.Command{
 	Use:   "sendPhonons",
 	Short: "Send a packet of phonons",
 	Long:  `Send a packet of phonons with a list of keyIndices,`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		sendPhonons()
 	},
 }
@@ -146,7 +146,7 @@ func sendPhonons() {
 	}
 	fmt.Println("cards paired succesfully!")
 
-	err = sender.SendPhonons([]uint16{keyIndex})
+	err = sender.SendPhonons([]model.PhononKeyIndex{keyIndex})
 	if err != nil {
 		fmt.Println("error sending phonons")
 		fmt.Println(err)

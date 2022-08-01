@@ -34,7 +34,7 @@ when the SELECT command is run against the card again.
 
 Phonons created by this command have no identifying descriptor information.
 `,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		var n int
 		if len(args) < 1 {
 			n = 1

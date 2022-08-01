@@ -719,8 +719,6 @@ func (s *Session) RedeemPhonon(p *model.Phonon, redeemAddress string) (transacti
 	return transactionData, privKeyString, nil
 }
 
-//TODO: retry and track progress automatically.
-
 /*addPubKeyToCache adds the pubkey to an already cached phonon. This is done differently from the addInfoToCache because there are only two
 instances where we add information to a preexisting cached phonon, and they need to be handled differently without going through the trouble
 of making a fully generic updater that handles all fields*/

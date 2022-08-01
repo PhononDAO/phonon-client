@@ -131,11 +131,12 @@ func Start() {
 }
 
 func getDisplayName(activeCard *orchestrator.Session) string {
-	var name = activeCard.GetName()
-	if name != "" {
+	name, err := activeCard.GetName()
+	if err != nil || name == "" {
+		return activeCard.GetCardId()
+	} else {
 		return name
 	}
-	return activeCard.GetCardId()
 }
 
 //internal bookkeeping method to set a card to receive subsequent commands
@@ -203,11 +204,11 @@ func listCards(c *ishell.Context) {
 		c.Println("no cards found")
 	} else {
 		for _, s := range sessions {
-			var name = s.GetName()
-			if name != "" {
-				c.Printf("%v - %v\n", s.GetCardId(), name)
-			} else {
+			name, err := s.GetName()
+			if err != nil || name == "" {
 				c.Printf("%v\n", s.GetCardId())
+			} else {
+				c.Printf("%v - %v\n", s.GetCardId(), name)
 			}
 		}
 	}

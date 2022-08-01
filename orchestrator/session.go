@@ -37,12 +37,21 @@ type Session struct {
 	ElementUsageMtex      sync.Mutex
 	logger                *log.Entry
 	chainSrv              chain.ChainService
+	cache                 map[model.PhononKeyIndex]cachedPhonon
+	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
+	cachePopulated bool
+}
+
+type cachedPhonon struct {
+	pubkeyCached bool
+	infoCached   bool
+	p            *model.Phonon
 }
 
 var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
 var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
 var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
-var ErrNameCannotBeEmpty = errors.New("requested name cannot be empty.")
+var ErrNameCannotBeEmpty = errors.New("requested name cannot be empty")
 
 //Creates a new card session, automatically connecting if the card is already initialized with a PIN
 //The next step is to run VerifyPIN to gain access to the secure commands on the card
@@ -66,6 +75,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
 		chainSrv:              chainSrv,
+		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
 
@@ -122,21 +132,31 @@ func (s *Session) GetCardId() string {
 	}
 }
 
-func (s *Session) GetName() string {
-	return s.friendlyName
+func (s *Session) GetName() (string, error) {
+	if s.friendlyName != "" {
+		return s.friendlyName, nil
+	} else {
+		var err error
+		s.friendlyName, err = s.cs.GetFriendlyName()
+		if err != nil {
+			return "", err
+		}
+	}
+	return s.friendlyName, nil
 }
 
 func (s *Session) SetName(name string) error {
 	if !s.verified() {
 		return card.ErrPINNotEntered
 	}
-
 	if name == "" {
 		return ErrNameCannotBeEmpty
 	}
-
-	s.friendlyName = name
-	return s.cs.SetFriendlyName(name)
+	err := s.cs.SetFriendlyName(name)
+	if err == nil {
+		s.friendlyName = name
+	}
+	return err
 }
 
 func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
@@ -244,8 +264,19 @@ func (s *Session) CreatePhonon() (keyIndex model.PhononKeyIndex, pubkey model.Ph
 	}
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
-
-	return s.cs.CreatePhonon(model.Secp256k1)
+	index, pubkey, err := s.cs.CreatePhonon(model.Secp256k1)
+	if err != nil {
+		s.cache[index] = cachedPhonon{
+			pubkeyCached: true,
+			infoCached:   true,
+			p: &model.Phonon{
+				KeyIndex:  index,
+				CurveType: model.Secp256k1,
+				PubKey:    pubkey,
+			},
+		}
+	}
+	return index, pubkey, err
 }
 
 func (s *Session) SetDescriptor(p *model.Phonon) error {
@@ -254,17 +285,38 @@ func (s *Session) SetDescriptor(p *model.Phonon) error {
 	}
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
-	return s.cs.SetDescriptor(p)
+	err := s.cs.SetDescriptor(p)
+	if err == nil {
+		s.addInfoToCache(p)
+	}
+	return err
 }
 
 func (s *Session) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64) ([]*model.Phonon, error) {
 	if !s.verified() {
 		return nil, card.ErrPINNotEntered
 	}
+	if s.cachePopulated {
+		ret := []*model.Phonon{}
+		for _, p := range s.cache {
+			ret = append(ret, p.p)
+		}
+		return ret, nil
+	}
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 
-	return s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue, false)
+	phonons, err := s.cs.ListPhonons(currencyType, lessThanValue, greaterThanValue, false)
+	// add listed phonons to the cache
+	for _, phonon := range phonons {
+		s.addInfoToCache(phonon)
+	}
+
+	if currencyType == 0 && lessThanValue == 0 && greaterThanValue == 0 {
+		//all phonons were listed, therefore each one can be accounted for in the cache
+		s.cachePopulated = true
+	}
+	return phonons, err
 }
 
 func (s *Session) GetPhononPubKey(keyIndex model.PhononKeyIndex, crv model.CurveType) (pubkey model.PhononPubKey, err error) {
@@ -274,7 +326,11 @@ func (s *Session) GetPhononPubKey(keyIndex model.PhononKeyIndex, crv model.Curve
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 
-	return s.cs.GetPhononPubKey(keyIndex, crv)
+	k, err := s.cs.GetPhononPubKey(keyIndex, crv)
+	if err == nil {
+		s.addPubKeyToCache(keyIndex, k)
+	}
+	return k, err
 }
 
 func (s *Session) DestroyPhonon(keyIndex model.PhononKeyIndex) (privKey *ecdsa.PrivateKey, err error) {
@@ -284,7 +340,11 @@ func (s *Session) DestroyPhonon(keyIndex model.PhononKeyIndex) (privKey *ecdsa.P
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 
-	return s.cs.DestroyPhonon(keyIndex)
+	privKey, err = s.cs.DestroyPhonon(keyIndex)
+	if err == nil {
+		delete(s.cache, keyIndex)
+	}
+	return privKey, err
 }
 
 func (s *Session) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error) {
@@ -366,6 +426,9 @@ func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
 		return err
 	}
 	fmt.Println("unlockingMutex")
+	for _, index := range keyIndices {
+		delete(s.cache, index)
+	}
 	return nil
 }
 
@@ -380,6 +443,8 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 	if err != nil {
 		return err
 	}
+	//invalidate the cache now that new phonons have been received
+	s.cachePopulated = false
 	return nil
 }
 
@@ -654,4 +719,45 @@ func (s *Session) RedeemPhonon(p *model.Phonon, redeemAddress string) (transacti
 	return transactionData, privKeyString, nil
 }
 
-//TODO: retry and track progress automatically.
+/*addPubKeyToCache adds the pubkey to an already cached phonon. This is done differently from the addInfoToCache because there are only two
+instances where we add information to a preexisting cached phonon, and they need to be handled differently without going through the trouble
+of making a fully generic updater that handles all fields*/
+func (s *Session) addPubKeyToCache(i model.PhononKeyIndex, k model.PhononPubKey) {
+	cached, ok := s.cache[i]
+	// if it didn't already exist, create it
+	if !ok {
+		s.cache[i] = cachedPhonon{
+			p: &model.Phonon{
+				KeyIndex: i,
+				PubKey:   k,
+			},
+			pubkeyCached: true,
+		}
+		// otherwise, add the new descriptor things
+	} else {
+		cached.p.PubKey = k
+		cached.pubkeyCached = true
+	}
+}
+
+/*addInfoToCache handles merging information we know and information we don't know into the cache*/
+func (s *Session) addInfoToCache(p *model.Phonon) {
+	cached, ok := s.cache[p.KeyIndex]
+	// if it didn't already exist, create it
+	if !ok {
+		s.cache[p.KeyIndex] = cachedPhonon{
+			p:          p,
+			infoCached: true,
+		}
+		// otherwise, add the new descriptor things
+	} else {
+		cachedPubKey := cached.p.PubKey
+		s.cache[p.KeyIndex] = cachedPhonon{
+			p:            p,
+			pubkeyCached: cached.pubkeyCached,
+			infoCached:   true,
+		}
+		s.cache[p.KeyIndex].p.PubKey = cachedPubKey
+	}
+
+}

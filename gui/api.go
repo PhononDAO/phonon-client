@@ -45,14 +45,14 @@ type apiSession struct {
 func Server(port string, certFile string, keyFile string, mock bool) {
 	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.JSONFormatter{})
-	log.Debug("Starting local api server")
+	log.Debug("starting local api server")
 	session := apiSession{orchestrator.NewPhononTerminal()}
 
 	//initialize cache map
 	if mock {
 		//Start server with a mock and ignore actual cards
 		_, err := session.t.GenerateMock()
-		log.Debug("Mock generated")
+		log.Debug("mock generated")
 		if err != nil {
 			log.Error("unable to generate mock during REST server startup: ", err)
 			return
@@ -100,12 +100,12 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	// frontend
 	stripped, err := fs.Sub(frontend, "frontend/build")
 	if err != nil {
-		log.Fatal("Unable to setup filesystem to serve frontend: " + err.Error())
+		log.Fatal("unable to setup filesystem to serve frontend: " + err.Error())
 	}
 	r.PathPrefix("/").Handler(http.FileServer(http.FS(stripped)))
 
 	http.Handle("/", r)
-	log.Debug("Listening for incoming connections on " + port)
+	log.Debug("listening for incoming connections on " + port)
 	fmt.Println("listen and serve")
 	go func() {
 		if certFile != "" && keyFile != "" {
@@ -128,7 +128,7 @@ func logsink(w http.ResponseWriter, r *http.Request) {
 	var msg map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&msg)
 	if err != nil {
-		log.Errorf("Unable to decode logs from frontend: %s\n", err)
+		log.Errorf("unable to decode logs from frontend: %s\n", err)
 		http.Error(w, "unable to decode logs", http.StatusBadRequest)
 		return
 	}
@@ -139,7 +139,7 @@ func logsink(w http.ResponseWriter, r *http.Request) {
 	} else {
 		lvlInt, err := parseJSLogLevel(lvl)
 		if err != nil {
-			log.Debug(fmt.Sprintf("Unable to decode log level from frontend: %s. Defaulting to debug", err.Error()))
+			log.Debug(fmt.Sprintf("unable to decode log level from frontend: %s. Defaulting to debug", err.Error()))
 			log.WithFields(log.Fields(msg)).Debug()
 		} else {
 			switch lvlInt {
@@ -202,7 +202,7 @@ func onReady() {
 }
 
 func onExit() {
-	log.Println("Server killed by systray interaction")
+	log.Println("server killed by systray interaction")
 }
 
 func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request) {
@@ -355,7 +355,7 @@ func serveAPIFunc(port string) func(w http.ResponseWriter, r *http.Request) {
 	templ, err := template.New("swaggeryaml").Parse(swaggerTemplateFile)
 	if err != nil {
 		// this shouldn't happen. this is to make sure it fails in testing if it's set up wrong
-		log.Fatal("Unable to render swagger template. Exiting")
+		log.Fatal("unable to render swagger template. Exiting")
 	}
 	buff := bytes.NewBuffer([]byte{})
 	err = templ.Execute(buff, port)

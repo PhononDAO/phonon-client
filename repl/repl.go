@@ -119,16 +119,30 @@ func Start() {
 		Func: addMock,
 		Help: "make a mock card and add it to the session",
 	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "setName",
+		Func: setName,
+		Help: "set the name of the active card",
+	})
 	//Automatically refresh connections as the user is dropped into the shell
 	shell.Process("refresh")
 	shell.Run()
+}
+
+func getDisplayName(activeCard *orchestrator.Session) string {
+	var name = activeCard.GetName()
+	if name != "" {
+		return name
+	}
+	return activeCard.GetCardId()
 }
 
 //internal bookkeeping method to set a card to receive subsequent commands
 func setActiveCard(c *ishell.Context, s *orchestrator.Session) {
 	activeCard = s
 	updatePrompt()
-	c.Printf("%v selected\n", activeCard.GetCardId())
+	c.Printf("%v selected\n", getDisplayName(activeCard))
 }
 
 //Updates the prompt to display the status of the active card
@@ -136,7 +150,7 @@ func updatePrompt() {
 	if activeCard == nil {
 		shell.SetPrompt(standardPrompt)
 	}
-	cardName := activeCard.GetCardId()
+
 	var status string
 	if !activeCard.IsInitialized() {
 		status = "-uninitialized"
@@ -145,7 +159,7 @@ func updatePrompt() {
 	} else {
 		status = ""
 	}
-	shell.SetPrompt(cardName + status + ">")
+	shell.SetPrompt(fmt.Sprintf("%v%v>", getDisplayName(activeCard), status))
 }
 
 //checkActiveCard provides a guard function for shell commands to check that there is a card ready to use before proceeding
@@ -187,10 +201,36 @@ func listCards(c *ishell.Context) {
 	sessions := t.ListSessions()
 	if len(sessions) == 0 {
 		c.Println("no cards found")
+	} else {
+		for _, s := range sessions {
+			var name = s.GetName()
+			if name != "" {
+				c.Printf("%v - %v\n", s.GetCardId(), name)
+			} else {
+				c.Printf("%v\n", s.GetCardId())
+			}
+		}
 	}
-	c.Println("available cards: ")
-	for _, s := range sessions {
-		c.Println(s.GetCardId())
+}
+
+func setName(c *ishell.Context) {
+	if ready := checkActiveCard(c); !ready {
+		return
+	}
+
+	numCorrectArgs := 1
+	if len(c.Args) != numCorrectArgs {
+		c.Printf("setName requires %v args\n", numCorrectArgs)
+		return
+	}
+
+	name := c.Args[0]
+	err := activeCard.SetName(name)
+	if err != nil {
+		c.Printf("error setting name: %v", err)
+	} else {
+		updatePrompt()
+		c.Printf("name set to %v", name)
 	}
 }
 
@@ -198,7 +238,7 @@ func activateCard(c *ishell.Context) {
 	sessions := t.ListSessions()
 	var sessionNames []string
 	for _, session := range sessions {
-		sessionNames = append(sessionNames, session.GetCardId())
+		sessionNames = append(sessionNames, getDisplayName(session))
 	}
 
 	selection := c.MultiChoice(sessionNames, "please select an available card")

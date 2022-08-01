@@ -118,7 +118,7 @@ func KeyIndexFromBytes(keyIndexBytes []byte) PhononKeyIndex {
 	return PhononKeyIndex(binary.BigEndian.Uint16(keyIndexBytes))
 }
 func (i PhononKeyIndex) ToBytes() []byte {
-	b := make([]byte, 0)
+	b := make([]byte, 2)
 	binary.BigEndian.PutUint16(b, uint16(i))
 	return b
 }

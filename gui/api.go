@@ -15,12 +15,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/gorilla/mux"
 	"github.com/pkg/browser"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
-	"gthub.com/GridPlus/phonon-client/model"
 )
 
 //go:embed frontend/build/*
@@ -42,46 +42,25 @@ type apiSession struct {
 	t *orchestrator.PhononTerminal
 }
 
-type sessionCache struct {
-	cachePopulated bool
-	phonons        map[model.PhononKeyIndex]*model.Phonon
-}
-
-var cache map[string]*sessionCache
-
 func Server(port string, certFile string, keyFile string, mock bool) {
 	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.JSONFormatter{})
-	log.Debug("Starting local api server")
+	log.Debug("starting local api server")
 	session := apiSession{orchestrator.NewPhononTerminal()}
 
 	//initialize cache map
-	cache = make(map[string]*sessionCache)
 	if mock {
 		//Start server with a mock and ignore actual cards
 		_, err := session.t.GenerateMock()
-		log.Debug("Mock generated")
+		log.Debug("mock generated")
 		if err != nil {
 			log.Error("unable to generate mock during REST server startup: ", err)
 			return
 		}
-		//will only be one
-		for _, sess := range session.t.ListSessions() {
-			cache[sess.GetCardId()] = &sessionCache{
-				phonons:        make(map[model.PhononKeyIndex]*model.Phonon),
-				cachePopulated: false,
-			}
-		}
 	} else {
-		sessions, err := session.t.RefreshSessions()
+		_, err := session.t.RefreshSessions()
 		if err != nil {
 			log.Error("unable to refresh card sessions during REST server startup: ", err)
-		}
-		for _, session := range sessions {
-			cache[session.GetCardId()] = &sessionCache{
-				phonons:        make(map[model.PhononKeyIndex]*model.Phonon),
-				cachePopulated: false,
-			}
 		}
 	}
 	r := mux.NewRouter()
@@ -122,12 +101,12 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	// frontend
 	stripped, err := fs.Sub(frontend, "frontend/build")
 	if err != nil {
-		log.Fatal("Unable to setup filesystem to serve frontend: " + err.Error())
+		log.Fatal("unable to setup filesystem to serve frontend: " + err.Error())
 	}
 	r.PathPrefix("/").Handler(http.FileServer(http.FS(stripped)))
 
 	http.Handle("/", r)
-	log.Debug("Listening for incoming connections on " + port)
+	log.Debug("listening for incoming connections on " + port)
 	fmt.Println("listen and serve")
 	go func() {
 		if certFile != "" && keyFile != "" {
@@ -147,10 +126,9 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 
 	// start the systray Icon
 	endSystray := SystrayIcon(kill)
-	setupGUI(kill)
-	endSystray()
 	browser.OpenURL("http://localhost:" + port + "/")
 	<-kill
+	endSystray()
 }
 
 func verifyDenomination(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +156,7 @@ func logsink(w http.ResponseWriter, r *http.Request) {
 	var msg map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&msg)
 	if err != nil {
-		log.Errorf("Unable to decode logs from frontend: %s\n", err)
+		log.Errorf("unable to decode logs from frontend: %s\n", err)
 		http.Error(w, "unable to decode logs", http.StatusBadRequest)
 		return
 	}
@@ -189,7 +167,7 @@ func logsink(w http.ResponseWriter, r *http.Request) {
 	} else {
 		lvlInt, err := parseJSLogLevel(lvl)
 		if err != nil {
-			log.Debug(fmt.Sprintf("Unable to decode log level from frontend: %s. Defaulting to debug", err.Error()))
+			log.Debug(fmt.Sprintf("unable to decode log level from frontend: %s. Defaulting to debug", err.Error()))
 			log.WithFields(log.Fields(msg)).Debug()
 		} else {
 			switch lvlInt {
@@ -252,11 +230,6 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	cache[sess.GetCardId()].phonons[index] = &model.Phonon{
-		KeyIndex: index,
-		PubKey:   pubKey,
-	}
-
 	enc := json.NewEncoder(w)
 	enc.Encode(struct {
 		Index  model.PhononKeyIndex `json:"index"`
@@ -288,10 +261,6 @@ func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.
 		log.Error("unable to create phonons for deposit. err: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	for _, phonon := range phonons {
-		cache[sess.GetCardId()].phonons[phonon.KeyIndex] = phonon
 	}
 
 	enc := json.NewEncoder(w)
@@ -398,7 +367,7 @@ func serveAPIFunc(port string) func(w http.ResponseWriter, r *http.Request) {
 	templ, err := template.New("swaggeryaml").Parse(swaggerTemplateFile)
 	if err != nil {
 		// this shouldn't happen. this is to make sure it fails in testing if it's set up wrong
-		log.Fatal("Unable to render swagger template. Exiting")
+		log.Fatal("unable to render swagger template. Exiting")
 	}
 	buff := bytes.NewBuffer([]byte{})
 	err = templ.Execute(buff, port)
@@ -427,10 +396,15 @@ func (apiSession apiSession) listSessions(w http.ResponseWriter, r *http.Request
 	sessionStatuses := make([]*SessionStatus, 0)
 
 	for _, v := range sessions {
+		name, err := v.GetName()
+		if err != nil {
+			log.Error("unable to retrieve friendly name: " + err.Error())
+			name = ""
+		}
 		sessionStatuses = append(sessionStatuses,
 			&SessionStatus{
 				Id:             v.GetCardId(),
-				Name:           v.GetName(),
+				Name:           name,
 				Initialized:    v.IsInitialized(),
 				TerminalPaired: v.IsPairedToTerminal(),
 				PinVerified:    v.IsUnlocked(),
@@ -645,29 +619,19 @@ func (apiSession apiSession) listPhonons(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	phonons := []*model.Phonon{}
-	if cache[sess.GetCardId()].cachePopulated {
-		for _, phonon := range cache[sess.GetCardId()].phonons {
-			phonons = append(phonons, phonon)
-		}
-	} else {
-		phonons, err = sess.ListPhonons(0, 0, 0)
+	var phonons []*model.Phonon
+	phonons, err = sess.ListPhonons(0, 0, 0)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	for _, p := range phonons {
+		p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex, p.CurveType)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		for _, p := range phonons {
-			p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex, p.CurveType)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
-		for _, phonon := range phonons {
-			cache[sess.GetCardId()].phonons[phonon.KeyIndex] = phonon
-		}
-		cache[sess.GetCardId()].cachePopulated = true
 	}
 	enc := json.NewEncoder(w)
 	err = enc.Encode(phonons)
@@ -722,7 +686,6 @@ func (apiSession apiSession) setDescriptor(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Unable to set descriptor", http.StatusBadRequest)
 		return
 	}
-	cache[sess.GetCardId()].phonons[p.KeyIndex] = p
 }
 
 func (apiSession apiSession) send(w http.ResponseWriter, r *http.Request) {
@@ -748,9 +711,6 @@ func (apiSession apiSession) send(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "unable to send phonons: "+err.Error(), http.StatusInternalServerError)
 		return
-	}
-	for _, index := range toSend {
-		delete(cache[sess.GetName()].phonons, index)
 	}
 }
 
@@ -779,7 +739,6 @@ func (apiSession apiSession) exportPhonon(w http.ResponseWriter, r *http.Request
 	ret := struct {
 		PrivateKey string `json:"privateKey"`
 	}{PrivateKey: fmt.Sprintf("%x", privkey.D)}
-	delete(cache[sess.GetCardId()].phonons, model.PhononKeyIndex(index))
 	enc := json.NewEncoder(w)
 	err = enc.Encode(ret)
 	if err != nil {
@@ -789,14 +748,10 @@ func (apiSession apiSession) exportPhonon(w http.ResponseWriter, r *http.Request
 }
 
 func (apiSession apiSession) generatemock(w http.ResponseWriter, r *http.Request) {
-	session, err := apiSession.t.GenerateMock()
+	_, err := apiSession.t.GenerateMock()
 	if err != nil {
 		http.Error(w, "unable to generate mock", http.StatusInternalServerError)
 		return
-	}
-	cache[session] = &sessionCache{
-		cachePopulated: true,
-		phonons:        map[model.PhononKeyIndex]*model.Phonon{},
 	}
 }
 

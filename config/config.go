@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"runtime"
 	"strings"
 
@@ -31,22 +32,27 @@ func DefaultConfig() Config {
 }
 
 func SetDefaultConfig() {
-	viper.SetDefault("AppletCACert", cert.PhononAlphaCAPubKey)
+	viper.SetDefault("AppletCACert", string(cert.PhononAlphaCAPubKey))
 	viper.SetDefault("LogLevel", log.DebugLevel)
 }
 
 func LoadConfig() (config Config, err error) {
 	SetDefaultConfig()
-	if runtime.GOOS == "windows" {
+	switch runtime.GOOS {
+	case "linux", "darwin":
+		viper.AddConfigPath("$HOME/.phonon/")
+		viper.AddConfigPath("$XDG_CONFIG_HOME/.phonon/phonon.yml")
+		viper.AddConfigPath("/usr/var/phonon/phonon.yml")
+
+	case "windows":
 		viper.AddConfigPath("$HOME\\.phonon\\")
+	default:
+		return Config{}, fmt.Errorf("unknown os: %s encountered", runtime.GOOS)
 	}
-	viper.AddConfigPath("$HOME/.phonon/")
-	viper.AddConfigPath("$XDG_CONFIG_HOME/.phonon/phonon.yml")
-	viper.AddConfigPath("/usr/var/phonon/phonon.yml")
 	viper.SetConfigName("phonon")
 	viper.SetConfigType("yml")
-
 	viper.SetEnvPrefix("phonon")
+
 	viper.AutomaticEnv()
 
 	err = viper.ReadInConfig()

@@ -170,7 +170,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		var matchedPhononCount int
 
 		for _, received := range receivedPhonons {
-			received.PubKey, err = cs.GetPhononPubKey(uint16(received.KeyIndex), received.CurveType)
+			received.PubKey, err = cs.GetPhononPubKey(model.PhononKeyIndex(received.KeyIndex), received.CurveType)
 			if err != nil {
 				t.Errorf("could not get phonon pubkey at index %v: %v\n", received.KeyIndex, err)
 				return
@@ -272,9 +272,9 @@ func TestFillPhononTable(t *testing.T) {
 	}
 	initialCount := len(initialList)
 	maxPhononCount := 256
-	var createdIndices []uint16
+	var createdIndices []model.PhononKeyIndex
 	for i := 0; i < maxPhononCount-initialCount; i++ {
-		var keyIndex uint16
+		var keyIndex model.PhononKeyIndex
 		keyIndex, _, err = cs.CreatePhonon(model.Secp256k1)
 		if err != nil {
 			t.Error(err)
@@ -337,7 +337,7 @@ func TestReuseDestroyedIndex(t *testing.T) {
 	}
 	fmt.Printf("created phonons for reuse and destroy check at indices, %v, %v, and %v\n", keyIndex1, keyIndex2, keyIndex3)
 	//Check the indices in order middle, last, first to ensure all index positions are properly reused
-	DestroyReuseAndCheck := func(keyIndex uint16) error {
+	DestroyReuseAndCheck := func(keyIndex model.PhononKeyIndex) error {
 		//Destroy and reused the middle index
 		_, err = cs.DestroyPhonon(keyIndex)
 		if err != nil {
@@ -362,7 +362,7 @@ func TestReuseDestroyedIndex(t *testing.T) {
 
 }
 
-func prepareCardForPairingTest(cs *StaticPhononCommandSet) (uint16, error) {
+func prepareCardForPairingTest(cs *StaticPhononCommandSet) (model.PhononKeyIndex, error) {
 	err := cs.OpenSecureConnection()
 	if err != nil {
 		return 0, err
@@ -413,7 +413,7 @@ func TestIncompletePairing(t *testing.T) {
 	}
 
 	//Issue Send to unpaired card
-	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	_, err = cs.SendPhonons([]model.PhononKeyIndex{keyIndex}, false)
 	if err != nil {
 		t.Log(err)
 	}
@@ -425,7 +425,7 @@ func TestIncompletePairing(t *testing.T) {
 		return
 	}
 	//Issue SendPhonons command
-	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	_, err = cs.SendPhonons([]model.PhononKeyIndex{keyIndex}, false)
 	if err != nil {
 		t.Log("expected error received calling SEND_PHONONS command after just INIT_CARD_PAIRING err: ", err)
 	}
@@ -441,7 +441,7 @@ func TestIncompletePairing(t *testing.T) {
 		return
 	}
 
-	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	_, err = cs.SendPhonons([]model.PhononKeyIndex{keyIndex}, false)
 	if err != nil {
 		t.Log("expected error received calling SEND_PHONONS after just CARD_PAIR_1. err: ", err)
 	}
@@ -455,7 +455,7 @@ func TestIncompletePairing(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
-	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	_, err = cs.SendPhonons([]model.PhononKeyIndex{keyIndex}, false)
 	if err != nil {
 		t.Log("expected error received calling SEND_PHONONS after just CARD_PAIR_2. err: ", err)
 	}
@@ -470,7 +470,7 @@ func TestIncompletePairing(t *testing.T) {
 		t.Log(err)
 
 	}
-	_, err = cs.SendPhonons([]uint16{keyIndex}, false)
+	_, err = cs.SendPhonons([]model.PhononKeyIndex{keyIndex}, false)
 	if err != nil {
 		t.Log("expected error received calling SEND_PHONONS after just FINALIZE_CARD_PAIR. err: ", err)
 	}

@@ -124,11 +124,11 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	// setup channel to end the application
 	kill := make(chan struct{}, 1)
 
-	// start the systray Icon
-	endSystray := SystrayIcon(kill)
 	browser.OpenURL("http://localhost:" + port + "/")
+
+	// start the systray Icon
+	_ = SystrayIcon(kill)
 	<-kill
-	endSystray()
 }
 
 func verifyDenomination(w http.ResponseWriter, r *http.Request) {

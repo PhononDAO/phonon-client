@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 if [ `arch` == "arm64" ] 
 then
+	echo "a"
 	if ! [ -f "$HOME/.phonon/phonon.yml" ] ; then
-		exec "${0%/*}/phonon_arm64" graphicalConfigure
+		echo "b"
+		"${0%/*}/phonon_arm64" graphicalConfigure
+		echo "c"
 	fi
+	echo "d"
 	exec "${0%/*}/phonon_arm64" webUI -p 8080
+	echo "e"
 fi
 
 if [ `arch` == "x86_64" ]

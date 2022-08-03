@@ -38,7 +38,7 @@ jobs:
   build-apple:
     # The type of runner that the job will run on
     runs-on: macos-11
-    -env:
+    env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:

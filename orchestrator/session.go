@@ -265,7 +265,7 @@ func (s *Session) CreatePhonon() (keyIndex model.PhononKeyIndex, pubkey model.Ph
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 	index, pubkey, err := s.cs.CreatePhonon(model.Secp256k1)
-	if err != nil {
+	if err == nil {
 		s.cache[index] = cachedPhonon{
 			pubkeyCached: true,
 			infoCached:   true,

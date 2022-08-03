@@ -56,7 +56,7 @@ func TestE2EJumpboxSendPhonon(t *testing.T) {
 		CurrencyType: 2,
 	})
 
-	err := sess2.SendPhonons([]uint16{
+	err := sess2.SendPhonons([]model.PhononKeyIndex{
 		0,
 	})
 	if err != nil {
@@ -92,13 +92,13 @@ func TestE2ELocalSendPhonon(t *testing.T) {
 		},
 		CurrencyType: 2,
 	})
-	err := sess2.SendPhonons([]uint16{
+	err := sess2.SendPhonons([]model.PhononKeyIndex{
 		0,
 	})
 	if err != nil {
 		t.Error(err.Error())
 	}
-	err = sess1.SendPhonons([]uint16{
+	err = sess1.SendPhonons([]model.PhononKeyIndex{
 		0,
 	})
 	if err != nil {

@@ -4,7 +4,7 @@ then
 	exec "${0%/*}/phonon_arm64" webUI -p 8080
 fi
 
-if [ `arch` == "x86_64" ]
+if [ `arch` == "i386" ]
 then
 	exec "${0%/*}/phonon_x86_64" webUI -p 8080
 fi

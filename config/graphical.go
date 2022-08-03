@@ -1,7 +1,11 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"runtime"
 	"strings"
@@ -12,6 +16,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+var loggingTestURL = "https://logs.phonon.network/testKey"
+
 func GraphicalConfiguration() {
 	a := app.New()
 	w := a.NewWindow("Configure Phonon Application")
@@ -20,6 +26,13 @@ func GraphicalConfiguration() {
 	w.SetContent(container.NewVBox(
 		welcome,
 		keyBox,
+		widget.NewButton("Test Logging Key", func() {
+			cleaned := strings.Trim(keyBox.Text, `\ `)
+			err := CheckTelemetryKey(cleaned)
+			if err != nil {
+				welcome.SetText(fmt.Sprintf("Telemetry key validation failed: %s", err.Error()))
+			}
+		}),
 		widget.NewButton("Save Configuration", func() {
 			cleaned := strings.Trim(keyBox.Text, `\ "`)
 			SetDefaultConfig()
@@ -29,6 +42,9 @@ func GraphicalConfiguration() {
 				welcome.SetText(fmt.Sprintf("Unable to save configuration: %s", err.Error()))
 			}
 			welcome.SetText("Configuration saved. You may now exit the program")
+		}),
+		widget.NewButton("Skip for now", func() {
+			w.Close()
 		}),
 	))
 	w.ShowAndRun()
@@ -55,7 +71,31 @@ func SaveConfig() error {
 	default:
 		return fmt.Errorf("unable to set configuration path for %s", runtime.GOOS)
 	}
+	return viper.WriteConfigAs(configPath + "phonon.yml")
+}
 
-	err = viper.WriteConfigAs(configPath + "phonon.yml")
-	return err
+func CheckTelemetryKey(key2check string) error {
+	urlstruct, err := url.Parse(loggingTestURL)
+	if err != nil {
+		return err
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    urlstruct,
+		Header: http.Header{
+			"AuthToken": []string{key2check},
+		},
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		respBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return errors.New(string(respBytes))
+	}
+	return nil
 }

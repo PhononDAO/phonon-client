@@ -16,5 +16,9 @@ jobs:
           go-version: 1.17.0
       - name: Install go stringer
         run: go get golang.org/x/tools/cmd/stringer@latest
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install libayatana-appindicator libpcsclite-dev
       - name: Build
         run: make build

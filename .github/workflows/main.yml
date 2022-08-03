@@ -95,7 +95,6 @@ jobs:
           choco install mingw
       - name: Install go stringer
         run: |
-          echo "$PATH"
           GOBIN=/usr/bin go install golang.org/x/tools/cmd/stringer@latest
       - name: Build Windows
         run: make windows-build
@@ -109,14 +108,8 @@ jobs:
           latest: true
           draft: false
           prerelease: true
-      - name: Upload Windows Release Asset
+      - name: Upluad Winodws Release Asset
         id: upload-windows-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.get_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./phonon.exe
-          asset_name: phonon.exe
-          asset_content_type: application/octet-stream
+        run: |
+          gh release upload latest ./phonon.exe 
       

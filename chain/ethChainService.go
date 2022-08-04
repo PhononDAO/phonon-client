@@ -137,6 +137,12 @@ func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 		RPCEndpoint = "https://eth-rinkeby.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
 	case 42: //Kovan
 		RPCEndpoint = "https://poa-kovan.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
+	case 97: // Binance
+		RPCEndpoint = "https://data-seed-prebsc-1-s1.binance.org:8545"
+	case 43113: // Avalanche
+		RPCEndpoint = "https://api.avax-test.network/ext/bc/C/rpc"
+	case 80001: // Polygon
+		RPCEndpoint = "https://rpc-mumbai.maticvigil.com"
 	case 1337: //Local Ganache
 		RPCEndpoint = "HTTP://127.0.0.1:8545"
 	default:
@@ -158,14 +164,14 @@ func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 func (eth *EthChainService) fetchPreTransactionInfo(ctx context.Context, fromAddress common.Address) (nonce uint64, balance *big.Int, suggestedGas *big.Int, err error) {
 	nonce, err = eth.cl.PendingNonceAt(ctx, fromAddress)
 	if err != nil {
-		log.Error("could not fetch pending nonce for eth account")
+		log.Error("could not fetch pending nonce for eth account: ", err)
 		return 0, nil, nil, err
 	}
 	log.Debug("pending nonce: ", nonce)
 	//Check actual balance of phonon
 	balance, err = eth.cl.BalanceAt(ctx, fromAddress, nil)
 	if err != nil {
-		log.Error("could not fetch on chain Phonon value")
+		log.Error("could not fetch on chain Phonon value: ", err)
 		return 0, nil, nil, err
 	}
 	log.Debug("on chain balance: ", balance)
@@ -185,6 +191,15 @@ func (eth *EthChainService) calcRedemptionValue(balance *big.Int, gasPrice *big.
 	return valueMinusGas.Sub(balance, estimatedGasCost.Mul(gasPrice, big.NewInt(int64(gasLimit))))
 }
 
+func (eth *EthChainService) checkBalance(ctx context.Context, address string) (balance *big.Int, err error) {
+	balance, err = eth.cl.BalanceAt(ctx, common.HexToAddress(address), nil)
+	if err != nil {
+		log.Error("could not fetch on chain Phonon value: ", err)
+		return nil, err
+	}
+	return balance, nil
+}
+
 func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce uint64, chainID *big.Int, redeemAddress common.Address, redeemValue *big.Int, gasLimit uint64, gasPrice *big.Int, privKey *ecdsa.PrivateKey) (*types.Transaction, error) {
 	//Submit transaction
 	//build transaction payload
@@ -194,6 +209,17 @@ func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce u
 	if err != nil {
 		log.Error("error forming signed transaction: ", err)
 		return signedTx, err
+	}
+
+	balance, err := eth.checkBalance(ctx, redeemAddress.Hex())
+	if err != nil {
+		log.Error("error checking balance: ", err)
+		return signedTx, err
+	}
+
+	if redeemValue.Cmp(eth.calcRedemptionValue(balance, gasPrice)) < 0 {
+		log.Error("balance is insufficient to cover redemption value")
+		return signedTx, errors.New("balance is insufficient to cover redemption value")
 	}
 
 	//Send the transaction through the ETH client

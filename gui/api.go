@@ -360,6 +360,10 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 			err:             respErr,
 		})
 	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	enc := json.NewEncoder(w)
 	err = enc.Encode(resps)

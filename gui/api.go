@@ -360,8 +360,15 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 			err:             respErr,
 		})
 	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	success := true
+	for _, res := range resps {
+		if res.err != "" {
+			success = false
+		}
+	}
+	if !success {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

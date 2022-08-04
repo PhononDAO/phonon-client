@@ -137,11 +137,11 @@ func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 		RPCEndpoint = "https://eth-rinkeby.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
 	case 42: //Kovan
 		RPCEndpoint = "https://poa-kovan.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
-	case 97: // Binance
+	case 97: // Binance Testnet
 		RPCEndpoint = "https://data-seed-prebsc-1-s1.binance.org:8545"
-	case 43114: // Avalanche
+	case 43114: // Avalanche Fuji (C-Chain)
 		RPCEndpoint = "https://api.avax-test.network/ext/bc/C/rpc"
-	case 80001: // Polygon
+	case 80001: // Mumbai (Polygon)
 		RPCEndpoint = "https://rpc-mumbai.maticvigil.com"
 	case 1337: //Local Ganache
 		RPCEndpoint = "HTTP://127.0.0.1:8545"
@@ -218,8 +218,8 @@ func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce u
 	}
 
 	if redeemValue.Cmp(eth.calcRedemptionValue(balance, gasPrice)) < 0 {
-		log.Error("balance is insufficient to cover redemption value")
-		return signedTx, errors.New("balance is insufficient to cover redemption value")
+		log.Error("balance is insufficient to cover gas cost of redemption")
+		return signedTx, errors.New("balance is insufficient to cover gas cost of redemption")
 	}
 
 	//Send the transaction through the ETH client

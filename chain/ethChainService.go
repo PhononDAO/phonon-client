@@ -127,14 +127,16 @@ func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 		return nil
 	}
 	switch chainID {
-	case 1: //Mainnet
-		//untested
-		RPCEndpoint = "https://eth-mainnet.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
+	// case 1: //Mainnet
+	// 	//untested
+	// 	RPCEndpoint = "https://eth-mainnet.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
 	case 3: //Ropsten
 		//untested
 		RPCEndpoint = "https://eth-ropsten.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
 	case 4: //Rinkeby
 		RPCEndpoint = "https://eth-rinkeby.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
+	case 5: // Goerli
+		RPCEndpoint = "https://eth-goerli.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
 	case 42: //Kovan
 		RPCEndpoint = "https://poa-kovan.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
 	case 1337: //Local Ganache

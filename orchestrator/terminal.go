@@ -53,12 +53,12 @@ func (t *PhononTerminal) GenerateMock() (string, error) {
 func (t *PhononTerminal) RefreshSessions() ([]*Session, error) {
 	t.sessions = []*Session{}
 	var err error
-	readers, err := usb.ConnectAllUSBReaders()
+	cards, err := usb.ConnectAllUSBReaders()
 	if err != nil {
 		return nil, err
 	}
-	for _, reader := range readers {
-		s, err := NewSession(card.NewPhononCommandSet(io.NewNormalChannel(reader)))
+	for _, crd := range cards {
+		s, err := NewSession(card.NewPhononCommandSet(io.NewNormalChannel(crd)))
 		if err != nil {
 			return nil, err
 		}

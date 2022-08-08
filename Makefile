@@ -36,10 +36,12 @@ release-mac: generate frontend
 	cp phonon_arm64 ./release/MacOS/Phonon.app/Contents/MacOS/phonon_arm64
 	cp phonon_x86_64 ./release/MacOS/Phonon.app/Contents/MacOS/phonon_x86_64
 	create-dmg \
-		--app-drop-link 200 120 \
-		--icon "Phonon.app" 200 190\
+		--app-drop-link 100 300 \
+		--icon "Phonon.app" 100 100\
 		--volname "Phonon Installer" \
-		--hide-extension "Phonon.App" \
+		--hide-extension "Phonon.app" \
+		--window-size 1200 600 \
+		--background "./release/MacOS/background.png" \
 		phonon.dmg \
 		./release/MacOS/Phonon.app
 

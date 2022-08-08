@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/GridPlus/phonon-client/card"
@@ -44,7 +43,7 @@ var installCardCert = &cobra.Command{
 var (
 	useDemoKey    bool
 	provisionMode bool
-	yubikeySlot   string
+	yubikeySlot   int
 	yubikeyPass   string
 )
 
@@ -53,7 +52,7 @@ func init() {
 
 	installCardCert.Flags().BoolVarP(&useDemoKey, "demo", "d", false, "Use the demo key to sign -- insecure for demo purposes only")
 	installCardCert.Flags().BoolVarP(&provisionMode, "provision", "p", false, "suppress all output except for the cardID for automated provisioning")
-	installCardCert.Flags().StringVarP(&yubikeySlot, "slot", "s", "", "Slot in which the signing yubikey is insterted") //this is taken in as a string to allow for a nil value instead of 0 value
+	installCardCert.Flags().IntVarP(&yubikeySlot, "slot", "s", 0, "Slot in which the signing yubikey is insterted")
 	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Yubikey Password")
 }
 
@@ -67,9 +66,8 @@ func InstallCardCert() {
 		signKeyFunc = cert.SignWithDemoKey
 	} else {
 		//gather information for yubikey signing
-		var yubikeySlotInt int
-		yubikeySlotInt, err := strconv.Atoi(yubikeySlot)
-		if err != nil {
+
+		if yubikeySlot == 0 {
 			fmt.Println("Please enter the yubikey slot: ")
 			reader := bufio.NewReader(os.Stdin)
 			input, err := reader.ReadString('\n')
@@ -78,11 +76,6 @@ func InstallCardCert() {
 				os.Exit(1)
 			}
 			input = strings.TrimSuffix(input, "\n")
-			yubikeySlotInt, err = strconv.Atoi(input)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
 		}
 		if yubikeyPass == "" {
 			fmt.Println("Please enter the yubikey password:")
@@ -93,7 +86,7 @@ func InstallCardCert() {
 			yubikeyPass = string(passBytes)
 		}
 
-		signKeyFunc = cert.SignWithYubikeyFunc(yubikeySlotInt, yubikeyPass)
+		signKeyFunc = cert.SignWithYubikeyFunc(yubikeySlot, yubikeyPass)
 	}
 
 	var cs model.PhononCard

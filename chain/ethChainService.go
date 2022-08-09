@@ -69,8 +69,7 @@ func (eth *EthChainService) RedeemPhonon(p *model.Phonon, privKey *ecdsa.Private
 	redeemValue := eth.calcRedemptionValue(onChainBalance, suggestedGasPrice)
 	log.Debug("transaction redemption value is: ", redeemValue)
 
-	//If gas would cost more than the value in the phonon, return error
-	if suggestedGasPrice.Cmp(onChainBalance) != -1 {
+	if redeemValue.Cmp(big.NewInt(0)) > 0 {
 		log.Error("phonon not large enough to pay gas for redemption")
 		return "", errors.New("phonon not large enough to pay gas for redemption")
 	}

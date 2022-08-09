@@ -342,7 +342,7 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 	type redeemPhononResp struct {
 		TransactionData string
 		PrivKey         string
-		err             string
+		Err             string
 	}
 	var resps []*redeemPhononResp
 	for _, req := range reqs {
@@ -357,19 +357,14 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 		resps = append(resps, &redeemPhononResp{
 			TransactionData: transactionData,
 			PrivKey:         privKeyString,
-			err:             respErr,
+			Err:             respErr,
 		})
 	}
 
-	success := true
 	for _, res := range resps {
-		if res.err != "" {
-			success = false
+		if res.Err != "" {
+			w.WriteHeader(http.StatusInternalServerError)
 		}
-	}
-	if !success {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	enc := json.NewEncoder(w)

@@ -18,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//Composite interface supporting all needed EVM RPC calls
+// Composite interface supporting all needed EVM RPC calls
 type EthChainInterface interface {
 	bind.ContractTransactor
 	ethereum.ChainStateReader
@@ -38,7 +38,7 @@ func NewEthChainService() (*EthChainService, error) {
 	return ethchainSrv, nil
 }
 
-//Derives an ETH address from a phonon's ECDSA Public Key
+// Derives an ETH address from a phonon's ECDSA Public Key
 func (eth *EthChainService) DeriveAddress(p *model.Phonon) (address string, err error) {
 	eccPubKey, err := model.PhononPubKeyToECDSA(p.PubKey)
 	if err != nil {
@@ -83,8 +83,8 @@ func (eth *EthChainService) RedeemPhonon(p *model.Phonon, privKey *ecdsa.Private
 	return tx.Hash().String(), nil
 }
 
-//ReconcileRedeemData validates the input data to ensure it contains all that's needed for a successful redemption.
-//It will update the phonon data structure with a derived address if necessary
+// ReconcileRedeemData validates the input data to ensure it contains all that's needed for a successful redemption.
+// It will update the phonon data structure with a derived address if necessary
 func (eth *EthChainService) ValidateRedeemData(p *model.Phonon, privKey *ecdsa.PrivateKey, redeemAddress string) (err error) {
 	eccPubKey, err := model.PhononPubKeyToECDSA(p.PubKey)
 	if err != nil {
@@ -117,7 +117,7 @@ func (eth *EthChainService) ValidateRedeemData(p *model.Phonon, privKey *ecdsa.P
 	return nil
 }
 
-//dialRPCNode establishes a connection to the proper RPC node based on the chainID
+// dialRPCNode establishes a connection to the proper RPC node based on the chainID
 func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 	log.Debugf("ethChainID: %v, chainID: %v\n", eth.clChainID, chainID)
 	var RPCEndpoint string
@@ -142,6 +142,8 @@ func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 		RPCEndpoint = "https://api.avax-test.network/ext/bc/C/rpc"
 	case 80001: // Mumbai (Polygon)
 		RPCEndpoint = "https://rpc-mumbai.maticvigil.com"
+	case 4002: // Fantom testnet
+		RPCEndpoint = "https://rpc.testnet.fantom.network"
 	case 1337: //Local Ganache
 		RPCEndpoint = "HTTP://127.0.0.1:8545"
 	default:

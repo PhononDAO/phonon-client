@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 
@@ -32,7 +33,7 @@ func DefaultConfig() Config {
 }
 
 func SetDefaultConfig() {
-	viper.SetDefault("AppletCACert", string(cert.PhononAlphaCAPubKey))
+	viper.SetDefault("AppletCACert", cert.PhononAlphaCAPubKey)
 	viper.SetDefault("LogLevel", log.DebugLevel)
 }
 
@@ -87,4 +88,37 @@ func LoadConfig() (config Config, err error) {
 		}
 	}
 	return config, nil
+}
+
+func DefaultConfigPath() (string, error) {
+	var ret string
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	switch runtime.GOOS {
+	case "darwin", "linux":
+		ret = homedir + "/.phonon/"
+		if err != nil {
+			return "", err
+		}
+	case "windows":
+		ret = homedir + "\\.phonon\\"
+	default:
+		return "", fmt.Errorf("unable to set configuration path for %s", runtime.GOOS)
+	}
+	return ret, nil
+}
+
+func SaveConfig() error {
+	viper.SetConfigType("yml")
+	configPath, err := DefaultConfigPath()
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(configPath, 0700)
+	if err != nil {
+		return err
+	}
+	return viper.WriteConfigAs(configPath + "phonon.yml")
 }

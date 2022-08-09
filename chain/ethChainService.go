@@ -69,7 +69,7 @@ func (eth *EthChainService) RedeemPhonon(p *model.Phonon, privKey *ecdsa.Private
 	redeemValue := eth.calcRedemptionValue(onChainBalance, suggestedGasPrice)
 	log.Debug("transaction redemption value is: ", redeemValue)
 
-	if redeemValue.Cmp(big.NewInt(0)) > 0 {
+	if redeemValue.Cmp(big.NewInt(0)) < 1 {
 		log.Error("phonon not large enough to pay gas for redemption")
 		return "", errors.New("phonon not large enough to pay gas for redemption")
 	}
@@ -208,17 +208,6 @@ func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce u
 	if err != nil {
 		log.Error("error forming signed transaction: ", err)
 		return signedTx, err
-	}
-
-	balance, err := eth.checkBalance(ctx, redeemAddress.Hex())
-	if err != nil {
-		log.Error("error checking balance: ", err)
-		return signedTx, err
-	}
-
-	if redeemValue.Cmp(eth.calcRedemptionValue(balance, gasPrice)) < 0 {
-		log.Error("balance is insufficient to cover gas cost of redemption")
-		return signedTx, errors.New("balance is insufficient to cover gas cost of redemption")
 	}
 
 	//Send the transaction through the ETH client

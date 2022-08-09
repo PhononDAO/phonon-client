@@ -190,15 +190,6 @@ func (eth *EthChainService) calcRedemptionValue(balance *big.Int, gasPrice *big.
 	return valueMinusGas.Sub(balance, estimatedGasCost.Mul(gasPrice, big.NewInt(int64(gasLimit))))
 }
 
-func (eth *EthChainService) checkBalance(ctx context.Context, address string) (balance *big.Int, err error) {
-	balance, err = eth.cl.BalanceAt(ctx, common.HexToAddress(address), nil)
-	if err != nil {
-		log.Error("could not fetch on chain Phonon value: ", err)
-		return nil, err
-	}
-	return balance, nil
-}
-
 func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce uint64, chainID *big.Int, redeemAddress common.Address, redeemValue *big.Int, gasLimit uint64, gasPrice *big.Int, privKey *ecdsa.PrivateKey) (*types.Transaction, error) {
 	//Submit transaction
 	//build transaction payload

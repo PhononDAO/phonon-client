@@ -35,7 +35,15 @@ release-mac: generate frontend
 	CGO_ENABLED=1 CC="clang -target x86_64-apple-darwin-macho" GOOS=darwin GOARCH=amd64 go build -o phonon_x86_64 main/phonon.go
 	cp phonon_arm64 ./release/MacOS/Phonon.app/Contents/MacOS/phonon_arm64
 	cp phonon_x86_64 ./release/MacOS/Phonon.app/Contents/MacOS/phonon_x86_64
-	create-dmg --app-drop-link 200 200 phonon.dmg ./release/MacOS/Phonon.app
+	create-dmg \
+		--app-drop-link 100 300 \
+		--icon "Phonon.app" 100 100\
+		--volname "Phonon Installer" \
+		--hide-extension "Phonon.app" \
+		--window-size 1200 600 \
+		--background "./release/MacOS/background.png" \
+		phonon.dmg \
+		./release/MacOS/Phonon.app
 
 checkout-submodules:
 	git submodule update --init

@@ -123,11 +123,9 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	}()
 	// setup channel to end the application
 	kill := make(chan struct{}, 1)
-
 	browser.OpenURL("http://localhost:" + port + "/")
-
 	// start the systray Icon
-	_ = SystrayIcon(kill)
+	_ = SystrayIcon(kill, port)
 	<-kill
 }
 

@@ -18,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//Composite interface supporting all needed EVM RPC calls
+// Composite interface supporting all needed EVM RPC calls
 type EthChainInterface interface {
 	bind.ContractTransactor
 	ethereum.ChainStateReader
@@ -38,7 +38,7 @@ func NewEthChainService() (*EthChainService, error) {
 	return ethchainSrv, nil
 }
 
-//Derives an ETH address from a phonon's ECDSA Public Key
+// Derives an ETH address from a phonon's ECDSA Public Key
 func (eth *EthChainService) DeriveAddress(p *model.Phonon) (address string, err error) {
 	eccPubKey, err := model.PhononPubKeyToECDSA(p.PubKey)
 	if err != nil {
@@ -69,8 +69,7 @@ func (eth *EthChainService) RedeemPhonon(p *model.Phonon, privKey *ecdsa.Private
 	redeemValue := eth.calcRedemptionValue(onChainBalance, suggestedGasPrice)
 	log.Debug("transaction redemption value is: ", redeemValue)
 
-	//If gas would cost more than the value in the phonon, return error
-	if suggestedGasPrice.Cmp(onChainBalance) != -1 {
+	if redeemValue.Cmp(big.NewInt(0)) < 1 {
 		log.Error("phonon not large enough to pay gas for redemption")
 		return "", errors.New("phonon not large enough to pay gas for redemption")
 	}
@@ -84,8 +83,8 @@ func (eth *EthChainService) RedeemPhonon(p *model.Phonon, privKey *ecdsa.Private
 	return tx.Hash().String(), nil
 }
 
-//ReconcileRedeemData validates the input data to ensure it contains all that's needed for a successful redemption.
-//It will update the phonon data structure with a derived address if necessary
+// ReconcileRedeemData validates the input data to ensure it contains all that's needed for a successful redemption.
+// It will update the phonon data structure with a derived address if necessary
 func (eth *EthChainService) ValidateRedeemData(p *model.Phonon, privKey *ecdsa.PrivateKey, redeemAddress string) (err error) {
 	eccPubKey, err := model.PhononPubKeyToECDSA(p.PubKey)
 	if err != nil {
@@ -118,7 +117,7 @@ func (eth *EthChainService) ValidateRedeemData(p *model.Phonon, privKey *ecdsa.P
 	return nil
 }
 
-//dialRPCNode establishes a connection to the proper RPC node based on the chainID
+// dialRPCNode establishes a connection to the proper RPC node based on the chainID
 func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 	log.Debugf("ethChainID: %v, chainID: %v\n", eth.clChainID, chainID)
 	var RPCEndpoint string
@@ -139,6 +138,14 @@ func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 		RPCEndpoint = "https://eth-goerli.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
 	case 42: //Kovan
 		RPCEndpoint = "https://poa-kovan.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
+	case 97: // Binance Testnet
+		RPCEndpoint = "https://data-seed-prebsc-1-s1.binance.org:8545"
+	case 43114: // Avalanche Fuji (C-Chain)
+		RPCEndpoint = "https://api.avax-test.network/ext/bc/C/rpc"
+	case 80001: // Mumbai (Polygon)
+		RPCEndpoint = "https://rpc-mumbai.maticvigil.com"
+	case 4002: // Fantom testnet
+		RPCEndpoint = "https://rpc.testnet.fantom.network"
 	case 1337: //Local Ganache
 		RPCEndpoint = "HTTP://127.0.0.1:8545"
 	default:
@@ -160,14 +167,14 @@ func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 func (eth *EthChainService) fetchPreTransactionInfo(ctx context.Context, fromAddress common.Address) (nonce uint64, balance *big.Int, suggestedGas *big.Int, err error) {
 	nonce, err = eth.cl.PendingNonceAt(ctx, fromAddress)
 	if err != nil {
-		log.Error("could not fetch pending nonce for eth account")
+		log.Error("could not fetch pending nonce for eth account: ", err)
 		return 0, nil, nil, err
 	}
 	log.Debug("pending nonce: ", nonce)
 	//Check actual balance of phonon
 	balance, err = eth.cl.BalanceAt(ctx, fromAddress, nil)
 	if err != nil {
-		log.Error("could not fetch on chain Phonon value")
+		log.Error("could not fetch on chain Phonon value: ", err)
 		return 0, nil, nil, err
 	}
 	log.Debug("on chain balance: ", balance)

@@ -361,10 +361,14 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 		})
 	}
 
+	success := true
 	for _, res := range resps {
 		if res.Err != "" {
-			w.WriteHeader(http.StatusInternalServerError)
+			success = false
 		}
+	}
+	if !success {
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 
 	enc := json.NewEncoder(w)

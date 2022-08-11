@@ -29,7 +29,8 @@ android-sdk:
 frontend:
 	(cd gui/frontend && npm install)
 	(cd gui/frontend && npm run build)
-
+jumpbox-only: generate
+	go build -o jumpbox extra/jumpbox/main.go
 release-mac: generate frontend
 	CGO_ENABLED=1 CC="clang -target arm64v8-apple-darwin-macho" GOOS=darwin GOARCH=arm64 go build -o phonon_arm64 main/phonon.go
 	CGO_ENABLED=1 CC="clang -target x86_64-apple-darwin-macho" GOOS=darwin GOARCH=amd64 go build -o phonon_x86_64 main/phonon.go

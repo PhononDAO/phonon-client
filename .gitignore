@@ -2,6 +2,9 @@
 jumpbox
 phonon
 phonon.exe
+phonon.msi
+phonon.wixpdb
+release/win/wix/phonon.wixobj
 localCerts/
 apdu.log
 gui/frontend/build/*

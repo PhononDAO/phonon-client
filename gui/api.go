@@ -32,12 +32,6 @@ var swaggeryaml []byte
 //go:embed swagger
 var swagger embed.FS
 
-//go:embed icons/phonon.png
-var phononLogo []byte
-
-//go:embed icons/x.png
-var xIcon []byte
-
 type apiSession struct {
 	t *orchestrator.PhononTerminal
 }

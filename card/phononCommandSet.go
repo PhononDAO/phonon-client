@@ -395,6 +395,7 @@ func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedRespo
 	return apdu.NewErrBadResponse(resp.Sw, "unexpected response")
 }
 
+//Nonce must be 32 bytes in length
 func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error) {
 	log.Debug("sending IDENTIFY_CARD command")
 	cmd := NewCommandIdentifyCard(nonce)

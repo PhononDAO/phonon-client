@@ -157,7 +157,8 @@ func SignWithYubikeyFunc(slot int, password string) func([]byte) ([]byte, error)
 		c := connector.NewHTTPConnector("localhost:12345")
 		sm, err := yubihsm.NewSessionManager(c, 1, password)
 		if err != nil {
-			panic(err)
+			log.Debug("error contacting yubikey. err: ", err)
+			return nil, err
 		}
 
 		digest := sha256.Sum256(cert)

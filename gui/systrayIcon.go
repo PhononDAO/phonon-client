@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 
+	_ "embed"
 	"fyne.io/systray"
 	"github.com/pkg/browser"
 	log "github.com/sirupsen/logrus"

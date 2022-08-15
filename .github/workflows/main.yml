@@ -78,7 +78,7 @@ jobs:
       - name: install prereqs
         run: |
           choco install mingw
-          scoop install wixtoolset
+          choco install wixtoolset
       - name: Install go stringer
         run: |
           GOBIN=/usr/bin go install golang.org/x/tools/cmd/stringer@latest

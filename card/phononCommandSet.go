@@ -57,7 +57,7 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 	var err error
 	conf, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal("could not configure PhononCommandSet")
+		log.Fatal("could not configure PhononCommandSet: ", err)
 	}
 	var level = conf.LogLevel
 

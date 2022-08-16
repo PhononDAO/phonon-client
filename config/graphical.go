@@ -36,6 +36,7 @@ func GraphicalConfiguration() {
 			err = SaveConfig()
 			if err != nil {
 				welcome.SetText(fmt.Sprintf("Unable to save configuration: %s", err.Error()))
+				return
 			}
 			welcome.SetText("Configuration saved. You may now exit the program")
 		}),

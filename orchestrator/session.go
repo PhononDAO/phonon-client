@@ -41,7 +41,7 @@ type Session struct {
 	logger                *log.Entry
 	chainSrv              chain.ChainService
 	cache                 map[model.PhononKeyIndex]cachedPhonon
-	miningCards           map[string]chan struct{}
+	miningCards           chan struct{}
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
 	cachePopulated bool
 }
@@ -80,7 +80,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
 		chainSrv:              chainSrv,
-		miningCards:           make(map[string]chan struct{}),
+		miningCards:           make(chan struct{}),
 		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
@@ -119,18 +119,12 @@ func (s *Session) handleIncomingSessionRequests() {
 	}
 }
 
-func (s *Session) SetPaired(status bool) {
-}
+func (s *Session) SetPaired(status bool) {}
+
+func (s *Session) GetMiningReport() {}
 
 func (s *Session) CancelMiningRequest() error {
-	id := s.GetCardId()
-	cancel, ok := s.miningCards[id]
-	if !ok {
-		return errors.New("there was no running mining operation to cancel")
-	}
-
-	cancel <- struct{}{}
-	defer delete(s.miningCards, id)
+	s.miningCards <- struct{}{}
 	return nil
 }
 
@@ -142,9 +136,8 @@ func (s *Session) MineNativePhonon(difficulty uint8) error {
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 
-	id := s.GetCardId()
 	cancel := make(chan struct{})
-	s.miningCards[id] = cancel
+	s.miningCards = cancel
 
 	i := 0
 	go func() {

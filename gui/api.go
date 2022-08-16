@@ -68,7 +68,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "HEAD", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "HEAD", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Origin"},
 		AllowCredentials: true,
 	})

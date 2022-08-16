@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/util"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -62,11 +63,11 @@ func identifyCard() {
 		return
 	}
 
-	log.Debug("cardPubKey:\n", hex.Dump(append(cardPubKey.X.Bytes(), cardPubKey.Y.Bytes()...)))
+	log.Debugf("cardPubKey: %X\n", util.ECCPubKeyToHexString(cardPubKey))
+	log.Debugf("cardID: %v\n", util.CardIDFromPubKey(cardPubKey))
+
 	log.Debug("cardSig:\n", hex.Dump(append(cardSig.R.Bytes(), cardSig.S.Bytes()...)))
 
-	log.Debugf("ecdsaCardPubKey: % X\n", append(cardPubKey.X.Bytes(), cardPubKey.Y.Bytes()...))
-	log.Debugf("ecdsaSignature: % X\n", append(cardSig.R.Bytes(), cardSig.S.Bytes()...))
 	//Validate sig
 
 	valid := ecdsa.Verify(cardPubKey, nonce, cardSig.R, cardSig.S)

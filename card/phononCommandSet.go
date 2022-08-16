@@ -57,7 +57,7 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 	var err error
 	conf, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal("could not configure PhononCommandSet")
+		log.Fatal("could not configure PhononCommandSet: ", err)
 	}
 	var level = conf.LogLevel
 
@@ -395,6 +395,7 @@ func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedRespo
 	return apdu.NewErrBadResponse(resp.Sw, "unexpected response")
 }
 
+//Nonce must be 32 bytes in length
 func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error) {
 	log.Debug("sending IDENTIFY_CARD command")
 	cmd := NewCommandIdentifyCard(nonce)

@@ -32,12 +32,6 @@ var swaggeryaml []byte
 //go:embed swagger
 var swagger embed.FS
 
-//go:embed icons/phonon.png
-var phononLogo []byte
-
-//go:embed icons/x.png
-var xIcon []byte
-
 type apiSession struct {
 	t *orchestrator.PhononTerminal
 }
@@ -123,11 +117,9 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	}()
 	// setup channel to end the application
 	kill := make(chan struct{}, 1)
-
 	browser.OpenURL("http://localhost:" + port + "/")
-
 	// start the systray Icon
-	_ = SystrayIcon(kill)
+	_ = SystrayIcon(kill, port)
 	<-kill
 }
 
@@ -331,7 +323,7 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 	type redeemPhononResp struct {
 		TransactionData string
 		PrivKey         string
-		err             string
+		Err             string
 	}
 	var resps []*redeemPhononResp
 	for _, req := range reqs {
@@ -346,8 +338,18 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 		resps = append(resps, &redeemPhononResp{
 			TransactionData: transactionData,
 			PrivKey:         privKeyString,
-			err:             respErr,
+			Err:             respErr,
 		})
+	}
+
+	success := true
+	for _, res := range resps {
+		if res.Err != "" {
+			success = false
+		}
+	}
+	if !success {
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 
 	enc := json.NewEncoder(w)

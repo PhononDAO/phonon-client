@@ -24,11 +24,11 @@ func ConnectAllUSBReaders() (cards []*scard.Card, err error) {
 	}
 	for _, reader := range readers {
 		c, err := ctx.Connect(reader, scard.ShareShared, scard.ProtocolAny)
-		if err != nil {
-			return nil, err
+		if err == nil {
+			cards = append(cards, c)
+		} else {
+			log.Debugf("unable to connect to card on reader %v: %v\n", reader, err)
 		}
-
-		cards = append(cards, c)
 	}
 	return cards, nil
 }

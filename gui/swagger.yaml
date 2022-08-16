@@ -355,6 +355,68 @@ paths:
         name: phononIndex
         type: string
         description: index of phonon to redeem
+  /cards/{sessionID}/phonon/mineNative:
+    post:
+      tags:
+        - "sessions"
+      responses:
+        "404":
+          description: "no session with id"
+        "500":
+          description: "Could not start native phonon mining operation"
+        "200":
+          description: "Successfully mined a native phonon"
+    parameters:
+      - in: path
+        required: true
+        name: sessionID
+        type: string
+        description: sessionID of connected card
+      - in: "body"
+        name: "body"
+        description: "Set a difficulty of the mining operation"
+        required: true
+        schema:
+          properties:
+            difficulty:
+              type: "integer"
+  /cards/{sessionID}/phonon/mineNative/cancel:
+    put:
+      tags:
+        - "sessions"
+      responses:
+        "404":
+          description: "There was no running mining operation to cancel"
+        "500":
+          description: "There was an issue canceling the mining operation"
+        "200":
+          description: "Successfully cancelled a running mining operation"
+    parameters:
+      - in: path
+        required: true
+        name: sessionID
+        type: string
+        description: sessionID of connected card
+  /cards/{sessionID}/phonon/mineNative/status:
+    get:
+      tags:
+        - "sessions"
+      responses:
+        "500":
+          description: "Could not retrieve mining operation status"
+        "404":
+          description: "no session with id"
+        "200":
+          description: "Return the status of a running native phonon mining operation"
+          required: true
+          schema:
+            $ref: "#/definitions/MiningStatus"
+    parameters:
+      - in: path
+        required: true
+        name: sessionID
+        type: string
+        description: sessionID of connected card
   /cards/{sessionID}/phonon/initDeposit:
     post:
       tags:
@@ -527,3 +589,31 @@ definitions:
         type: "boolean"
       PinVerified:
         type: "boolean"
+  MiningStatus:
+    type: object
+    properties:
+      Attempts:
+        type: "integer"
+      Status:
+        enum: [success, active, cancelled, error]
+        description: >
+          Status:
+            * `success` - If the mining operation has succeeded.
+            * `active` - If the mining operation is still active.
+            * `cancelled` - If the mining operation was cancelled.
+            * `error` - If the mining operation has failed.
+      TimeElapsed:
+        type: "integer"
+      StartTime:
+        type: "string"
+        format: "date-time"
+      StopTime:
+        type: "string"
+        format: "date-time"
+        nullable: true
+      AverageTime:
+        type: "integer"
+      KeyIndex:
+        type: "string"
+      Hash:
+        type: "string"

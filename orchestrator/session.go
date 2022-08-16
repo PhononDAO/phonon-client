@@ -19,9 +19,11 @@ import (
 
 var ErrorRequestNotRecognized = errors.New("unrecognized request sent to session")
 
-/*The session struct handles a local connection with a card
+/*
+The session struct handles a local connection with a card
 Keeps a client side cache of the card state to make interaction
-with the card through this API more convenient*/
+with the card through this API more convenient
+*/
 type Session struct {
 	cs                    model.PhononCard
 	RemoteCard            model.CounterpartyPhononCard
@@ -30,6 +32,7 @@ type Session struct {
 	remoteMessageChan     chan (model.SessionRequest)
 	remoteMessageKillChan chan interface{}
 	active                bool
+	hash                  []byte
 	pinInitialized        bool
 	terminalPaired        bool
 	pinVerified           bool
@@ -38,6 +41,7 @@ type Session struct {
 	logger                *log.Entry
 	chainSrv              chain.ChainService
 	cache                 map[model.PhononKeyIndex]cachedPhonon
+	miningCards           map[string]chan struct{}
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
 	cachePopulated bool
 }
@@ -53,8 +57,8 @@ var ErrInitFailed = errors.New("card failed initialized check after init command
 var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 var ErrNameCannotBeEmpty = errors.New("requested name cannot be empty")
 
-//Creates a new card session, automatically connecting if the card is already initialized with a PIN
-//The next step is to run VerifyPIN to gain access to the secure commands on the card
+// Creates a new card session, automatically connecting if the card is already initialized with a PIN
+// The next step is to run VerifyPIN to gain access to the secure commands on the card
 func NewSession(storage model.PhononCard) (s *Session, err error) {
 	chainSrv, err := chain.NewMultiChainRouter()
 	if err != nil {
@@ -68,6 +72,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		remoteMessageChan:     make(chan model.SessionRequest),
 		remoteMessageKillChan: make(chan interface{}),
 		active:                true,
+		hash:                  nil,
 		pinInitialized:        false,
 		terminalPaired:        false,
 		pinVerified:           false,
@@ -75,6 +80,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
 		chainSrv:              chainSrv,
+		miningCards:           make(map[string]chan struct{}),
 		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
@@ -114,6 +120,57 @@ func (s *Session) handleIncomingSessionRequests() {
 }
 
 func (s *Session) SetPaired(status bool) {
+}
+
+func (s *Session) CancelMiningRequest() error {
+	id := s.GetCardId()
+	cancel, ok := s.miningCards[id]
+	if !ok {
+		return errors.New("there was no running mining operation to cancel")
+	}
+
+	cancel <- struct{}{}
+	defer delete(s.miningCards, id)
+	return nil
+}
+
+func (s *Session) MineNativePhonon(difficulty uint8) error {
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+
+	s.ElementUsageMtex.Lock()
+	defer s.ElementUsageMtex.Unlock()
+
+	id := s.GetCardId()
+	cancel := make(chan struct{})
+	s.miningCards[id] = cancel
+
+	i := 0
+	go func() {
+		for {
+			select {
+			case <-cancel:
+				log.Info("cancelling mining operation")
+				return
+			default:
+				keyIndex, hash, err := s.cs.MineNativePhonon(difficulty)
+				if err == card.ErrMiningFailed {
+					fmt.Println("mining failed to find phonon. repeating attempt...")
+				} else if err != nil {
+					fmt.Println("unknown error mining phonon. err: ", err)
+					return
+				} else {
+					fmt.Printf("mined native phonon after %v attempts.\n", i)
+					fmt.Printf("keyIndex: %v\nhash: % X\n", keyIndex, hash)
+					return
+				}
+				i += 1
+			}
+		}
+	}()
+
+	return nil
 }
 
 func (s *Session) GetCardId() string {
@@ -169,7 +226,6 @@ func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
 }
 
 func (s *Session) IsUnlocked() bool {
-
 	return s.pinVerified
 }
 
@@ -185,7 +241,7 @@ func (s *Session) IsPairedToCard() bool {
 	return s.RemoteCard != nil
 }
 
-//Connect opens a secure channel with a card.
+// Connect opens a secure channel with a card.
 func (s *Session) Connect() error {
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
@@ -203,10 +259,9 @@ func (s *Session) Connect() error {
 	return nil
 }
 
-//Initializes the card with a PIN
-//Also creates a secure channel and verifies the PIN that was just set
+// Initializes the card with a PIN
+// Also creates a secure channel and verifies the PIN that was just set
 func (s *Session) Init(pin string) error {
-
 	if s.pinInitialized {
 		return ErrAlreadyInitialized
 	}
@@ -546,9 +601,11 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 	return nil
 }
 
-/*InitDepositPhonons takes a currencyType and a map of denominations to quantity,
+/*
+InitDepositPhonons takes a currencyType and a map of denominations to quantity,
 Creates the required phonons, deposits them using the configured service for the asset
-and upon success sets their descriptors*/
+and upon success sets their descriptors
+*/
 func (s *Session) InitDepositPhonons(currencyType model.CurrencyType, denoms []*model.Denomination) (phonons []*model.Phonon, err error) {
 	log.Debugf("running InitDepositPhonons with data: %v, %v\n", currencyType, denoms)
 	if !s.verified() {
@@ -575,7 +632,7 @@ func (s *Session) InitDepositPhonons(currencyType model.CurrencyType, denoms []*
 	return phonons, nil
 }
 
-//Phonon Deposit and Redeem higher level methods
+// Phonon Deposit and Redeem higher level methods
 type DepositConfirmation struct {
 	Phonon           *model.Phonon
 	ConfirmedOnChain bool
@@ -701,9 +758,11 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 	}
 }
 
-/*RedeemPhonon takes a phonon and a redemptionAddress as an asset specific address string (usually hex encoded)
+/*
+RedeemPhonon takes a phonon and a redemptionAddress as an asset specific address string (usually hex encoded)
 and submits a transaction to the asset's chain in order to transfer it to another address
-In case the on chain transfer fails, returns the private key as a fallback so that access to the asset is not lost*/
+In case the on chain transfer fails, returns the private key as a fallback so that access to the asset is not lost
+*/
 func (s *Session) RedeemPhonon(p *model.Phonon, redeemAddress string) (transactionData string, privKeyString string, err error) {
 	//Retrieve phonon private key.
 	privKey, err := s.DestroyPhonon(p.KeyIndex)
@@ -719,9 +778,11 @@ func (s *Session) RedeemPhonon(p *model.Phonon, redeemAddress string) (transacti
 	return transactionData, privKeyString, nil
 }
 
-/*addPubKeyToCache adds the pubkey to an already cached phonon. This is done differently from the addInfoToCache because there are only two
+/*
+addPubKeyToCache adds the pubkey to an already cached phonon. This is done differently from the addInfoToCache because there are only two
 instances where we add information to a preexisting cached phonon, and they need to be handled differently without going through the trouble
-of making a fully generic updater that handles all fields*/
+of making a fully generic updater that handles all fields
+*/
 func (s *Session) addPubKeyToCache(i model.PhononKeyIndex, k model.PhononPubKey) {
 	cached, ok := s.cache[i]
 	// if it didn't already exist, create it

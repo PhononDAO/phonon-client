@@ -86,7 +86,7 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 		c:               c,
 		sc:              NewSecureChannel(c),
 		ApplicationInfo: &types.ApplicationInfo{},
-		PhononCACert:    conf.AppletCACert,
+		PhononCACert:    cert.SelectCACertByName(conf.Certificate),
 	}
 }
 

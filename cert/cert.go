@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/GridPlus/phonon-client/util"
 	yubihsm "github.com/certusone/yubihsm-go"
@@ -92,7 +93,7 @@ func ValidateCardCertificate(cert CardCertificate, CAPubKey []byte) error {
 		log.Error("could not parse CAPubKey: ", err)
 		return err
 	}
-	log.Debug("certificate CA PubKey was valid")
+	log.Debug("certificate authority pubkey was valid")
 	signature, err := util.ParseECDSASignature(cert.Sig)
 	if err != nil {
 		log.Error("could not parse cert signature: ", err)
@@ -251,4 +252,16 @@ func (cert CardCertificate) Serialize() []byte {
 
 func (cert CardCertificate) String() string {
 	return fmt.Sprintf("Permissions: % X, PubKey: % X (length: %v), Sig: % X (length %v)", cert.Permissions, cert.PubKey, len(cert.PubKey), cert.Sig, len(cert.Sig))
+}
+
+func SelectCACertByName(name string) []byte {
+	//Select cert based on provided certificate name
+	switch strings.ToLower(name) {
+	case "alpha", "testnet":
+		return PhononAlphaCAPubKey
+	case "dev", "demo":
+		return PhononDemoCAPubKey
+	default:
+		return PhononAlphaCAPubKey
+	}
 }

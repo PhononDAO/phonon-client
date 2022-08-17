@@ -25,7 +25,7 @@
       </DirectoryRef>
       <DirectoryRef Id="ApplicationProgramsFolder">
          <Component Id="ApplicationShortcut" Guid="*">
-            <Shortcut Id="ApplicationStartMenuShortcut" Name="Phonon Client" Description="Start the Phonon Client" Target="[#launcher]" WorkingDirectory="APPLICATIONROOTDIRECTORY" Icon="phonon_icon" />
+            <Shortcut Id="ApplicationStartMenuShortcut" Name="Phonon Client" Description="Start the Phonon Client" Target="[#launcher]" WorkingDirectory="ProgramFolder" Icon="phonon_icon" />
             <RemoveFolder Id="CleanupShortCut" Directory="ApplicationProgramsFolder" On="uninstall" />
             <RegistryValue Root="HKCU" Key="Software\GridPlus\Phonon" Name="installed" Type="integer" Value="1" KeyPath="yes" />
          </Component>

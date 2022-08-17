@@ -2,9 +2,7 @@
 if [ `arch` == "arm64" ] 
 then
 	if ! [ -f "$HOME/.phonon/phonon.yml" ] ; then
-		echo "b"
 		"${0%/*}/phonon_arm64" graphicalConfigure
-		echo "c"
 	fi
 	exec "${0%/*}/phonon_arm64" webUI -p 8080
 fi

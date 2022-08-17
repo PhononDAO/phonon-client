@@ -47,8 +47,8 @@ release-mac: generate frontend
 		./release/MacOS/Phonon.app
 release-win: windows-build
 	go run extra/wxsgenerator/generator.go release/win/wix/phonon.wxs.templ > phonon.wxs
-	candle "phonon.wxs"  -ext WixUtilExtension -ext wixUIExtension -arch x64
-	light ".\phonon.wixobj" -b ".\release\win\wix" -ext wixUIExtension  -ext WixUtilExtension -spdb
+	candle.exe "phonon.wxs"  -ext WixUtilExtension -ext wixUIExtension -arch x64
+	light.exe ".\phonon.wixobj" -b ".\release\win\wix" -ext wixUIExtension  -ext WixUtilExtension -spdb
 
 
 checkout-submodules:

@@ -2,11 +2,29 @@ package gui
 
 import (
 	"fmt"
+	"runtime"
+
+	_ "embed"
 
 	"fyne.io/systray"
 	"github.com/pkg/browser"
 	log "github.com/sirupsen/logrus"
 )
+
+//go:embed icons/phonon.png
+var phononLogoPng []byte
+
+//go:embed icons/x.png
+var xIconPng []byte
+
+//go:embed icons/phonon.ico
+var phononLogoIco []byte
+
+//go:embed icons/x.ico
+var xIconIco []byte
+
+var phononLogo []byte
+var xIcon []byte
 
 func SystrayIcon(kill chan struct{}, port string) (end func()) {
 	startSystray, endSystray := systray.RunWithExternalLoop(onReadyFunc(port), onExit(kill))
@@ -16,8 +34,20 @@ func SystrayIcon(kill chan struct{}, port string) (end func()) {
 }
 
 func onReadyFunc(port string) func() {
+	switch runtime.GOOS {
+	case "linux", "darwin":
+		phononLogo = phononLogoPng
+		xIcon = xIconPng
+	case "windows":
+		phononLogo = phononLogoIco
+		xIcon = xIconIco
+	default:
+		return func() {
+			fmt.Println("Unsupported os")
+			systray.Quit()
+		}
+	}
 	return func() {
-		fmt.Println("onready")
 		systray.SetIcon(phononLogo)
 		systray.SetTitle("")
 		systray.SetTooltip("Phonon UI backend is currently running")

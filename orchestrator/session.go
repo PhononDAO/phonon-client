@@ -63,9 +63,9 @@ type miningReportStatus struct {
 	TimeElapsed int64
 	StartTime   time.Time
 	StopTime    time.Time `json:",omitempty"`
-	AverageTime int64
-	KeyIndex    int `json:",omitempty"`
-	Hash        string
+	AverageTime int64     `json:",omitempty"`
+	KeyIndex    int       `json:",omitempty"`
+	Hash        string    `json:",omitempty"`
 }
 
 type cachedPhonon struct {
@@ -205,7 +205,6 @@ func (s *Session) MineNativePhonon(difficulty uint8) error {
 						Status:      StatusMiningActive,
 						TimeElapsed: int64(totalTime.Milliseconds()),
 						StartTime:   start,
-						StopTime:    time.Now(),
 					}
 				} else if err != nil {
 					s.miningReportStatus = &miningReportStatus{
@@ -213,7 +212,6 @@ func (s *Session) MineNativePhonon(difficulty uint8) error {
 						Status:      StatusMiningError,
 						TimeElapsed: int64(totalTime.Milliseconds()),
 						StartTime:   start,
-						StopTime:    time.Now(),
 					}
 					return
 				} else {

@@ -1,7 +1,13 @@
 .vscode/
 jumpbox
 phonon
+phonon.wxs
+phonon.wixobj
+release/win/wix/Phonon Client/
 phonon.exe
+phonon.msi
+phonon.wixpdb
+release/win/wix/phonon.wixobj
 localCerts/
 apdu.log
 gui/frontend/build/*

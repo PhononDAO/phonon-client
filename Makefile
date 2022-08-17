@@ -45,6 +45,11 @@ release-mac: generate frontend
 		--background "./release/MacOS/background.png" \
 		phonon.dmg \
 		./release/MacOS/Phonon.app
+release-win: windows-build
+	go run extra/wxsgenerator/generator.go release/win/wix/phonon.wxs.templ > phonon.wxs
+	candle "phonon.wxs"  -ext WixUtilExtension -ext wixUIExtension -arch x64
+	light ".\phonon.wixobj" -b ".\release\win\wix" -ext wixUIExtension  -ext WixUtilExtension -spdb
+
 
 checkout-submodules:
 	git submodule update --init

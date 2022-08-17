@@ -3,17 +3,10 @@ package gui
 import (
 	"fmt"
 
-	_ "embed"
 	"fyne.io/systray"
 	"github.com/pkg/browser"
 	log "github.com/sirupsen/logrus"
 )
-
-//go:embed icons/phonon.ico
-var phononLogo []byte
-
-//go:embed icons/x.ico
-var xIcon []byte
 
 func SystrayIcon(kill chan struct{}, port string) (end func()) {
 	startSystray, endSystray := systray.RunWithExternalLoop(onReadyFunc(port), onExit(kill))

@@ -65,10 +65,6 @@ jobs:
           gh release upload latest ./phonon.dmg
   build-windows:
     runs-on: windows-latest
-
-    defaults:
-      run:
-        shell: bash
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:

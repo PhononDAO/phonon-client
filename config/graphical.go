@@ -6,8 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
-	"runtime"
 	"strings"
 
 	"fyne.io/fyne/v2/app"
@@ -21,57 +19,40 @@ var loggingTestURL = "https://logs.phonon.network/testKey"
 func GraphicalConfiguration() {
 	a := app.New()
 	w := a.NewWindow("Configure Phonon Application")
-	welcome := widget.NewLabel("Welcome to Phonon configuration. Please paste your alpha logging key here")
+	welcome := widget.NewLabel("Welcome to Phonon configuration. Please paste your Phonon Telemetry key here")
 	keyBox := widget.NewEntry()
 	w.SetContent(container.NewVBox(
 		welcome,
 		keyBox,
-		widget.NewButton("Test Logging Key", func() {
-			cleaned := strings.Trim(keyBox.Text, `\ `)
+		widget.NewButton("Save Configuration", func() {
+			cleaned := strings.Trim(keyBox.Text, `\ "`)
 			err := CheckTelemetryKey(cleaned)
 			if err != nil {
 				welcome.SetText(fmt.Sprintf("Telemetry key validation failed: %s", err.Error()))
+				return
 			}
-		}),
-		widget.NewButton("Save Configuration", func() {
-			cleaned := strings.Trim(keyBox.Text, `\ "`)
-			SetDefaultConfig()
 			viper.Set("TelemetryKey", cleaned)
-			err := SaveConfig()
+			err = SaveConfig()
 			if err != nil {
 				welcome.SetText(fmt.Sprintf("Unable to save configuration: %s", err.Error()))
+				return
 			}
 			welcome.SetText("Configuration saved. You may now exit the program")
 		}),
-		widget.NewButton("Skip for now", func() {
+		widget.NewButton("Stop seeing this message (will not save a telemetry key)", func() {
+			err := SaveConfig()
+			if err != nil {
+				welcome.SetText(fmt.Sprintf("Unable to save default configuration: %s", err.Error()))
+			} else {
+				w.Close()
+			}
+		}),
+		widget.NewButton("Skip for now/exit", func() {
 			w.Close()
 		}),
 	))
 	w.ShowAndRun()
 
-}
-
-func SaveConfig() error {
-	viper.SetConfigType("yml")
-	var configPath string
-	homedir, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-	switch runtime.GOOS {
-	case "darwin", "linux":
-		configPath = homedir + "/.phonon/"
-		err = os.MkdirAll(configPath, 0700)
-		if err != nil {
-			return err
-		}
-	case "windows":
-		configPath = homedir + "\\.phonon\\"
-		os.MkdirAll(configPath, 0700)
-	default:
-		return fmt.Errorf("unable to set configuration path for %s", runtime.GOOS)
-	}
-	return viper.WriteConfigAs(configPath + "phonon.yml")
 }
 
 func CheckTelemetryKey(key2check string) error {

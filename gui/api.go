@@ -32,12 +32,6 @@ var swaggeryaml []byte
 //go:embed swagger
 var swagger embed.FS
 
-//go:embed icons/phonon.png
-var phononLogo []byte
-
-//go:embed icons/x.png
-var xIcon []byte
-
 type apiSession struct {
 	t *orchestrator.PhononTerminal
 }
@@ -122,11 +116,9 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 		}
 	}()
 	// setup channel to end the application
-	kill := make(chan struct{}, 1)
 	browser.OpenURL("http://localhost:" + port + "/")
 	// start the systray Icon
-	_ = SystrayIcon(kill, port)
-	<-kill
+	SystrayIcon(port)
 }
 
 func verifyDenomination(w http.ResponseWriter, r *http.Request) {

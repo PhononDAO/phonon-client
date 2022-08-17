@@ -2,21 +2,17 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"runtime"
-	"strings"
 
-	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/hooks"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	//Global
-	LogLevel log.Level //A logrus logLevel
 	//PhononCommandSet
-	AppletCACert []byte //One of the CA certificates listed in the cert package. Used as default if Certificate not set
-	Certificate  string //string ID to select a certificate
+	Certificate string //string ID to select a certificate
 	// log exporting
 	TelemetryKey string
 }
@@ -24,20 +20,13 @@ type Config struct {
 func DefaultConfig() Config {
 	//Add viper/commandline integration later
 	conf := Config{
-		Certificate:  "alpha",
-		AppletCACert: cert.PhononAlphaCAPubKey,
-		LogLevel:     log.DebugLevel,
+		Certificate: "alpha",
 	}
 	return conf
 }
 
-func SetDefaultConfig() {
-	viper.SetDefault("AppletCACert", string(cert.PhononAlphaCAPubKey))
-	viper.SetDefault("LogLevel", log.DebugLevel)
-}
-
 func LoadConfig() (config Config, err error) {
-	SetDefaultConfig()
+	// SetDefaultConfig()
 	switch runtime.GOOS {
 	case "linux", "darwin":
 		viper.AddConfigPath("$HOME/.phonon/")
@@ -67,6 +56,7 @@ func LoadConfig() (config Config, err error) {
 
 	err = viper.Unmarshal(&config)
 	if err != nil {
+		log.Error("error unmarshalling into config: ", err)
 		return DefaultConfig(), err
 	}
 	// Possibly not the best place to put this, but it does a good job of setting this up before an interactive session
@@ -75,16 +65,38 @@ func LoadConfig() (config Config, err error) {
 		log.AddHook(hooks.NewLoggingHook(config.TelemetryKey))
 	}
 
-	//Select cert based on provided certificate name
-	if config.Certificate != "" {
-		switch strings.ToLower(config.Certificate) {
-		case "alpha", "testnet":
-			break
-		case "dev", "demo":
-			config.AppletCACert = cert.PhononDemoCAPubKey
-		default:
-			break
-		}
-	}
 	return config, nil
+}
+
+func DefaultConfigPath() (string, error) {
+	var ret string
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	switch runtime.GOOS {
+	case "darwin", "linux":
+		ret = homedir + "/.phonon/"
+		if err != nil {
+			return "", err
+		}
+	case "windows":
+		ret = homedir + "\\.phonon\\"
+	default:
+		return "", fmt.Errorf("unable to set configuration path for %s", runtime.GOOS)
+	}
+	return ret, nil
+}
+
+func SaveConfig() error {
+	viper.SetConfigType("yml")
+	configPath, err := DefaultConfigPath()
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(configPath, 0700)
+	if err != nil {
+		return err
+	}
+	return viper.WriteConfigAs(configPath + "phonon.yml")
 }

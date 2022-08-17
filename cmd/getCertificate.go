@@ -72,9 +72,10 @@ func getCertificate() {
 	}
 	fmt.Println("Certificate: ", cardCert)
 	//Validate cert matches configured CA
-	err = cert.ValidateCardCertificate(*cardCert, conf.AppletCACert)
+	caCert := cert.SelectCACertByName(conf.Certificate)
+	err = cert.ValidateCardCertificate(*cardCert, caCert)
 	if err != nil {
-		fmt.Printf("error validating card certificate %v against CA certificate %v. err: %v\n", *cardCert, conf.AppletCACert, err)
+		fmt.Printf("error validating card certificate %v against CA certificate %v. err: %v\n", *cardCert, caCert, err)
 		return
 	}
 	fmt.Println("getCertificate command successfully validated cert")

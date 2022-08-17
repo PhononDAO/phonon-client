@@ -5,16 +5,11 @@ import (
 
 	"github.com/GridPlus/keycard-go/io"
 	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/usb"
 )
 
 type PhononTerminal struct {
 	sessions []*Session
-}
-
-type remoteSession struct {
-	counterParty model.CounterpartyPhononCard
 }
 
 var ErrRemoteNotPaired error = errors.New("no remote card paired")
@@ -33,9 +28,9 @@ func NewPhononTerminal() *PhononTerminal {
 	return globalTerminal
 }
 
-////
+// //
 // basic multi-session management
-////
+// //
 func (t *PhononTerminal) GenerateMock() (string, error) {
 	c, err := card.NewMockCard(true, false)
 	if err != nil {

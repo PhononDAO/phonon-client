@@ -2,10 +2,12 @@ package orchestrator
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
@@ -43,8 +45,27 @@ type Session struct {
 	cache                 map[model.PhononKeyIndex]cachedPhonon
 	cancelMiningChan      chan bool
 	isMiningActive        bool
+	miningReportStatus    *miningReportStatus
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
 	cachePopulated bool
+}
+
+const (
+	StatusMiningSuccess   = "success"
+	StatusMiningActive    = "active"
+	StatusMiningError     = "error"
+	StatusMiningCancelled = "cancelled"
+)
+
+type miningReportStatus struct {
+	Attempts    int
+	Status      string
+	TimeElapsed int64
+	StartTime   time.Time
+	StopTime    time.Time `json:",omitempty"`
+	AverageTime int64
+	KeyIndex    int `json:",omitempty"`
+	Hash        string
 }
 
 type cachedPhonon struct {
@@ -57,6 +78,7 @@ var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
 var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
 var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 var ErrNameCannotBeEmpty = errors.New("requested name cannot be empty")
+var ErrMiningNotActive = errors.New("no active mining operation")
 
 // Creates a new card session, automatically connecting if the card is already initialized with a PIN
 // The next step is to run VerifyPIN to gain access to the secure commands on the card
@@ -83,6 +105,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		chainSrv:              chainSrv,
 		cancelMiningChan:      make(chan bool),
 		isMiningActive:        false,
+		miningReportStatus:    nil,
 		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
@@ -123,9 +146,13 @@ func (s *Session) handleIncomingSessionRequests() {
 
 func (s *Session) SetPaired(status bool) {}
 
-func (s *Session) GetMiningReport() {}
+func (s *Session) GetMiningReport() (*miningReportStatus, error) {
+	if !s.verified() {
+		return nil, card.ErrPINNotEntered
+	}
 
-var ErrMiningNotActive = errors.New("mining not active")
+	return s.miningReportStatus, nil
+}
 
 func (s *Session) CancelMiningRequest() error {
 	if !s.verified() {
@@ -151,24 +178,56 @@ func (s *Session) MineNativePhonon(difficulty uint8) error {
 	cancel := make(chan bool)
 	s.cancelMiningChan = cancel
 
+	var totalTime time.Duration
 	i := 0
 	go func() {
+		start := time.Now()
 		for {
 			select {
 			case <-cancel:
 				s.isMiningActive = false
+				s.miningReportStatus = &miningReportStatus{
+					Attempts:    i,
+					Status:      StatusMiningCancelled,
+					TimeElapsed: int64(totalTime.Milliseconds()),
+					StartTime:   start,
+					StopTime:    time.Now(),
+				}
 				return
 			default:
 				s.isMiningActive = true
 				keyIndex, hash, err := s.cs.MineNativePhonon(difficulty)
+				elapsed := time.Since(start)
+				totalTime += elapsed
 				if err == card.ErrMiningFailed {
-					fmt.Println("mining failed to find phonon. repeating attempt...")
+					s.miningReportStatus = &miningReportStatus{
+						Attempts:    i,
+						Status:      StatusMiningActive,
+						TimeElapsed: int64(totalTime.Milliseconds()),
+						StartTime:   start,
+						StopTime:    time.Now(),
+					}
 				} else if err != nil {
-					fmt.Println("unknown error mining phonon. err: ", err)
+					s.miningReportStatus = &miningReportStatus{
+						Attempts:    i,
+						Status:      StatusMiningError,
+						TimeElapsed: int64(totalTime.Milliseconds()),
+						StartTime:   start,
+						StopTime:    time.Now(),
+					}
 					return
 				} else {
-					fmt.Printf("mined native phonon after %v attempts.\n", i)
-					fmt.Printf("keyIndex: %v\nhash: % X\n", keyIndex, hash)
+					averageTime := time.Duration(float64(totalTime.Nanoseconds()) / float64(i))
+					s.miningReportStatus = &miningReportStatus{
+						Attempts:    i,
+						Status:      StatusMiningSuccess,
+						TimeElapsed: int64(totalTime.Milliseconds()),
+						StartTime:   start,
+						StopTime:    time.Now(),
+						AverageTime: int64(averageTime.Milliseconds()),
+						KeyIndex:    int(keyIndex),
+						Hash:        hex.EncodeToString(hash),
+					}
 					return
 				}
 				i += 1

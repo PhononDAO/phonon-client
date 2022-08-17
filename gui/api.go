@@ -261,11 +261,14 @@ func (apiSession apiSession) cancelMineRequest(w http.ResponseWriter, r *http.Re
 
 	err = sess.CancelMiningRequest()
 	if err != nil {
+		if err == orchestrator.ErrMiningNotActive {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (apiSession apiSession) mineNativePhonons(w http.ResponseWriter, r *http.Request) {

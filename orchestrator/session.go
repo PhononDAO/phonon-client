@@ -41,7 +41,8 @@ type Session struct {
 	logger                *log.Entry
 	chainSrv              chain.ChainService
 	cache                 map[model.PhononKeyIndex]cachedPhonon
-	miningCards           chan struct{}
+	cancelMiningChan      chan bool
+	isMiningActive        bool
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
 	cachePopulated bool
 }
@@ -80,7 +81,8 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
 		chainSrv:              chainSrv,
-		miningCards:           make(chan struct{}),
+		cancelMiningChan:      make(chan bool),
+		isMiningActive:        false,
 		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
@@ -123,9 +125,19 @@ func (s *Session) SetPaired(status bool) {}
 
 func (s *Session) GetMiningReport() {}
 
+var ErrMiningNotActive = errors.New("mining not active")
+
 func (s *Session) CancelMiningRequest() error {
-	s.miningCards <- struct{}{}
-	return nil
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+
+	if s.isMiningActive {
+		s.cancelMiningChan <- true
+		return nil
+	}
+
+	return ErrMiningNotActive
 }
 
 func (s *Session) MineNativePhonon(difficulty uint8) error {
@@ -136,17 +148,18 @@ func (s *Session) MineNativePhonon(difficulty uint8) error {
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 
-	cancel := make(chan struct{})
-	s.miningCards = cancel
+	cancel := make(chan bool)
+	s.cancelMiningChan = cancel
 
 	i := 0
 	go func() {
 		for {
 			select {
 			case <-cancel:
-				log.Info("cancelling mining operation")
+				s.isMiningActive = false
 				return
 			default:
+				s.isMiningActive = true
 				keyIndex, hash, err := s.cs.MineNativePhonon(difficulty)
 				if err == card.ErrMiningFailed {
 					fmt.Println("mining failed to find phonon. repeating attempt...")

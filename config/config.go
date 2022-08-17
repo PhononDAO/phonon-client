@@ -11,8 +11,6 @@ import (
 )
 
 type Config struct {
-	//Global
-	LogLevel log.Level //A logrus logLevel
 	//PhononCommandSet
 	Certificate string //string ID to select a certificate
 	// log exporting
@@ -23,17 +21,12 @@ func DefaultConfig() Config {
 	//Add viper/commandline integration later
 	conf := Config{
 		Certificate: "alpha",
-		LogLevel:    log.DebugLevel,
 	}
 	return conf
 }
 
-func SetDefaultConfig() {
-	viper.SetDefault("LogLevel", log.DebugLevel)
-}
-
 func LoadConfig() (config Config, err error) {
-	SetDefaultConfig()
+	// SetDefaultConfig()
 	switch runtime.GOOS {
 	case "linux", "darwin":
 		viper.AddConfigPath("$HOME/.phonon/")
@@ -63,6 +56,7 @@ func LoadConfig() (config Config, err error) {
 
 	err = viper.Unmarshal(&config)
 	if err != nil {
+		log.Error("error unmarshalling into config: ", err)
 		return DefaultConfig(), err
 	}
 	// Possibly not the best place to put this, but it does a good job of setting this up before an interactive session

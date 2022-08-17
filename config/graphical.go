@@ -31,7 +31,6 @@ func GraphicalConfiguration() {
 				welcome.SetText(fmt.Sprintf("Telemetry key validation failed: %s", err.Error()))
 				return
 			}
-			SetDefaultConfig()
 			viper.Set("TelemetryKey", cleaned)
 			err = SaveConfig()
 			if err != nil {
@@ -41,7 +40,6 @@ func GraphicalConfiguration() {
 			welcome.SetText("Configuration saved. You may now exit the program")
 		}),
 		widget.NewButton("Stop seeing this message (will not save a telemetry key)", func() {
-			SetDefaultConfig()
 			err := SaveConfig()
 			if err != nil {
 				welcome.SetText(fmt.Sprintf("Unable to save default configuration: %s", err.Error()))

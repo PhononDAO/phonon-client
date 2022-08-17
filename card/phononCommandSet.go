@@ -59,7 +59,7 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 	if err != nil {
 		log.Fatal("could not configure PhononCommandSet: ", err)
 	}
-	var level = conf.LogLevel
+	var level = log.DebugLevel //hardcoded for testnet
 
 	if level == log.DebugLevel {
 		//Create an apdu.log file in the current working directory

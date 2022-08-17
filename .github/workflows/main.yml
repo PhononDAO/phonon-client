@@ -78,12 +78,13 @@ jobs:
       - name: install prereqs
         run: |
           choco install mingw
-          choco install wixtoolset
       - name: Install go stringer
         run: |
           GOBIN=/usr/bin go install golang.org/x/tools/cmd/stringer@latest
       - name: Build Windows
-        run: make release-win
+        run: |
+          $env:Path += ";C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          make release-win
 
       - name: get release
         id: get_release

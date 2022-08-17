@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+      <Product UpgradeCode="{{ .String }}" Name="Phonon-Client" Id="*" Language="1033" Version="0.0.0" Manufacturer="GridPlus">
+      <Package Platform="x64" InstallerVersion="300" Compressed="yes"/>
+      <MediaTemplate EmbedCab="yes" />
+      <Icon Id="phonon_icon" SourceFile="phonon.ico" />
+      <UIRef Id="WixUI_Minimal" />
+      <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+      <Property Id="ARPPRODUCTICON" Value="phonon_icon" />
+      <Directory Id="TARGETDIR" Name="SourceDir">
+         <Directory Id="ProgramFiles64Folder">
+            <Directory Id="ProgramFolder" Name="Phonon Client" />
+         </Directory>
+         <Directory Id="ProgramMenuFolder">
+            <Directory Id="ApplicationProgramsFolder" Name="Phonon Client" />
+         </Directory>
+      </Directory>
+      <DirectoryRef Id="ProgramFolder">
+         <Component Id="PhononEXE" Guid="*">
+            <File Id="PhononEXE" Source="./phonon.exe" Name="phonon.exe" KeyPath="yes" />
+         </Component>
+         <Component Id="launcher" Guid="*">
+            <File Id="launcher" Source="./phonon-launcher.bat" Name="phonon-launcher.bat" KeyPath="yes" />
+         </Component>
+      </DirectoryRef>
+      <DirectoryRef Id="ApplicationProgramsFolder">
+         <Component Id="ApplicationShortcut" Guid="*">
+            <Shortcut Id="ApplicationStartMenuShortcut" Name="Phonon Client" Description="Start the Phonon Client" Target="[#launcher]" WorkingDirectory="APPLICATIONROOTDIRECTORY" Icon="phonon_icon" />
+            <RemoveFolder Id="CleanupShortCut" Directory="ApplicationProgramsFolder" On="uninstall" />
+            <RegistryValue Root="HKCU" Key="Software\GridPlus\Phonon" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+         </Component>
+      </DirectoryRef>
+      <Feature Id="PhononApplication" Title="Application" Level="1">
+         <ComponentRef Id="PhononEXE" />
+         <ComponentRef Id="launcher" />
+         <ComponentRef Id="ApplicationShortcut" />
+      </Feature>
+   </Product>
+</Wix>
+

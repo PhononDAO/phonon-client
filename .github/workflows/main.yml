@@ -65,10 +65,6 @@ jobs:
           gh release upload latest ./phonon.dmg
   build-windows:
     runs-on: windows-latest
-
-    defaults:
-      run:
-        shell: bash
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -76,11 +72,12 @@ jobs:
         with:
           submodules: recursive
       - name: Install go stringer
+        shell: bash
         run: |
           GOBIN=/usr/bin go install golang.org/x/tools/cmd/stringer@latest
       - name: Build Windows
         run: |
-          PATH="$PATH:C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          $env:Path += ";C:\Program Files (x86)\WiX Toolset v3.11\bin"
           make release-win
 
       - name: get release

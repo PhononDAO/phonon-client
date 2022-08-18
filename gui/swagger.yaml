@@ -366,6 +366,11 @@ paths:
           description: "Could not start native phonon mining operation"
         "200":
           description: "Successfully mined a native phonon"
+          schema:
+            type: "object"
+            properties:
+              AttemptId:
+                type: "string"
     parameters:
       - in: path
         required: true
@@ -593,9 +598,8 @@ definitions:
     type: object
     properties:
       AttemptId:
-        type: "array"
-        items:
-          $ref: "#/definitions/MiningStatusReport"
+        type: "object"
+        $ref: "#/definitions/MiningStatusReport"
   MiningStatusReport:
     type: object
     properties:

@@ -309,11 +309,18 @@ func (apiSession apiSession) mineNativePhonons(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = sess.MineNativePhonon(req.Difficulty)
+	attemptId, err := sess.MineNativePhonon(req.Difficulty)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	type minePhononsResp struct {
+		AttemptId string
+	}
+
+	enc := json.NewEncoder(w)
+	enc.Encode(minePhononsResp{AttemptId: attemptId})
 }
 
 func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.Request) {

@@ -705,6 +705,11 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 and submits a transaction to the asset's chain in order to transfer it to another address
 In case the on chain transfer fails, returns the private key as a fallback so that access to the asset is not lost*/
 func (s *Session) RedeemPhonon(p *model.Phonon, redeemAddress string) (transactionData string, privKeyString string, err error) {
+	err = s.chainSrv.CheckRedeemable(p, redeemAddress)
+	if err != nil {
+		return "", "", err
+	}
+
 	//Retrieve phonon private key.
 	privKey, err := s.DestroyPhonon(p.KeyIndex)
 	if err != nil {

@@ -51,3 +51,11 @@ func (mcr *MultiChainRouter) RedeemPhonon(p *model.Phonon, privKey *ecdsa.Privat
 	}
 	return chain.RedeemPhonon(p, privKey, redeemAddress)
 }
+
+func (mcr *MultiChainRouter) CheckRedeemable(p *model.Phonon, redeemAddress string) (err error) {
+	chain, ok := mcr.chainServices[p.CurrencyType]
+	if !ok {
+		return ErrCurrencyTypeUnsupported
+	}
+	return chain.CheckRedeemable(p, redeemAddress)
+}

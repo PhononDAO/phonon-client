@@ -592,6 +592,13 @@ definitions:
   MiningStatus:
     type: object
     properties:
+      AttemptId:
+        type: "array"
+        items:
+          $ref: "#/definitions/MiningStatusReport"
+  MiningStatusReport:
+    type: object
+    properties:
       Attempts:
         type: "integer"
       Status:

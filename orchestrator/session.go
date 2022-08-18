@@ -202,8 +202,6 @@ func (s *Session) MineNativePhonon(difficulty uint8) error {
 			return
 		}
 
-		s.miningStatusReport[id] = make([]*miningStatusReport, 0)
-
 		start := time.Now()
 		for {
 			select {
@@ -229,7 +227,6 @@ func (s *Session) MineNativePhonon(difficulty uint8) error {
 						Status:      StatusMiningActive,
 						TimeElapsed: elapsed.Milliseconds(),
 						StartTime:   start,
-						AverageTime: averageTime.Milliseconds(),
 					})
 				} else if err != nil {
 					s.miningStatusReport[id] = append(s.miningStatusReport[id], &miningStatusReport{
@@ -238,7 +235,6 @@ func (s *Session) MineNativePhonon(difficulty uint8) error {
 						TimeElapsed: elapsed.Milliseconds(),
 						StartTime:   start,
 						StopTime:    time.Now(),
-						AverageTime: averageTime.Milliseconds(),
 					})
 					return
 				} else {

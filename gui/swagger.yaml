@@ -386,7 +386,7 @@ paths:
         - "sessions"
       responses:
         "404":
-          description: "There was no running mining operation to cancel"
+          description: "no active mining operation"
         "500":
           description: "There was an issue canceling the mining operation"
         "200":
@@ -403,7 +403,7 @@ paths:
         - "sessions"
       responses:
         "500":
-          description: "Could not retrieve mining operation status"
+          description: "no mining status report available"
         "404":
           description: "no session with id"
         "200":

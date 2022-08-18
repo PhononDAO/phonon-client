@@ -314,8 +314,6 @@ func (apiSession apiSession) mineNativePhonons(w http.ResponseWriter, r *http.Re
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.Request) {

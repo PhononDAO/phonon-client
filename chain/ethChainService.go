@@ -160,7 +160,7 @@ func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 
 	//If connection succeeded, set currently configured chainID
 	eth.clChainID = chainID
-	log.Debug("eth chain ID set to ", chainID)
+	log.Trace("eth chain ID set to ", chainID)
 	return nil
 }
 

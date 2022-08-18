@@ -627,10 +627,12 @@ func (apiSession apiSession) listPhonons(w http.ResponseWriter, r *http.Request)
 	}
 
 	for _, p := range phonons {
-		p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex, p.CurveType)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		if p.PubKey == nil {
+			p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex, p.CurveType)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 	enc := json.NewEncoder(w)

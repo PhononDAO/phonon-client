@@ -519,9 +519,7 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("List phonons command data: ")
-	log.Debugf("% X", cmdData)
-	log.Debugf("p2: % X", p2)
+
 	var p1 byte
 	if continuation {
 		p1 = 0x01

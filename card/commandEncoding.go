@@ -187,7 +187,6 @@ func parseDestroyPhononResponse(resp []byte) (privKey *ecdsa.PrivateKey, err err
 		return nil, err
 	}
 
-	log.Debug("raw PrivateKey: " + string(rawPrivKey))
 	privKey, err = util.ParseECCPrivKey(rawPrivKey)
 	if err != nil {
 		return nil, err
@@ -220,7 +219,7 @@ func parseSelectResponse(resp []byte) (instanceUID []byte, cardPubKey *ecdsa.Pub
 	if len(resp) == 0 {
 		return nil, nil, false, errors.New("received nil response")
 	}
-	log.Debug("length of select response data: ", len(resp))
+	log.Trace("length of select response data: ", len(resp))
 	switch resp[0] {
 	//Initialized
 	case 0xA4:

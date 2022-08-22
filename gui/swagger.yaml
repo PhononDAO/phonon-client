@@ -422,6 +422,31 @@ paths:
         name: sessionID
         type: string
         description: sessionID of connected card
+  /cards/{sessionID}/phonon/mineNative/status/{miningSessionID}:
+    get:
+      tags:
+        - "sessions"
+      responses:
+        "500":
+          description: "no mining status report available"
+        "404":
+          description: "no session with id"
+        "200":
+          description: "Return the status of a running native phonon mining operation"
+          required: true
+          schema:
+            $ref: "#/definitions/MiningStatusReport"
+    parameters:
+      - in: path
+        required: true
+        name: sessionID
+        type: string
+        description: sessionID of connected card
+      - in: path
+        required: true
+        name: miningSessionID
+        type: string
+        description: sessionID of mining operation
   /cards/{sessionID}/phonon/initDeposit:
     post:
       tags:

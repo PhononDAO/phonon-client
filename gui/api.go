@@ -89,7 +89,8 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/export", session.exportPhonon)
 	r.HandleFunc("/cards/{sessionID}/phonon/mineNative", session.mineNativePhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/cancel", session.cancelMineRequest)
-	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/status", session.statusMineRequest)
+	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/status", session.listMiningReportStatus)
+	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/status/{miningSessionID}", session.miningReportStatus)
 	r.HandleFunc("/cards/{sessionID}/phonon/initDeposit", session.initDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/finalizeDeposit", session.finalizeDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
@@ -252,7 +253,7 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 		PubKey: pubKey.String()})
 }
 
-func (apiSession apiSession) statusMineRequest(w http.ResponseWriter, r *http.Request) {
+func (apiSession apiSession) miningReportStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sess, err := apiSession.sessionFromMuxVars(vars)
 	if err != nil {
@@ -260,7 +261,31 @@ func (apiSession apiSession) statusMineRequest(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	report, err := sess.GetMiningReport()
+	miningSessionID, err := sessionFromMiningVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	report, err := sess.GetMiningReport(miningSessionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	enc := json.NewEncoder(w)
+	enc.Encode(report)
+}
+
+func (apiSession apiSession) listMiningReportStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	report, err := sess.ListMiningReports()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -857,4 +882,13 @@ func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestra
 		return nil, fmt.Errorf("unable to find session")
 	}
 	return targetSession, nil
+}
+
+func sessionFromMiningVars(p map[string]string) (string, error) {
+	miningSessionName, ok := p["miningSessionID"]
+	if !ok {
+		fmt.Println("unable to find mining session")
+		return "", fmt.Errorf("unable to find mining session")
+	}
+	return miningSessionName, nil
 }

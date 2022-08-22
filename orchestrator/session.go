@@ -21,8 +21,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ErrorRequestNotRecognized = errors.New("unrecognized request sent to session")
-
 /*
 The session struct handles a local connection with a card
 Keeps a client side cache of the card state to make interaction
@@ -44,7 +42,7 @@ type Session struct {
 	logger                *log.Entry
 	chainSrv              chain.ChainService
 	cache                 map[model.PhononKeyIndex]cachedPhonon
-	cancelMiningChan      chan bool
+	cancelMiningChan      chan struct{}
 	isMiningActive        bool
 	miningStatusReport    map[string]*miningStatusReport
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
@@ -104,7 +102,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
 		chainSrv:              chainSrv,
-		cancelMiningChan:      make(chan bool),
+		cancelMiningChan:      make(chan struct{}),
 		isMiningActive:        false,
 		miningStatusReport:    make(map[string]*miningStatusReport),
 		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
@@ -158,7 +156,19 @@ func generateId() (string, error) {
 	return base64.URLEncoding.EncodeToString(buffer), nil
 }
 
-func (s *Session) GetMiningReport() (map[string]*miningStatusReport, error) {
+func (s *Session) GetMiningReport(attemptId string) (*miningStatusReport, error) {
+	if !s.verified() {
+		return nil, card.ErrPINNotEntered
+	}
+
+	report, ok := s.miningStatusReport[attemptId]
+	if !ok {
+		return nil, ErrMiningReportNotAvailable
+	}
+	return report, nil
+}
+
+func (s *Session) ListMiningReports() (map[string]*miningStatusReport, error) {
 	if !s.verified() {
 		return nil, card.ErrPINNotEntered
 	}
@@ -176,7 +186,7 @@ func (s *Session) CancelMiningRequest() error {
 	}
 
 	if s.isMiningActive {
-		s.cancelMiningChan <- true
+		s.cancelMiningChan <- struct{}{}
 		return nil
 	}
 
@@ -188,7 +198,7 @@ func (s *Session) MineNativePhonon(difficulty uint8) (string, error) {
 		return "", card.ErrPINNotEntered
 	}
 
-	cancel := make(chan bool)
+	cancel := make(chan struct{})
 	s.cancelMiningChan = cancel
 
 	id, err := generateId()
@@ -207,6 +217,7 @@ func (s *Session) MineNativePhonon(difficulty uint8) (string, error) {
 			case <-cancel:
 				s.isMiningActive = false
 				elapsed := time.Since(start)
+				log.Debug("mining successfully cancelled")
 				s.miningStatusReport[id] = &miningStatusReport{
 					Attempts:    i,
 					Status:      StatusMiningCancelled,
@@ -221,6 +232,7 @@ func (s *Session) MineNativePhonon(difficulty uint8) (string, error) {
 				averageTime := time.Duration(float64(elapsed.Nanoseconds()) / float64(i))
 				keyIndex, hash, err := s.cs.MineNativePhonon(difficulty)
 				if err == card.ErrMiningFailed {
+					log.Debug("mining failed to find a phonon, retrying...")
 					s.miningStatusReport[id] = &miningStatusReport{
 						Attempts:    i,
 						Status:      StatusMiningActive,
@@ -228,6 +240,7 @@ func (s *Session) MineNativePhonon(difficulty uint8) (string, error) {
 						StartTime:   start,
 					}
 				} else if err != nil {
+					log.Debug("mining failed due to an unknown error: ", err)
 					s.miningStatusReport[id] = &miningStatusReport{
 						Attempts:    i,
 						Status:      StatusMiningError,
@@ -237,6 +250,7 @@ func (s *Session) MineNativePhonon(difficulty uint8) (string, error) {
 					}
 					return
 				} else {
+					log.Debugf("mining succeeded with difficulty %d", difficulty)
 					s.miningStatusReport[id] = &miningStatusReport{
 						Attempts:    i,
 						Status:      StatusMiningSuccess,

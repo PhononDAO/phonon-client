@@ -261,6 +261,22 @@ func (s *Session) MineNativePhonon(difficulty uint8) (string, error) {
 						KeyIndex:    int(keyIndex),
 						Hash:        hex.EncodeToString(hash),
 					}
+
+					key, err := s.cs.GetPhononPubKey(keyIndex, model.NativeCurve)
+					if err != nil {
+						log.Error("could not get phonon public key: ", err)
+						return
+					}
+
+					s.cache[keyIndex] = cachedPhonon{
+						pubkeyCached: true,
+						infoCached:   true,
+						p: &model.Phonon{
+							KeyIndex:  keyIndex,
+							CurveType: model.NativeCurve,
+							PubKey:    key,
+						},
+					}
 					return
 				}
 				i += 1

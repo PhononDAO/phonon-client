@@ -44,7 +44,7 @@ type Session struct {
 	cache                 map[model.PhononKeyIndex]cachedPhonon
 	cancelMiningChan      chan struct{}
 	isMiningActive        bool
-	miningStatusReport    map[string]*miningStatusReport
+	mutexedMiningReport   mutexedMiningReport
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
 	cachePopulated bool
 }
@@ -55,6 +55,11 @@ const (
 	StatusMiningError     = "error"
 	StatusMiningCancelled = "cancelled"
 )
+
+type mutexedMiningReport struct {
+	m    map[string]miningStatusReport
+	mtex *sync.Mutex
+}
 
 type miningStatusReport struct {
 	Attempts    int
@@ -104,7 +109,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		chainSrv:              chainSrv,
 		cancelMiningChan:      make(chan struct{}),
 		isMiningActive:        false,
-		miningStatusReport:    make(map[string]*miningStatusReport),
+		mutexedMiningReport:   mutexedMiningReport{m: make(map[string]miningStatusReport), mtex: &sync.Mutex{}},
 		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
@@ -129,6 +134,21 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 	go s.handleIncomingSessionRequests()
 	log.Debug("initialized new applet session")
 	return s, nil
+}
+
+func (m mutexedMiningReport) setMiningStatus(attemptId string, report miningStatusReport) {
+	m.mtex.Lock()
+	m.m[attemptId] = report
+	m.mtex.Unlock()
+}
+
+func (m mutexedMiningReport) getMiningStatus(attemptId string) (miningStatusReport, error) {
+	m.mtex.Lock()
+	defer m.mtex.Unlock()
+	if _, ok := m.m[attemptId]; ok {
+		return m.m[attemptId], nil
+	}
+	return miningStatusReport{}, ErrMiningReportNotAvailable
 }
 
 // loop until killed
@@ -156,25 +176,21 @@ func generateId() (string, error) {
 	return base64.URLEncoding.EncodeToString(buffer), nil
 }
 
-func (s *Session) GetMiningReport(attemptId string) (*miningStatusReport, error) {
+func (s *Session) GetMiningReport(attemptId string) (miningStatusReport, error) {
 	if !s.verified() {
-		return nil, card.ErrPINNotEntered
+		return miningStatusReport{}, card.ErrPINNotEntered
 	}
 
-	report, ok := s.miningStatusReport[attemptId]
-	if !ok {
-		return nil, ErrMiningReportNotAvailable
-	}
-	return report, nil
+	return s.mutexedMiningReport.getMiningStatus(attemptId)
 }
 
-func (s *Session) ListMiningReports() (map[string]*miningStatusReport, error) {
+func (s *Session) ListMiningReports() (map[string]miningStatusReport, error) {
 	if !s.verified() {
 		return nil, card.ErrPINNotEntered
 	}
 
-	if s.miningStatusReport != nil {
-		return s.miningStatusReport, nil
+	if len(s.mutexedMiningReport.m) > 0 {
+		return s.mutexedMiningReport.m, nil
 	}
 
 	return nil, ErrMiningReportNotAvailable
@@ -193,94 +209,102 @@ func (s *Session) CancelMiningRequest() error {
 	return ErrMiningNotActive
 }
 
+func (s *Session) initMiningAttempt(id string, difficulty uint8) {
+	cancel := make(chan struct{})
+	s.cancelMiningChan = cancel
+
+	i := 0
+	s.ElementUsageMtex.Lock()
+	defer s.ElementUsageMtex.Unlock()
+
+	report := miningStatusReport{}
+
+	start := time.Now()
+	for {
+		select {
+		case <-cancel:
+			s.isMiningActive = false
+			elapsed := time.Since(start)
+			log.Debug("mining successfully cancelled")
+			report.Attempts = i
+			report.Status = StatusMiningCancelled
+			report.TimeElapsed = elapsed.Milliseconds()
+			report.StartTime = start
+			report.StopTime = time.Now()
+			s.mutexedMiningReport.setMiningStatus(id, report)
+			return
+		default:
+			s.isMiningActive = true
+			elapsed := time.Since(start)
+			averageTime := time.Duration(float64(elapsed.Nanoseconds()) / float64(i))
+			keyIndex, hash, err := s.cs.MineNativePhonon(difficulty)
+			if err == card.ErrMiningFailed {
+				log.Debug("mining failed to find a phonon, retrying...")
+				report.Attempts = i
+				report.Status = StatusMiningActive
+				report.TimeElapsed = elapsed.Milliseconds()
+				report.StartTime = start
+				s.mutexedMiningReport.setMiningStatus(id, report)
+			} else if err != nil {
+				log.Debug("mining failed due to an unknown error: ", err)
+				report.Attempts = i
+				report.Status = StatusMiningError
+				report.TimeElapsed = elapsed.Milliseconds()
+				report.StartTime = start
+				report.StopTime = time.Now()
+				s.mutexedMiningReport.setMiningStatus(id, report)
+				return
+			} else {
+				log.Debugf("mining succeeded with difficulty %d", difficulty)
+				report.Attempts = i
+				report.Status = StatusMiningSuccess
+				report.TimeElapsed = elapsed.Milliseconds()
+				report.StartTime = start
+				report.StopTime = time.Now()
+				report.AverageTime = averageTime.Milliseconds()
+				report.KeyIndex = int(keyIndex)
+				report.Hash = hex.EncodeToString(hash)
+				s.mutexedMiningReport.setMiningStatus(id, report)
+				phonons, err := s.cs.ListPhonons(0, 0, 0, false)
+				if err != nil {
+					log.Error("error listing phonons: ", err)
+					return
+				}
+				for _, p := range phonons {
+					if p.KeyIndex == keyIndex {
+						pubkey, err := s.cs.GetPhononPubKey(keyIndex, p.CurveType)
+						if err != nil {
+							fmt.Println("error getting public key: ", err)
+							return
+						}
+
+						p.PubKey = pubkey
+
+						s.cache[keyIndex] = cachedPhonon{
+							pubkeyCached: true,
+							infoCached:   true,
+							p:            p,
+						}
+					}
+				}
+				return
+			}
+			i += 1
+		}
+	}
+}
+
 func (s *Session) MineNativePhonon(difficulty uint8) (string, error) {
 	if !s.verified() {
 		return "", card.ErrPINNotEntered
 	}
-
-	cancel := make(chan struct{})
-	s.cancelMiningChan = cancel
 
 	id, err := generateId()
 	if err != nil {
 		return "", err
 	}
 
-	i := 0
-	go func() {
-		s.ElementUsageMtex.Lock()
-		defer s.ElementUsageMtex.Unlock()
-
-		start := time.Now()
-		for {
-			select {
-			case <-cancel:
-				s.isMiningActive = false
-				elapsed := time.Since(start)
-				log.Debug("mining successfully cancelled")
-				s.miningStatusReport[id] = &miningStatusReport{
-					Attempts:    i,
-					Status:      StatusMiningCancelled,
-					TimeElapsed: elapsed.Milliseconds(),
-					StartTime:   start,
-					StopTime:    time.Now(),
-				}
-				return
-			default:
-				s.isMiningActive = true
-				elapsed := time.Since(start)
-				averageTime := time.Duration(float64(elapsed.Nanoseconds()) / float64(i))
-				keyIndex, hash, err := s.cs.MineNativePhonon(difficulty)
-				if err == card.ErrMiningFailed {
-					log.Debug("mining failed to find a phonon, retrying...")
-					s.miningStatusReport[id] = &miningStatusReport{
-						Attempts:    i,
-						Status:      StatusMiningActive,
-						TimeElapsed: elapsed.Milliseconds(),
-						StartTime:   start,
-					}
-				} else if err != nil {
-					log.Debug("mining failed due to an unknown error: ", err)
-					s.miningStatusReport[id] = &miningStatusReport{
-						Attempts:    i,
-						Status:      StatusMiningError,
-						TimeElapsed: elapsed.Milliseconds(),
-						StartTime:   start,
-						StopTime:    time.Now(),
-					}
-					return
-				} else {
-					log.Debugf("mining succeeded with difficulty %d", difficulty)
-					s.miningStatusReport[id] = &miningStatusReport{
-						Attempts:    i,
-						Status:      StatusMiningSuccess,
-						TimeElapsed: elapsed.Milliseconds(),
-						StartTime:   start,
-						StopTime:    time.Now(),
-						AverageTime: averageTime.Milliseconds(),
-						KeyIndex:    int(keyIndex),
-						Hash:        hex.EncodeToString(hash),
-					}
-					phonons, err := s.cs.ListPhonons(0, 0, 0, false)
-					if err != nil {
-						fmt.Println("error listing phonons: ", err)
-						return
-					}
-					for _, p := range phonons {
-						if p.KeyIndex == keyIndex {
-							s.cache[keyIndex] = cachedPhonon{
-								pubkeyCached: true,
-								infoCached:   true,
-								p:            p,
-							}
-						}
-					}
-					return
-				}
-				i += 1
-			}
-		}
-	}()
+	go s.initMiningAttempt(id, difficulty)
 
 	return id, nil
 }

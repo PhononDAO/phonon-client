@@ -90,7 +90,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/phonon/mineNative", session.mineNativePhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/cancel", session.cancelMineRequest)
 	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/status", session.listMiningReportStatus)
-	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/status/{miningSessionID}", session.miningReportStatus)
+	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/status/{miningAttemptID}", session.miningReportStatus)
 	r.HandleFunc("/cards/{sessionID}/phonon/initDeposit", session.initDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/finalizeDeposit", session.finalizeDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
@@ -261,13 +261,9 @@ func (apiSession apiSession) miningReportStatus(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	miningSessionID, err := sessionFromMiningVars(vars)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
+	attemptId := vars["miningAttemptID"]
 
-	report, err := sess.GetMiningReport(miningSessionID)
+	report, err := sess.GetMiningReport(attemptId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -867,7 +863,7 @@ func (apiSession apiSession) generatemock(w http.ResponseWriter, r *http.Request
 func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestrator.Session, error) {
 	sessionName, ok := p["sessionID"]
 	if !ok {
-		fmt.Println("unable to find session")
+		log.Error("unable to find session")
 		return nil, fmt.Errorf("unable to find session")
 	}
 	sessions := apiSession.t.ListSessions()
@@ -882,13 +878,4 @@ func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestra
 		return nil, fmt.Errorf("unable to find session")
 	}
 	return targetSession, nil
-}
-
-func sessionFromMiningVars(p map[string]string) (string, error) {
-	miningSessionName, ok := p["miningSessionID"]
-	if !ok {
-		fmt.Println("unable to find mining session")
-		return "", fmt.Errorf("unable to find mining session")
-	}
-	return miningSessionName, nil
 }

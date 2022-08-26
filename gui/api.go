@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/gorilla/mux"
@@ -45,26 +46,31 @@ var manifest []byte
 var swagger embed.FS
 
 type apiSession struct {
-	t *orchestrator.PhononTerminal
+	t            *orchestrator.PhononTerminal
+	telemetryKey string
 }
 
 func Server(port string, certFile string, keyFile string, mock bool) {
 	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.JSONFormatter{})
 	log.Debug("starting local api server")
-	session := apiSession{orchestrator.NewPhononTerminal()}
-
+	// loading this here is going to be only temporary for testnet. Will be removed later
+	conf, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal("Unable to load configuration")
+	}
+	session := apiSession{orchestrator.NewPhononTerminal(), conf.TelemetryKey}
 	//initialize cache map
 	if mock {
 		//Start server with a mock and ignore actual cards
-		_, err := session.t.GenerateMock()
+		_, err = session.t.GenerateMock()
 		log.Debug("mock generated")
 		if err != nil {
 			log.Error("unable to generate mock during REST server startup: ", err)
 			return
 		}
 	} else {
-		_, err := session.t.RefreshSessions()
+		_, err = session.t.RefreshSessions()
 		if err != nil {
 			log.Error("unable to refresh card sessions during REST server startup: ", err)
 		}
@@ -104,6 +110,8 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 
 	// log sink
 	r.HandleFunc("/logs", logsink)
+	// telemetry check
+	r.HandleFunc("/telemetryCheck", session.checkTelemetryKey)
 	// frontend
 	static, err := fs.Sub(frontendStatic, "frontend/build/static")
 	if err != nil {
@@ -806,4 +814,12 @@ func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestra
 		return nil, fmt.Errorf("unable to find session")
 	}
 	return targetSession, nil
+}
+
+func (apiSession apiSession) checkTelemetryKey(w http.ResponseWriter, r *http.Request) {
+	err := config.CheckTelemetryKey(apiSession.telemetryKey)
+	if err != nil {
+		http.Error(w, "telemetry check not successful", http.StatusInternalServerError)
+	}
+	// blank return gives 200 on successful test
 }

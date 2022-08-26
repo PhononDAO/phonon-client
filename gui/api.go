@@ -23,11 +23,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//go:embed frontend/build/*
-var frontend embed.FS
+//go:embed frontend/build/assets/*
+var frontendAssets embed.FS
+
+//go:embed frontend/build/static/*
+var frontendStatic embed.FS
 
 //go:embed swagger.yaml
 var swaggeryaml []byte
+
+//go:embed frontend/build/index.html
+var indexFile []byte
+
+//go:embed frontend/build/asset-manifest.json
+var assetManifest []byte
+
+//go:embed frontend/build/manifest.json
+var manifest []byte
 
 //go:embed swagger
 var swagger embed.FS
@@ -93,12 +105,31 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	// log sink
 	r.HandleFunc("/logs", logsink)
 	// frontend
-	stripped, err := fs.Sub(frontend, "frontend/build")
+	static, err := fs.Sub(frontendStatic, "frontend/build/static")
 	if err != nil {
 		log.Fatal("unable to setup filesystem to serve frontend: " + err.Error())
 	}
-	r.PathPrefix("/").Handler(http.FileServer(http.FS(stripped)))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(static))))
 
+	assets, err := fs.Sub(frontendAssets, "frontend/build/assets")
+	if err != nil {
+		log.Fatal("unable to setup filesystem to serve frontend: " + err.Error())
+	}
+
+	r.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.FS(assets))))
+
+	r.HandleFunc("/index.html", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(indexFile)
+	})
+	r.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(indexFile)
+	}))
+	r.HandleFunc("/asset-manifest.json", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(assetManifest)
+	})
+	r.HandleFunc("/manifest.json", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(manifest)
+	})
 	http.Handle("/", r)
 	log.Debug("listening for incoming connections on " + port)
 	fmt.Println("listen and serve")

@@ -4,7 +4,7 @@ on:
     branches: [ master ]
   workflow_dispatch:
 jobs:
-  build-apple:
+  build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     env:
@@ -25,6 +25,6 @@ jobs:
         run: go get golang.org/x/tools/cmd/stringer@latest
       - name: Install Prereqs
         run: |
-            apt install libpcsclite-dev libgl1-mesa-dev xorg-dev
+            sudo apt-get -y install libpcsclite-dev libgl1-mesa-dev xorg-dev
       - name: build
         run: make build

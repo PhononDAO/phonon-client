@@ -55,7 +55,6 @@ jobs:
       - name: Install go stringer
         run: |
           go get golang.org/x/tools/cmd/stringer@latest
-          sudo ln -s ~/go/bin/stringer /usr/bin/stringer
 
       - name: Install dmg maker
         run: brew install create-dmg

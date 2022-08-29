@@ -15,51 +15,62 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
-	"github.com/getlantern/systray"
 	"github.com/gorilla/mux"
 	"github.com/pkg/browser"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 )
 
-//go:embed frontend/build/*
-var frontend embed.FS
+//go:embed frontend/build/assets/*
+var frontendAssets embed.FS
+
+//go:embed frontend/build/static/*
+var frontendStatic embed.FS
 
 //go:embed swagger.yaml
 var swaggeryaml []byte
 
+//go:embed frontend/build/index.html
+var indexFile []byte
+
+//go:embed frontend/build/asset-manifest.json
+var assetManifest []byte
+
+//go:embed frontend/build/manifest.json
+var manifest []byte
+
 //go:embed swagger
 var swagger embed.FS
 
-//go:embed icons/phonon.png
-var phononLogo []byte
-
-//go:embed icons/x.png
-var xIcon []byte
-
 type apiSession struct {
-	t *orchestrator.PhononTerminal
+	t            *orchestrator.PhononTerminal
+	telemetryKey string
 }
 
 func Server(port string, certFile string, keyFile string, mock bool) {
 	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.JSONFormatter{})
 	log.Debug("starting local api server")
-	session := apiSession{orchestrator.NewPhononTerminal()}
-
+	// loading this here is going to be only temporary for testnet. Will be removed later
+	conf, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal("Unable to load configuration")
+	}
+	session := apiSession{orchestrator.NewPhononTerminal(), conf.TelemetryKey}
 	//initialize cache map
 	if mock {
 		//Start server with a mock and ignore actual cards
-		_, err := session.t.GenerateMock()
+		_, err = session.t.GenerateMock()
 		log.Debug("mock generated")
 		if err != nil {
 			log.Error("unable to generate mock during REST server startup: ", err)
 			return
 		}
 	} else {
-		_, err := session.t.RefreshSessions()
+		_, err = session.t.RefreshSessions()
 		if err != nil {
 			log.Error("unable to refresh card sessions during REST server startup: ", err)
 		}
@@ -103,13 +114,34 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 
 	// log sink
 	r.HandleFunc("/logs", logsink)
+	// telemetry check
+	r.HandleFunc("/telemetryCheck", session.checkTelemetryKey)
 	// frontend
-	stripped, err := fs.Sub(frontend, "frontend/build")
+	static, err := fs.Sub(frontendStatic, "frontend/build/static")
 	if err != nil {
 		log.Fatal("unable to setup filesystem to serve frontend: " + err.Error())
 	}
-	r.PathPrefix("/").Handler(http.FileServer(http.FS(stripped)))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(static))))
 
+	assets, err := fs.Sub(frontendAssets, "frontend/build/assets")
+	if err != nil {
+		log.Fatal("unable to setup filesystem to serve frontend: " + err.Error())
+	}
+
+	r.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.FS(assets))))
+
+	r.HandleFunc("/index.html", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(indexFile)
+	})
+	r.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(indexFile)
+	}))
+	r.HandleFunc("/asset-manifest.json", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(assetManifest)
+	})
+	r.HandleFunc("/manifest.json", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(manifest)
+	})
 	http.Handle("/", r)
 	log.Debug("listening for incoming connections on " + port)
 	fmt.Println("listen and serve")
@@ -126,8 +158,10 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 			}
 		}
 	}()
+	// setup channel to end the application
 	browser.OpenURL("http://localhost:" + port + "/")
-	systray.Run(onReady, onExit)
+	// start the systray Icon
+	SystrayIcon(port)
 }
 
 func verifyDenomination(w http.ResponseWriter, r *http.Request) {
@@ -216,22 +250,6 @@ func parseJSLogLevel(input interface{}) (int, error) {
 	return lvlInt, nil
 }
 
-func onReady() {
-	systray.SetIcon(phononLogo)
-	systray.SetTitle("")
-	systray.SetTooltip("Phonon UI backend is currently running")
-	mQuit := systray.AddMenuItem("Quit", "Exit PhononUI")
-	mQuit.SetIcon(xIcon)
-	go func() {
-		<-mQuit.ClickedCh
-		systray.Quit()
-	}()
-}
-
-func onExit() {
-	log.Println("server killed by systray interaction")
-}
-
 func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sess, err := apiSession.sessionFromMuxVars(vars)
@@ -265,6 +283,11 @@ func (apiSession apiSession) miningReportStatus(w http.ResponseWriter, r *http.R
 
 	report, err := sess.GetMiningReport(attemptId)
 	if err != nil {
+		if err == orchestrator.ErrMiningReportNotAvailable {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -283,6 +306,11 @@ func (apiSession apiSession) listMiningReportStatus(w http.ResponseWriter, r *ht
 
 	report, err := sess.ListMiningReports()
 	if err != nil {
+		if err == orchestrator.ErrMiningReportNotAvailable {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -732,10 +760,12 @@ func (apiSession apiSession) listPhonons(w http.ResponseWriter, r *http.Request)
 	}
 
 	for _, p := range phonons {
-		p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex, p.CurveType)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		if p.PubKey == nil {
+			p.PubKey, err = sess.GetPhononPubKey(p.KeyIndex, p.CurveType)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 	enc := json.NewEncoder(w)
@@ -878,4 +908,12 @@ func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestra
 		return nil, fmt.Errorf("unable to find session")
 	}
 	return targetSession, nil
+}
+
+func (apiSession apiSession) checkTelemetryKey(w http.ResponseWriter, r *http.Request) {
+	err := config.CheckTelemetryKey(apiSession.telemetryKey)
+	if err != nil {
+		http.Error(w, "telemetry check not successful", http.StatusInternalServerError)
+	}
+	// blank return gives 200 on successful test
 }

@@ -83,7 +83,7 @@ var ErrInitFailed = errors.New("card failed initialized check after init command
 var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 var ErrNameCannotBeEmpty = errors.New("requested name cannot be empty")
 var ErrMiningNotActive = errors.New("no active mining operation")
-var ErrMiningReportNotAvailable = errors.New("mining report not available")
+var ErrMiningReportNotAvailable = errors.New("could not find mining status report")
 
 // Creates a new card session, automatically connecting if the card is already initialized with a PIN
 // The next step is to run VerifyPIN to gain access to the secure commands on the card
@@ -272,7 +272,7 @@ func (s *Session) initMiningAttempt(id string, difficulty uint8) {
 				}
 				for _, p := range phonons {
 					if p.KeyIndex == keyIndex {
-						pubkey, err := s.cs.GetPhononPubKey(keyIndex, p.CurveType)
+						pubkey, err := model.NewPhononPubKey(hash, model.NativeCurve)
 						if err != nil {
 							fmt.Println("error getting public key: ", err)
 							return

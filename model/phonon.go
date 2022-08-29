@@ -167,12 +167,10 @@ func NewDenomination(i *big.Int) (Denomination, error) {
 		log.Error("remaining denomination base = ", i)
 		return Denomination{}, errors.New("denomination exceeds representable precision")
 	}
-	log.Debugf("i = %v, exponent = %v", i, exponent)
 	d := Denomination{
 		Base:     uint8(i.Int64()),
 		Exponent: exponent,
 	}
-	log.Debugf("d: %+v", d)
 	return d, nil
 }
 

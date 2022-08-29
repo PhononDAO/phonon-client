@@ -102,7 +102,6 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 		log.Debug("could not parse schema version tag")
 		return phonon, err
 	}
-	log.Debug("value of rawSchemaVersion: ", rawSchemaVersion)
 	if len(rawSchemaVersion) != 1 {
 		return phonon, errors.New("schemaVersion length incorrect")
 	}
@@ -149,7 +148,6 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 		log.Debug("could not parse currencyType tag")
 		return phonon, err
 	}
-	log.Debugf("currencyTypeBytes: % X", currencyTypeBytes)
 	phonon.CurrencyType = model.CurrencyType(binary.BigEndian.Uint16(currencyTypeBytes))
 
 	//Extended Schema

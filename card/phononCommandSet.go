@@ -57,9 +57,9 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 	var err error
 	conf, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal("could not configure PhononCommandSet")
+		log.Fatal("could not configure PhononCommandSet: ", err)
 	}
-	var level = conf.LogLevel
+	var level = log.DebugLevel //hardcoded for testnet
 
 	if level == log.DebugLevel {
 		//Create an apdu.log file in the current working directory
@@ -86,7 +86,7 @@ func NewPhononCommandSet(c types.Channel) *PhononCommandSet {
 		c:               c,
 		sc:              NewSecureChannel(c),
 		ApplicationInfo: &types.ApplicationInfo{},
-		PhononCACert:    conf.AppletCACert,
+		PhononCACert:    cert.SelectCACertByName(conf.Certificate),
 	}
 }
 
@@ -519,9 +519,7 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("List phonons command data: ")
-	log.Debugf("% X", cmdData)
-	log.Debugf("p2: % X", p2)
+
 	var p1 byte
 	if continuation {
 		p1 = 0x01

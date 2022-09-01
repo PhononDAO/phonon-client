@@ -69,7 +69,26 @@ Build for windows x86
 ```
 make build-windows
 ```
-note: for windows compilation from mac or linux, you will need to install mingw-64 from your favorite package manager
+NOTE: For windows compilation from Mac or Linux, you will need to install `mingw-64` from your favorite package manager.
+
+## Additional Notes
+
+The default pin for mock cards is `111111`.
+
+### Running the webUI
+To run the webUI you'll need to checkout the submodules in this repository.
+
+You'll want to run the following:
+```
+make checkout-submodules
+```
+
+Here's the order of commands for running the webUI for the first time:
+1. `make checkout-submodules`
+2. `make build` or `make build-windows`
+3. `go run main/phonon.go webUI`
+
+NOTE: You don't need to checkout the submodules every time you run the webUI.
 
 # License
 The source code files in this repository are license under the terms of the Mozilla Public License 2.0

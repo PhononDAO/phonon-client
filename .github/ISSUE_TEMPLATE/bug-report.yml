@@ -1,0 +1,42 @@
+name: Bug Report
+description: Create a report to help us improve Phonon client.
+labels: [bug]
+body:
+  - type: textarea
+    id: problem_statement
+    attributes:
+      label: Problem
+      description: A clear and concise description of what the bug is. The more information you provide, the easier it is for us to reproduce the bug.
+  - type: textarea
+    id: expected_behaviour
+    attributes:
+      label: Expected Behaviour
+  - type: textarea
+    id: reproducible_steps
+    attributes:
+      label: Steps to reproduce
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      multiple: true
+      description: What operating system does this bug occur on?
+      options:
+        - Windows
+        - macOS
+        - Linux
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: The browser(s) that this problem occurs in
+      multiple: true
+      options:
+        - Firefox
+        - Chrome
+        - Safari
+        - Microsoft Edge
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log output and Stacktrace
+      render: shell

@@ -78,7 +78,7 @@ It's recommended to set this variable in your shell profile to make this value p
 
 ## Process
 
-This repository has a submodule that contains the front-end application. Use the `--recursive` flag to clone all submodules in this repository. Otherwise, you may encounter build errors.
+This repository has a submodule that contains the frontend application. Use the `--recursive` flag to clone all submodules in this repository. Otherwise, you may encounter build errors.
 
 Build for your local machine architecture
 

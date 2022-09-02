@@ -1,2 +1,2 @@
-IF NOT EXIST %userprofile% phonon.exe graphicalConfigure
+IF NOT EXIST "%userprofile%\.phonon\phonon.yml" phonon.exe graphicalConfigure
 start phonon.exe webUI

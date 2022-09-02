@@ -15,26 +15,20 @@ body:
     id: reproducible_steps
     attributes:
       label: Steps to reproduce
-  - type: dropdown
+  - type: textarea
     id: os
     attributes:
       label: OS
-      multiple: true
       description: What operating system does this bug occur on?
-      options:
-        - Windows
-        - macOS
-        - Linux
-  - type: dropdown
+  - type: textarea
     id: browsers
     attributes:
-      label: The browser(s) that this problem occurs in
-      multiple: true
-      options:
-        - Firefox
-        - Chrome
-        - Safari
-        - Microsoft Edge
+      label: Browsers
+      description: The browser(s) that this problem occurs in
+      placeholder: |
+        Example:
+        - Chrome 90.0.4430.212
+        - Firefox 88.0.1
   - type: textarea
     id: logs
     attributes:

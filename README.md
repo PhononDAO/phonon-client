@@ -78,8 +78,6 @@ It's recommended to set this variable in your shell profile to make this value p
 
 ## Process
 
-This repository has a submodule that contains the frontend application. Use the `--recursive` flag to clone all submodules in this repository. Otherwise, you may encounter build errors.
-
 Build for your local machine architecture
 
 ```
@@ -92,7 +90,29 @@ Build for windows x86
 make build-windows
 ```
 
-note: for windows compilation from mac or linux, you will need to install mingw-64 from your favorite package manager
+NOTE: For windows compilation from Mac or Linux, you will need to install `mingw-64` from your favorite package manager.
+
+## Additional Notes
+
+The default pin for mock cards is `111111`.
+
+### Running the webUI
+
+To run the webUI you'll need to checkout the submodules in this repository.
+
+You'll want to run the following:
+
+```
+make checkout-submodules
+```
+
+Here's the order of commands for running the webUI for the first time:
+
+1. `make checkout-submodules`
+2. `make build` or `make build-windows`
+3. `go run main/phonon.go webUI`
+
+NOTE: You don't need to checkout the submodules every time you run the webUI.
 
 # License
 

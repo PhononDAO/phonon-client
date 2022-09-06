@@ -79,7 +79,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "HEAD", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "HEAD", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Origin"},
 		AllowCredentials: true,
 	})
@@ -98,6 +98,10 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/phonon/create", session.createPhonon)
 	r.HandleFunc("/cards/{sessionID}/phonon/redeem", session.redeemPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/export", session.exportPhonon)
+	r.HandleFunc("/cards/{sessionID}/phonon/mineNative", session.mineNativePhonons)
+	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/cancel", session.cancelMineRequest)
+	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/status", session.listMiningReportStatus)
+	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/status/{miningAttemptID}", session.miningReportStatus)
 	r.HandleFunc("/cards/{sessionID}/phonon/initDeposit", session.initDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/finalizeDeposit", session.finalizeDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
@@ -267,6 +271,107 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 		PubKey: pubKey.String()})
 }
 
+func (apiSession apiSession) miningReportStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	attemptId := vars["miningAttemptID"]
+
+	report, err := sess.GetMiningReport(attemptId)
+	if err != nil {
+		if err == orchestrator.ErrMiningReportNotAvailable {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	enc := json.NewEncoder(w)
+	enc.Encode(report)
+}
+
+func (apiSession apiSession) listMiningReportStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	report, err := sess.ListMiningReports()
+	if err != nil {
+		if err == orchestrator.ErrMiningReportNotAvailable {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	enc := json.NewEncoder(w)
+	enc.Encode(report)
+}
+
+func (apiSession apiSession) cancelMineRequest(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	err = sess.CancelMiningRequest()
+	if err != nil {
+		if err == orchestrator.ErrMiningNotActive {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (apiSession apiSession) mineNativePhonons(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	type minePhononsRequest struct {
+		Difficulty uint8 `json:"difficulty"`
+	}
+
+	var req minePhononsRequest
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	attemptId, err := sess.MineNativePhonon(req.Difficulty)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	type minePhononsResp struct {
+		AttemptId string
+	}
+
+	enc := json.NewEncoder(w)
+	enc.Encode(minePhononsResp{AttemptId: attemptId})
+}
+
 func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sess, err := apiSession.sessionFromMuxVars(vars)
@@ -395,10 +500,6 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 		log.Error("unable to encode outgoing redeem response")
 		return
 	}
-}
-
-func serveapi(w http.ResponseWriter, r *http.Request) {
-	http.ServeContent(w, r, "swagger.json", time.Time{}, bytes.NewReader(swaggeryaml))
 }
 
 func serveAPIFunc(port string) func(w http.ResponseWriter, r *http.Request) {
@@ -643,13 +744,6 @@ func (apiSession apiSession) setName(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type phonRet struct {
-	Index  int    `json:"index"`
-	PubKey string `json:"pubKey"`
-	Type   int    `json:"type"`
-	Value  int    `json:"value"`
-}
-
 func (apiSession apiSession) listPhonons(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sess, err := apiSession.sessionFromMuxVars(vars)
@@ -799,7 +893,7 @@ func (apiSession apiSession) generatemock(w http.ResponseWriter, r *http.Request
 func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestrator.Session, error) {
 	sessionName, ok := p["sessionID"]
 	if !ok {
-		fmt.Println("unable to find session")
+		log.Error("unable to find session")
 		return nil, fmt.Errorf("unable to find session")
 	}
 	sessions := apiSession.t.ListSessions()

@@ -2,10 +2,14 @@ package orchestrator
 
 import (
 	"crypto/ecdsa"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
@@ -17,11 +21,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ErrorRequestNotRecognized = errors.New("unrecognized request sent to session")
-
-/*The session struct handles a local connection with a card
+/*
+The session struct handles a local connection with a card
 Keeps a client side cache of the card state to make interaction
-with the card through this API more convenient*/
+with the card through this API more convenient
+*/
 type Session struct {
 	cs                    model.PhononCard
 	RemoteCard            model.CounterpartyPhononCard
@@ -38,8 +42,34 @@ type Session struct {
 	logger                *log.Entry
 	chainSrv              chain.ChainService
 	cache                 map[model.PhononKeyIndex]cachedPhonon
+	cancelMiningChan      chan struct{}
+	isMiningActive        bool
+	mutexedMiningReport   mutexedMiningReport
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
 	cachePopulated bool
+}
+
+const (
+	StatusMiningSuccess   = "success"
+	StatusMiningActive    = "active"
+	StatusMiningError     = "error"
+	StatusMiningCancelled = "cancelled"
+)
+
+type mutexedMiningReport struct {
+	m    map[string]miningStatusReport
+	mtex *sync.Mutex
+}
+
+type miningStatusReport struct {
+	Attempts    int
+	Status      string
+	TimeElapsed int64
+	StartTime   time.Time
+	StopTime    time.Time `json:",omitempty"`
+	AverageTime int64     `json:",omitempty"`
+	KeyIndex    int       `json:",omitempty"`
+	Hash        string    `json:",omitempty"`
 }
 
 type cachedPhonon struct {
@@ -52,9 +82,11 @@ var ErrAlreadyInitialized = errors.New("card is already initialized with a pin")
 var ErrInitFailed = errors.New("card failed initialized check after init command accepted")
 var ErrCardNotPairedToCard = errors.New("card not paired with any other card")
 var ErrNameCannotBeEmpty = errors.New("requested name cannot be empty")
+var ErrMiningNotActive = errors.New("no active mining operation")
+var ErrMiningReportNotAvailable = errors.New("could not find mining status report")
 
-//Creates a new card session, automatically connecting if the card is already initialized with a PIN
-//The next step is to run VerifyPIN to gain access to the secure commands on the card
+// Creates a new card session, automatically connecting if the card is already initialized with a PIN
+// The next step is to run VerifyPIN to gain access to the secure commands on the card
 func NewSession(storage model.PhononCard) (s *Session, err error) {
 	chainSrv, err := chain.NewMultiChainRouter()
 	if err != nil {
@@ -75,6 +107,9 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
 		chainSrv:              chainSrv,
+		cancelMiningChan:      make(chan struct{}),
+		isMiningActive:        false,
+		mutexedMiningReport:   mutexedMiningReport{m: make(map[string]miningStatusReport), mtex: &sync.Mutex{}},
 		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
@@ -101,6 +136,21 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 	return s, nil
 }
 
+func (m mutexedMiningReport) setMiningStatus(attemptId string, report miningStatusReport) {
+	m.mtex.Lock()
+	m.m[attemptId] = report
+	m.mtex.Unlock()
+}
+
+func (m mutexedMiningReport) getMiningStatus(attemptId string) (miningStatusReport, error) {
+	m.mtex.Lock()
+	defer m.mtex.Unlock()
+	if _, ok := m.m[attemptId]; ok {
+		return m.m[attemptId], nil
+	}
+	return miningStatusReport{}, ErrMiningReportNotAvailable
+}
+
 // loop until killed
 func (s *Session) handleIncomingSessionRequests() {
 	for {
@@ -113,7 +163,150 @@ func (s *Session) handleIncomingSessionRequests() {
 	}
 }
 
-func (s *Session) SetPaired(status bool) {
+func (s *Session) SetPaired(status bool) {}
+
+func generateId() (string, error) {
+	buffer := make([]byte, 16)
+	_, err := rand.Read(buffer)
+
+	if err != nil {
+		return "", err
+	}
+
+	return base64.URLEncoding.EncodeToString(buffer), nil
+}
+
+func (s *Session) GetMiningReport(attemptId string) (miningStatusReport, error) {
+	if !s.verified() {
+		return miningStatusReport{}, card.ErrPINNotEntered
+	}
+
+	return s.mutexedMiningReport.getMiningStatus(attemptId)
+}
+
+func (s *Session) ListMiningReports() (map[string]miningStatusReport, error) {
+	if !s.verified() {
+		return nil, card.ErrPINNotEntered
+	}
+
+	if len(s.mutexedMiningReport.m) > 0 {
+		return s.mutexedMiningReport.m, nil
+	}
+
+	return nil, ErrMiningReportNotAvailable
+}
+
+func (s *Session) CancelMiningRequest() error {
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+
+	if s.isMiningActive {
+		s.cancelMiningChan <- struct{}{}
+		return nil
+	}
+
+	return ErrMiningNotActive
+}
+
+func (s *Session) initMiningAttempt(id string, difficulty uint8) {
+	cancel := make(chan struct{})
+	s.cancelMiningChan = cancel
+
+	i := 0
+	s.ElementUsageMtex.Lock()
+	defer s.ElementUsageMtex.Unlock()
+
+	report := miningStatusReport{}
+
+	start := time.Now()
+	for {
+		select {
+		case <-cancel:
+			s.isMiningActive = false
+			elapsed := time.Since(start)
+			log.Debug("mining successfully cancelled")
+			report.Attempts = i
+			report.Status = StatusMiningCancelled
+			report.TimeElapsed = elapsed.Milliseconds()
+			report.StartTime = start
+			report.StopTime = time.Now()
+			s.mutexedMiningReport.setMiningStatus(id, report)
+			return
+		default:
+			s.isMiningActive = true
+			elapsed := time.Since(start)
+			averageTime := time.Duration(float64(elapsed.Nanoseconds()) / float64(i))
+			keyIndex, hash, err := s.cs.MineNativePhonon(difficulty)
+			if err == card.ErrMiningFailed {
+				log.Debug("mining failed to find a phonon, retrying...")
+				report.Attempts = i
+				report.Status = StatusMiningActive
+				report.TimeElapsed = elapsed.Milliseconds()
+				report.StartTime = start
+				s.mutexedMiningReport.setMiningStatus(id, report)
+			} else if err != nil {
+				log.Debug("mining failed due to an unknown error: ", err)
+				report.Attempts = i
+				report.Status = StatusMiningError
+				report.TimeElapsed = elapsed.Milliseconds()
+				report.StartTime = start
+				report.StopTime = time.Now()
+				s.mutexedMiningReport.setMiningStatus(id, report)
+				return
+			} else {
+				log.Debugf("mining succeeded with difficulty %d", difficulty)
+				report.Attempts = i
+				report.Status = StatusMiningSuccess
+				report.TimeElapsed = elapsed.Milliseconds()
+				report.StartTime = start
+				report.StopTime = time.Now()
+				report.AverageTime = averageTime.Milliseconds()
+				report.KeyIndex = int(keyIndex)
+				report.Hash = hex.EncodeToString(hash)
+				s.mutexedMiningReport.setMiningStatus(id, report)
+				phonons, err := s.cs.ListPhonons(0, 0, 0, false)
+				if err != nil {
+					log.Error("error listing phonons: ", err)
+					return
+				}
+				for _, p := range phonons {
+					if p.KeyIndex == keyIndex {
+						pubkey, err := model.NewPhononPubKey(hash, model.NativeCurve)
+						if err != nil {
+							fmt.Println("error getting public key: ", err)
+							return
+						}
+
+						p.PubKey = pubkey
+
+						s.cache[keyIndex] = cachedPhonon{
+							pubkeyCached: true,
+							infoCached:   true,
+							p:            p,
+						}
+					}
+				}
+				return
+			}
+			i += 1
+		}
+	}
+}
+
+func (s *Session) MineNativePhonon(difficulty uint8) (string, error) {
+	if !s.verified() {
+		return "", card.ErrPINNotEntered
+	}
+
+	id, err := generateId()
+	if err != nil {
+		return "", err
+	}
+
+	go s.initMiningAttempt(id, difficulty)
+
+	return id, nil
 }
 
 func (s *Session) GetCardId() string {
@@ -169,7 +362,6 @@ func (s *Session) GetCertificate() (*cert.CardCertificate, error) {
 }
 
 func (s *Session) IsUnlocked() bool {
-
 	return s.pinVerified
 }
 
@@ -185,7 +377,7 @@ func (s *Session) IsPairedToCard() bool {
 	return s.RemoteCard != nil
 }
 
-//Connect opens a secure channel with a card.
+// Connect opens a secure channel with a card.
 func (s *Session) Connect() error {
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
@@ -203,10 +395,9 @@ func (s *Session) Connect() error {
 	return nil
 }
 
-//Initializes the card with a PIN
-//Also creates a secure channel and verifies the PIN that was just set
+// Initializes the card with a PIN
+// Also creates a secure channel and verifies the PIN that was just set
 func (s *Session) Init(pin string) error {
-
 	if s.pinInitialized {
 		return ErrAlreadyInitialized
 	}
@@ -546,9 +737,11 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 	return nil
 }
 
-/*InitDepositPhonons takes a currencyType and a map of denominations to quantity,
+/*
+InitDepositPhonons takes a currencyType and a map of denominations to quantity,
 Creates the required phonons, deposits them using the configured service for the asset
-and upon success sets their descriptors*/
+and upon success sets their descriptors
+*/
 func (s *Session) InitDepositPhonons(currencyType model.CurrencyType, denoms []*model.Denomination) (phonons []*model.Phonon, err error) {
 	log.Debugf("running InitDepositPhonons with data: %v, %v\n", currencyType, denoms)
 	if !s.verified() {
@@ -575,7 +768,7 @@ func (s *Session) InitDepositPhonons(currencyType model.CurrencyType, denoms []*
 	return phonons, nil
 }
 
-//Phonon Deposit and Redeem higher level methods
+// Phonon Deposit and Redeem higher level methods
 type DepositConfirmation struct {
 	Phonon           *model.Phonon
 	ConfirmedOnChain bool
@@ -701,9 +894,11 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 	}
 }
 
-/*RedeemPhonon takes a phonon and a redemptionAddress as an asset specific address string (usually hex encoded)
+/*
+RedeemPhonon takes a phonon and a redemptionAddress as an asset specific address string (usually hex encoded)
 and submits a transaction to the asset's chain in order to transfer it to another address
-In case the on chain transfer fails, returns the private key as a fallback so that access to the asset is not lost*/
+In case the on chain transfer fails, returns the private key as a fallback so that access to the asset is not lost
+*/
 func (s *Session) RedeemPhonon(p *model.Phonon, redeemAddress string) (transactionData string, privKeyString string, err error) {
 	err = s.chainSrv.CheckRedeemable(p, redeemAddress)
 	if err != nil {
@@ -724,9 +919,11 @@ func (s *Session) RedeemPhonon(p *model.Phonon, redeemAddress string) (transacti
 	return transactionData, privKeyString, nil
 }
 
-/*addPubKeyToCache adds the pubkey to an already cached phonon. This is done differently from the addInfoToCache because there are only two
+/*
+addPubKeyToCache adds the pubkey to an already cached phonon. This is done differently from the addInfoToCache because there are only two
 instances where we add information to a preexisting cached phonon, and they need to be handled differently without going through the trouble
-of making a fully generic updater that handles all fields*/
+of making a fully generic updater that handles all fields
+*/
 func (s *Session) addPubKeyToCache(i model.PhononKeyIndex, k model.PhononPubKey) {
 	cached, ok := s.cache[i]
 	// if it didn't already exist, create it

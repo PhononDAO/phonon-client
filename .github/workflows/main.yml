@@ -51,7 +51,9 @@ jobs:
         with:
           # The Go version to download (if necessary) and use. Supports semver spec and ranges.
           go-version: 1.17.0
-
+      - name: Install prereqs
+        run: |
+          go get ./...
       - name: Install go stringer
         run: |
           go get golang.org/x/tools/cmd/stringer@latest

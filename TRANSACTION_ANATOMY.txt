@@ -77,9 +77,9 @@
 │  │  │  │  │   ┃                            └───────────────┘         ┃             ┃                                  ┌─────────┐      ┃
 │  │  │  │  │   ┃               ┌────────────┐                         ┃      ┌──────╋──▶2) Verify the PIN with command:│VerifyPIN│      ┃
 │  │  │  │  │   ┃  2) Request a │ NewSession │ with the Phonon Card.◀──╋──────┘      ┃                                  └─────────┘      ┃
-│  │  │  │  │   ┃               └────────────┘                         ┃             ┃         ┌───────────┐                             ┃
-│  │  │  │  │   ┃    ┌──────────────────┐                              ┃     ┌───────╋──▶10)   │ReceivePhon│and save to card.            ┃
-│  │  │  │  └───╋─▶3)│PairWithRemoteCard│to create a secure channel    ┃     │       ┃         └───────────┘                             ┃
+│  │  │  │  │   ┃               └────────────┘                         ┃             ┃      ┌──────────────┐                             ┃
+│  │  │  │  │   ┃    ┌──────────────────┐                              ┃     ┌───────╋──▶10)│ReceivePhonons│and save to card.            ┃
+│  │  │  │  └───╋─▶3)│PairWithRemoteCard│to create a secure channel    ┃     │       ┃      └──────────────┘                             ┃
 │  │  │  │      ┃    └──────────────────┘                              ┃     │       ┃                                                   ┃
 │  │  │  │      ┃    between two cards.                                ┃     │       ┃            ┌───────────┐                          ┃
 │  │  │  │      ┃    ┌───────────────┐                                 ┃     │  ┌────╋──▶11) Send │AckRecieved│ in return.               ┃
@@ -88,13 +88,13 @@
 │  │  │         ┃                                                      ┃     │  │    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 │  │  │         ┃  7) Validate assets via remote chains/protocols.     ┃     │  │
 │  │  │         ┃                                                      ┃     │  │
-│  │  │         ┃    ┌────────────────┐                                ┃     │  │
-│  │  └─────────╋─▶8)│ApproveProposal │and send to the paired card.    ┃     │  │
-│  │            ┃    └────────────────┘                                ┃     │  │
+│  │  │         ┃    ┌───────────────┐                                 ┃     │  │
+│  │  └─────────╋─▶8)│ApproveProposal│ and send to the paired card.    ┃     │  │
+│  │            ┃    └───────────────┘                                 ┃     │  │
 │  │            ┃     ┌──────────────┐                                 ┃     │  │
 │  └────────────╋─▶10)│ReceivePhonons│and send to the Phonon card. ◀───╋─────┘  │
 │               ┃     └──────────────┘                                 ┃        │
-│               ┃           ┌─────────────┐                            ┃        │
-└───────────────╋─▶11) Relay│ AckReceived │ from the Phonon card. ◀────╋────────┘
-                ┃           └─────────────┘                            ┃
+│               ┃           ┌───────────┐                              ┃        │
+└───────────────╋─▶11) Relay│AckReceived│ from the Phonon card. ◀──────╋────────┘
+                ┃           └───────────┘                              ┃
                 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛

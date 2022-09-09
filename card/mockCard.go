@@ -584,6 +584,7 @@ func (c *MockCard) SetDescriptor(phonon *model.Phonon) error {
 	storedPhonon.ExtendedSchemaVersion = phonon.ExtendedSchemaVersion
 	storedPhonon.CurrencyType = phonon.CurrencyType
 	storedPhonon.Denomination = phonon.Denomination
+	storedPhonon.ChainID = phonon.ChainID
 	storedPhonon.ExtendedSchemaVersion = phonon.ExtendedSchemaVersion
 
 	return nil

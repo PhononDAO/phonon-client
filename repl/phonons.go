@@ -73,7 +73,7 @@ func setDescriptor(c *ishell.Context) {
 	if ready := checkActiveCard(c); !ready {
 		return
 	}
-	numCorrectArgs := 3
+	numCorrectArgs := 4
 	if len(c.Args) != numCorrectArgs {
 		c.Printf("setDescriptor requires %v args\n", numCorrectArgs)
 		return
@@ -91,7 +91,13 @@ func setDescriptor(c *ishell.Context) {
 	}
 	currencyType := model.CurrencyType(currencyTypeInt)
 
-	value, err := strconv.ParseUint(c.Args[2], 10, 0)
+	chainID, err := strconv.Atoi(c.Args[2])
+	if err != nil {
+		c.Println("chainID could not be parsed: ", err)
+		return
+	}
+
+	value, err := strconv.ParseUint(c.Args[3], 10, 0)
 	if err != nil {
 		c.Println("value could not be parse: ", err)
 		return
@@ -106,6 +112,7 @@ func setDescriptor(c *ishell.Context) {
 		KeyIndex:     model.PhononKeyIndex(keyIndex),
 		CurrencyType: currencyType,
 		Denomination: denomination,
+		ChainID:      chainID,
 	}
 
 	err = activeCard.SetDescriptor(p)

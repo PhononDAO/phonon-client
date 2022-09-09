@@ -76,7 +76,7 @@ func Start() {
 		Name: "setDescriptor",
 		Func: setDescriptor,
 		Help: `Set the metadata associated with this phonon.
-		       Args: [KeyIndex] [CurrencyType] [Value]`,
+		       Args: [KeyIndex] [CurrencyType] [ChainID] [Value]`,
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "redeem",

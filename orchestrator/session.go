@@ -329,6 +329,8 @@ func (s *Session) GetName() (string, error) {
 	if s.friendlyName != "" {
 		return s.friendlyName, nil
 	} else {
+		s.ElementUsageMtex.Lock()
+		defer s.ElementUsageMtex.Unlock()
 		var err error
 		s.friendlyName, err = s.cs.GetFriendlyName()
 		if err != nil {

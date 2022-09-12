@@ -21,7 +21,7 @@ import (
 var ErrGasCostExceedsRedeemValue = errors.New("cannot redeem phonon where gas cost would exceed on chain balance")
 var ErrRedeemAddressInvalid = errors.New("redeem address is invalid")
 
-//Composite interface supporting all needed EVM RPC calls
+// Composite interface supporting all needed EVM RPC calls
 type EthChainInterface interface {
 	bind.ContractTransactor
 	ethereum.ChainStateReader
@@ -30,6 +30,28 @@ type EthChainService struct {
 	gasLimit  uint64
 	cl        EthChainInterface //*ethclient.Client // //bind.ContractTransactor
 	clChainID int
+}
+
+type supportedChains struct {
+	ChainID      uint
+	Ticker       string
+	Name         string
+	CurrencyType uint
+}
+
+func GetSupportedChains() []supportedChains {
+	var chains []supportedChains
+
+	chains = append(chains, supportedChains{ChainID: 3, Ticker: "ETH", Name: "Ropsten", CurrencyType: 2})
+	chains = append(chains, supportedChains{ChainID: 42, Ticker: "ETH", Name: "Kovan", CurrencyType: 2})
+	chains = append(chains, supportedChains{ChainID: 0, Ticker: "nPhonon", Name: "Native", CurrencyType: 3})
+	chains = append(chains, supportedChains{ChainID: 4, Ticker: "RINKEBY-EITH", Name: "Rinkeby", CurrencyType: 2})
+	chains = append(chains, supportedChains{ChainID: 5, Ticker: "GOERLI-EITH", Name: "Goerli", CurrencyType: 2})
+	chains = append(chains, supportedChains{ChainID: 56, Ticker: "BNB", Name: "binance-testnet", CurrencyType: 2})
+	chains = append(chains, supportedChains{ChainID: 80001, Ticker: "MATIC-TEST", Name: "polygon-testnet", CurrencyType: 2})
+	chains = append(chains, supportedChains{ChainID: 42113, Ticker: "AVAX-TEST", Name: "avalanche-mainnet", CurrencyType: 2})
+
+	return chains
 }
 
 func NewEthChainService() (*EthChainService, error) {
@@ -215,8 +237,8 @@ func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce u
 	return signedTx, nil
 }
 
-//Hacky function to ensure a phonon can be redeemed before an irreversible DESTROY_PHONON command is executed to redeem it.
-//Returns an error if the phonon can't be redeemed, or nil if it can
+// Hacky function to ensure a phonon can be redeemed before an irreversible DESTROY_PHONON command is executed to redeem it.
+// Returns an error if the phonon can't be redeemed, or nil if it can
 func (eth *EthChainService) CheckRedeemable(p *model.Phonon, redeemAddress string) (err error) {
 	//Check that fromAddress exists, if not derive it
 	if p.Address == "" {

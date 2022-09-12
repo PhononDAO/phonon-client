@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/GridPlus/phonon-client/chain"
 	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
@@ -108,6 +109,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/connectionStatus", session.RemoteConnectionStatus)
 	r.HandleFunc("/cards/{sessionID}/connectLocal", session.ConnectLocal)
 	r.HandleFunc("/checkDenomination", verifyDenomination)
+	r.HandleFunc("/listChains", listChains)
 	// api docs
 	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/", http.FileServer(http.FS(swagger))))
 	r.HandleFunc("/swagger.json", serveAPIFunc(port))
@@ -248,6 +250,16 @@ func parseJSLogLevel(input interface{}) (int, error) {
 	}
 	lvlInt := int(lvlFloat64)
 	return lvlInt, nil
+}
+
+func listChains(w http.ResponseWriter, r *http.Request) {
+	chains := chain.GetSupportedChains()
+
+	err := json.NewEncoder(w).Encode(chains)
+	if err != nil {
+		http.Error(w, "unable to encode supported chains: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request) {

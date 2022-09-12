@@ -525,6 +525,30 @@ paths:
             schema:
               type: string
         required: true
+  /listChains:
+    post:
+      tags:
+        - general
+      summary: list the chains that the testnet supports
+      responses:
+        "200":
+          description: return list of chains for testnet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    ChainId:
+                      type: number
+                    Ticker:
+                      type: string
+                    Name:
+                      type: string
+                    CurrencyType:
+                      type: number
+        "500":
+          description: unable to list chains
 components:
   requestBodies:
     Body:

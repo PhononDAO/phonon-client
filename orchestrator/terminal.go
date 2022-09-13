@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/GridPlus/keycard-go/io"
 	"github.com/GridPlus/phonon-client/card"
@@ -63,6 +64,15 @@ func (t *PhononTerminal) RefreshSessions() ([]*Session, error) {
 		return nil, errors.New("no cards detected")
 	}
 	return t.sessions, nil
+}
+
+func (t *PhononTerminal) SafeRefreshSessions() ([]*Session, error) {
+	for _, sess := range t.sessions {
+		if sess.isMiningActive || sess.IsPairedToCard() {
+			return nil, fmt.Errorf("unable to refresh. One or more cards currently paired")
+		}
+	}
+	return t.RefreshSessions()
 }
 
 func (t *PhononTerminal) ListSessions() []*Session {

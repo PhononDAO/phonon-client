@@ -87,6 +87,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	// sessions
 	r.HandleFunc("/genMock", session.generatemock)
 	r.HandleFunc("/listSessions", session.listSessions)
+	r.HandleFunc("/refreshSessions", session.refreshSessions)
 	r.HandleFunc("/cards/{sessionID}/init", session.init)
 	r.HandleFunc("/cards/{sessionID}/unlock", session.unlock)
 	r.HandleFunc("/cards/{sessionID}/pair", session.pair)
@@ -248,6 +249,15 @@ func parseJSLogLevel(input interface{}) (int, error) {
 	}
 	lvlInt := int(lvlFloat64)
 	return lvlInt, nil
+}
+
+func (apiSession apiSession) refreshSessions(w http.ResponseWriter, r *http.Request) {
+	_, err := apiSession.t.SafeRefreshSessions()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	apiSession.listSessions(w, r)
 }
 
 func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request) {

@@ -39,18 +39,18 @@ type supportedChains struct {
 	CurrencyType uint
 }
 
+var chains = []supportedChains{
+	{ChainID: 3, Ticker: "ETH", Name: "Ropsten", CurrencyType: 2},
+	{ChainID: 42, Ticker: "ETH", Name: "Kovan", CurrencyType: 2},
+	{ChainID: 0, Ticker: "nPhonon", Name: "Native", CurrencyType: 3},
+	{ChainID: 4, Ticker: "RINKEBY-EITH", Name: "Rinkeby", CurrencyType: 2},
+	{ChainID: 5, Ticker: "GOERLI-EITH", Name: "Goerli", CurrencyType: 2},
+	{ChainID: 56, Ticker: "BNB", Name: "binance-testnet", CurrencyType: 2},
+	{ChainID: 80001, Ticker: "MATIC-TEST", Name: "polygon-testnet", CurrencyType: 2},
+	{ChainID: 42113, Ticker: "AVAX-TEST", Name: "avalanche-mainnet", CurrencyType: 2},
+}
+
 func GetSupportedChains() []supportedChains {
-	var chains []supportedChains
-
-	chains = append(chains, supportedChains{ChainID: 3, Ticker: "ETH", Name: "Ropsten", CurrencyType: 2})
-	chains = append(chains, supportedChains{ChainID: 42, Ticker: "ETH", Name: "Kovan", CurrencyType: 2})
-	chains = append(chains, supportedChains{ChainID: 0, Ticker: "nPhonon", Name: "Native", CurrencyType: 3})
-	chains = append(chains, supportedChains{ChainID: 4, Ticker: "RINKEBY-EITH", Name: "Rinkeby", CurrencyType: 2})
-	chains = append(chains, supportedChains{ChainID: 5, Ticker: "GOERLI-EITH", Name: "Goerli", CurrencyType: 2})
-	chains = append(chains, supportedChains{ChainID: 56, Ticker: "BNB", Name: "binance-testnet", CurrencyType: 2})
-	chains = append(chains, supportedChains{ChainID: 80001, Ticker: "MATIC-TEST", Name: "polygon-testnet", CurrencyType: 2})
-	chains = append(chains, supportedChains{ChainID: 42113, Ticker: "AVAX-TEST", Name: "avalanche-mainnet", CurrencyType: 2})
-
 	return chains
 }
 

@@ -114,6 +114,10 @@ Here's the order of commands for running the webUI for the first time:
 
 NOTE: You don't need to checkout the submodules every time you run the webUI.
 
+# Contributing
+
+Please read the [contributing guide](./contributing/CONTRIBUTING.md).
+
 # License
 
 The source code files in this repository are license under the terms of the Mozilla Public License 2.0

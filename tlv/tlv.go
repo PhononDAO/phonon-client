@@ -2,6 +2,7 @@ package tlv
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -17,7 +18,7 @@ type TLVCollection map[byte][][]byte
 
 type TLVList []TLV
 
-const MaxValueBytes = 256
+const MaxValueBytes = 65535 // 2^16-1
 
 var ErrValueLengthExceedsMax = errors.New("value exceeds max allowable length")
 var ErrDataNotFound = errors.New("data read hit EOF before specified length was reached")
@@ -48,11 +49,71 @@ Returning a flattened map where the keys are tags
 and the value is a slice of raw bytes, one entry for each tag instance found.
 For any "constructedTags" passed, the parser will recurse into the value of that
 tag to find internal TLV's and append them to the collection as flattened entries */
+// func ParseTLVPacket(data []byte, constructedTags ...byte) (TLVCollection, error) {
+// 	buf := bytes.NewBuffer(data)
+// 	result := make(TLVCollection)
+
+// 	for {
+// 		tag, err := buf.ReadByte()
+// 		if err == io.EOF {
+// 			return result, nil
+// 		}
+// 		if err != nil {
+// 			return result, err
+// 		}
+// 		length, err := buf.ReadByte()
+// 		if err == io.EOF {
+// 			return result, nil
+// 		}
+// 		if err != nil {
+// 			return result, err
+// 		}
+// 		value := make([]byte, int(length))
+// 		_, err = buf.Read(value)
+// 		if err != nil {
+// 			return result, ErrDataNotFound
+// 		}
+// 		result[tag] = append(result[tag], value)
+// 		for _, constructedTag := range constructedTags {
+// 			if tag == constructedTag {
+// 				nestedResult, err := ParseTLVPacket(value, constructedTags...)
+// 				if err != nil {
+// 					return result, err
+// 				}
+// 				result = mergeTLVCollections(result, nestedResult)
+// 			}
+// 		}
+// 	}
+// }
+
+/*
+Parses a TLV encoded response structure
+Returning a flattened map where the keys are tags
+and the value is a slice of raw bytes, one entry for each tag instance found.
+For any "constructedTags" passed, the parser will recurse into the value of that
+tag to find internal TLV's and append them to the collection as flattened entries
+
+Extends the max length of Value to 65535 instead of 256 bytes.
+
+The TLV is parsed as follows:
+TAG: 1st byte
+LENGTH: can be encoded using a GROUP 1 to 3 bytes
+- 1st byte of LENGTH group defines the number of bytes encoding the LENGTH
+- case LENGTH < 0x7f (127) -> LENGTH encoded using single byte
+	- the LENGHT byte has already been read
+- CASE 0x7f < LENGTH < 0xff -> LENGTH encoded using 2 bytes
+    - the first byte will be 0x81
+	- second byte is the LENGTH
+- case LENGTH > 0xff (255) -> LENGTH encoded using 3 bytes
+    - first byte will be 0x82
+	- second and third bytes are the actual value LENGTH
+*/
 func ParseTLVPacket(data []byte, constructedTags ...byte) (TLVCollection, error) {
 	buf := bytes.NewBuffer(data)
 	result := make(TLVCollection)
 
 	for {
+		// TAG is always 1 byte long in our implementation
 		tag, err := buf.ReadByte()
 		if err == io.EOF {
 			return result, nil
@@ -60,18 +121,43 @@ func ParseTLVPacket(data []byte, constructedTags ...byte) (TLVCollection, error)
 		if err != nil {
 			return result, err
 		}
-		length, err := buf.ReadByte()
-		if err == io.EOF {
-			return result, nil
-		}
+
+		length := 0
+		// specifies length of bytes encoding TLV VALUE length
+		lenSpecifier, err := buf.ReadByte()
 		if err != nil {
 			return result, err
 		}
+
+		if lenSpecifier <= 0x7F {
+			// LENGTH encoded using single byte
+			length = int(lenSpecifier)
+		} else if lenSpecifier == 0x81 {
+			// 0x7f < LENGTH < 0xff -> LENGTH encoded using 2 bytes
+			lenByte, err := buf.ReadByte()
+			if err != nil {
+				return result, err
+			}
+			length = int(lenByte)
+		} else if lenSpecifier == 0x82 {
+			// LENGTH > 256 -> LENGTH encoded using 3 bytes
+			lenBytes, err := buf.ReadBytes(2)
+			if err != nil {
+				return result, err
+			}
+			length = int(binary.BigEndian.Uint16(lenBytes))
+		} else {
+			return result, errors.New("invalid value prefix encoding")
+		}
+
 		value := make([]byte, int(length))
 		_, err = buf.Read(value)
-		if err != nil {
-			return result, ErrDataNotFound
+		if err != nil && errors.Is(err, io.EOF) {
+			return result, nil
+		} else if err != nil {
+			return result, err
 		}
+
 		result[tag] = append(result[tag], value)
 		for _, constructedTag := range constructedTags {
 			if tag == constructedTag {
@@ -83,7 +169,6 @@ func ParseTLVPacket(data []byte, constructedTags ...byte) (TLVCollection, error)
 			}
 		}
 	}
-
 }
 
 func mergeTLVCollections(collections ...TLVCollection) TLVCollection {

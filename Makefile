@@ -27,8 +27,9 @@ android-sdk:
 	cd session && gomobile bind  -target android -o ../androidSDK/phononAndroid.aar
 
 frontend:
-	(cd gui/frontend && npm install)
-	(cd gui/frontend && npm run build)
+	#(cd gui/frontend && npm install)
+	#(cd gui/frontend && npm run build)
+	echo "this is where the frontend build would be if there was one"
 jumpbox-only: generate
 	go build -o jumpbox extra/jumpbox/main.go
 release-mac: generate frontend
@@ -50,7 +51,3 @@ release-win: windows-build
 	go run extra/wxsgenerator/generator.go release/win/wix/phonon.wxs.templ > phonon.wxs
 	candle.exe "phonon.wxs"  -ext WixUtilExtension -ext wixUIExtension -arch x64
 	light.exe ".\phonon.wixobj" -b ".\release\win\wix" -ext wixUIExtension  -ext WixUtilExtension -spdb
-
-
-checkout-submodules:
-	git submodule update --init

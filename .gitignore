@@ -18,3 +18,5 @@ phonon_arm64
 phonon_x86_64
 release/MacOS/Phonon.app/Contents/MacOS/phonon_arm64
 release/MacOS/Phonon.app/Contents/MacOS/phonon_x86_64
+gui/frontend/node_modules
+gui/frontend/build

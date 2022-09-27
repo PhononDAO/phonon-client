@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"math/bits"
 	"unicode"
 
 	"github.com/GridPlus/keycard-go/crypto"
@@ -879,6 +880,9 @@ func (c *MockCard) MineNativePhonon(difficulty uint8) (model.PhononKeyIndex, []b
 	rand.Reader.Read(buf)
 	fmt.Printf("generated salt for native private key: % X\n", string(buf))
 	pubKey := DeriveNativePhononPubKey(buf)
+	if !correctDifficulty(pubKey.Hash, int(difficulty)) {
+		return model.PhononKeyIndex(0), nil, ErrMiningFailed
+	}
 	r, s, err := ecdsa.Sign(rand.Reader, c.identityKey, pubKey.Bytes())
 	if err != nil {
 		return 0, nil, err
@@ -898,6 +902,24 @@ func (c *MockCard) MineNativePhonon(difficulty uint8) (model.PhononKeyIndex, []b
 		false,
 	})
 	return index, pubKey.Bytes(), nil
+}
+
+func correctDifficulty(input []byte, difficulty int) bool {
+	zeroBits := 0
+	for _, individualByte := range input {
+		add := bits.LeadingZeros8(uint8(individualByte))
+		zeroBits += add
+		if zeroBits == difficulty {
+			return true
+		}
+		if add < 8 {
+			return false
+		}
+		if zeroBits > difficulty {
+			return false
+		}
+	}
+	return false
 }
 
 /*Takes a 32 byte salt as input to generate and return a sha512 hash of it.

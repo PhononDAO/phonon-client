@@ -60,7 +60,9 @@ go run main/phonon.go init
 
 ## Dependencies
 
-A recent version of golang, up to date requirement given in the go.mod file. (1.16 as of this writing.)
+A recent version of golang, up to date requirement given in the go.mod file. (1.19 as of this writing.)
+
+To build the frontend submodule, you'll need to have nodejs and npm installed prior to running the `make build` command.
 
 The go stringer tool, which generates human readable strings based on constant variable names for display and data exchange purposes. Install with:
 

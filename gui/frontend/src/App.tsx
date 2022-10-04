@@ -1,22 +1,26 @@
-import React from 'react';
-import { useTranslation, withTranslation } from 'react-i18next';
+import React, { Suspense, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
-function App(i18n) {
-  const { t } = useTranslation();
+function App() {
+  const { t, i18n } = useTranslation();
 
-  const changeLanguage = async (language) => {
-    await i18n.changeLanguage(language);
-  };
+  // const changeLanguage = async (language) => {
+  //   return await i18n.changeLanguage(language);
+  // };
 
-  changeLanguage('fr-FR').catch((err) => {
-    console.log(err);
-  });
+  // useEffect(() => {
+  //   changeLanguage('fr-FR').catch((err) => {
+  //     console.log(err);
+  //   });
+  // }, []);
 
   return (
-    <div className="App">
-      <header className="text-4xl">{t('PHONON MANAGER GOES HERE')}</header>
-    </div>
+    <Suspense fallback="loading">
+      <div className="App">
+        <header className="text-4xl">{t('PHONON MANAGER GOES HERE')}</header>
+      </div>
+    </Suspense>
   );
 }
 
-export default withTranslation()(App);
+export default App;

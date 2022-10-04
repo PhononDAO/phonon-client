@@ -1,11 +1,22 @@
 import React from 'react';
+import { useTranslation, withTranslation } from 'react-i18next';
 
-function App() {
+function App(i18n) {
+  const { t } = useTranslation();
+
+  const changeLanguage = async (language) => {
+    await i18n.changeLanguage(language);
+  };
+
+  changeLanguage('fr-FR').catch((err) => {
+    console.log(err);
+  });
+
   return (
     <div className="App">
-      <header className="text-4xl">PHONON MANAGER GOES HERE</header>
+      <header className="text-4xl">{t('PHONON MANAGER GOES HERE')}</header>
     </div>
   );
 }
 
-export default App;
+export default withTranslation()(App);

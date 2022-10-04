@@ -8,10 +8,12 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "bignumber.js": "^9.1.0",
+    "i18next": "^21.9.2",
     "luxon": "^3.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.36.1",
+    "react-i18next": "^11.18.6",
     "react-redux": "^8.0.4",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
@@ -22,7 +24,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint --config .eslintrc --ignore-path .eslintignore src/**/*"
+    "lint": "eslint --config .eslintrc --ignore-path .eslintignore src/**/*",
+    "i18n-extract": "i18next 'src/**/*.{ts,tsx}' -c './i18next-parser.config.mjs'"
   },
   "eslintConfig": {
     "extends": [
@@ -64,6 +67,7 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "eslint-plugin-testing-library": "^5.0.4",
     "eslint-plugin-unused-imports": "^2.0.0",
+    "i18next-parser": "^6.5.0",
     "lint-staged": "^12.5.0",
     "postcss": "^8.4.17",
     "prettier": "2.7.1",

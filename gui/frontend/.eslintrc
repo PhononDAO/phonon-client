@@ -13,7 +13,8 @@
     "ecmaFeatures": {
       "jsx": true // Allows for the parsing of JSX,
     },
-    "project": ["tsconfig.json"],
+    "project": "tsconfig.json",
+    "tsconfigRootDir": ".",
     "projectFolderIgnoreList": [
       "node_modules/*",
       "node_modules",
@@ -54,6 +55,7 @@
     "@typescript-eslint/no-unsafe-assignment": "off",
     "@typescript-eslint/no-unsafe-member-access": "off",
     "@typescript-eslint/no-explicit-any": "off",
+    "react/react-in-jsx-scope": "off",
     "comma-dangle": 1,
     "prettier/prettier": [
       "error",

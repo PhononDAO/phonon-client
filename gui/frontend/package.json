@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "description": "Phonon Manager",
-  "version": "Beta.0.0",
+  "version": "0.0.0",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.5",
@@ -20,8 +20,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "start:tailwind": "tailwindcss -i src/index.css -o src/output.css --watch",
-    "build": "react-scripts build",
+    "start:tailwind": "tailwindcss -i src/index.css -o src/styles.css --watch",
+    "version": "npx genversion ./src/constants/version.ts --es6",
+    "build": "npm run version && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint --config .eslintrc --ignore-path .eslintignore src/**/*",
@@ -68,6 +69,7 @@
     "eslint-plugin-testing-library": "^5.0.4",
     "eslint-plugin-unused-imports": "^2.0.0",
     "i18next-parser": "^6.5.0",
+    "genversion": "^3.1.1",
     "lint-staged": "^12.5.0",
     "postcss": "^8.4.17",
     "prettier": "2.7.1",

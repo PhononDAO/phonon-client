@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-function App() {
+const App = () => {
   const { t, i18n } = useTranslation();
 
   // const changeLanguage = async (language) => {
@@ -21,6 +21,6 @@ function App() {
       </div>
     </Suspense>
   );
-}
+};
 
 export default App;

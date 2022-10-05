@@ -1,21 +1,21 @@
 # API Errors
 
-Errors are returned as an object with a code/message pair.
+Errors are returned as an object with a key/message pair.
 
 ## Example Error Object
 
 ```
 {
-    code: 0,
+    key: "UNKNOWN ERROR",
     message: "Unknown Error"
 }
 ```
 
-# Error Codes
+# Error Keys and Messages
 
-The following error codes are returned from the API.
+The following errors are returned from the API.
 
-| HTTP Status Code | Code | Message           | Notes                                          |
-| ---------------- | ---- | ----------------- | ---------------------------------------------- |
-| 500              | 0    | Unknown Error     |                                                |
-| 400              | 1    | Field is required | This error will return for each required field |
+| HTTP Status Code | Key            | Message           | Notes                                          |
+| ---------------- | -------------- | ----------------- | ---------------------------------------------- |
+| 500              | UNKONWN_ERROR  | Unknown Error     |                                                |
+| 400              | FIELD_REQUIRED | Field is required | This error will return for each required field |

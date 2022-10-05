@@ -64,7 +64,7 @@ throw new Error({
 
 ### API Errors
 
-API Error Codes can be found here: [API_ERROR_CODES](./../API_ERROR_CODES.md).
+API Error Keys and Messages can be found here: [API_ERROR_CODES](./../API_ERROR_CODES.md).
 
 ### Form Errors
 

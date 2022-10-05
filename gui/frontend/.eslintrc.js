@@ -58,12 +58,12 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
-    'comma-dangle': 1,
+    'comma-dangle': 0,
     'prettier/prettier': [
       'error',
       {
         semi: true,
-        trailingComma: 'all',
+        trailingComma: 'none',
         endofLine: 'auto',
         singleQuote: true,
         printWidth: 80,

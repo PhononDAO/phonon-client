@@ -18,5 +18,5 @@ root.render(
         <App />
       </I18nextProvider>
     </ErrorBoundary>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

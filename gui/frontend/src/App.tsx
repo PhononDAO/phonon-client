@@ -24,11 +24,11 @@ const App = () => {
           toastOptions={{
             duration: 8000,
             success: {
-              className: 'border border-green-300',
+              className: 'border border-green-300'
             },
             error: {
-              className: 'border border-red-300',
-            },
+              className: 'border border-red-300'
+            }
           }}
         />
         <header className="text-4xl">{t('PHONON MANAGER GOES HERE')}</header>

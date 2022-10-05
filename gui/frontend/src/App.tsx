@@ -22,7 +22,7 @@ const App = () => {
         <Toaster
           position="top-right"
           toastOptions={{
-            duration: 80000,
+            duration: 8000,
             success: {
               className: 'border border-green-300',
             },

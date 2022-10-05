@@ -1,6 +1,6 @@
 export const ErrorHandler = (
   error: Error,
-  info: { componentStack: string }
+  info: { componentStack: string },
 ) => {
   // Do something with the error
   console.error(error);

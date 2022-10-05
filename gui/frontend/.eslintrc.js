@@ -63,7 +63,7 @@ module.exports = {
       'error',
       {
         semi: true,
-        trailingComma: 'none',
+        trailingComma: 'es5',
         endofLine: 'auto',
         singleQuote: true,
         printWidth: 80,

@@ -18,6 +18,6 @@ export const useFeature = (): { [feature: string]: boolean } => {
     Object.entries(features).map(([key, [_fix, _minor, _major]]) => [
       key,
       fix >= _fix && minor >= _minor && major >= _major,
-    ]),
+    ])
   );
 };

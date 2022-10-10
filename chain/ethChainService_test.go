@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
+
 	// "github.com/ethereum/go-ethereum/core/types"
 
 	// "github.com/ethereum/go-ethereum/common"
@@ -42,8 +43,8 @@ func getSimEVM() (*backends.SimulatedBackend, error) {
 	return simEVM, nil
 }
 
-//TestEthChainServiceRedeem smoke tests the basic redeem funtionality using a ganache backend.
-//Ganache must be stood up manually and this test must be hand edited with valid keys to function.
+// TestEthChainServiceRedeem smoke tests the basic redeem funtionality using a ganache backend.
+// Ganache must be stood up manually and this test must be hand edited with valid keys to function.
 func TestEthChainServiceRedeem(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
@@ -70,9 +71,8 @@ func TestEthChainServiceRedeem(t *testing.T) {
 	}
 
 	//Manually substitute simulated backend for usual RPC client
-	testChainID := 1337
 	eth.cl = sim
-	eth.clChainID = testChainID
+	eth.clChainID = 1337
 
 	pubKey, err := model.NewPhononPubKey(crypto.FromECDSAPub(&senderPrivKey.PublicKey), model.Secp256k1)
 	if err != nil {
@@ -83,7 +83,7 @@ func TestEthChainServiceRedeem(t *testing.T) {
 		KeyIndex:     1,
 		PubKey:       pubKey,
 		CurrencyType: model.Ethereum,
-		ChainID:      testChainID,
+		ChainID:      eth.clChainID,
 	}
 	p.Address, err = eth.DeriveAddress(p)
 	if err != nil {
@@ -99,7 +99,7 @@ func TestEthChainServiceRedeem(t *testing.T) {
 	fixedGasPrice := big.NewInt(875000000)
 	phononValue := big.NewInt(10000000000000000)
 	_, err = eth.submitLegacyTransaction(ctx, nonce,
-		big.NewInt(int64(testChainID)),
+		big.NewInt(int64(eth.clChainID)),
 		common.HexToAddress(p.Address),
 		phononValue,
 		eth.gasLimit,

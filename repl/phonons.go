@@ -112,7 +112,7 @@ func setDescriptor(c *ishell.Context) {
 		KeyIndex:     model.PhononKeyIndex(keyIndex),
 		CurrencyType: currencyType,
 		Denomination: denomination,
-		ChainID:      chainID,
+		ChainID:      uint32(chainID),
 	}
 
 	err = activeCard.SetDescriptor(p)

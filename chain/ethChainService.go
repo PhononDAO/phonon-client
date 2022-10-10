@@ -21,7 +21,7 @@ import (
 var ErrGasCostExceedsRedeemValue = errors.New("cannot redeem phonon where gas cost would exceed on chain balance")
 var ErrRedeemAddressInvalid = errors.New("redeem address is invalid")
 
-//Composite interface supporting all needed EVM RPC calls
+// Composite interface supporting all needed EVM RPC calls
 type EthChainInterface interface {
 	bind.ContractTransactor
 	ethereum.ChainStateReader
@@ -29,7 +29,7 @@ type EthChainInterface interface {
 type EthChainService struct {
 	gasLimit  uint64
 	cl        EthChainInterface //*ethclient.Client // //bind.ContractTransactor
-	clChainID int
+	clChainID uint32
 }
 
 func NewEthChainService() (*EthChainService, error) {
@@ -118,7 +118,7 @@ func (eth *EthChainService) ValidateRedeemData(p *model.Phonon, privKey *ecdsa.P
 }
 
 // dialRPCNode establishes a connection to the proper RPC node based on the chainID
-func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
+func (eth *EthChainService) dialRPCNode(chainID uint32) (err error) {
 	log.Debugf("ethChainID: %v, chainID: %v\n", eth.clChainID, chainID)
 	var RPCEndpoint string
 	//If chainID is already set, correct RPC node is already connected
@@ -215,8 +215,8 @@ func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce u
 	return signedTx, nil
 }
 
-//Hacky function to ensure a phonon can be redeemed before an irreversible DESTROY_PHONON command is executed to redeem it.
-//Returns an error if the phonon can't be redeemed, or nil if it can
+// Hacky function to ensure a phonon can be redeemed before an irreversible DESTROY_PHONON command is executed to redeem it.
+// Returns an error if the phonon can't be redeemed, or nil if it can
 func (eth *EthChainService) CheckRedeemable(p *model.Phonon, redeemAddress string) (err error) {
 	//Check that fromAddress exists, if not derive it
 	if p.Address == "" {

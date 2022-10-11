@@ -29,7 +29,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "start:tailwind": "tailwindcss -i src/index.css -o src/styles.css --watch",
+    "start:tailwind": "tailwindcss -i src/assets/css/index.css -o src/styles.css --watch",
     "version": "npx genversion ./src/constants/Version.ts --es6",
     "build": "npm run version && react-scripts build",
     "test": "react-scripts test",
@@ -87,7 +87,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "npm run lint -- --quiet --fix"
+      "npm run lint -- --quiet --fix --no-error-on-unmatched-pattern"
     ]
   }
 }

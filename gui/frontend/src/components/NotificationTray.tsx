@@ -1,43 +1,57 @@
-import { useToaster } from 'react-hot-toast/headless';
+import { toast, Toaster, ToastBar } from 'react-hot-toast';
+import { IonIcon } from '@ionic/react';
+import { closeOutline } from 'ionicons/icons';
 
-export const NotificationTray = () => {
-  const { toasts, handlers } = useToaster();
-  const { startPause, endPause, calculateOffset, updateHeight } = handlers;
-
+export const NotificationTray: React.FC = () => {
   return (
-    <div
-      className="fixed top-2 left-2 w-48 z-100"
-      onMouseEnter={startPause}
-      onMouseLeave={endPause}
+    <Toaster
+      position="top-right"
+      toastOptions={{
+        style: {
+          width: '400px',
+          padding: '0px',
+        },
+        duration: 8000,
+        success: {
+          className: 'border border-green-400',
+        },
+        error: {
+          className: 'border border-red-400',
+        },
+      }}
     >
-      {toasts.map((toast) => {
-        const offset = calculateOffset(toast, {
-          reverseOrder: false,
-          gutter: 8,
-        });
-
-        const ref = (el) => {
-          if (el && typeof toast.height !== 'number') {
-            const height = el.getBoundingClientRect().height;
-            updateHeight(toast.id, height);
-          }
-        };
-        return (
-          <div
-            key={toast.id}
-            ref={ref}
-            className="absolute w-48 bg-gray-200 rounded border-gray-400"
-            style={{
-              transition: 'all 0.5s ease-out',
-              //   opacity: toast.visible ? 1 : 0,
-              transform: `translateY(${offset}px)`,
-            }}
-            {...toast.ariaProps}
-          >
-            {toast.message}
-          </div>
-        );
-      })}
-    </div>
+      {(t) => (
+        <>
+          <ToastBar toast={t}>
+            {({ icon, message }) => (
+              <div className="rounded w-full overflow-hidden">
+                <div className="flex w-full justify-between px-4 py-2">
+                  <div className="flex">
+                    {icon}
+                    {message}
+                  </div>
+                  {t.type !== 'loading' && (
+                    <button
+                      className="flex items-center justify-self-end"
+                      onClick={() => toast.dismiss(t.id)}
+                    >
+                      <IonIcon icon={closeOutline} />
+                    </button>
+                  )}
+                </div>
+                {t.type !== 'loading' && (
+                  <div
+                    className={
+                      'border-b-3 animate-dismissIndicator w-full ' +
+                      String(t.className)
+                    }
+                  ></div>
+                )}
+              </div>
+            )}
+          </ToastBar>
+        </>
+      )}
+    </Toaster>
   );
 };

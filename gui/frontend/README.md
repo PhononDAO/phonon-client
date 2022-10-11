@@ -143,7 +143,30 @@ useEffect(() => {
 
 ## Notifications
 
-**TODO**
+The application has a notification system built in. Notifications are handled by [react-hot-toast](https://react-hot-toast.com/).
+
+To send a success notification:
+
+```
+notifySuccess('This was a success!');
+```
+
+To send an error notification:
+
+```
+notifyError('There was an error.');
+```
+
+To send a promise notification:
+
+```
+const somePromise = new Promise((resolve) => setTimeout(resolve, 4000));
+
+notifyPromise(
+    somePromise,
+    'blockchain transaction'
+);
+```
 
 ## Testing
 

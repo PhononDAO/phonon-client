@@ -14,9 +14,9 @@ const root = createRoot(container!);
 root.render(
   <React.StrictMode>
     <ErrorBoundary FallbackComponent={ErrorFallback} onError={ErrorHandler}>
-        <I18nextProvider i18n={i18n}>
-          <App />
-        </I18nextProvider>
+      <I18nextProvider i18n={i18n}>
+        <App />
+      </I18nextProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

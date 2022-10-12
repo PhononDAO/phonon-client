@@ -1,0 +1,108 @@
+                                            ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                            +                                                                                    +
+                                            +  NOTE: This diagram and implementation process is a work-in-progress.  This        +
+                                            +  document should be updated accordingly as the transaction process is solidified.  +
+                                            +                                                                                    +
+                                            +  You can update this document using the respective monopic file and Monodraw:      +
+                                            +  https://monodraw.helftone.com/                                                    +
+                                            +                                                                                    +
+                                            ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                                      _               _                                 __
+                                                     /_\  _ __   __ _| |_ ___  _ __ ___  _   _    ___  / _|   __ _
+                                                    //_\\| '_ \ / _` | __/ _ \| '_ ` _ \| | | |  / _ \| |_   / _` |
+                                                   /  _  \ | | | (_| | || (_) | | | | | | |_| | | (_) |  _| | (_| |
+                                                   \_/ \_/_| |_|\__,_|\__\___/|_| |_| |_|\__, |  \___/|_|    \__,_|
+                                                                                         |___/
+                                       ___ _                               _____                                _   _
+                                      / _ \ |__   ___  _ __   ___  _ __   /__   \_ __ __ _ _ __  ___  __ _  ___| |_(_) ___  _ __
+                                     / /_)/ '_ \ / _ \| '_ \ / _ \| '_ \    / /\/ '__/ _` | '_ \/ __|/ _` |/ __| __| |/ _ \| '_ \
+                                    / ___/| | | | (_) | | | | (_) | | | |  / /  | | | (_| | | | \__ \ (_| | (__| |_| | (_) | | | |
+                                    \/    |_| |_|\___/|_| |_|\___/|_| |_|  \/   |_|  \__,_|_| |_|___/\__,_|\___|\__|_|\___/|_| |_|
+
+
+
+
+                              +-+-+-+-+-+ +-+-+-+-+-+-+-+-+
+                              |B|O|B|'|S| |T|E|R|M|I|N|A|L|
+                              +-+-+-+-+-+ +-+-+-+-+-+-+-+-+                                            +-+-+-+-+-+ +-+-+-+-+
+                ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                               |B|O|B|'|S| |C|A|R|D|
+                ┃       This code originates in orchestrator directory.┃                               +-+-+-+-+-+ +-+-+-+-+
+                ┃                                                      ┃              ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                ┃                            ┌───────────────┐         ┃              ┃         This code originates in card/apdu.go file.┃
+                ┃  1) Detect card by calling:│RefreshSessions│         ┃              ┃                                                   ┃
+                ┃                            └───────────────┘         ┃              ┃                                 ┌─────────┐       ┃
+                ┃               ┌────────────┐                         ┃      ┌───────╋─▶2) Verify the PIN with command:│VerifyPIN│       ┃
+                ┃  2) Request a │ NewSession │ with the Phonon Card.◀──╋──────┘       ┃                                 └─────────┘       ┃
+                ┃               └────────────┘                         ┃              ┃        ┌───────────┐                              ┃
+                ┃    ┌──────────────────┐                              ┃      ┌───────╋─▶4) Run│ListPhonons│and return Phonons on card.   ┃
+            ┌───╋─▶3)│PairWithRemoteCard│to create a secure channel    ┃      │       ┃        └───────────┘                              ┃
+            │   ┃    └──────────────────┘                              ┃      │       ┃                                                   ┃
+            │   ┃    between two cards.                                ┃      │  ┌────╋─▶6) Create a transfer proposal by calling         ┃
+            │   ┃                                       ┌───────────┐  ┃      │  │    ┃     ┌──────────────────┐                          ┃
+            │   ┃  4) Detect Phonons on card by calling:│ListPhonons│◀─╋──────┘  │    ┃     │ GenerateProposal │                          ┃
+            │   ┃                                       └───────────┘  ┃         │    ┃     └──────────────────┘                          ┃
+            │   ┃    ┌───────────────────────┐                         ┃         │    ┃    ┌───────────┐                                  ┃
+            │   ┃  5)│CreateTransferProposal │with a subset of Phonons ┃  ┌──────┘┌───╋─▶8)│SendPhonons│and destroy Phonons on card.      ┃
+            │   ┃    └───────────────────────┘                         ┃  │       │   ┃    └───────────┘                                  ┃
+            │   ┃     from the card's list.                            ┃  │       │   ┃                                                   ┃
+            │   ┃                                                      ┃  │       │ ┌─╋▶ 10) Clean up the Transfer Proposal.              ┃
+            │   ┃    ┌───────────────────────┐                         ┃  │ ┌─────┘ │ ┃                                                   ┃
+         ┌──┼───╋─▶6)│ SendTransferProposal  │to the paired card. ◀────╋──┘ │       │ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+         │  │   ┃    └───────────────────────┘                         ┃    │       │
+         │  │   ┃                                                      ┃    │       │
+      ┌──┼──┼───╋─▶8) Receive approved proposal.                       ┃    │       │
+      │  │  │   ┃                                                      ┃    │       │
+      │  │  │   ┃                                                      ┃    │       │
+      │  │  │   ┃  9) Request the Phonons from the card. ◀─────────────╋────┘       │
+      │  │  │   ┃                                                      ┃            │
+      │  │  │   ┃     ┌───────────┐                                    ┃            │
+   ┌──┼──┼──┼───╋─▶10)│SendPhonons│to the paired card.                 ┃            │
+   │  │  │  │   ┃     └───────────┘                                    ┃   ┌────────┘
+   │  │  │  │   ┃     ┌───────────┐                                    ┃   │
+┌──┼──┼──┼──┼───╋─▶11)│AckRecieved│to the card.◀───────────────────────╋───┘
+│  │  │  │  │   ┃     └───────────┘                                    ┃
+│  │  │  │  │   ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │
+│  │  │  │  │               +-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+-+
+│  │  │  │  │               |A|L|I|C|E|'|S| |T|E|R|M|I|N|A|L|
+│  │  │  │  │               +-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+-+                                        +-+-+-+-+-+-+-+ +-+-+-+-+
+│  │  │  │  │   ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                             |A|L|I|C|E|'|S| |C|A|R|D|
+│  │  │  │  │   ┃       This code originates in orchestrator directory.┃                             +-+-+-+-+-+-+-+ +-+-+-+-+
+│  │  │  │  │   ┃                                                      ┃             ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+│  │  │  │  │   ┃                            ┌───────────────┐         ┃             ┃         This code originates in card/apdu.go file.┃
+│  │  │  │  │   ┃  1) Detect card by calling:│RefreshSessions│         ┃             ┃                                                   ┃
+│  │  │  │  │   ┃                            └───────────────┘         ┃             ┃                                  ┌─────────┐      ┃
+│  │  │  │  │   ┃               ┌────────────┐                         ┃      ┌──────╋──▶2) Verify the PIN with command:│VerifyPIN│      ┃
+│  │  │  │  │   ┃  2) Request a │ NewSession │ with the Phonon Card.◀──╋──────┘      ┃                                  └─────────┘      ┃
+│  │  │  │  │   ┃               └────────────┘                         ┃             ┃      ┌──────────────┐                             ┃
+│  │  │  │  │   ┃    ┌──────────────────┐                              ┃     ┌───────╋──▶10)│ReceivePhonons│and save to card.            ┃
+│  │  │  │  └───╋─▶3)│PairWithRemoteCard│to create a secure channel    ┃     │       ┃      └──────────────┘                             ┃
+│  │  │  │      ┃    └──────────────────┘                              ┃     │       ┃                                                   ┃
+│  │  │  │      ┃    between two cards.                                ┃     │       ┃            ┌───────────┐                          ┃
+│  │  │  │      ┃    ┌───────────────┐                                 ┃     │  ┌────╋──▶11) Send │AckRecieved│ in return.               ┃
+│  │  │  └──────╋─▶6)│ReceiveProposal│ from the paired card.           ┃     │  │    ┃            └───────────┘                          ┃
+│  │  │         ┃    └───────────────┘                                 ┃     │  │    ┃                                                   ┃
+│  │  │         ┃                                                      ┃     │  │    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+│  │  │         ┃  7) Validate assets via remote chains/protocols.     ┃     │  │
+│  │  │         ┃                                                      ┃     │  │
+│  │  │         ┃    ┌───────────────┐                                 ┃     │  │
+│  │  └─────────╋─▶8)│ApproveProposal│ and send to the paired card.    ┃     │  │
+│  │            ┃    └───────────────┘                                 ┃     │  │
+│  │            ┃     ┌──────────────┐                                 ┃     │  │
+│  └────────────╋─▶10)│ReceivePhonons│and send to the Phonon card. ◀───╋─────┘  │
+│               ┃     └──────────────┘                                 ┃        │
+│               ┃           ┌───────────┐                              ┃        │
+└───────────────╋─▶11) Relay│AckReceived│ from the Phonon card. ◀──────╋────────┘
+                ┃           └───────────┘                              ┃
+                ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛

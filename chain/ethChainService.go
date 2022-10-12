@@ -32,6 +32,28 @@ type EthChainService struct {
 	clChainID uint32
 }
 
+type supportedChains struct {
+	ChainID      uint
+	Ticker       string
+	Name         string
+	CurrencyType uint
+}
+
+var chains = []supportedChains{
+	{ChainID: 3, Ticker: "ETH", Name: "Ropsten", CurrencyType: 2},
+	{ChainID: 42, Ticker: "ETH", Name: "Kovan", CurrencyType: 2},
+	{ChainID: 0, Ticker: "nPhonon", Name: "Native", CurrencyType: 3},
+	{ChainID: 4, Ticker: "RINKEBY-EITH", Name: "Rinkeby", CurrencyType: 2},
+	{ChainID: 5, Ticker: "GOERLI-EITH", Name: "Goerli", CurrencyType: 2},
+	{ChainID: 56, Ticker: "BNB", Name: "binance-testnet", CurrencyType: 2},
+	{ChainID: 80001, Ticker: "MATIC-TEST", Name: "polygon-testnet", CurrencyType: 2},
+	{ChainID: 42113, Ticker: "AVAX-TEST", Name: "avalanche-mainnet", CurrencyType: 2},
+}
+
+func GetSupportedChains() []supportedChains {
+	return chains
+}
+
 func NewEthChainService() (*EthChainService, error) {
 	ethchainSrv := &EthChainService{
 		gasLimit: uint64(21000), //Setting to default magic value for now

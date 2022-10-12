@@ -448,8 +448,9 @@ func NewCommandInstallCert(data []byte) *Command {
 			data,
 		),
 		PossibleErrs: CmdErrTable{
-			SW_COMMAND_NOT_ALLOWED: errors.New("certificate already loaded"),
-			SW_DATA_INVALID:        errors.New("unable to save certificate"),
+			SW_COMMAND_NOT_ALLOWED:           errors.New("certificate already loaded"),
+			SW_DATA_INVALID:                  errors.New("unable to save certificate"),
+			SW_SECURITY_STATUS_NOT_SATISFIED: errors.New("installed cert signature does not match configured certificate authority"),
 		},
 	}
 }

@@ -6,6 +6,7 @@ module.exports = {
     '**/*.css',
     '**/*.less',
     '**/*.json',
+    '**/*.otf',
     '.eslintrc.js',
   ],
   parserOptions: {
@@ -24,7 +25,7 @@ module.exports = {
       '.yarn',
       'build-utils',
       'docs',
-      './src/styles',
+      './src/assets/**/*',
     ],
   },
   env: {

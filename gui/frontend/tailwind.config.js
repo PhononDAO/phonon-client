@@ -4,6 +4,12 @@ module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        'bandeins-sans': ['BandeinsSansRegular'],
+        'bandeins-sans-semibold': ['BandeinsSansSemiBold'],
+        'bandeins-sans-bold': ['BandeinsSansBold'],
+        'bandeins-sans-light': ['BandeinsSansLight'],
+      },
       keyframes: {
         dismissIndicator: {
           '0%': { width: '100%' },

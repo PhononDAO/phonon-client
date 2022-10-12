@@ -6,7 +6,10 @@ import { ErrorFallback } from './components/ErrorFallback';
 import { ErrorHandler } from './constants/ErrorHandler';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
+
 import './styles.css';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/themes/light.css';
 
 const container = document.getElementById('root');
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

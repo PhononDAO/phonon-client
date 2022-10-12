@@ -11,6 +11,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@tippyjs/react": "^4.2.6",
     "bignumber.js": "^9.1.0",
     "i18next": "^21.9.2",
     "i18next-browser-languagedetector": "^6.1.5",

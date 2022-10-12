@@ -55,10 +55,10 @@ Most errors are handled by an `ErrorBoundary` wrapper via [react-error-boundary]
 
 All logical code should be wrapped in a `try/catch` which throws an error like so:
 
-```
+```js
 throw new Error({
-    code: null, // only API errors return an error code
-    message: "Something went wrong"
+  code: null, // only API errors return an error code
+  message: 'Something went wrong',
 });
 ```
 
@@ -72,7 +72,7 @@ Form errors are handled inline using field validation via [react-hook-form](http
 
 Example:
 
-```
+```jsx
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 
@@ -127,7 +127,7 @@ To add new language locales update the `locales` in **i18next-parser.config.mjs*
 
 To change the language within the app use the `useTranslation` hook:
 
-```
+```js
 const { t, i18n } = useTranslation();
 
 const changeLanguage = async (language) => {
@@ -135,9 +135,9 @@ const changeLanguage = async (language) => {
 };
 
 useEffect(() => {
-    changeLanguage('fr-FR').catch((err) => {
-        console.log(err);
-    });
+  changeLanguage('fr-FR').catch((err) => {
+    console.log(err);
+  });
 }, []);
 ```
 
@@ -147,25 +147,22 @@ The application has a notification system built in. Notifications are handled by
 
 To send a success notification:
 
-```
+```js
 notifySuccess('This was a success!');
 ```
 
 To send an error notification:
 
-```
+```js
 notifyError('There was an error.');
 ```
 
 To send a promise notification:
 
-```
+```js
 const somePromise = new Promise((resolve) => setTimeout(resolve, 4000));
 
-notifyPromise(
-    somePromise,
-    'blockchain transaction'
-);
+notifyPromise(somePromise, 'blockchain transaction');
 ```
 
 ## Testing

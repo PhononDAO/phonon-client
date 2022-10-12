@@ -6,7 +6,7 @@ Errors are returned as an object with a key/message pair.
 
 ```
 {
-    key: "UNKNOWN ERROR",
+    key: "UNKNOWN_ERROR",
     message: "Unknown Error"
 }
 ```
@@ -17,5 +17,5 @@ The following errors are returned from the API.
 
 | HTTP Status Code | Key            | Message           | Notes                                          |
 | ---------------- | -------------- | ----------------- | ---------------------------------------------- |
-| 500              | UNKONWN_ERROR  | Unknown Error     |                                                |
+| 500              | UNKNOWN_ERROR  | Unknown Error     |                                                |
 | 400              | FIELD_REQUIRED | Field is required | This error will return for each required field |

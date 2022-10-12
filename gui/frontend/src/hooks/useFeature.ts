@@ -1,4 +1,3 @@
-import { useContext } from 'react';
 import { version } from '../constants/Version';
 /**
  * `useFeature` is a React hook for feature flags that makes it easy to know when a particular

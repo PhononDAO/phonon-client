@@ -4,6 +4,9 @@ module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
+      boxShadow: {
+        top: '0 0px 8px',
+      },
       fontFamily: {
         'bandeins-sans': ['BandeinsSansRegular'],
         'bandeins-sans-semibold': ['BandeinsSansSemiBold'],

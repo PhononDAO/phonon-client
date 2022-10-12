@@ -10,10 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//TLV Encodes the phonon standard schema used for setting it's descriptor. Must be extended with additional fields
-//to suit the various commands that deal with phonons.
-//Excludes fields KeyIndex, PubKey, and CurveType which are already known by the card at the time of creation
-//Includes fields SchemaVersion, ExtendedSchemaVersion, CurrencyType, Denomination, and ExtendedTLVs
+// TLV Encodes the phonon standard schema used for setting it's descriptor. Must be extended with additional fields
+// to suit the various commands that deal with phonons.
+// Excludes fields KeyIndex, PubKey, and CurveType which are already known by the card at the time of creation
+// Includes fields SchemaVersion, ExtendedSchemaVersion, CurrencyType, Denomination, and ExtendedTLVs
 func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 	//KeyIndex omitted
 
@@ -50,10 +50,13 @@ func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 		return nil, err
 	}
 	//adding chainID support through extended schema to avoid card code change
-	chainIDTLV, err := tlv.NewTLV(TagChainID, []byte{byte(p.ChainID)})
+	chainIdBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(chainIdBytes, p.ChainID)
+	chainIDTLV, err := tlv.NewTLV(TagChainID, chainIdBytes)
 	if err != nil {
 		return nil, err
 	}
+
 	p.ExtendedTLV = append(p.ExtendedTLV, chainIDTLV)
 
 	phononTLV := append(schemaVersionTLV.Encode(), extendedSchemaVersionTLV.Encode()...)
@@ -67,8 +70,8 @@ func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 	return phononTLV, nil
 }
 
-//Decodes the public phonon fields typically returned from a card
-//Excludes PubKey and KeyIndex
+// Decodes the public phonon fields typically returned from a card
+// Excludes PubKey and KeyIndex
 func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, error) {
 	phonon := &model.Phonon{}
 
@@ -160,10 +163,7 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 	//Collecting ChainID from extended tags pending a more elegant way to do this
 	for _, entry := range phonon.ExtendedTLV {
 		if entry.Tag == TagChainID {
-			//guard parsing against panics
-			if len(entry.Value) == 1 {
-				phonon.ChainID = int(entry.Value[0])
-			}
+			phonon.ChainID = binary.BigEndian.Uint32(entry.Value)
 		}
 	}
 	return phonon, nil

@@ -27,7 +27,7 @@ type Phonon struct {
 	ExtendedSchemaVersion uint8
 	Denomination          Denomination
 	CurrencyType          CurrencyType
-	ChainID               int
+	ChainID               uint32
 	ExtendedTLV           tlv.TLVList
 	Address               string //chain specific attribute not stored on card
 	AddressType           uint8  //chain specific address type identifier
@@ -47,7 +47,7 @@ func (p *Phonon) String() string {
 		p.ExtendedTLV)
 }
 
-//Phonon data structured for display to the user and use in frontends
+// Phonon data structured for display to the user and use in frontends
 type PhononJSON struct {
 	KeyIndex              PhononKeyIndex
 	PubKey                string //pubkey as hexstring
@@ -57,11 +57,11 @@ type PhononJSON struct {
 	ExtendedSchemaVersion uint8
 	Denomination          Denomination
 	CurrencyType          int
-	ChainID               int
+	ChainID               uint32
 	CurveType             uint8
 }
 
-//Unmarshals a PhononUserView into an internal phonon representation
+// Unmarshals a PhononUserView into an internal phonon representation
 func (p *Phonon) UnmarshalJSON(b []byte) error {
 	phJSON := PhononJSON{}
 	err := json.Unmarshal(b, &phJSON)
@@ -145,8 +145,8 @@ type Denomination struct {
 
 var ErrInvalidDenomination = errors.New("value cannot be represented as a phonon denomination")
 
-//NewDenomination takes an integer input and attempts to store it as a compressible value representing currency base units
-//Precision is limited to significant digits no greater than the value 255, along with exponentiation up to 255 digits
+// NewDenomination takes an integer input and attempts to store it as a compressible value representing currency base units
+// Precision is limited to significant digits no greater than the value 255, along with exponentiation up to 255 digits
 func NewDenomination(i *big.Int) (Denomination, error) {
 	var exponent uint8
 	maxUint8 := big.NewInt(int64(math.MaxUint8))
@@ -223,7 +223,7 @@ func (pubKey *ECCPubKey) Equal(x PhononPubKey) bool {
 	return pubKey.PubKey.Equal(xx.PubKey)
 }
 
-//Convenience function to easily convert PhononPublicKeys to their underyling concrete type when possible
+// Convenience function to easily convert PhononPublicKeys to their underyling concrete type when possible
 func PhononPubKeyToECDSA(pubKey PhononPubKey) (*ecdsa.PublicKey, error) {
 	ecc, ok := pubKey.(*ECCPubKey)
 	if !ok {
@@ -261,7 +261,7 @@ func (nat *NativePubKey) Equal(x PhononPubKey) bool {
 	return bytes.Equal(nat.Hash, xx.Hash)
 }
 
-//NewPhononPubKey parses raw public key data into the assigned PhononPubKey interface based on the given CurveType
+// NewPhononPubKey parses raw public key data into the assigned PhononPubKey interface based on the given CurveType
 func NewPhononPubKey(rawPubKey []byte, crv CurveType) (pubKey PhononPubKey, err error) {
 	//Switch pubkey interface based on given curveType
 	switch crv {
@@ -276,7 +276,7 @@ func NewPhononPubKey(rawPubKey []byte, crv CurveType) (pubKey PhononPubKey, err 
 	}
 }
 
-//Unmarshal Denominations from string to internal representation
+// Unmarshal Denominations from string to internal representation
 func (d *Denomination) UnmarshalJSON(b []byte) error {
 	var denomString string
 	err := json.Unmarshal(b, &denomString)
@@ -296,7 +296,7 @@ func (d *Denomination) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-//Marshal denominations as strings
+// Marshal denominations as strings
 func (d *Denomination) MarshalJSON() ([]byte, error) {
 	dString := d.String()
 	data, err := json.Marshal(dString)

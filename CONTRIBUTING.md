@@ -25,5 +25,3 @@ There are a couple of ways of communication with the Phonon client.
 - The first is through the phonon-client Github issues, which you may subscribe to receive messages. You can also use Github issues to open a discussion, and if it involves a specific member, you should CC them by using the `@name`.
 
 - We also have a Discord server that's managed by the Phonon DAO. [Phonon Discord](https://discord.gg/ungcMWNSwC)
-
-- Twitter Spaces is another form of communication the Phonon DAO offers, with whom do regular events. [Phonon Twitter](https://twitter.com/PhononDAO)

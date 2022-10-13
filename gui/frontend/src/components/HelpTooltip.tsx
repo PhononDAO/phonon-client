@@ -1,12 +1,12 @@
-import Tippy from '@tippyjs/react';
+import { Tooltip } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { helpCircle } from 'ionicons/icons';
 
 export const HelpTooltip: React.FC<{
   text: string;
-  tooltip: string | JSX.Element;
   theme?: 'error' | 'normal';
-}> = ({ text, tooltip = false, theme = 'normal' }) => {
+  children;
+}> = ({ text, theme = 'normal', children }) => {
   const colors = {
     normal: {
       text: 'text-white',
@@ -19,13 +19,13 @@ export const HelpTooltip: React.FC<{
   };
 
   return (
-    <Tippy theme="light" content={tooltip}>
+    <Tooltip hasArrow label={children} bg="gray.300" color="black">
       <button
         className={'inline flex space-x-1 cursor-pointer ' + colors[theme].text}
       >
         <IonIcon slot="start" icon={helpCircle} />
         <p className="text-sm">{text}</p>
       </button>
-    </Tippy>
+    </Tooltip>
   );
 };

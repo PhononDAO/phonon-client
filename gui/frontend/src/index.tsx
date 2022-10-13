@@ -6,10 +6,8 @@ import { ErrorFallback } from './components/ErrorFallback';
 import { ErrorHandler } from './constants/ErrorHandler';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
-
+import { ChakraProvider } from '@chakra-ui/react';
 import './styles.css';
-import 'tippy.js/dist/tippy.css';
-import 'tippy.js/themes/light.css';
 
 const container = document.getElementById('root');
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -18,7 +16,9 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary FallbackComponent={ErrorFallback} onError={ErrorHandler}>
       <I18nextProvider i18n={i18n}>
-        <App />
+        <ChakraProvider>
+          <App />
+        </ChakraProvider>
       </I18nextProvider>
     </ErrorBoundary>
   </React.StrictMode>

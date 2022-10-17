@@ -5,10 +5,12 @@ import (
 
 	"github.com/GridPlus/keycard-go/io"
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/usb"
 )
 
 type PhononTerminal struct {
+	conf     config.Config
 	sessions []*Session
 }
 
@@ -24,7 +26,13 @@ func init() {
 }
 
 // NewPhononTerminal returns a new reference to the global phonon terminal singleton.
-func NewPhononTerminal() *PhononTerminal {
+func NewPhononTerminal(conf config.Config) *PhononTerminal {
+	if globalTerminal == nil {
+		globalTerminal = &PhononTerminal{
+			sessions: make([]*Session, 0),
+			conf:     conf,
+		}
+	}
 	return globalTerminal
 }
 
@@ -53,7 +61,7 @@ func (t *PhononTerminal) RefreshSessions() ([]*Session, error) {
 		return nil, err
 	}
 	for _, crd := range cards {
-		s, err := NewSession(card.NewPhononCommandSet(io.NewNormalChannel(crd)))
+		s, err := NewSession(card.NewPhononCommandSet(io.NewNormalChannel(crd), t.conf))
 		if err != nil {
 			return nil, err
 		}

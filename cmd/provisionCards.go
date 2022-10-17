@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,6 +29,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/usb"
 	"github.com/GridPlus/phonon-client/util"
 
@@ -195,7 +196,8 @@ func provisionCard(readerIndex int, readerName string) (cardID string, err error
 	fmt.Println(string(output))
 	fmt.Printf("applet successfully installed on reader: %v\n", readerName)
 
-	cs, err := card.Connect(readerIndex)
+	conf := config.MustLoadConfig()
+	cs, err := card.Connect(readerIndex, conf)
 	if err != nil {
 		fmt.Printf("unable to connect to newly flashed applet on reader %v: %v\n", readerName, err)
 		return "", err
@@ -234,7 +236,7 @@ func provisionCard(readerIndex int, readerName string) (cardID string, err error
 	return cardID, nil
 }
 
-//registerCard takes a cardID and registers it with the phonon-address-service for use in the testnet
+// registerCard takes a cardID and registers it with the phonon-address-service for use in the testnet
 func registerCard(cardID string) (string, error) {
 	//TODO: centralize hardcoded values
 	registrationSrvURI := "https://register.phonon.network/add"
@@ -270,9 +272,9 @@ func registerCard(cardID string) (string, error) {
 	return string(output), nil
 }
 
-//Lights up readers one at a time by looping through the -info gp.jar command.
-//Allows the operator to position the readers sequentially for easy identification of errors during runs
-//as readers may switch IDs each time they power off and on.
+// Lights up readers one at a time by looping through the -info gp.jar command.
+// Allows the operator to position the readers sequentially for easy identification of errors during runs
+// as readers may switch IDs each time they power off and on.
 func rollCall(readerName string, readerIndex int) {
 	quit := make(chan bool)
 	go func() {

@@ -25,6 +25,14 @@ func DefaultConfig() Config {
 	return conf
 }
 
+func MustLoadConfig() (config Config) {
+	conf, err := LoadConfig()
+	if err != nil {
+		log.Fatal(fmt.Sprintf("unable to load configuration, %s", err.Error()))
+	}
+	return conf
+}
+
 func LoadConfig() (config Config, err error) {
 	// SetDefaultConfig()
 	switch runtime.GOOS {
@@ -77,9 +85,6 @@ func DefaultConfigPath() (string, error) {
 	switch runtime.GOOS {
 	case "darwin", "linux":
 		ret = homedir + "/.phonon/"
-		if err != nil {
-			return "", err
-		}
 	case "windows":
 		ret = homedir + "\\.phonon\\"
 	default:

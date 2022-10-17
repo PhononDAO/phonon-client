@@ -394,7 +394,7 @@ func (c *RemoteConnection) CardPair2(cardPairData []byte) (cardPairData2 []byte,
 
 func (c *RemoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 	c.sendMessage(v1.RequestFinalizeCardPair, cardPair2Data)
-	if !(c.pairingStatus == model.StatusPaired) {
+	if c.pairingStatus != model.StatusPaired {
 		select {
 		case errorbytes := <-c.finalizeCardPairDataChan:
 			var err error
@@ -505,6 +505,7 @@ func (c *RemoteConnection) VerifyPaired() error {
 		return err
 	}
 	if connectedCardID != connectedID {
+		log.Info(fmt.Sprintf("opposing card thinks it's paired with %s but this card is %s", connectedCardID, connectedID))
 		//remote isn't paired to this card
 		err = c.requestPairWithRemote(c)
 	}

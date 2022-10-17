@@ -24,7 +24,7 @@ var ErrDataNotFound = errors.New("data read hit EOF before specified length was 
 var ErrTagNotFound = errors.New("tag not found in TLV collection")
 var ErrTagEmpty = errors.New("tag contained no parsed data")
 
-//Create a TLV struct from a tag identifier and a value represented as bytes
+// Create a TLV struct from a tag identifier and a value represented as bytes
 func NewTLV(tag byte, value []byte) (TLV, error) {
 	if len(value) > MaxValueBytes {
 		return TLV{}, ErrValueLengthExceedsMax
@@ -36,18 +36,20 @@ func NewTLV(tag byte, value []byte) (TLV, error) {
 	}, nil
 }
 
-//Encode a TLV structure as serialized bytes
+// Encode a TLV structure as serialized bytes
 func (tlv *TLV) Encode() []byte {
 	prefix := []byte{tlv.Tag, byte(tlv.Length)}
 	serializedBytes := append(prefix, tlv.Value...)
 	return serializedBytes
 }
 
-/*Parses a TLV encoded response structure
+/*
+Parses a TLV encoded response structure
 Returning a flattened map where the keys are tags
 and the value is a slice of raw bytes, one entry for each tag instance found.
 For any "constructedTags" passed, the parser will recurse into the value of that
-tag to find internal TLV's and append them to the collection as flattened entries */
+tag to find internal TLV's and append them to the collection as flattened entries
+*/
 func ParseTLVPacket(data []byte, constructedTags ...byte) (TLVCollection, error) {
 	buf := bytes.NewBuffer(data)
 	result := make(TLVCollection)
@@ -96,7 +98,7 @@ func mergeTLVCollections(collections ...TLVCollection) TLVCollection {
 	return result
 }
 
-//FindTag takes a tag as input and returns the first instance of the tag's value
+// FindTag takes a tag as input and returns the first instance of the tag's value
 func (coll TLVCollection) FindTag(tag byte) (value []byte, err error) {
 	valueSlice, err := coll.FindTags(tag)
 	if err != nil {
@@ -105,7 +107,7 @@ func (coll TLVCollection) FindTag(tag byte) (value []byte, err error) {
 	return valueSlice[0], nil
 }
 
-//Findtags takes a tag as input and returns all instances of the tag's values as a slice of slice of byte
+// Findtags takes a tag as input and returns all instances of the tag's values as a slice of slice of byte
 func (coll TLVCollection) FindTags(tag byte) (value [][]byte, err error) {
 	valueSlice, exists := coll[tag]
 	if !exists {
@@ -117,7 +119,7 @@ func (coll TLVCollection) FindTags(tag byte) (value [][]byte, err error) {
 	return valueSlice, nil
 }
 
-//Takes a list of TLVs and encodes them as serialized bytes in FIFO order
+// Takes a list of TLVs and encodes them as serialized bytes in FIFO order
 func EncodeTLVList(tlvList ...TLV) []byte {
 	var data []byte
 	for _, tlv := range tlvList {
@@ -126,8 +128,8 @@ func EncodeTLVList(tlvList ...TLV) []byte {
 	return data
 }
 
-//Removes tags from a collection, returning the remaining TLV's
-//Useful for slicing out extended TLVs after the known ones are parsed
+// Removes tags from a collection, returning the remaining TLV's
+// Useful for slicing out extended TLVs after the known ones are parsed
 func (coll TLVCollection) GetRemainingTLVs(tags []byte) (remaining []TLV) {
 	for _, tag := range tags {
 		delete(coll, tag)

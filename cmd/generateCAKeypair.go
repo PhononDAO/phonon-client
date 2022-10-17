@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -86,7 +86,7 @@ func printGolangfmt(key []byte) string {
 	return result
 }
 
-//Same as golang fmt code except we prepend the string (byte) before any value over 0x80
+// Same as golang fmt code except we prepend the string (byte) before any value over 0x80
 func printJavacardfmt(key []byte) string {
 	var result string
 	width := 0

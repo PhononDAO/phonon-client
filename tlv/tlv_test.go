@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//Duplicate tags needed for standalone TLV test here
+// Duplicate tags needed for standalone TLV test here
 const (
 	TagSelectAppInfo           = 0xA4
 	TagCardUID                 = 0x8F

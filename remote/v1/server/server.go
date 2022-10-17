@@ -31,12 +31,12 @@ func StartServer(port string, certfile string, keyfile string) {
 
 type clientSession struct {
 	Name           string
-	certificate    cert.CardCertificate
 	underlyingConn *h2conn.Conn
 	out            *gob.Encoder
 	in             *gob.Decoder
-	validated      bool
 	Counterparty   *clientSession
+	certificate    cert.CardCertificate
+	validated      bool
 	// the same name that goes in the lookup value of the clientSession map
 }
 
@@ -110,6 +110,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 			log.Errorf("msg payload: % X", msg.Payload)
 		}
 	}
+	session.endSession(v1.Message{})
 }
 
 func (c *clientSession) process(msg v1.Message) error {

@@ -359,9 +359,9 @@ func (c *RemoteConnection) receiveCertificate(msg v1.Message) {
 	c.remoteCertificateChan <- remoteCert
 }
 
-/////
+// ///
 // Below are the methods that satisfy the interface for remote counterparty
-/////
+// ///
 func (c *RemoteConnection) Identify() error {
 	var nonce [32]byte
 	rand.Read(nonce[:])
@@ -495,7 +495,7 @@ func (c *RemoteConnection) VerifyPaired() error {
 	select {
 	case connectedCardID = <-c.verifyPairedChan:
 	case <-time.After(10 * time.Second):
-		return fmt.Errorf("counterparty card not paired to this card")
+		return fmt.Errorf("counterparty card not paired to this card: timeout")
 	}
 	c.verifyPairedChan = nil
 

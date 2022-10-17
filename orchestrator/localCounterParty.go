@@ -52,11 +52,7 @@ func (lcp *localCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
 }
 
 func (lcp *localCounterParty) ReceivePhonons(phononTransfer []byte) error {
-	err := lcp.counterSession.ReceivePhonons(phononTransfer)
-	if err != nil {
-		return err
-	}
-	return nil
+	return lcp.counterSession.ReceivePhonons(phononTransfer)
 }
 
 func (lcp *localCounterParty) GenerateInvoice() (invoiceData []byte, err error) {

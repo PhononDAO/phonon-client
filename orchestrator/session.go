@@ -598,7 +598,10 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 
 func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
 	log.Debug("Sending phonons")
-	if !s.verified() && s.RemoteCard != nil {
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+	if s.RemoteCard == nil {
 		return ErrCardNotPairedToCard
 	}
 	log.Debug("verifying pairing")
@@ -626,7 +629,10 @@ func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
 }
 
 func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
-	if !s.verified() && s.RemoteCard == nil {
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+	if s.RemoteCard == nil {
 		return ErrCardNotPairedToCard
 	}
 	s.ElementUsageMtex.Lock()
@@ -642,7 +648,10 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 }
 
 func (s *Session) GenerateInvoice() ([]byte, error) {
-	if !s.verified() && s.RemoteCard != nil {
+	if !s.verified() {
+		return nil, card.ErrPINNotEntered
+	}
+	if s.RemoteCard == nil {
 		return nil, ErrCardNotPairedToCard
 	}
 	s.ElementUsageMtex.Lock()

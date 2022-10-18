@@ -7,13 +7,15 @@ import { Phonon } from './Phonon';
 export class PhononCard {
   CardId: string | null;
   VanityName: string | null;
-  IsLocked: boolean | null;
+  IsLocked: boolean;
+  IsMock: boolean;
   Phonons: Array<Phonon>;
 
   constructor() {
     this.CardId = null;
     this.VanityName = null;
-    this.IsLocked = null;
+    this.IsLocked = true;
+    this.IsMock = false;
     this.Phonons = [];
   }
 }

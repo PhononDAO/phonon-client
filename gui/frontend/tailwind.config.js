@@ -7,11 +7,21 @@ module.exports = {
       boxShadow: {
         top: '0 0px 8px',
       },
+      backgroundImage: {
+        'phonon-card': "url('./assets/images/card-bg.jpg')",
+      },
       fontFamily: {
         'bandeins-sans': ['BandeinsSansRegular'],
         'bandeins-sans-semibold': ['BandeinsSansSemiBold'],
         'bandeins-sans-bold': ['BandeinsSansBold'],
         'bandeins-sans-light': ['BandeinsSansLight'],
+        'noto-sans-mono': ['Noto Sans Mono', 'monospace'],
+      },
+      fontSize: {
+        'phonon-card': '2.15rem',
+      },
+      rotate: {
+        30: '30deg',
       },
       keyframes: {
         dismissIndicator: {

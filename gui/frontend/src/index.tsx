@@ -7,6 +7,7 @@ import { ErrorHandler } from './constants/ErrorHandler';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
 import { ChakraProvider } from '@chakra-ui/react';
+import theme from './chakra-theme';
 import './styles.css';
 
 const container = document.getElementById('root');
@@ -16,7 +17,7 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary FallbackComponent={ErrorFallback} onError={ErrorHandler}>
       <I18nextProvider i18n={i18n}>
-        <ChakraProvider>
+        <ChakraProvider theme={theme}>
           <App />
         </ChakraProvider>
       </I18nextProvider>

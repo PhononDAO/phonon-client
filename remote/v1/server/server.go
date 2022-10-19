@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -100,7 +101,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	})
 
 	log.Info("validated client connection: ", session.Name)
-
+	defer session.endSession(v1.Message{})
 	//Client is now validated, move on
 	for r.Context().Err() == nil {
 		var msg v1.Message
@@ -116,7 +117,6 @@ func handle(w http.ResponseWriter, r *http.Request) {
 			log.Errorf("msg payload: % X", msg.Payload)
 		}
 	}
-	session.endSession(v1.Message{})
 }
 
 func (c *clientSession) process(msg v1.Message) error {
@@ -129,10 +129,11 @@ func (c *clientSession) process(msg v1.Message) error {
 		c.endSession(msg)
 	case v1.RequestNoOp:
 		c.noop(msg)
-	case v1.RequestIdentify, v1.ResponseIdentify, v1.RequestCardPair1, v1.ResponseCardPair1, v1.RequestCardPair2, v1.ResponseCardPair2, v1.RequestFinalizeCardPair, v1.ResponseFinalizeCardPair, v1.RequestReceivePhonon, v1.MessagePhononAck, v1.RequestVerifyPaired, v1.ResponseVerifyPaired:
-		c.passthrough(msg)
 	case v1.RequestCertificate:
 		c.provideCertificate()
+	default:
+		fmt.Printf("passing through %+v\n", msg)
+		c.passthrough(msg)
 	}
 	//TODO: provide actual errors, or ensure all the cases handle errors themselves
 	return nil

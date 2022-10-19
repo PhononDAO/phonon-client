@@ -258,10 +258,13 @@ func SelectCACertByName(name string) []byte {
 	//Select cert based on provided certificate name
 	switch strings.ToLower(name) {
 	case "alpha", "testnet":
+		log.Info("using configured alpha key")
 		return PhononAlphaCAPubKey
 	case "dev", "demo":
+		log.Info("using configured demo key")
 		return PhononDemoCAPubKey
 	default:
+		log.Info("using default alpha key")
 		return PhononAlphaCAPubKey
 	}
 }

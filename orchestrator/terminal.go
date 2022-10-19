@@ -27,11 +27,8 @@ func init() {
 
 // NewPhononTerminal returns a new reference to the global phonon terminal singleton.
 func NewPhononTerminal(conf config.Config) *PhononTerminal {
-	if globalTerminal == nil {
-		globalTerminal = &PhononTerminal{
-			sessions: make([]*Session, 0),
-			conf:     conf,
-		}
+	if (globalTerminal.conf == config.Config{}) {
+		globalTerminal.conf = conf
 	}
 	return globalTerminal
 }

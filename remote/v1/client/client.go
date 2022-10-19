@@ -431,6 +431,9 @@ func (c *RemoteConnection) GetCertificate() (*cert.CardCertificate, error) {
 
 func (c *RemoteConnection) ConnectToCard(cardID string) error {
 	c.logger.Info("sending requestConnectCard2Card message")
+	if c.pairingStatus != model.StatusConnectedToBridge {
+		return errors.New("not connected to phonon bridge")
+	}
 	c.sendMessage(v1.RequestConnectCard2Card, []byte(cardID))
 	var err error
 	select {

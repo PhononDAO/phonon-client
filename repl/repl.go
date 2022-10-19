@@ -2,8 +2,10 @@ package repl
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/orchestrator"
 
 	ishell "github.com/abiosoft/ishell/v2"
@@ -19,7 +21,11 @@ const standardPrompt string = "Phonon>"
 
 func Start() {
 	shell = ishell.New()
-	t = orchestrator.NewPhononTerminal()
+	conf, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal("Unable to load configuration")
+	}
+	t = orchestrator.NewPhononTerminal(conf)
 	// get initial state of orchestrator
 	shell.Println("Welcome to the phonon command interface")
 	shell.SetPrompt(standardPrompt)
@@ -139,14 +145,14 @@ func getDisplayName(activeCard *orchestrator.Session) string {
 	}
 }
 
-//internal bookkeeping method to set a card to receive subsequent commands
+// internal bookkeeping method to set a card to receive subsequent commands
 func setActiveCard(c *ishell.Context, s *orchestrator.Session) {
 	activeCard = s
 	updatePrompt()
 	c.Printf("%v selected\n", getDisplayName(activeCard))
 }
 
-//Updates the prompt to display the status of the active card
+// Updates the prompt to display the status of the active card
 func updatePrompt() {
 	if activeCard == nil {
 		shell.SetPrompt(standardPrompt)
@@ -163,8 +169,8 @@ func updatePrompt() {
 	shell.SetPrompt(fmt.Sprintf("%v%v>", getDisplayName(activeCard), status))
 }
 
-//checkActiveCard provides a guard function for shell commands to check that there is a card ready to use before proceeding
-//should generally be called at the top of shell functions which require a connected card
+// checkActiveCard provides a guard function for shell commands to check that there is a card ready to use before proceeding
+// should generally be called at the top of shell functions which require a connected card
 func checkActiveCard(c *ishell.Context) bool {
 	if activeCard == nil {
 		c.Println("please select a card before attempting to unlock")
@@ -173,8 +179,8 @@ func checkActiveCard(c *ishell.Context) bool {
 	return true
 }
 
-//checkCardPaired provides a guard function for shell commands to check that a card is paired with a remote
-//before performing an operation where this is required, such as sending or receiving phonons
+// checkCardPaired provides a guard function for shell commands to check that a card is paired with a remote
+// before performing an operation where this is required, such as sending or receiving phonons
 func checkCardPaired(c *ishell.Context) bool {
 	if !activeCard.IsPairedToCard() {
 		c.Println("card must be paired with remote card to complete this operation")

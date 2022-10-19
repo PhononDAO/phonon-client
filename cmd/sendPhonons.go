@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/GridPlus/phonon-client/card"
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/spf13/cobra"
@@ -45,7 +46,8 @@ func init() {
 }
 
 func sendPhonons() {
-	term := orchestrator.NewPhononTerminal()
+	conf := config.MustLoadConfig()
+	term := orchestrator.NewPhononTerminal(conf)
 
 	fmt.Println("opening session with sender Card")
 	var senderCard model.PhononCard
@@ -57,7 +59,7 @@ func sendPhonons() {
 			return
 		}
 	} else {
-		senderCard, err = card.QuickSecureConnection(senderReaderIndex, staticPairing)
+		senderCard, err = card.QuickSecureConnection(senderReaderIndex, staticPairing, conf)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -107,7 +109,7 @@ func sendPhonons() {
 			return
 		}
 	} else {
-		receiverCard, err = card.QuickSecureConnection(receiverReaderIndex, staticPairing)
+		receiverCard, err = card.QuickSecureConnection(receiverReaderIndex, staticPairing, conf)
 		if err != nil {
 			fmt.Println(err)
 			return

@@ -138,9 +138,9 @@ func (cmd *Command) HumanReadableErr(res *apdu.Response) error {
 	return nil
 }
 
-//NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU
-//As a response it receives the card's public key and and a signature
-//on the salt to prove posession of the private key
+// NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU
+// As a response it receives the card's public key and and a signature
+// on the salt to prove posession of the private key
 func NewCommandIdentifyCard(nonce []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
@@ -315,8 +315,8 @@ func NewCommandSendPhonons(data []byte, p2Length byte, extendedRequest bool) *Co
 	}
 }
 
-//Receives a TLV encoded Phonon Transfer Packet Payload in encrypted form
-//and passes it on directly to a card
+// Receives a TLV encoded Phonon Transfer Packet Payload in encrypted form
+// and passes it on directly to a card
 func NewCommandReceivePhonons(phononTransferPacket []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(

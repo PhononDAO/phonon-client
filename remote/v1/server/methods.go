@@ -100,8 +100,6 @@ func (c *clientSession) ConnectCard2Card(msg v1.Message) {
 			Payload: c.certificate.Serialize(),
 		})
 		log.Infof("Connected card %s to card %s\n", c.Name, c.Counterparty.Name)
-	} else if c.Counterparty == counterparty && counterparty.Counterparty == c {
-		//do nothing
 	}
 }
 

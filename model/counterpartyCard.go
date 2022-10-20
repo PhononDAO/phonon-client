@@ -15,6 +15,7 @@ type CounterpartyPhononCard interface {
 	VerifyPaired() error
 	PairingStatus() RemotePairingStatus
 	ConnectToCard(string) error
+	Disconnect() error
 }
 
 type RemotePairingStatus int

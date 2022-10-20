@@ -271,7 +271,6 @@ func (c *RemoteConnection) processConnectedToCard(msg v1.Message) {
 	c.remoteCertificate = &counterpartyCert
 	c.connectedToCardChan <- true
 	c.pairingStatus = model.StatusConnectedToCard
-
 }
 
 func (c *RemoteConnection) sendCertificate(msg v1.Message) {
@@ -546,4 +545,8 @@ func (c *RemoteConnection) disconnect() {
 
 func (c *RemoteConnection) disconnectFromCard() {
 	c.pairingStatus = model.StatusConnectedToBridge
+}
+
+func (c *RemoteConnection) Disconnect() error {
+	return c.conn.Close()
 }

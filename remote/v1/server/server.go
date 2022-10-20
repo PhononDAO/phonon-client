@@ -45,8 +45,12 @@ func index(w http.ResponseWriter, _ *http.Request) {
 }
 
 func listConnected(w http.ResponseWriter, _ *http.Request) {
-	ret, _ := json.Marshal(clientSessions)
-	w.Write(ret)
+	sess := make([]string, 0)
+	for name, s := range clientSessions {
+		sess = append(sess, fmt.Sprintf("session %s: %+v", name, s))
+		sess = append(sess, fmt.Sprintf("counterparty: %+v", s.Counterparty))
+	}
+	json.NewEncoder(w).Encode(sess)
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {

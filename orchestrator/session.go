@@ -973,3 +973,12 @@ func (s *Session) addInfoToCache(p *model.Phonon) {
 	}
 
 }
+
+func (s *Session) DisconnectRemote() error {
+	if s.RemoteCard == nil {
+		return nil
+	}
+	err := s.RemoteCard.Disconnect()
+	s.RemoteCard = nil
+	return err
+}

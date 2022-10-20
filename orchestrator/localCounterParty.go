@@ -74,3 +74,14 @@ func (lcp *localCounterParty) VerifyPaired() error {
 func (lcp *localCounterParty) PairingStatus() model.RemotePairingStatus {
 	return lcp.pairingStatus
 }
+
+func (lcp *localCounterParty) Disconnect() error {
+	// disconnect the other side from here
+	if lcp.counterSession != nil {
+		connectedCardsAndLCPSessions[lcp.counterSession] = nil
+	}
+	// disconnect this side from the other side
+	lcp.counterSession = nil
+
+	return nil
+}

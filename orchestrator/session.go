@@ -598,7 +598,10 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 
 func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
 	log.Debug("Sending phonons")
-	if !s.verified() && s.RemoteCard != nil {
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+	if s.RemoteCard == nil {
 		return ErrCardNotPairedToCard
 	}
 	log.Debug("verifying pairing")
@@ -626,7 +629,10 @@ func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
 }
 
 func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
-	if !s.verified() && s.RemoteCard != nil {
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+	if s.RemoteCard == nil {
 		return ErrCardNotPairedToCard
 	}
 	s.ElementUsageMtex.Lock()
@@ -642,7 +648,10 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 }
 
 func (s *Session) GenerateInvoice() ([]byte, error) {
-	if !s.verified() && s.RemoteCard != nil {
+	if !s.verified() {
+		return nil, card.ErrPINNotEntered
+	}
+	if s.RemoteCard == nil {
 		return nil, ErrCardNotPairedToCard
 	}
 	s.ElementUsageMtex.Lock()
@@ -707,13 +716,13 @@ func (s *Session) ConnectToCounterparty(cardID string) error {
 		//we shouldn't get this far and still receive this error
 		return err
 	}
-	err = s.PairWithRemoteCard(s.RemoteCard)
+	err = s.PairWithRemoteCard()
 	return err
 
 }
 
-func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) error {
-	remoteCert, err := remoteCard.GetCertificate()
+func (s *Session) PairWithRemoteCard() error {
+	remoteCert, err := s.RemoteCard.GetCertificate()
 	if err != nil {
 		return err
 	}
@@ -722,7 +731,7 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 		return err
 	}
 	log.Debug("sending card pair request")
-	cardPairData, err := remoteCard.CardPair(initPairingData)
+	cardPairData, err := s.RemoteCard.CardPair(initPairingData)
 	if err != nil {
 		return err
 	}
@@ -731,11 +740,10 @@ func (s *Session) PairWithRemoteCard(remoteCard model.CounterpartyPhononCard) er
 		log.Debug("PairWithRemoteCard failed at cardPair2. err: ", err)
 		return err
 	}
-	err = remoteCard.FinalizeCardPair(cardPair2Data)
+	err = s.RemoteCard.FinalizeCardPair(cardPair2Data)
 	if err != nil {
 		return err
 	}
-	s.RemoteCard = remoteCard
 	return nil
 }
 
@@ -880,7 +888,7 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 			panic("this shouldn't happen.")
 		}
 		var resp model.ResponsePairWithRemote
-		resp.Err = s.PairWithRemoteCard(req.Card)
+		resp.Err = s.PairWithRemoteCard()
 		log.Debug("Returning pairing stuff")
 		req.Ret <- resp
 		log.Debug("Done returning pairing stuff")
@@ -964,4 +972,13 @@ func (s *Session) addInfoToCache(p *model.Phonon) {
 		s.cache[p.KeyIndex].p.PubKey = cachedPubKey
 	}
 
+}
+
+func (s *Session) DisconnectRemote() error {
+	if s.RemoteCard == nil {
+		return nil
+	}
+	err := s.RemoteCard.Disconnect()
+	s.RemoteCard = nil
+	return err
 }

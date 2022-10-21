@@ -52,11 +52,7 @@ func (lcp *localCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
 }
 
 func (lcp *localCounterParty) ReceivePhonons(phononTransfer []byte) error {
-	err := lcp.counterSession.ReceivePhonons(phononTransfer)
-	if err != nil {
-		return err
-	}
-	return nil
+	return lcp.counterSession.ReceivePhonons(phononTransfer)
 }
 
 func (lcp *localCounterParty) GenerateInvoice() (invoiceData []byte, err error) {
@@ -77,4 +73,15 @@ func (lcp *localCounterParty) VerifyPaired() error {
 
 func (lcp *localCounterParty) PairingStatus() model.RemotePairingStatus {
 	return lcp.pairingStatus
+}
+
+func (lcp *localCounterParty) Disconnect() error {
+	// disconnect the other side from here
+	if lcp.counterSession != nil {
+		connectedCardsAndLCPSessions[lcp.counterSession] = nil
+	}
+	// disconnect this side from the other side
+	lcp.counterSession = nil
+
+	return nil
 }

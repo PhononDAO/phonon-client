@@ -154,7 +154,6 @@ func Connect(sessReqChan chan model.SessionRequest, url string, ignoreTLS bool) 
 		identifiedWithServer:     false,
 		counterpartyNonce:        [32]byte{},
 		verified:                 false,
-		connectedToCardChan:      make(chan bool, 1),
 		verifyPairedChan:         make(chan string),
 		remoteCertificateChan:    make(chan cert.CardCertificate, 1),
 		remoteIdentityChan:       make(chan []byte, 1),
@@ -269,9 +268,10 @@ func (c *RemoteConnection) processConnectedToCard(msg v1.Message) {
 		return
 	}
 	c.remoteCertificate = &counterpartyCert
-	c.connectedToCardChan <- true
+	if c.connectedToCardChan != nil {
+		c.connectedToCardChan <- true
+	}
 	c.pairingStatus = model.StatusConnectedToCard
-
 }
 
 func (c *RemoteConnection) sendCertificate(msg v1.Message) {
@@ -394,7 +394,7 @@ func (c *RemoteConnection) CardPair2(cardPairData []byte) (cardPairData2 []byte,
 
 func (c *RemoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 	c.sendMessage(v1.RequestFinalizeCardPair, cardPair2Data)
-	if !(c.pairingStatus == model.StatusPaired) {
+	if c.pairingStatus != model.StatusPaired {
 		select {
 		case errorbytes := <-c.finalizeCardPairDataChan:
 			var err error
@@ -431,8 +431,15 @@ func (c *RemoteConnection) GetCertificate() (*cert.CardCertificate, error) {
 
 func (c *RemoteConnection) ConnectToCard(cardID string) error {
 	c.logger.Info("sending requestConnectCard2Card message")
+	if c.pairingStatus == model.StatusUnconnected {
+		return errors.New("not connected to phonon bridge")
+	}
 	c.sendMessage(v1.RequestConnectCard2Card, []byte(cardID))
 	var err error
+	c.connectedToCardChan = make(chan bool)
+	defer func() {
+		c.connectedToCardChan = nil
+	}()
 	select {
 	case <-time.After(10 * time.Second):
 		c.logger.Error("Connection Timed out Waiting for peer")
@@ -461,16 +468,6 @@ func (c *RemoteConnection) ReceivePhonons(PhononTransfer []byte) error {
 	}
 }
 
-func (c *RemoteConnection) GenerateInvoice() (invoiceData []byte, err error) {
-	// todo:
-	return
-}
-
-func (c *RemoteConnection) ReceiveInvoice(invoiceData []byte) error {
-	// todo:
-	return nil
-}
-
 // Utility functions
 func (c *RemoteConnection) sendMessage(messageName string, messagePayload []byte) {
 	c.logger.Debug(messageName, string(messagePayload))
@@ -495,7 +492,7 @@ func (c *RemoteConnection) VerifyPaired() error {
 	select {
 	case connectedCardID = <-c.verifyPairedChan:
 	case <-time.After(10 * time.Second):
-		return fmt.Errorf("counterparty card not paired to this card")
+		return fmt.Errorf("counterparty card not paired to this card: timeout")
 	}
 	c.verifyPairedChan = nil
 
@@ -505,6 +502,7 @@ func (c *RemoteConnection) VerifyPaired() error {
 		return err
 	}
 	if connectedCardID != connectedID {
+		log.Info(fmt.Sprintf("opposing card thinks it's paired with %s but this card is %s", connectedCardID, connectedID))
 		//remote isn't paired to this card
 		err = c.requestPairWithRemote(c)
 	}
@@ -542,4 +540,8 @@ func (c *RemoteConnection) disconnect() {
 
 func (c *RemoteConnection) disconnectFromCard() {
 	c.pairingStatus = model.StatusConnectedToBridge
+}
+
+func (c *RemoteConnection) Disconnect() error {
+	return c.conn.Close()
 }

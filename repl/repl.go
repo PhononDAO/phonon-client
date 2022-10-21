@@ -86,6 +86,11 @@ func Start() {
 		Func: redeemPhonon,
 		Help: "Destroy the phonon at index on card at index and retrieve the private key (NOTE: THIS WILL DESTROY THE PHONON ON THE CARD. DO NOT RUN THIS WITHOUT BEING READY TO COPY OUT THE PRIVATE KEY",
 	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "disconnect",
+		Func: disconnectFromRemote,
+		Help: "disconnect from currently connected remote provider\n",
+	})
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "sendPhonons",
@@ -313,6 +318,13 @@ func pairWithCounterparty(c *ishell.Context) {
 	CounterPartyID := strings.TrimSpace(c.Args[0])
 
 	err := activeCard.ConnectToCounterparty(CounterPartyID)
+	if err != nil {
+		c.Err(err)
+	}
+}
+
+func disconnectFromRemote(c *ishell.Context) {
+	err := activeCard.DisconnectRemote()
 	if err != nil {
 		c.Err(err)
 	}

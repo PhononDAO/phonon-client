@@ -17,3 +17,11 @@ Before creating a pull request, we ask that you create an issue for it or atleas
 Your pull request should be descriptive, containing how it works and what has changed.
 
 Changes may be requested in your pull request. We ask that you do not use the resolve prompt to resolve your own issues. We will use this prompt once we can verify that the changes are made. It's important to note that before you may attempt to merge your request, we require at least one Phonon core developer to approve the change. There must also be no conflicts with `master`, and the CI must pass. prior.
+
+## Communicating
+
+There are a couple of ways of communication with the Phonon client.
+
+- The first is through the phonon-client Github issues, which you may subscribe to receive messages. You can also use Github issues to open a discussion, and if it involves a specific member, you should CC them by using the `@name`.
+
+- We also have a Discord server that's managed by the Phonon DAO. [Phonon Discord](https://discord.gg/ungcMWNSwC)

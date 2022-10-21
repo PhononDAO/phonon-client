@@ -2,7 +2,6 @@ package repl
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/GridPlus/phonon-client/config"
@@ -21,10 +20,8 @@ const standardPrompt string = "Phonon>"
 
 func Start() {
 	shell = ishell.New()
-	conf, err := config.LoadConfig()
-	if err != nil {
-		log.Fatal("Unable to load configuration")
-	}
+	conf := config.MustLoadConfig()
+
 	t = orchestrator.NewPhononTerminal(conf)
 	// get initial state of orchestrator
 	shell.Println("Welcome to the phonon command interface")

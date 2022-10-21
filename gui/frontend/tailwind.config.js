@@ -8,7 +8,9 @@ module.exports = {
         top: '0 0px 8px',
       },
       backgroundImage: {
-        'phonon-card': "url('./assets/images/card-bg.jpg')",
+        'phonon-card': "url('./assets/images/card-bg.png')",
+        'phonon-card-light': "url('./assets/images/card-bg-light.png')",
+        'phonon-card-blue': "url('./assets/images/card-bg-blue.png')",
       },
       fontFamily: {
         'bandeins-sans': ['BandeinsSansRegular'],
@@ -18,7 +20,8 @@ module.exports = {
         'noto-sans-mono': ['Noto Sans Mono', 'monospace'],
       },
       fontSize: {
-        'phonon-card': '2.15rem',
+        'phonon-card': '2.85rem',
+        xxs: '0.7rem',
       },
       rotate: {
         30: '30deg',

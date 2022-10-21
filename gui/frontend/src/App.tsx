@@ -2,10 +2,11 @@ import React, { Suspense } from 'react';
 import { NotificationTray } from './components/NotificationTray';
 import { Header } from './components/Header';
 import { Stage } from './components/Stage';
+import { PageLoading } from './components/PageLoading';
 
 const App = () => {
   return (
-    <Suspense fallback="loading">
+    <Suspense fallback={<PageLoading />}>
       <NotificationTray />
       <div className="w-full overflow-hidden flex flex-col h-screen bg-black relative">
         <Header />

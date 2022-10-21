@@ -1,4 +1,4 @@
-import { Chain } from '../types/types';
+import { Chain } from '../interfaces/interfaces';
 
 export const CHAINS: { [key: string]: Chain } = {
   '1': {

@@ -15,7 +15,14 @@ const theme = extendTheme(
   withDefaultVariant({
     variant: 'solid',
     components: ['Button', 'Input', 'NumberInput', 'PinInput', 'Select'],
-  })
+  }),
+  {
+    colors: {
+      darkGray: {
+        100: '#3D3D3D',
+      },
+    },
+  }
 );
 
 export default theme;

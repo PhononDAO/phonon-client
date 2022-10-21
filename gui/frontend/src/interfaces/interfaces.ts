@@ -1,16 +1,16 @@
 /**
  * Error Object to be thrown in errors
  */
-export type ErrorObject = {
+export interface ErrorObject {
   code: number;
   message: string;
-};
+}
 
 /**
  * Chain object
  */
-export type Chain = {
+export interface Chain {
   name: string;
   textColor: string;
   bgColor: string;
-};
+}

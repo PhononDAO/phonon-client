@@ -463,16 +463,6 @@ func (c *RemoteConnection) ReceivePhonons(PhononTransfer []byte) error {
 	}
 }
 
-func (c *RemoteConnection) GenerateInvoice() (invoiceData []byte, err error) {
-	// todo:
-	return
-}
-
-func (c *RemoteConnection) ReceiveInvoice(invoiceData []byte) error {
-	// todo:
-	return nil
-}
-
 // Utility functions
 func (c *RemoteConnection) sendMessage(messageName string, messagePayload []byte) {
 	c.logger.Debug(messageName, string(messagePayload))

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/orchestrator"
 
 	"github.com/spf13/cobra"
@@ -66,7 +67,8 @@ func PairCardToCard() {
 	fmt.Println("opening session with sender Card")
 	var sender *orchestrator.Session
 	var err error
-	terminal := orchestrator.NewPhononTerminal()
+	conf := config.MustLoadConfig()
+	terminal := orchestrator.NewPhononTerminal(conf)
 	var sessions []*orchestrator.Session
 	if !useMockSender || !useMockReceiver {
 		sessions, err = terminal.RefreshSessions()

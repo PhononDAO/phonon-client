@@ -60,7 +60,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	if err != nil {
 		log.Fatal("Unable to load configuration")
 	}
-	session := apiSession{orchestrator.NewPhononTerminal(), conf.TelemetryKey}
+	session := apiSession{orchestrator.NewPhononTerminal(conf), conf.TelemetryKey}
 	//initialize cache map
 	if mock {
 		//Start server with a mock and ignore actual cards
@@ -252,7 +252,7 @@ func parseJSLogLevel(input interface{}) (int, error) {
 	return lvlInt, nil
 }
 
-func listChains(w http.ResponseWriter, r *http.Request) {
+func listChains(w http.ResponseWriter, _ *http.Request) {
 	chains := chain.GetSupportedChains()
 
 	err := json.NewEncoder(w).Encode(chains)
@@ -277,8 +277,8 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 
 	enc := json.NewEncoder(w)
 	enc.Encode(struct {
-		Index  model.PhononKeyIndex `json:"index"`
 		PubKey string               `json:"pubkey"`
+		Index  model.PhononKeyIndex `json:"index"`
 	}{Index: index,
 		PubKey: pubKey.String()})
 }
@@ -392,8 +392,8 @@ func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.
 		return
 	}
 	var depositPhononReq struct {
-		CurrencyType  model.CurrencyType
 		Denominations []*model.Denomination
+		CurrencyType  model.CurrencyType
 	}
 	err = json.NewDecoder(r.Body).Decode(&depositPhononReq)
 	if err != nil {
@@ -466,7 +466,7 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 	}
 	if len(reqs) == 0 {
 		log.Error("request data empty")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "request data empty", http.StatusBadRequest)
 		return
 	}
 	for _, req := range reqs {

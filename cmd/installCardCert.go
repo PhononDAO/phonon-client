@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@ import (
 
 	"github.com/GridPlus/phonon-client/card"
 	"github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/util"
 
@@ -90,7 +91,8 @@ func InstallCardCert() {
 	}
 
 	var cs model.PhononCard
-	baseCS, err := card.Connect(readerIndex)
+	conf := config.MustLoadConfig()
+	baseCS, err := card.Connect(readerIndex, conf)
 	if err != nil {
 		log.Fatalf("Unable to connect to card: %s", err.Error())
 	}

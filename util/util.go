@@ -15,7 +15,7 @@ func RandomKey(length int) []byte {
 	return key
 }
 
-//Create an interactive prompt for user's pin
+// Create an interactive prompt for user's pin
 func PinPrompt() (string, error) {
 	//Prompt user for pin
 	prompt := promptui.Prompt{

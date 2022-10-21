@@ -203,7 +203,7 @@ func (c *MockCard) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, ca
 	return instanceUID, cardPubKey, cardInitialized, nil
 }
 
-//PIN functions
+// PIN functions
 func validatePIN(pin string) error {
 	if len(pin) != 6 {
 		return errors.New("pin must be 6 digits")
@@ -922,8 +922,10 @@ func correctDifficulty(input []byte, difficulty int) bool {
 	return false
 }
 
-/*Takes a 32 byte salt as input to generate and return a sha512 hash of it.
-This is the process for deriving a native phonon hash, which is stored as its pubKey in the phonon table*/
+/*
+Takes a 32 byte salt as input to generate and return a sha512 hash of it.
+This is the process for deriving a native phonon hash, which is stored as its pubKey in the phonon table
+*/
 func DeriveNativePhononPubKey(salt []byte) *model.NativePubKey {
 	hash := sha512.Sum512(salt)
 	return &model.NativePubKey{Hash: hash[:]}

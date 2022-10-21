@@ -136,7 +136,6 @@ func (c *clientSession) process(msg v1.Message) error {
 	case v1.RequestCertificate:
 		c.provideCertificate()
 	default:
-		fmt.Printf("passing through %+v\n", msg)
 		c.passthrough(msg)
 	}
 	//TODO: provide actual errors, or ensure all the cases handle errors themselves

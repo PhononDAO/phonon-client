@@ -154,7 +154,6 @@ func Connect(sessReqChan chan model.SessionRequest, url string, ignoreTLS bool) 
 		identifiedWithServer:     false,
 		counterpartyNonce:        [32]byte{},
 		verified:                 false,
-		connectedToCardChan:      make(chan bool, 1),
 		verifyPairedChan:         make(chan string),
 		remoteCertificateChan:    make(chan cert.CardCertificate, 1),
 		remoteIdentityChan:       make(chan []byte, 1),
@@ -269,7 +268,9 @@ func (c *RemoteConnection) processConnectedToCard(msg v1.Message) {
 		return
 	}
 	c.remoteCertificate = &counterpartyCert
-	c.connectedToCardChan <- true
+	if c.connectedToCardChan != nil {
+		c.connectedToCardChan <- true
+	}
 	c.pairingStatus = model.StatusConnectedToCard
 }
 
@@ -435,6 +436,10 @@ func (c *RemoteConnection) ConnectToCard(cardID string) error {
 	}
 	c.sendMessage(v1.RequestConnectCard2Card, []byte(cardID))
 	var err error
+	c.connectedToCardChan = make(chan bool)
+	defer func() {
+		c.connectedToCardChan = nil
+	}()
 	select {
 	case <-time.After(10 * time.Second):
 		c.logger.Error("Connection Timed out Waiting for peer")

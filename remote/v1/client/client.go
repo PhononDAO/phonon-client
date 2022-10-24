@@ -154,14 +154,8 @@ func Connect(sessReqChan chan model.SessionRequest, url string, ignoreTLS bool) 
 		identifiedWithServer:     false,
 		counterpartyNonce:        [32]byte{},
 		verified:                 false,
-		verifyPairedChan:         make(chan string),
-		remoteCertificateChan:    make(chan cert.CardCertificate, 1),
-		remoteIdentityChan:       make(chan []byte, 1),
-		cardPair1DataChan:        make(chan []byte, 1),
-		finalizeCardPairDataChan: make(chan []byte, 1),
 		pairingStatus:            model.StatusUnconnected,
 		logger:                   log.WithField("cardID", "unknown"),
-		phononAckChan:            make(chan bool, 1),
 	}
 
 	name, err := client.requestGetName()
@@ -226,7 +220,9 @@ func (c *RemoteConnection) process(msg v1.Message) {
 	case v1.MessageError:
 		c.logger.Error(string(msg.Payload))
 	case v1.MessageIdentifiedWithServer:
-		c.identifiedWithServerChan <- true
+		if c.identifiedWithServerChan != nil {
+			c.identifiedWithServerChan <- true
+		}
 		c.identifiedWithServer = true
 	case v1.MessageConnectedToCard:
 		c.processConnectedToCard(msg)
@@ -234,13 +230,19 @@ func (c *RemoteConnection) process(msg v1.Message) {
 	case v1.RequestCardPair1:
 		c.processCardPair1(msg)
 	case v1.ResponseCardPair1:
-		c.cardPair1DataChan <- msg.Payload
+		if c.cardPair1DataChan != nil {
+			c.cardPair1DataChan <- msg.Payload
+		}
 	case v1.RequestFinalizeCardPair:
 		c.processFinalizeCardPair(msg)
 	case v1.ResponseFinalizeCardPair:
-		c.finalizeCardPairDataChan <- msg.Payload
+		if c.finalizeCardPairDataChan != nil {
+			c.finalizeCardPairDataChan <- msg.Payload
+		}
 	case v1.MessagePhononAck:
-		c.phononAckChan <- true
+		if c.phononAckChan != nil {
+			c.phononAckChan <- true
+		}
 	case v1.RequestReceivePhonon:
 		c.processReceivePhonons(msg)
 	case v1.RequestVerifyPaired:
@@ -301,9 +303,10 @@ func (c *RemoteConnection) processIdentify(msg v1.Message) {
 	if !ecdsa.Verify(key, c.counterpartyNonce[:], sig.R, sig.S) {
 		c.logger.Error("Unable to verify card challenge")
 		return
-	} else {
-		c.verified = true
-		return
+	}
+	c.verified = true
+	if c.remoteIdentityChan != nil {
+		c.remoteIdentityChan <- msg.Payload
 	}
 }
 
@@ -356,7 +359,9 @@ func (c *RemoteConnection) receiveCertificate(msg v1.Message) {
 		return
 	}
 	c.logger.Debug("Remote Certificate received")
-	c.remoteCertificateChan <- remoteCert
+	if c.remoteCertificateChan != nil {
+		c.remoteCertificateChan <- remoteCert
+	}
 }
 
 // ///
@@ -367,6 +372,10 @@ func (c *RemoteConnection) Identify() error {
 	rand.Read(nonce[:])
 	c.counterpartyNonce = nonce
 	c.sendMessage(v1.RequestIdentify, nonce[:])
+	c.remoteIdentityChan = make(chan []byte)
+	defer func() {
+		c.remoteIdentityChan = nil
+	}()
 	select {
 	case <-c.remoteIdentityChan:
 		return nil
@@ -379,6 +388,10 @@ func (c *RemoteConnection) Identify() error {
 func (c *RemoteConnection) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
 	c.logger.Debug("card pair initiated")
 	c.sendMessage(v1.RequestCardPair1, initPairingData)
+	c.cardPair1DataChan = make(chan []byte)
+	defer func() {
+		c.cardPair1DataChan = nil
+	}()
 	select {
 	case cardPairData := <-c.cardPair1DataChan:
 		return cardPairData, nil
@@ -395,6 +408,10 @@ func (c *RemoteConnection) CardPair2(cardPairData []byte) (cardPairData2 []byte,
 func (c *RemoteConnection) FinalizeCardPair(cardPair2Data []byte) error {
 	c.sendMessage(v1.RequestFinalizeCardPair, cardPair2Data)
 	if c.pairingStatus != model.StatusPaired {
+		c.finalizeCardPairDataChan = make(chan []byte)
+		defer func() {
+			c.finalizeCardPairDataChan = nil
+		}()
 		select {
 		case errorbytes := <-c.finalizeCardPairDataChan:
 			var err error
@@ -415,6 +432,10 @@ func (c *RemoteConnection) GetCertificate() (*cert.CardCertificate, error) {
 	if c.remoteCertificate == nil {
 		c.logger.Debug("remote certificate not cached, requesting it")
 		c.sendMessage(v1.RequestCertificate, []byte{})
+		c.remoteCertificateChan = make(chan cert.CardCertificate)
+		defer func() {
+			c.remoteCertificateChan = nil
+		}()
 		select {
 		case cert := <-c.remoteCertificateChan:
 			c.remoteCertificate = &cert
@@ -459,6 +480,10 @@ func (c *RemoteConnection) ConnectToCard(cardID string) error {
 
 func (c *RemoteConnection) ReceivePhonons(PhononTransfer []byte) error {
 	c.sendMessage(v1.RequestReceivePhonon, PhononTransfer)
+	c.phononAckChan = make(chan bool)
+	defer func() {
+		c.phononAckChan = nil
+	}()
 	select {
 	case <-time.After(10 * time.Second):
 		c.logger.Error("unable to verify remote recipt of phonons")
@@ -485,6 +510,9 @@ func (c *RemoteConnection) VerifyPaired() error {
 		Payload: []byte(""),
 	}
 	c.verifyPairedChan = make(chan string)
+	defer func() {
+		c.verifyPairedChan = nil
+	}()
 	c.out.Encode(tosend)
 
 	var connectedCardID string

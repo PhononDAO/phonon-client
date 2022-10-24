@@ -92,6 +92,7 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/unlock", session.unlock)
 	r.HandleFunc("/cards/{sessionID}/pair", session.pair)
 	r.HandleFunc("/cards/{sessionID}/name", session.setName)
+	r.HandleFunc("/cards/{sessionID}/disconnect", session.disconnect)
 	// phonons
 	r.HandleFunc("/cards/{sessionID}/listPhonons", session.listPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/{PhononIndex}/setDescriptor", session.setDescriptor)
@@ -727,6 +728,19 @@ func (apiSession apiSession) pair(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func (apiSession apiSession) disconnect(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sess, err := apiSession.sessionFromMuxVars(vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	err = sess.DisconnectRemote()
+	if err != nil {
+		http.Error(w, "unable to disconnect remote", http.StatusInternalServerError)
+	}
 }
 
 func (apiSession apiSession) setName(w http.ResponseWriter, r *http.Request) {

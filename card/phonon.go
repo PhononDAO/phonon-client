@@ -10,10 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//TLV Encodes the phonon standard schema used for setting it's descriptor. Must be extended with additional fields
-//to suit the various commands that deal with phonons.
-//Excludes fields KeyIndex, PubKey, and CurveType which are already known by the card at the time of creation
-//Includes fields SchemaVersion, ExtendedSchemaVersion, CurrencyType, Denomination, and ExtendedTLVs
+// TLV Encodes the phonon standard schema used for setting it's descriptor. Must be extended with additional fields
+// to suit the various commands that deal with phonons.
+// Excludes fields KeyIndex, PubKey, and CurveType which are already known by the card at the time of creation
+// Includes fields SchemaVersion, ExtendedSchemaVersion, CurrencyType, Denomination, and ExtendedTLVs
 func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 	//KeyIndex omitted
 
@@ -67,8 +67,8 @@ func TLVEncodePhononDescriptor(p *model.Phonon) ([]byte, error) {
 	return phononTLV, nil
 }
 
-//Decodes the public phonon fields typically returned from a card
-//Excludes PubKey and KeyIndex
+// Decodes the public phonon fields typically returned from a card
+// Excludes PubKey and KeyIndex
 func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, error) {
 	phonon := &model.Phonon{}
 

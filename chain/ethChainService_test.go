@@ -42,8 +42,8 @@ func getSimEVM() (*backends.SimulatedBackend, error) {
 	return simEVM, nil
 }
 
-//TestEthChainServiceRedeem smoke tests the basic redeem funtionality using a ganache backend.
-//Ganache must be stood up manually and this test must be hand edited with valid keys to function.
+// TestEthChainServiceRedeem smoke tests the basic redeem funtionality using a ganache backend.
+// Ganache must be stood up manually and this test must be hand edited with valid keys to function.
 func TestEthChainServiceRedeem(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 

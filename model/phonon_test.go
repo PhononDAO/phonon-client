@@ -103,7 +103,7 @@ func TestDenominationJSONMarshal(t *testing.T) {
 	}
 }
 
-//TestMarshalJSON tests Marshalling the interesting fields from the phonon struct
+// TestMarshalJSON tests Marshalling the interesting fields from the phonon struct
 func TestMarshalPhononJSON(t *testing.T) {
 	dInt, _ := big.NewInt(0).SetString("1000000000000000", 10) //15 zeros
 	d, err := NewDenomination(dInt)

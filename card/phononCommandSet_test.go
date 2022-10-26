@@ -14,10 +14,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//Card must be initialized with this pin before integration test suite can run
+// Card must be initialized with this pin before integration test suite can run
 var testPin string = "111111"
 
-//SELECT
+// SELECT
 func TestSelect(t *testing.T) {
 	card, err := usb.ConnectUSBReader(0)
 	if err != nil {
@@ -50,9 +50,9 @@ func TestSelect(t *testing.T) {
 	log.Debugf("cardPubKey: % X", cardPubKey)
 }
 
-//PAIR
-//OPEN_SECURE_CHANNEL
-//MUTUAL_AUTH
+// PAIR
+// OPEN_SECURE_CHANNEL
+// MUTUAL_AUTH
 func TestOpenSecureConnection(t *testing.T) {
 	card, err := usb.ConnectUSBReader(0)
 	if err != nil {
@@ -67,11 +67,11 @@ func TestOpenSecureConnection(t *testing.T) {
 	}
 }
 
-//VERIFY_PIN
-//CREATE_PHONON
-//SET_DESCRIPTOR
-//GET_PHONON_PUB_KEY
-//LIST_PHONONS
+// VERIFY_PIN
+// CREATE_PHONON
+// SET_DESCRIPTOR
+// GET_PHONON_PUB_KEY
+// LIST_PHONONS
 func TestCreateSetAndListPhonons(t *testing.T) {
 	card, err := usb.ConnectUSBReader(0)
 	if err != nil {
@@ -245,7 +245,7 @@ func TestDestroyPhonon(t *testing.T) {
 
 //DestroyPhonon and reuse keyIndex
 
-//Create maximum number of phonons (256) and list them
+// Create maximum number of phonons (256) and list them
 func TestFillPhononTable(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping TestFillPhononTable in short mode")
@@ -389,7 +389,7 @@ func prepareCardForPairingTest(cs *StaticPhononCommandSet) (model.PhononKeyIndex
 	return keyIndex, nil
 }
 
-//Test is informational only for now. Proper error value that should be returned from send is not defined
+// Test is informational only for now. Proper error value that should be returned from send is not defined
 func TestIncompletePairing(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mock, err := NewMockCard(true, false)

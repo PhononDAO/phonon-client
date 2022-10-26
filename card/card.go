@@ -15,10 +15,12 @@ func Connect(readerIndex int) (*PhononCommandSet, error) {
 	return cs, nil
 }
 
-/*QuickSecureConnection is a convenience function which establishes a connection to the card attached
+/*
+QuickSecureConnection is a convenience function which establishes a connection to the card attached
 to the readerIndex given and immediately attempts to open a secure channel with it.
 Equivalent to running SELECT, PAIR, OPEN_SECURE_CHANNEL.
-Does not handle the details of uninitialized cards*/
+Does not handle the details of uninitialized cards
+*/
 func QuickSecureConnection(readerIndex int, isStatic bool) (cs model.PhononCard, err error) {
 	baseCS, err := Connect(readerIndex)
 	if err != nil {

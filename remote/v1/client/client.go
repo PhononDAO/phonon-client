@@ -359,9 +359,9 @@ func (c *RemoteConnection) receiveCertificate(msg v1.Message) {
 	c.remoteCertificateChan <- remoteCert
 }
 
-/////
+// ///
 // Below are the methods that satisfy the interface for remote counterparty
-/////
+// ///
 func (c *RemoteConnection) Identify() error {
 	var nonce [32]byte
 	rand.Read(nonce[:])

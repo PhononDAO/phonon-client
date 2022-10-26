@@ -163,7 +163,20 @@ func TLVDecodePublicPhononFields(phononTLV tlv.TLVCollection) (*model.Phonon, er
 	//Collecting ChainID from extended tags pending a more elegant way to do this
 	for _, entry := range phonon.ExtendedTLV {
 		if entry.Tag == TagChainID {
-			phonon.ChainID = binary.BigEndian.Uint32(entry.Value)
+			v := make([]byte, 4)
+			// pad the beginning with zeros if it's too short
+			if len(entry.Value) < 4 {
+				i := len(entry.Value) - 1
+				j := 0
+				for i >= 0 {
+					v[len(v)-1-j] = entry.Value[i]
+					j++
+					i--
+				}
+			} else {
+				v = entry.Value
+			}
+			phonon.ChainID = binary.BigEndian.Uint32(v)
 		}
 	}
 	return phonon, nil

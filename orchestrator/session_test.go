@@ -3,6 +3,7 @@ package orchestrator_test
 import (
 	"testing"
 
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/orchestrator"
 	"github.com/GridPlus/phonon-client/remote/v1/server"
@@ -30,7 +31,7 @@ func TestE2EJumpboxSendPhonon(t *testing.T) {
 	//todo: fix this
 
 	go server.StartServer("42069", "/Users/nate/Documents/localhost.cer.pem", "/Users/nate/Documents/localhost.key.pem")
-	term := orchestrator.NewPhononTerminal()
+	term := orchestrator.NewPhononTerminal(config.DefaultConfig())
 	mock1, _ := term.GenerateMock()
 	mock2, _ := term.GenerateMock()
 
@@ -67,7 +68,7 @@ func TestE2EJumpboxSendPhonon(t *testing.T) {
 
 func TestE2ELocalSendPhonon(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	term := orchestrator.NewPhononTerminal()
+	term := orchestrator.NewPhononTerminal(config.DefaultConfig())
 	mock1, _ := term.GenerateMock()
 	mock2, _ := term.GenerateMock()
 

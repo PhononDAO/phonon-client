@@ -5,14 +5,16 @@ import (
 
 	// "github.com/GridPlus/phonon-client/card"
 	// "github.com/GridPlus/phonon-client/cert"
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/orchestrator"
+
 	// "github.com/GridPlus/phonon-client/util"
 	"github.com/sirupsen/logrus"
 )
 
 func TestCardToCardPair(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
-	term := orchestrator.NewPhononTerminal()
+	term := orchestrator.NewPhononTerminal(config.DefaultConfig())
 	sessions, err := term.RefreshSessions()
 	if err != nil {
 		t.Error(err)

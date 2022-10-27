@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/GridPlus/keycard-go/io"
+	"github.com/GridPlus/phonon-client/config"
 	"github.com/GridPlus/phonon-client/model"
 	"github.com/GridPlus/phonon-client/usb"
 	"github.com/google/go-cmp/cmp"
@@ -24,7 +25,7 @@ func TestSelect(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	cs := NewPhononCommandSet(io.NewNormalChannel(card), config.DefaultConfig())
 	if err != nil {
 		t.Error(err)
 		return
@@ -59,7 +60,7 @@ func TestOpenSecureConnection(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	cs := NewPhononCommandSet(io.NewNormalChannel(card), config.DefaultConfig())
 	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
@@ -78,7 +79,7 @@ func TestCreateSetAndListPhonons(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	cs := NewPhononCommandSet(io.NewNormalChannel(card), config.DefaultConfig())
 	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
@@ -201,7 +202,7 @@ func TestDestroyPhonon(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	cs := NewPhononCommandSet(io.NewNormalChannel(card), config.DefaultConfig())
 	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
@@ -255,7 +256,7 @@ func TestFillPhononTable(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	cs := NewPhononCommandSet(io.NewNormalChannel(card), config.DefaultConfig())
 	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
@@ -309,7 +310,7 @@ func TestReuseDestroyedIndex(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	cs := NewPhononCommandSet(io.NewNormalChannel(card))
+	cs := NewPhononCommandSet(io.NewNormalChannel(card), config.DefaultConfig())
 	err = cs.OpenSecureConnection()
 	if err != nil {
 		t.Error(err)
@@ -404,7 +405,7 @@ func TestIncompletePairing(t *testing.T) {
 		return
 	}
 	//Use static command set to generate debugger logs
-	cs := NewStaticPhononCommandSet(NewPhononCommandSet(io.NewNormalChannel(card)))
+	cs := NewStaticPhononCommandSet(NewPhononCommandSet(io.NewNormalChannel(card), config.DefaultConfig()))
 
 	keyIndex, err := prepareCardForPairingTest(cs)
 	if err != nil {

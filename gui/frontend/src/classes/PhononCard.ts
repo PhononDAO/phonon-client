@@ -9,7 +9,8 @@ export class PhononCard {
   VanityName: string | null;
   IsLocked: boolean;
   IsMock: boolean;
-  IsActive: boolean;
+  IsInTray: boolean;
+  ShowActions: boolean;
   Phonons: Array<Phonon>;
 
   constructor() {
@@ -17,7 +18,8 @@ export class PhononCard {
     this.VanityName = null;
     this.IsLocked = true;
     this.IsMock = false;
-    this.IsActive = false;
+    this.IsInTray = false;
+    this.ShowActions = true;
     this.Phonons = [];
   }
 }

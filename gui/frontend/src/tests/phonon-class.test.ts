@@ -12,6 +12,7 @@ describe('Phonon Class', () => {
     expect(aPhonon.AddressType).toBeNull();
     expect(aPhonon.ChainID).toBeNull();
     expect(aPhonon.CurveType).toBeNull();
+    expect(aPhonon.CurrencyType).toBeNull();
     expect(aPhonon.Denomination).toBeNull();
     expect(aPhonon.ExtendedSchemaVersion).toBeNull();
     expect(aPhonon.KeyIndex).toBeNull();
@@ -23,8 +24,9 @@ describe('Phonon Class', () => {
     const bPhonon = new Phonon();
     bPhonon.Address = 'some address';
     bPhonon.AddressType = 1;
-    bPhonon.ChainID = 1;
+    bPhonon.ChainID = '1';
     bPhonon.CurveType = 1;
+    bPhonon.CurrencyType = 2;
     bPhonon.Denomination = 'some deonomination';
     bPhonon.ExtendedSchemaVersion = 1;
     bPhonon.KeyIndex = 0;
@@ -34,8 +36,9 @@ describe('Phonon Class', () => {
 
     expect(typeof bPhonon.Address).toBe('string');
     expect(typeof bPhonon.AddressType).toBe('number');
-    expect(typeof bPhonon.ChainID).toBe('number');
+    expect(typeof bPhonon.ChainID).toBe('string');
     expect(typeof bPhonon.CurveType).toBe('number');
+    expect(typeof bPhonon.CurrencyType).toBe('number');
     expect(typeof bPhonon.Denomination).toBe('string');
     expect(typeof bPhonon.ExtendedSchemaVersion).toBe('number');
     expect(typeof bPhonon.KeyIndex).toBe('number');

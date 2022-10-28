@@ -15,8 +15,8 @@ import {
   PinInputField,
 } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
-import { notifySuccess } from '../utils/notify';
-import { useRef } from 'react';
+import { notifyError, notifySuccess } from '../utils/notify';
+import { useRef, useState } from 'react';
 
 export const ModalUnlockCard: React.FC<{
   isOpen;
@@ -25,16 +25,26 @@ export const ModalUnlockCard: React.FC<{
   setThisCard;
 }> = ({ isOpen, onClose, card, setThisCard }) => {
   const { t } = useTranslation();
+  const [isError, setIsError] = useState(false);
   const initialRef = useRef(null);
   const pinLength = 6;
 
   const unlockCard = () => {
-    setThisCard((prevState) => ({
-      ...prevState,
-      IsLocked: false,
-    }));
-    onClose();
-    notifySuccess(t('Card "' + String(card.CardId) + '" is unlocked!'));
+    if (false) {
+      setIsError(true);
+      notifyError(t('Wrong PIN for "' + String(card.CardId) + '"!'));
+
+      setInterval(() => {
+        setIsError(false);
+      }, 1000);
+    } else {
+      setThisCard((prevState) => ({
+        ...prevState,
+        IsLocked: false,
+      }));
+      onClose();
+      notifySuccess(t('Card "' + String(card.CardId) + '" is unlocked!'));
+    }
   };
 
   return (
@@ -45,7 +55,9 @@ export const ModalUnlockCard: React.FC<{
       initialFocusRef={initialRef}
     >
       <ModalOverlay />
-      <ModalContent className="overflow-hidden">
+      <ModalContent
+        className={'overflow-hidden ' + (isError ? 'animate-errorShake' : '')}
+      >
         <ModalHeader>
           <div className="font-noto-sans-mono">
             <div className="text-2xl">

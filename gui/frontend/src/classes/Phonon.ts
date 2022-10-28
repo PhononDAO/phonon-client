@@ -5,8 +5,9 @@
 export class Phonon {
   Address: string | null;
   AddressType: number | null;
-  ChainID: number | null;
+  ChainID: string | null;
   CurveType: number | null;
+  CurrencyType: number | null;
   Denomination: string | null;
   ExtendedSchemaVersion: number | null;
   KeyIndex: number | null;
@@ -19,6 +20,7 @@ export class Phonon {
     this.AddressType = null;
     this.ChainID = null;
     this.CurveType = null;
+    this.CurrencyType = null;
     this.Denomination = null;
     this.ExtendedSchemaVersion = null;
     this.KeyIndex = null;

@@ -4,6 +4,7 @@ import { IonIcon } from '@ionic/react';
 import { lockClosed } from 'ionicons/icons';
 import { ModalUnlockCard } from '../ModalUnlockCard';
 import { useDisclosure } from '@chakra-ui/react';
+import { useEffect } from 'react';
 
 export const UnlockCard: React.FC<{
   card: Card;

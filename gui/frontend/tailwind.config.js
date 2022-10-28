@@ -4,6 +4,9 @@ module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
+      margin: {
+        full: '96%',
+      },
       boxShadow: {
         top: '0 0px 8px',
       },
@@ -26,14 +29,24 @@ module.exports = {
       rotate: {
         30: '30deg',
       },
+      transitionProperty: {
+        height: 'height',
+      },
       keyframes: {
         dismissIndicator: {
           '0%': { width: '100%' },
           '100%': { width: '0px' },
         },
+        errorShake: {
+          '10%, 90%': { transform: 'translate3d(-2px, 0, 0)' },
+          '20%, 80%': { transform: 'translate3d(4px, 0, 0)' },
+          '30%, 50%, 70%': { transform: 'translate3d(-6px, 0, 0)' },
+          '40%, 60%': { transform: 'translate3d(6px, 0, 0)' },
+        },
       },
       animation: {
         dismissIndicator: 'dismissIndicator 8s ease-out 1',
+        errorShake: 'errorShake 0.8s cubic-bezier(0.97,0.19,0.07,0.36) both',
       },
     },
   },

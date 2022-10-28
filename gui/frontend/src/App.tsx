@@ -8,7 +8,7 @@ const App = () => {
   return (
     <Suspense fallback={<PageLoading />}>
       <NotificationTray />
-      <div className="w-full overflow-hidden flex flex-col h-screen bg-black relative">
+      <div className="w-full overflow-scroll flex flex-col h-screen bg-black relative">
         <Header />
         <Stage />
       </div>

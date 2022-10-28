@@ -25,3 +25,7 @@
 .flip-card-back {
   transform: rotateY(180deg);
 }
+
+.card-selected:hover {
+  transform: perspective(2000px) rotateY(25deg);
+}

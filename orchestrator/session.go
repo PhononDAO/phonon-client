@@ -309,6 +309,50 @@ func (s *Session) MineNativePhonon(difficulty uint8) (string, error) {
 	return id, nil
 }
 
+func (s *Session) MineNative(difficulty int) error {
+	if !s.verified() {
+		return card.ErrPINNotEntered
+	}
+
+	s.ElementUsageMtex.Lock()
+	defer s.ElementUsageMtex.Unlock()
+
+	start := time.Now()
+	var i int
+	for i = 1; i > 0; i++ {
+		elapsed := time.Since(start)
+		averageTime := time.Duration(float64(elapsed.Nanoseconds()) / float64(i))
+
+		fmt.Println("Mining attempt #", i)
+		keyIndex, hash, err := s.cs.MineNativePhonon(uint8(difficulty))
+		fmt.Println("Mining duration: ", elapsed)
+		if err == card.ErrMiningFailed {
+			fmt.Println("mining failed to find a phonon, retrying...")
+			fmt.Println("mining time started: ", start)
+			fmt.Println("mining time elapsed: ", elapsed)
+			fmt.Println("mining average time: ", averageTime)
+		} else if err != nil {
+			fmt.Println("unknown error mining phonon. Error: ", err)
+			fmt.Println("mining time started: ", start)
+			fmt.Println("mining time elapsed: ", elapsed)
+			fmt.Println("mining time stopped: ", time.Now())
+			return err
+		} else {
+			fmt.Printf("mined native phonon after %d attempts\n", i)
+			fmt.Println("mining time started: ", start)
+			fmt.Println("mining time elapsed: ", elapsed)
+			fmt.Println("mining time stopped: ", time.Now())
+			fmt.Println("mining average time: ", averageTime)
+			fmt.Printf("key index: %d\n", keyIndex)
+			fmt.Printf("hash: %x\n", hash)
+			break
+		}
+	}
+	fmt.Printf("\nmining completed with difficulty of %v bit(s): \n", difficulty)
+	fmt.Println("total mining attempts: ", i)
+	return nil
+}
+
 func (s *Session) GetCardId() string {
 	//If identity public key has already been cached by pairing, return it
 	if s.identityPubKey != nil {

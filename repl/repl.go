@@ -2,6 +2,7 @@ package repl
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/GridPlus/phonon-client/config"
@@ -133,6 +134,12 @@ func Start() {
 		Func: setName,
 		Help: "set the name of the active card",
 	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "mineNative",
+		Func: mineNative,
+		Help: "mine native tokens on the active card",
+	})
 	//Automatically refresh connections as the user is dropped into the shell
 	shell.Process("refresh")
 	shell.Run()
@@ -219,6 +226,32 @@ func listCards(c *ishell.Context) {
 				c.Printf("%v - %v\n", s.GetCardId(), name)
 			}
 		}
+	}
+}
+
+func mineNative(c *ishell.Context) {
+	if ready := checkActiveCard(c); !ready {
+		return
+	}
+
+	numCorrectArgs := 1
+	if len(c.Args) != numCorrectArgs {
+		c.Printf("mineNative requires %v arguments, %v provided")
+		return
+	}
+
+	difficulty := c.Args[0]
+
+	difficultyToInt, err := strconv.Atoi(difficulty)
+	if err != nil {
+		c.Printf("difficulty must be an integer")
+		return
+	}
+
+	err = activeCard.MineNative(difficultyToInt)
+	if err != nil {
+		c.Printf("error mining native tokens: %v", err)
+		return
 	}
 }
 

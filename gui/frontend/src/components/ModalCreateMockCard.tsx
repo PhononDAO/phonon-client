@@ -14,15 +14,22 @@ import {
 import { PhononCard as Card } from '../classes/PhononCard';
 import { useTranslation } from 'react-i18next';
 import { notifySuccess } from '../utils/notify';
+import { useContext } from 'react';
+import { CardManagementContext } from '../assets/contexts/CardManagementContext';
 
 export const ModalCreateMockCard: React.FC<{
   isOpen;
   onClose;
 }> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
+  const { addPhononCardsToState } = useContext(CardManagementContext);
 
   const createMockCard = () => {
-    // TODO
+    const aCard = new Card();
+    aCard.CardId = '04e0d5eb884ae' + String(Math.floor(Math.random() * 999));
+    aCard.IsMock = true;
+
+    addPhononCardsToState([aCard]);
 
     notifySuccess(t('New mock card created!'));
 

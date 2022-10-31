@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { Phonon as aPhonon } from '../classes/Phonon';
 import { abbreviateHash, fromDecimals } from '../utils/formatting';
 import { ChainIDTag } from './ChainIDTag';
@@ -8,8 +7,6 @@ export const Phonon: React.FC<{
   phonon: aPhonon;
   layoutType?: string;
 }> = ({ phonon = null, layoutType = 'list' }) => {
-  const { t } = useTranslation();
-
   return (
     phonon && (
       <div

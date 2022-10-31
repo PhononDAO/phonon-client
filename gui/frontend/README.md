@@ -20,7 +20,7 @@ Starts a watcher that keeps Tailwind CSS styles up to date.
 
 ### `npm run version`
 
-Generates the latest version to be used for feature support checks.
+Generates the latest version as an exportable variable.
 
 ### `npm run test`
 
@@ -172,8 +172,6 @@ notifyPromise(somePromise, 'blockchain transaction');
 ## Feature Version Support
 
 To make a feature work for a specific version add a flag to the hook `useFeature`.
-
-Keep the latest version constant up-to-date by running `npm run version`.
 
 # Deployment
 

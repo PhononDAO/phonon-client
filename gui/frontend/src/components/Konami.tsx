@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
 
 export const Konami = () => {
-  const { t } = useTranslation();
   const keyTimeDelay = 500;
   const [konamiCode] = useState([
     'ArrowUp',

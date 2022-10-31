@@ -6,4 +6,9 @@ export const CURRENCIES: { [key: string]: Currency } = {
     ticker: 'ETH',
     decimals: 18,
   },
+  3: {
+    name: 'Matic',
+    ticker: 'MATIC',
+    decimals: 18,
+  },
 };

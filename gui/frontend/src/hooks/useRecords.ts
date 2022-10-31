@@ -12,18 +12,18 @@ import { PhononCard } from '../interfaces/interfaces';
  */
 export const useRecords = <T extends PhononCard>(
   defaultValue: T[],
-  Address = 'Address'
+  CardId = 'CardId'
 ): [T[], (toAdd: T[]) => void, (toRemove: T[]) => void, () => void] => {
   const [records, setRecords] = useState<T[]>(defaultValue);
 
   const addRecords = (recordsToAdd: T[]) =>
     setRecords((recordsInState) =>
-      unionBy(recordsInState, recordsToAdd, Address)
+      unionBy(recordsInState, recordsToAdd, CardId)
     );
 
   const removeRecords = (recordsToRemove: T[]) =>
     setRecords((recordsInState) =>
-      differenceBy(recordsInState, recordsToRemove, Address)
+      differenceBy(recordsInState, recordsToRemove, CardId)
     );
 
   const resetRecords = () => setRecords([]);

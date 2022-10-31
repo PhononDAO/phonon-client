@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { PhononCard as Card } from '../classes/PhononCard';
+import { useForm, SubmitHandler, Controller } from 'react-hook-form';
 import {
   Button,
   ButtonGroup,
@@ -16,44 +17,59 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { notifyError, notifySuccess } from '../utils/notify';
-import { useRef, useState } from 'react';
+import { useRef, useState, useContext } from 'react';
+import { CardManagementContext } from '../assets/contexts/CardManagementContext';
+
+type PINFormData = {
+  cardPin: string;
+};
 
 export const ModalUnlockCard: React.FC<{
   isOpen;
   onClose;
   card: Card;
-  setThisCard;
-}> = ({ isOpen, onClose, card, setThisCard }) => {
+}> = ({ isOpen, onClose, card }) => {
   const { t } = useTranslation();
   const [isError, setIsError] = useState(false);
-  const initialRef = useRef(null);
+  const { addPhononCardsToState } = useContext(CardManagementContext);
+  const ref = useRef(null);
   const pinLength = 6;
 
-  const unlockCard = () => {
-    if (false) {
+  const {
+    control,
+    register,
+    handleSubmit,
+    setError,
+    setValue,
+    formState: { errors },
+  } = useForm<PINFormData>();
+
+  // event when you start mining a phonon
+  const onSubmit = (data: PINFormData, event) => {
+    event.preventDefault();
+
+    if (data.cardPin !== '111111') {
+      setError('cardPin', {
+        type: 'custom',
+        message: 'Incorrect PIN, please try again.',
+      });
+      setValue('cardPin', '');
       setIsError(true);
-      notifyError(t('Wrong PIN for "' + String(card.CardId) + '"!'));
 
       setInterval(() => {
         setIsError(false);
       }, 1000);
     } else {
-      setThisCard((prevState) => ({
-        ...prevState,
-        IsLocked: false,
-      }));
+      card.IsLocked = false;
+      addPhononCardsToState([card]);
+
       onClose();
       notifySuccess(t('Card "' + String(card.CardId) + '" is unlocked!'));
     }
   };
 
   return (
-    <Modal
-      size={'sm'}
-      isOpen={isOpen}
-      onClose={onClose}
-      initialFocusRef={initialRef}
-    >
+    <Modal size={'sm'} isOpen={isOpen} onClose={onClose} initialFocusRef={ref}>
       <ModalOverlay />
       <ModalContent
         className={'overflow-hidden ' + (isError ? 'animate-errorShake' : '')}
@@ -69,36 +85,52 @@ export const ModalUnlockCard: React.FC<{
           </div>
         </ModalHeader>
         <ModalCloseButton />
-        <ModalBody pb={6}>
-          <div className="mb-2">{t('Enter PIN to unlock card:')}</div>
-          <form>
-            <HStack>
-              <PinInput mask>
-                {Array(pinLength)
-                  .fill(null)
-                  .map((val, key) => (
-                    <PinInputField
-                      bg="gray.700"
-                      color="white"
-                      key={key}
-                      ref={key === 0 ? initialRef : null}
-                    />
-                  ))}
-              </PinInput>
-            </HStack>
-          </form>
-        </ModalBody>
+        <form
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <ModalBody pb={6}>
+            <div className="mb-2">{t('Enter PIN to unlock card:')}</div>
 
-        <ModalFooter>
-          <ButtonGroup spacing={2}>
-            <Button size="sm" variant="ghost" onClick={onClose}>
-              {t('Cancel')}
-            </Button>
-            <Button size="sm" colorScheme="green" onClick={unlockCard}>
-              {t('UNLOCK')}
-            </Button>
-          </ButtonGroup>
-        </ModalFooter>
+            <Controller
+              control={control}
+              {...register('cardPin', {
+                required: 'Card PIN Required',
+                minLength: { value: pinLength, message: 'Card PIN too short' },
+              })}
+              render={({ field: { ref, ...restField } }) => (
+                <HStack>
+                  <PinInput {...restField} mask>
+                    {Array(pinLength)
+                      .fill(null)
+                      .map((val, key) => (
+                        <PinInputField
+                          bg="gray.700"
+                          color="white"
+                          key={key}
+                          ref={key === 0 ? ref : null}
+                        />
+                      ))}
+                  </PinInput>
+                </HStack>
+              )}
+            />
+            {errors.cardPin && (
+              <span className="text-red-600">{errors.cardPin.message}</span>
+            )}
+          </ModalBody>
+
+          <ModalFooter>
+            <ButtonGroup spacing={2}>
+              <Button size="sm" variant="ghost" onClick={onClose}>
+                {t('Cancel')}
+              </Button>
+              <Button size="sm" colorScheme="green" type="submit">
+                {t('UNLOCK')}
+              </Button>
+            </ButtonGroup>
+          </ModalFooter>
+        </form>
       </ModalContent>
     </Modal>
   );

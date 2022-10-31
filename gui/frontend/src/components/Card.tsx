@@ -1,6 +1,7 @@
-import { useTranslation } from 'react-i18next';
+import { useContext } from 'react';
 import { useDrag } from 'react-dnd';
-import { PhononCard as Card } from '../classes/PhononCard';
+import { CardManagementContext } from '../assets/contexts/CardManagementContext';
+import { PhononCard } from '../classes/PhononCard';
 
 import { CardBack } from './PhononCardStates/CardBack';
 import { CardFront } from './PhononCardStates/CardFront';
@@ -9,21 +10,18 @@ interface DropResult {
   name: string;
 }
 
-export const PhononCard: React.FC<{
-  card: Card;
-  isMini?: boolean;
-  setThisCard?;
-}> = ({ card, isMini, setThisCard }) => {
-  const { t } = useTranslation();
-  const props = { card, isMini, setThisCard };
+export const Card: React.FC<{
+  card: PhononCard;
+}> = ({ card }) => {
+  const { isCardsMini } = useContext(CardManagementContext);
 
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const [{ isDragging }] = useDrag(() => ({
     type: 'PhononCard',
     item: card,
     end: (item, monitor) => {
       const dropResult = monitor.getDropResult<DropResult>();
       if (item && dropResult) {
-        // item.IsInTray = true;
+        // item.TrayId = true;
       }
     },
     collect: (monitor) => ({
@@ -39,23 +37,23 @@ export const PhononCard: React.FC<{
     <div
       className={
         'transition-all flip-card duration-150 bg-transparent ' +
-        (isMini ? 'w-56 h-36 ' : 'w-80 h-52 ') +
+        (isCardsMini && !card.TrayId ? 'w-56 h-36 ' : 'w-80 h-52 ') +
         (card.IsLocked ? 'flip-card-locked' : '')
       }
     >
       <div className="flip-card-inner relative w-full h-full">
         <div className="flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
           {isDragging ? (
-            !card.IsLocked && <CardBack {...props} />
+            !card.IsLocked && <CardBack card={card} />
           ) : (
-            <CardBack {...props} />
+            <CardBack card={card} />
           )}
         </div>
         <div className="flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
           {isDragging ? (
-            card.IsLocked && <CardFront {...props} />
+            card.IsLocked && <CardFront card={card} />
           ) : (
-            <CardFront {...props} />
+            <CardFront card={card} />
           )}
         </div>
       </div>

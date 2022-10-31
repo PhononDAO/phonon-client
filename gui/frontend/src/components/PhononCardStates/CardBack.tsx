@@ -4,24 +4,25 @@ import { ViewPhonons } from '../PhononCardActions/ViewPhonons';
 import { CloseCard } from '../PhononCardActions/CloseCard';
 import { LockCard } from '../PhononCardActions/LockCard';
 import { useTranslation } from 'react-i18next';
+import { useContext } from 'react';
+import { CardManagementContext } from '../../assets/contexts/CardManagementContext';
 
 export const CardBack: React.FC<{
-  isMini;
   card;
-  setThisCard;
-}> = ({ isMini, card, setThisCard }) => {
+}> = ({ card }) => {
   const { t } = useTranslation();
+  const { isCardsMini } = useContext(CardManagementContext);
 
   return (
     <div className="absolute z-40 w-full h-full p-2">
       <div
         className={
           'flex space-x-2 font-bandeins-sans-bold uppercase ' +
-          (isMini ? 'text-sm' : 'text-md')
+          (isCardsMini && !card.TrayId ? 'text-sm' : 'text-md')
         }
       >
         <img
-          className={'inline ' + (isMini ? 'w-6' : 'w-10')}
+          className={'inline ' + (isCardsMini && !card.TrayId ? 'w-6' : 'w-10')}
           src="/assets/images/phonon-logo.png"
         />{' '}
         <span className="text-white">PHONON</span>
@@ -29,8 +30,8 @@ export const CardBack: React.FC<{
       {card.IsMock && (
         <div
           className={
-            'absolute rotate-30 font-bandeins-sans-bold text-center bg-red-600 py-px ' +
-            (isMini
+            'absolute rotate-30 font-bandeins-sans-bold text-center text-white bg-red-600 py-px ' +
+            (isCardsMini && !card.TrayId
               ? 'w-48 top-5 -right-12 text-sm'
               : 'w-60 top-5 -right-16 text-md')
           }
@@ -42,20 +43,27 @@ export const CardBack: React.FC<{
       <div className="absolute bottom-0 left-0 w-full">
         <div
           className={
-            'text-right text-sm text-white pr-1 ' + (isMini ? 'py-px' : 'py-2')
+            'text-right text-sm text-white pr-1 ' +
+            (isCardsMini && !card.TrayId ? 'py-px' : 'py-2')
           }
         >
           {t('Contains ' + String(card.Phonons.length) + ' Phonons.')}
         </div>
         <div
-          className={'bg-white z-50 pt-px px-2 ' + (isMini ? 'pb-px' : 'pb-2')}
+          className={
+            'bg-white z-50 pt-px px-2 ' +
+            (isCardsMini && !card.TrayId ? 'pb-px' : 'pb-2')
+          }
         >
           <div
             className={
-              'font-noto-sans-mono text-black ' + (isMini ? 'pb-px' : 'pb-2')
+              'font-noto-sans-mono text-black ' +
+              (isCardsMini && !card.TrayId ? 'pb-px' : 'pb-2')
             }
           >
-            <div className={isMini ? 'text-md' : 'text-base'}>
+            <div
+              className={isCardsMini && !card.TrayId ? 'text-md' : 'text-base'}
+            >
               {card.VanityName ? card.VanityName : card.CardId}
             </div>
             {card.VanityName && (
@@ -64,13 +72,13 @@ export const CardBack: React.FC<{
           </div>
           {card.ShowActions && (
             <ButtonGroup className="text-white" spacing={2}>
-              {card.IsInTray ? (
-                <CloseCard setThisCard={setThisCard} isMini={isMini} />
+              {card.TrayId ? (
+                <CloseCard card={card} />
               ) : (
-                <ViewPhonons setThisCard={setThisCard} isMini={isMini} />
+                <ViewPhonons card={card} />
               )}
-              <CardSettings isMini={isMini} />
-              <LockCard setThisCard={setThisCard} isMini={isMini} />
+              <CardSettings card={card} />
+              <LockCard card={card} />
             </ButtonGroup>
           )}
         </div>

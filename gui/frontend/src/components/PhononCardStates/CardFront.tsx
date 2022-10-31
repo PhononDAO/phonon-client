@@ -1,17 +1,18 @@
 import { UnlockCard } from '../PhononCardActions/UnlockCard';
 import { useTranslation } from 'react-i18next';
+import { useContext } from 'react';
+import { CardManagementContext } from '../../assets/contexts/CardManagementContext';
 
 export const CardFront: React.FC<{
-  isMini;
   card;
-  setThisCard;
-}> = ({ isMini, card, setThisCard }) => {
+}> = ({ card }) => {
   const { t } = useTranslation();
+  const { isCardsMini } = useContext(CardManagementContext);
 
   return (
     <div className="absolute w-full h-full">
       <div className="absolute w-full h-full p-2 font-noto-sans-mono">
-        <div className={'text-white ' + (isMini ? 'text-md' : 'text-lg')}>
+        <div className={'text-white ' + (isCardsMini ? 'text-md' : 'text-lg')}>
           {card.VanityName ? card.VanityName : card.CardId}
         </div>
         {card.VanityName && (
@@ -21,7 +22,7 @@ export const CardFront: React.FC<{
       <img
         className={
           'absolute ' +
-          (isMini ? 'w-16 right-10 bottom-3' : 'w-24 right-12 bottom-4')
+          (isCardsMini ? 'w-16 right-10 bottom-3' : 'w-24 right-12 bottom-4')
         }
         src="/assets/images/phonon-logo.png"
       />
@@ -29,20 +30,20 @@ export const CardFront: React.FC<{
         <div
           className={
             'absolute text-center font-bandeins-sans-bold text-white uppercase rotate-90 ' +
-            (isMini
+            (isCardsMini
               ? 'text-3xl -right-[46px]'
               : 'text-phonon-card -right-[74px]')
           }
         >
           PHONON
         </div>
-        {<UnlockCard card={card} setThisCard={setThisCard} isMini={isMini} />}
+        {<UnlockCard card={card} />}
       </div>
       {card.IsMock && (
         <div
           className={
-            'absolute rotate-30 font-bandeins-sans-bold text-center bg-red-600 py-px ' +
-            (isMini
+            'absolute rotate-30 font-bandeins-sans-bold text-center text-white bg-red-600 py-px ' +
+            (isCardsMini
               ? 'w-48 top-24 -left-12 text-sm'
               : 'w-60 top-40 -left-16 text-md')
           }

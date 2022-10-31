@@ -705,6 +705,11 @@ video {
   margin-bottom: 3rem;
 }
 
+.my-2{
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .mt-40{
   margin-top: 10rem;
 }
@@ -743,6 +748,10 @@ video {
 
 .mb-0{
   margin-bottom: 0px;
+}
+
+.block{
+  display: block;
 }
 
 .inline-block{
@@ -847,6 +856,10 @@ video {
 
 .w-32{
   width: 8rem;
+}
+
+.flex-1{
+  flex: 1 1 0%;
 }
 
 .flex-grow{
@@ -1026,6 +1039,10 @@ video {
 .gap-x-12{
   -webkit-column-gap: 3rem;
           column-gap: 3rem;
+}
+
+.gap-y-2{
+  row-gap: 0.5rem;
 }
 
 .space-x-1 > :not([hidden]) ~ :not([hidden]){
@@ -1212,6 +1229,10 @@ video {
   padding: 0.5rem;
 }
 
+.p-16{
+  padding: 4rem;
+}
+
 .px-4{
   padding-left: 1rem;
   padding-right: 1rem;
@@ -1240,6 +1261,11 @@ video {
 .px-2{
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+
+.py-0{
+  padding-top: 0px;
+  padding-bottom: 0px;
 }
 
 .pt-24{

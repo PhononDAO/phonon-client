@@ -3,21 +3,24 @@ import { IonIcon } from '@ionic/react';
 import { caretUpCircle } from 'ionicons/icons';
 import { Button, IconButton } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
+import { useContext } from 'react';
+import { CardManagementContext } from '../../assets/contexts/CardManagementContext';
+import { PhononCard } from '../../interfaces/interfaces';
 
 export const CloseCard: React.FC<{
-  setThisCard;
-  isMini?: boolean;
-}> = ({ setThisCard, isMini = false }) => {
+  card: PhononCard;
+}> = ({ card }) => {
   const { t } = useTranslation();
+  const { addPhononCardsToState, isCardsMini } = useContext(
+    CardManagementContext
+  );
 
   const closeCard = () => {
-    setThisCard((prevState) => ({
-      ...prevState,
-      IsActive: false,
-    }));
+    card.TrayId = false;
+    addPhononCardsToState([card]);
   };
 
-  return isMini ? (
+  return isCardsMini && !card.TrayId ? (
     <IconButton
       bg="darkGray.100"
       aria-label={t('Close Card')}

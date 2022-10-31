@@ -49,7 +49,7 @@ export interface PhononCard {
   VanityName: string;
   IsLocked: boolean;
   IsMock: boolean;
-  IsInTray: boolean;
+  TrayId: boolean;
   ShowActions: boolean;
   Phonons: Array<Phonon>;
 }

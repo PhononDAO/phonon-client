@@ -3,21 +3,25 @@ import { IonIcon } from '@ionic/react';
 import { lockOpen } from 'ionicons/icons';
 import { Button, IconButton } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
+import { useContext } from 'react';
+import { CardManagementContext } from '../../assets/contexts/CardManagementContext';
+import { PhononCard } from '../../interfaces/interfaces';
 
 export const LockCard: React.FC<{
-  setThisCard;
-  isMini?: boolean;
-}> = ({ setThisCard, isMini = false }) => {
+  card: PhononCard;
+}> = ({ card }) => {
   const { t } = useTranslation();
+  const { addPhononCardsToState, isCardsMini } = useContext(
+    CardManagementContext
+  );
 
   const lockCard = () => {
-    setThisCard((prevState) => ({
-      ...prevState,
-      IsLocked: true,
-    }));
+    card.IsLocked = true;
+    card.TrayId = false;
+    addPhononCardsToState([card]);
   };
 
-  return isMini ? (
+  return isCardsMini && !card.TrayId ? (
     <IconButton
       colorScheme="red"
       aria-label={t('Lock')}

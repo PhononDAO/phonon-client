@@ -4,14 +4,14 @@ import { IonIcon } from '@ionic/react';
 import { lockClosed } from 'ionicons/icons';
 import { ModalUnlockCard } from '../ModalUnlockCard';
 import { useDisclosure } from '@chakra-ui/react';
-import { useEffect } from 'react';
+import { useContext } from 'react';
+import { CardManagementContext } from '../../assets/contexts/CardManagementContext';
 
 export const UnlockCard: React.FC<{
   card: Card;
-  setThisCard;
-  isMini?: boolean;
-}> = ({ card, setThisCard, isMini = false }) => {
+}> = ({ card }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isCardsMini } = useContext(CardManagementContext);
 
   return (
     <>
@@ -21,18 +21,15 @@ export const UnlockCard: React.FC<{
       >
         <IonIcon
           className={
-            'duration-150 ' +
-            (isMini ? 'text-4xl hover:text-5xl' : 'text-6xl hover:text-7xl')
+            'p-16 duration-150 ' +
+            (isCardsMini && !card.TrayId
+              ? 'text-4xl hover:text-5xl'
+              : 'text-6xl hover:text-7xl')
           }
           icon={lockClosed}
         />
       </button>
-      <ModalUnlockCard
-        isOpen={isOpen}
-        onClose={onClose}
-        card={card}
-        setThisCard={setThisCard}
-      />
+      <ModalUnlockCard isOpen={isOpen} onClose={onClose} card={card} />
     </>
   );
 };

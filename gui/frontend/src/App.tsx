@@ -1,13 +1,14 @@
 import React, { Suspense } from 'react';
-import { Header } from './components/Header';
 import { NotificationTray } from './components/NotificationTray';
+import { Header } from './components/Header';
 import { Stage } from './components/Stage';
+import { PageLoading } from './components/PageLoading';
 
 const App = () => {
   return (
-    <Suspense fallback="loading">
+    <Suspense fallback={<PageLoading />}>
       <NotificationTray />
-      <div className="w-100 flex flex-col h-screen relative">
+      <div className="w-full overflow-scroll flex flex-col h-screen bg-black relative">
         <Header />
         <Stage />
       </div>

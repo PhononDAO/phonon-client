@@ -11,14 +11,16 @@ describe('Phonon Card Class', () => {
 
     expect(aPhononCard.CardId).toBeNull();
     expect(aPhononCard.VanityName).toBeNull();
-    expect(aPhononCard.IsLocked).toBeNull();
+    expect(aPhononCard.IsLocked).toBe(true);
+    expect(aPhononCard.IsMock).toBe(false);
+    expect(aPhononCard.TrayId).toBe(false);
+    expect(aPhononCard.ShowActions).toBe(true);
     expect(aPhononCard.Phonons).toStrictEqual([]);
 
     // a data filled Phonon Card
     const bPhononCard = new PhononCard();
     bPhononCard.CardId = 'some card id';
     bPhononCard.VanityName = 'some vanity name';
-    bPhononCard.IsLocked = true;
 
     const aPhonon = new Phonon();
     bPhononCard.Phonons = [aPhonon];
@@ -26,6 +28,9 @@ describe('Phonon Card Class', () => {
     expect(typeof bPhononCard.CardId).toBe('string');
     expect(typeof bPhononCard.VanityName).toBe('string');
     expect(typeof bPhononCard.IsLocked).toBe('boolean');
+    expect(typeof bPhononCard.IsMock).toBe('boolean');
+    expect(typeof bPhononCard.TrayId).toBe('boolean');
+    expect(typeof bPhononCard.ShowActions).toBe('boolean');
     expect(typeof bPhononCard.Phonons).toBe('object');
     expect(bPhononCard.Phonons[0] instanceof Phonon).toBe(true);
   });

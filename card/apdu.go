@@ -35,6 +35,7 @@ const (
 	InsGenerateInvoice    = 0x54
 	InsGetFriendlyName    = 0x56
 	InsSetFriendlyName    = 0x57
+	InsLoadCA             = 0x58
 	InsReceiveInvoice     = 0x55
 	InsGetAvailableMemory = 0x99
 	InsMineNativePhonon   = 0x41
@@ -117,6 +118,8 @@ const (
 var (
 	ErrMiningFailed       = errors.New("native phonon mine attempt failed")
 	ErrInvalidPhononIndex = errors.New("invalid phonon index")
+	ErrInvalidKeyLength   = errors.New("key invalid length")
+	ErrCertLocked         = errors.New("certificate already locked. cannot be reset")
 	ErrDefault            = errors.New("unspecified error for command")
 )
 
@@ -438,6 +441,21 @@ func NewCommandFinalizeCardPair(data []byte) *Command {
 	}
 }
 
+func NewCommandLoadCertAuthority(data []byte) *Command {
+	return &Command{
+		ApduCmd: apdu.NewCommand(
+			globalplatform.ClaGp,
+			InsLoadCA,
+			0x00,
+			0x00,
+			data,
+		),
+		PossibleErrs: CmdErrTable{
+			SW_FUNC_NOT_SUPPORTED: ErrCertLocked,
+			SW_WRONG_DATA:         ErrInvalidKeyLength,
+		},
+	}
+}
 func NewCommandInstallCert(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
@@ -448,7 +466,7 @@ func NewCommandInstallCert(data []byte) *Command {
 			data,
 		),
 		PossibleErrs: CmdErrTable{
-			SW_COMMAND_NOT_ALLOWED: errors.New("certificate already loaded"),
+			SW_COMMAND_NOT_ALLOWED: ErrCertLocked,
 			SW_DATA_INVALID:        errors.New("unable to save certificate"),
 		},
 	}

@@ -27,13 +27,15 @@ android-sdk:
 	cd session && gomobile bind  -target android -o ../androidSDK/phononAndroid.aar
 
 frontend:
-	#(cd gui/frontend && npm install)
-	#(cd gui/frontend && npm run build)
-	echo "this is where the frontend build would be if there was one"
+	(cd gui/frontend && npm install)
+	(cd gui/frontend && npm run build)
+
 jumpbox-only: generate
 	go build -o jumpbox extra/jumpbox/main.go
+
 repl-only: generate
 	go build -o phonon-repl extra/repl-only/main.go
+
 release-mac: generate frontend
 	go get ./...
 	CGO_ENABLED=1 CC="clang -target arm64v8-apple-darwin-macho" GOOS=darwin GOARCH=arm64 go build -o phonon_arm64 main/phonon.go
@@ -49,6 +51,7 @@ release-mac: generate frontend
 		--background "./release/MacOS/background.png" \
 		phonon.dmg \
 		./release/MacOS/Phonon.app
+
 release-win: windows-build
 	go run extra/wxsgenerator/generator.go release/win/wix/phonon.wxs.templ > phonon.wxs
 	candle.exe "phonon.wxs"  -ext WixUtilExtension -ext wixUIExtension -arch x64

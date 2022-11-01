@@ -1,13 +1,13 @@
 package tlv
 
 import (
-	"encoding/hex"
-	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/GridPlus/keycard-go/hexutils"
 	"github.com/GridPlus/phonon-client/util"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
 
 // Duplicate tags needed for standalone TLV test here
@@ -83,25 +83,42 @@ func TestParseBERTLVPacket(t *testing.T) {
 		"912015FB87F3577AC358E209EED7316C6EDB96981E04B4ED7E5DF597677B0B90BC2B921058EAE71460719CF332C9206863BD50F093473045022100C67639FA671CCCFC91B8A0CBFFFF5553EFBDC143933170C7129C48A42B45E3BE02204B12629A498DF0974E6B9DA4F915DC0C64D4C07E9C167E2FFA354B2888B9F79C",
 	}
 	for i, c := range cases {
-		fmt.Println("CASE", i)
-		r, err := ParseTLVPacket(hexutils.HexToBytes(c), TagAppVersion)
-		if err != nil {
-			fmt.Println("ERR", i, err)
-		}
-		for k, v := range r {
-			fmt.Println("## KEY", k, "VAL LEN", len(v[0]))
-			fmt.Println("##", k, "VAL STR", hex.EncodeToString(v[0]))
-		}
-		fmt.Printf("########\n\n")
+		collection, err := ParseTLVPacket(hexutils.HexToBytes(c))
+		require.NotEmptyf(t, collection, "empty tlv for case %d", i)
+		require.NoError(t, err, "unexpected err '%s' for case %d", i)
+		t.Logf("decoded TLV: %v", collection)
 	}
 }
 
-// TODO:
-// - test edgecases: 0 len TLV, overflowing TLV (>65535, or some other value)
-// - test invalid TLV:
-//    - TLV too short, VALUE is < LENGTH
-//    - unexpected number of found tags
-//    - expected tag not found
-//    - more tags than expected
-// EXTRAS:
-// Add tests for other functions which were not covered earlier
+func TestEncodeDecode(t *testing.T) {
+	// 80530000# - 1 TLV (no nesting)
+	cases := []string{
+		// 80510000# - 1 TLV (no nesting)
+		"90819030900202000080410468F84EC5BF0B5F4EB94ED720EF99FC1EFA4FECE6EA9B9138C3F4C07E169C0940DBF9128BD9ABAB58E8B8AEAA9F6313AEB9D17B05E37201FD68201F4AEB675903304502205AA91139AA469435F5F5EE3D18E333276C97F39792D02300D1DB89D89853EC2002210090AD60F5767B1A62FD91054B48DCBAE5CEA7B469349993A4C2A38698D92A3BE9912096DC0119296C3C2236E5146A72BCBD284CE68535727A43C2B784B378CB243C21",
+
+		// 80530000# - 1 TLV (no nesting)
+		"93473045022100C7DC911449F799FAD2F2522D2CDFF88B69A4BFFABC4D90A734454BAA63CE28AE0220128B78E3C1EA07F1B9CB84D38DA8BF6EC64F107EE73ED78275EEF9A6691BB7E1",
+	}
+	// test encoding on non-nesting TLV (short and long)
+	for i, c := range cases {
+		r, err := ParseTLVPacket(hexutils.HexToBytes(c))
+		require.NoError(t, err, "case %d failed to parse", i)
+
+		tlvList := []TLV{}
+
+		// order tlvs so result is deterministic
+		for k, v := range r {
+			tlv, err := NewTLV(k, v[0])
+			require.NotEmptyf(t, tlv, "empty tlv for case %d", i)
+			require.NoError(t, err, "unexpected err '%s' for case %d", i)
+			tlvList = append(tlvList, tlv)
+		}
+		sort.Slice(tlvList, func(i, j int) bool {
+			return tlvList[i].Tag < tlvList[j].Tag
+		})
+
+		encoded := hexutils.BytesToHex(EncodeTLVList(tlvList...))
+		require.Equal(t, c, encoded, "case '%d' does not match", i)
+		t.Logf("value after encode: %s", encoded)
+	}
+}

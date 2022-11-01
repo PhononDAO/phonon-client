@@ -33,6 +33,8 @@ type MockCard struct {
 	pinVerified     bool
 	sc              SecureChannel
 	receiveList     []*ecdsa.PublicKey
+	caPubKey        []byte
+	caPubKeyLocked  bool
 	identityKey     *ecdsa.PrivateKey
 	IdentityPubKey  *ecdsa.PublicKey
 	IdentityCert    cert.CardCertificate
@@ -171,6 +173,8 @@ func NewMockCard(isInitialized bool, isStatic bool) (*MockCard, error) {
 	}
 
 	mockCard := &MockCard{
+		caPubKeyLocked: false,
+		caPubKey:       cert.PhononDemoCAPubKey, //set default pubkey (reset by loadCertAuthority)
 		identityKey:    identityPrivKey,
 		IdentityPubKey: &identityPrivKey.PublicKey,
 		invoices:       make(map[string][]byte),
@@ -263,6 +267,19 @@ func (c *MockCard) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, card
 	return c.IdentityPubKey, cardSig, nil
 }
 
+func (c *MockCard) LoadCertAuthority(CAPubKey []byte) (err error) {
+	if c.caPubKeyLocked == true {
+		return ErrCertLocked
+	}
+	_, err = util.ParseECCPubKey(CAPubKey)
+	if err != nil {
+		return ErrInvalidKeyLength
+	}
+	c.caPubKey = CAPubKey
+	c.caPubKeyLocked = true
+
+	return nil
+}
 func (c *MockCard) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) error {
 	var err error
 	rawCardCert, err := cert.CreateCardCertificate(c.IdentityPubKey, signKeyFunc)
@@ -379,7 +396,7 @@ func (c *MockCard) CardPair(initCardPairingData []byte) (cardPairingData []byte,
 	log.Debugf("Sig: % X", senderCardCert.Sig)
 
 	//Validate counterparty certificate
-	err = cert.ValidateCardCertificate(senderCardCert, gridplus.SafecardDevCAPubKey)
+	err = cert.ValidateCardCertificate(senderCardCert, c.caPubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -460,7 +477,7 @@ func (c *MockCard) CardPair2(cardPairData []byte) (cardPair2Data []byte, err err
 		return nil, err
 	}
 	//Validate counterparty certificate
-	err = cert.ValidateCardCertificate(c.scPairData.counterPartyCert, gridplus.SafecardDevCAPubKey)
+	err = cert.ValidateCardCertificate(c.scPairData.counterPartyCert, c.caPubKey)
 	if err != nil {
 		return nil, err
 	}

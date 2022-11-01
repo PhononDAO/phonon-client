@@ -39,9 +39,50 @@ func NewTLV(tag byte, value []byte) (TLV, error) {
 
 // Encode a TLV structure as serialized bytes
 func (tlv *TLV) Encode() []byte {
-	prefix := []byte{tlv.Tag, byte(tlv.Length)}
+	prefix := append([]byte{tlv.Tag}, tlv.EncodeLen()...)
 	serializedBytes := append(prefix, tlv.Value...)
 	return serializedBytes
+}
+
+// EncodeLen returns encoded length of the value.
+/*
+The TLV is encoded as follows:
+TAG: 1st byte
+LENGTH: can be encoded using a GROUP 1 to 3 bytes
+- 1st byte of LENGTH group defines the number of bytes encoding the LENGTH
+- case LENGTH < 0x7f (127) -> LENGTH encoded using single byte
+	- the LENGHT byte has already been read
+- CASE 0x7f < LENGTH < 0xff -> LENGTH encoded using 2 bytes
+    - the first byte will be 0x81
+	- second byte is the LENGTH
+- case LENGTH > 0xff (255) -> LENGTH encoded using 3 bytes
+    - first byte will be 0x82
+	- second and third bytes are the actual value LENGTH
+*/
+func (tlv TLV) EncodeLen() []byte {
+	if tlv.Length <= 0x7f {
+		return []byte{byte(tlv.Length)}
+	}
+
+	// check len and figure out how many bytes are needed to encode it
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, uint32(tlv.Length))
+	var idx int
+	for ; idx < 4; idx++ {
+		if buf[idx] != 0 {
+			break
+		}
+	}
+
+	octets := buf[idx:]
+	numOctets := len(octets)
+	encodedLen := make([]byte, 1+numOctets)
+	// 0x81 (len < 255, 0xff)
+	// 0x82 (len > 255 -> takes 2 bytes to encode)
+	encodedLen[0] = 0x80 | byte(numOctets)
+
+	copy(encodedLen[1:], octets)
+	return encodedLen
 }
 
 /*Parses a TLV encoded response structure

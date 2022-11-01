@@ -794,6 +794,16 @@ func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 	return nil
 }
 
+func (cs *PhononCommandSet) LoadCertAuthority(CAPubKey []byte) (err error) {
+	log.Debug("sending LOAD_CA command")
+	cmd := NewCommandLoadCertAuthority(CAPubKey)
+	_, err = cs.Send(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (cs *PhononCommandSet) InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) (err error) {
 	nonce := make([]byte, 32)
 	n, err := io.ReadFull(rand.Reader, nonce)

@@ -11,8 +11,8 @@ import theme from './chakra-theme';
 import './styles.css';
 
 const container = document.getElementById('root');
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-const root = createRoot(container!);
+
+const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <ErrorBoundary FallbackComponent={ErrorFallback} onError={ErrorHandler}>

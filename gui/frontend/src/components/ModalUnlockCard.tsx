@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { PhononCard as Card } from '../classes/PhononCard';
-import { useForm, SubmitHandler, Controller } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import {
   Button,
   ButtonGroup,
@@ -16,7 +16,7 @@ import {
   PinInputField,
 } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
-import { notifyError, notifySuccess } from '../utils/notify';
+import { notifySuccess } from '../utils/notify';
 import { useRef, useState, useContext } from 'react';
 import { CardManagementContext } from '../assets/contexts/CardManagementContext';
 

@@ -22,9 +22,7 @@ export const UnlockCard: React.FC<{
         <IonIcon
           className={
             'p-16 duration-150 ' +
-            (isCardsMini && !card.TrayId
-              ? 'text-4xl hover:text-5xl'
-              : 'text-6xl hover:text-7xl')
+            (isCardsMini && !card.TrayId ? 'text-4xl' : 'text-6xl')
           }
           icon={lockClosed}
         />

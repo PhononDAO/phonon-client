@@ -51,6 +51,6 @@
   transform: rotateY(180deg);
 }
 
-.card-selected:hover {
+.flip-card-tilt:hover {
   transform: perspective(2000px) rotateY(25deg);
 }

@@ -11,20 +11,15 @@ import { CardManagementContext } from '../assets/contexts/CardManagementContext'
 export const CardTray: React.FC<{
   card: PhononCard;
   canHaveRemote?: boolean;
-  setDeckCard;
-}> = ({ card = null, canHaveRemote = false, setDeckCard }) => {
+}> = ({ card = null, canHaveRemote = false }) => {
   const { t } = useTranslation();
-  const { addPhononCardsToState, setIsCardsMini } = useContext(
-    CardManagementContext
-  );
+  const { addPhononCardsToState } = useContext(CardManagementContext);
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'PhononCard',
     drop: (item: PhononCard, monitor) => {
-      monitor.getItem().TrayId = true;
+      monitor.getItem().InTray = true;
       addPhononCardsToState([item]);
-      setDeckCard(item);
-      setIsCardsMini(true);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
@@ -33,7 +28,7 @@ export const CardTray: React.FC<{
   }));
 
   // only show card if not a mock card or if mock cards are enabled
-  return card?.TrayId ? (
+  return card?.InTray ? (
     <div className="w-80 h-52">
       <Card card={card} />
     </div>

@@ -18,11 +18,11 @@ export const CardBack: React.FC<{
       <div
         className={
           'flex space-x-2 font-bandeins-sans-bold uppercase ' +
-          (isCardsMini && !card.TrayId ? 'text-sm' : 'text-md')
+          (isCardsMini && !card.InTray ? 'text-sm' : 'text-md')
         }
       >
         <img
-          className={'inline ' + (isCardsMini && !card.TrayId ? 'w-6' : 'w-10')}
+          className={'inline ' + (isCardsMini && !card.InTray ? 'w-6' : 'w-10')}
           src="/assets/images/phonon-logo.png"
         />{' '}
         <span className="text-white">PHONON</span>
@@ -31,7 +31,7 @@ export const CardBack: React.FC<{
         <div
           className={
             'absolute rotate-30 font-bandeins-sans-bold text-center text-white bg-red-600 py-px ' +
-            (isCardsMini && !card.TrayId
+            (isCardsMini && !card.InTray
               ? 'w-48 top-5 -right-12 text-sm'
               : 'w-60 top-5 -right-16 text-md')
           }
@@ -44,7 +44,7 @@ export const CardBack: React.FC<{
         <div
           className={
             'text-right text-sm text-white pr-1 ' +
-            (isCardsMini && !card.TrayId ? 'py-px' : 'py-2')
+            (isCardsMini && !card.InTray ? 'py-px' : 'py-2')
           }
         >
           {t('Contains ' + String(card.Phonons.length) + ' Phonons.')}
@@ -52,17 +52,17 @@ export const CardBack: React.FC<{
         <div
           className={
             'bg-white z-50 pt-px px-2 ' +
-            (isCardsMini && !card.TrayId ? 'pb-px' : 'pb-2')
+            (isCardsMini && !card.InTray ? 'pb-px' : 'pb-2')
           }
         >
           <div
             className={
               'font-noto-sans-mono text-black ' +
-              (isCardsMini && !card.TrayId ? 'pb-px' : 'pb-2')
+              (isCardsMini && !card.InTray ? 'pb-px' : 'pb-2')
             }
           >
             <div
-              className={isCardsMini && !card.TrayId ? 'text-md' : 'text-base'}
+              className={isCardsMini && !card.InTray ? 'text-md' : 'text-base'}
             >
               {card.VanityName ? card.VanityName : card.CardId}
             </div>
@@ -72,7 +72,7 @@ export const CardBack: React.FC<{
           </div>
           {card.ShowActions && (
             <ButtonGroup className="text-white" spacing={2}>
-              {card.TrayId ? (
+              {card.InTray ? (
                 <CloseCard card={card} />
               ) : (
                 <ViewPhonons card={card} />

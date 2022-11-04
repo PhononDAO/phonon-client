@@ -17,7 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { notifySuccess } from '../utils/notify';
-import { useRef, useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { CardManagementContext } from '../assets/contexts/CardManagementContext';
 
 type PINFormData = {
@@ -32,7 +32,6 @@ export const ModalUnlockCard: React.FC<{
   const { t } = useTranslation();
   const [isError, setIsError] = useState(false);
   const { addPhononCardsToState } = useContext(CardManagementContext);
-  const ref = useRef(null);
   const pinLength = 6;
 
   const {
@@ -69,7 +68,7 @@ export const ModalUnlockCard: React.FC<{
   };
 
   return (
-    <Modal size={'sm'} isOpen={isOpen} onClose={onClose} initialFocusRef={ref}>
+    <Modal size={'sm'} isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent
         className={'overflow-hidden ' + (isError ? 'animate-errorShake' : '')}
@@ -98,18 +97,13 @@ export const ModalUnlockCard: React.FC<{
                 required: 'Card PIN Required',
                 minLength: { value: pinLength, message: 'Card PIN too short' },
               })}
-              render={({ field: { ref, ...restField } }) => (
+              render={({ field: { ...restField } }) => (
                 <HStack>
                   <PinInput {...restField} mask>
                     {Array(pinLength)
                       .fill(null)
                       .map((val, key) => (
-                        <PinInputField
-                          bg="gray.700"
-                          color="white"
-                          key={key}
-                          ref={key === 0 ? ref : null}
-                        />
+                        <PinInputField bg="gray.700" color="white" key={key} />
                       ))}
                   </PinInput>
                 </HStack>

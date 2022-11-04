@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useDrag } from 'react-dnd';
+import { useDrop } from 'react-dnd';
 import { PhononCard } from '../classes/PhononCard';
 import { HelpTooltip } from './HelpTooltip';
 import { useFeature } from '../hooks/useFeature';
@@ -8,43 +8,36 @@ import { Card } from './Card';
 import { useContext } from 'react';
 import { CardManagementContext } from '../assets/contexts/CardManagementContext';
 
-interface DropResult {
-  name: string;
-}
-
 export const WalletSlot: React.FC<{
   card: PhononCard;
 }> = ({ card }) => {
   const { t } = useTranslation();
   const { ENABLE_MOCK_CARDS } = useFeature();
-  const { isCardsMini } = useContext(CardManagementContext);
+  const { addPhononCardsToState, isCardsMini } = useContext(
+    CardManagementContext
+  );
 
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'PhononCard',
-    item: card,
-    end: (item, monitor) => {
-      const dropResult = monitor.getDropResult<DropResult>();
-      if (item && dropResult) {
-        // item.TrayId = true;
-      }
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: 'PhononCard',
+    drop: (item: PhononCard, monitor) => {
+      monitor.getItem().InTray = false;
+      addPhononCardsToState([item]);
     },
     collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-      handlerId: monitor.getHandlerId(),
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
     }),
   }));
 
   // only show card if not a mock card or if mock cards are enabled
   return (card.IsMock && ENABLE_MOCK_CARDS) || !card.IsMock ? (
-    <div
-      ref={drag}
-      data-testid={`PhononCard`}
-      className={
-        'transition-all  ' +
-        (card.IsLocked && !isDragging ? 'card-selected' : '')
-      }
-    >
-      {isDragging || card.TrayId ? <CardShadow /> : <Card card={card} />}
+    <div>
+      <div
+        ref={drop}
+        className={'relative ' + (isCardsMini ? 'w-56 h-36 ' : 'w-80 h-52')}
+      >
+        {card.InTray ? <CardShadow /> : <Card card={card} />}
+      </div>
 
       {card.IsMock && (
         <div

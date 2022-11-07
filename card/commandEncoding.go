@@ -274,7 +274,7 @@ func ParseIdentifyCardResponse(resp []byte) (cardPubKey *ecdsa.PublicKey, sig *u
 	return cardPubKey, sig, nil
 }
 
-//Replacement for original parsing logic which did not retrieve full certificate
+// Replacement for original parsing logic which did not retrieve full certificate
 func ParsePairStep1Response(resp []byte) (salt []byte, cardCert cert.CardCertificate, pairingSig []byte, err error) {
 	if len(resp) < 34 {
 		return nil, cardCert, nil, errors.New("pairing response was invalid length")

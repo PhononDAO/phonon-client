@@ -15,8 +15,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//Insecure alternative implementation of phonon command set which uses static keys in the card to terminal pairing process
-//in order to allow for debugging with the javacard simulator
+// Insecure alternative implementation of phonon command set which uses static keys in the card to terminal pairing process
+// in order to allow for debugging with the javacard simulator
 type StaticPhononCommandSet struct {
 	*PhononCommandSet
 }
@@ -27,8 +27,8 @@ func NewStaticPhononCommandSet(cs *PhononCommandSet) *StaticPhononCommandSet {
 	}
 }
 
-//staticBytes returns a slice of bytes filled with 0x01 values of the specified length
-//for the purpose of generating deterministic pairing variables
+// staticBytes returns a slice of bytes filled with 0x01 values of the specified length
+// for the purpose of generating deterministic pairing variables
 func staticBytes(length int) []byte {
 	bytes := make([]byte, length)
 	for i := 0; i < length; i++ {
@@ -208,8 +208,10 @@ func (cs *StaticPhononCommandSet) mutualAuthenticate() error {
 	return cs.checkOK(resp, err)
 }
 
-/*OpenSecureChannel is a convenience function to perform all of the necessary options to open a card
-to terminal secure channel in sequence. Runs SELECT, PAIR, OPEN_SECURE_CHANNEL*/
+/*
+OpenSecureChannel is a convenience function to perform all of the necessary options to open a card
+to terminal secure channel in sequence. Runs SELECT, PAIR, OPEN_SECURE_CHANNEL
+*/
 func (cs *StaticPhononCommandSet) OpenSecureConnection() error {
 	_, _, _, err := cs.Select()
 	if err != nil {

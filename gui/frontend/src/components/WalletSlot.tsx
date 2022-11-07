@@ -17,7 +17,7 @@ export const WalletSlot: React.FC<{
     CardManagementContext
   );
 
-  const [{ isOver }, drop] = useDrop(() => ({
+  const [{}, drop] = useDrop(() => ({
     accept: 'PhononCard',
     drop: (item: PhononCard, monitor) => {
       monitor.getItem().InTray = false;

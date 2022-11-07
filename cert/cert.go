@@ -59,7 +59,7 @@ var PhononAlphaCAPubKey = []byte{
 	0xa9, 0x24, 0xb6, 0x27, 0xf1, 0x5d, 0xec, 0x51,
 }
 
-//Additional CA Key for testing purposes
+// Additional CA Key for testing purposes
 var PhononMockCAPubKey = []byte{
 	0x04,
 	0xa0, 0x48, 0xd2, 0x7a, 0xe0, 0x10, 0xeb, 0x05,
@@ -81,8 +81,8 @@ var PhononMockCAPrivKey = []byte{
 
 var ErrInvalidCert = errors.New("certificate signature was invalid")
 
-//Accepts a safecard certificate and validates it against the provided CA PubKey
-//Safecard CA's provided by SafecardProdCAPubKey or SafecardDevCAPubKey for the respective environments
+// Accepts a safecard certificate and validates it against the provided CA PubKey
+// Safecard CA's provided by SafecardProdCAPubKey or SafecardDevCAPubKey for the respective environments
 func ValidateCardCertificate(cert CardCertificate, CAPubKey []byte) error {
 	//Hash of cert excepting signature, certType, and certLen
 	certBytes := cert.Digest()
@@ -107,7 +107,7 @@ func ValidateCardCertificate(cert CardCertificate, CAPubKey []byte) error {
 	return nil
 }
 
-//Create a card certificate, signing with the key supplied in the signKeyFunc
+// Create a card certificate, signing with the key supplied in the signKeyFunc
 func CreateCardCertificate(cardPubKey *ecdsa.PublicKey, signKeyFunc func([]byte) ([]byte, error)) ([]byte, error) {
 	cardPubKeyBytes := ethcrypto.FromECDSAPub(cardPubKey)
 
@@ -223,9 +223,9 @@ func ParseRawCardCertificate(cardCertificateRaw []byte) (cert CardCertificate, e
 	return cert, nil
 }
 
-//Digest the certificate data, permissions and pubkey into bytes
-//This is the set of bytes used to sign and validate the certificate
-//(skips the first two bytes for cert type and length)
+// Digest the certificate data, permissions and pubkey into bytes
+// This is the set of bytes used to sign and validate the certificate
+// (skips the first two bytes for cert type and length)
 func (cert CardCertificate) Digest() []byte {
 	bytes := []byte{
 		cert.Permissions.permType,
@@ -238,8 +238,8 @@ func (cert CardCertificate) Digest() []byte {
 	return bytes
 }
 
-//Serialize the full certificate, including the cert type and length
-//which are unused in the certificate signature
+// Serialize the full certificate, including the cert type and length
+// which are unused in the certificate signature
 func (cert CardCertificate) Serialize() []byte {
 	bytes := []byte{
 		cert.Permissions.certType,

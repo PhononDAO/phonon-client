@@ -95,7 +95,7 @@ func (sc *SecureChannel) RawPublicKey() []byte {
 	return ethcrypto.FromECDSAPub(sc.publicKey)
 }
 
-//AES-CBC-256 Symmetric encryption
+// AES-CBC-256 Symmetric encryption
 func (sc *SecureChannel) Send(cmd *Command) (resp *apdu.Response, err error) {
 	log.Debugf("raw command before encryption: CLA: % X Ins: % X P1: % X P2: % X Data: % X", cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2, cmd.ApduCmd.Data)
 	log.Debugf("raw command in APDU format: %X", append([]byte{cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2}, cmd.ApduCmd.Data...))
@@ -173,7 +173,7 @@ func (sc *SecureChannel) updateIV(meta, data []byte) error {
 	return nil
 }
 
-//Encrypt data and return ciphertext directly
+// Encrypt data and return ciphertext directly
 func (sc *SecureChannel) Encrypt(data []byte) (ciphertext []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -200,9 +200,9 @@ func (sc *SecureChannel) Encrypt(data []byte) (ciphertext []byte, err error) {
 	return ciphertext, nil
 }
 
-//DecryptDirect decrypts a message but does not track iv updates or authenticate the decryption with the MAC
-//Useful for decrypting a message that was just encrypted by the same channel, rather than by a counterparty channel
-//which is keeping the IV in sync. Could also be used to decrypt a message which provides the IV
+// DecryptDirect decrypts a message but does not track iv updates or authenticate the decryption with the MAC
+// Useful for decrypting a message that was just encrypted by the same channel, rather than by a counterparty channel
+// which is keeping the IV in sync. Could also be used to decrypt a message which provides the IV
 func (sc *SecureChannel) DecryptDirect(ciphertext []byte, iv []byte) (data []byte, err error) {
 	log.Debugf("ciphertext: % X", ciphertext)
 	// meta := []byte{byte(len(ciphertext)), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
@@ -223,9 +223,9 @@ func (sc *SecureChannel) DecryptDirect(ciphertext []byte, iv []byte) (data []byt
 	return data, nil
 }
 
-//Decrypts the response to the last message Encrypted in this channel
-//The init vector is automatically updated to match the iv the response should use after
-//a Decrypt -> Encrypt cycle
+// Decrypts the response to the last message Encrypted in this channel
+// The init vector is automatically updated to match the iv the response should use after
+// a Decrypt -> Encrypt cycle
 func (sc *SecureChannel) Decrypt(ciphertext []byte) (data []byte, err error) {
 	log.Debug("decrypting ciphertext of length: ", len(ciphertext))
 	log.Debugf("% X", ciphertext)

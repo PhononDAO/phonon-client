@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,10 +41,11 @@ var installCardCert = &cobra.Command{
 }
 
 var (
-	useDemoKey    bool
-	provisionMode bool
-	yubikeySlot   int
-	yubikeyPass   string
+	useDemoKey            bool
+	provisionMode         bool
+	yubikeySlot           int
+	yubikeyPass           string
+	skipLoadCertAuthority bool
 )
 
 func init() {
@@ -54,6 +55,8 @@ func init() {
 	installCardCert.Flags().BoolVarP(&provisionMode, "provision", "p", false, "suppress all output except for the cardID for automated provisioning")
 	installCardCert.Flags().IntVarP(&yubikeySlot, "slot", "s", 0, "Slot in which the signing yubikey is insterted")
 	installCardCert.Flags().StringVarP(&yubikeyPass, "pass", "", "", "Yubikey Password")
+	installCardCert.Flags().BoolVarP(&skipLoadCertAuthority, "s-ca", "c", false, "Skip loading the Certificate Authority Public Key before installing the individual certificate. Useful for pre-Beta cards that lack this feature")
+
 }
 
 func InstallCardCert() {
@@ -104,6 +107,23 @@ func InstallCardCert() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	//Load the certificate authority if option enabled
+	if !skipLoadCertAuthority {
+		var ca []byte
+		if useDemoKey {
+			ca = cert.PhononDemoCAPubKey
+		} else {
+			//TODO: Allow for alternate keys to be passed as arguments
+			ca = cert.PhononAlphaCAPubKey
+		}
+		err = cs.LoadCertAuthority(ca)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
 	err = cs.InstallCertificate(signKeyFunc)
 	if err != nil {
 		log.Fatalf("Unable to Install Certificate: %s", err.Error())

@@ -106,7 +106,7 @@ func (cs PhononCommandSet) Send(cmd *Command) (*apdu.Response, error) {
 
 }
 
-//Selects the phonon applet for further usage
+// Selects the phonon applet for further usage
 func (cs *PhononCommandSet) Select() (instanceUID []byte, cardPubKey *ecdsa.PublicKey, cardInitialized bool, err error) {
 	cmd := NewCommandSelectPhononApplet()
 	cmd.ApduCmd.SetLe(0)
@@ -234,8 +234,8 @@ func (cs *PhononCommandSet) Pair() (*cert.CardCertificate, error) {
 	return &cardCert, nil
 }
 
-//checkPairingErrors takes a pairing step, either 1 or 2, and the SW value of the response to return appropriate error messages
-//Errors and error codes are defined internally to this function as they are specific to PAIR and do not apply to other commands
+// checkPairingErrors takes a pairing step, either 1 or 2, and the SW value of the response to return appropriate error messages
+// Errors and error codes are defined internally to this function as they are specific to PAIR and do not apply to other commands
 func checkPairingErrors(pairingStep int, status uint16) (err error) {
 	if pairingStep != 1 && pairingStep != 2 {
 		return errors.New("pairing step must be set to 1 or 2 to check pairing errors")
@@ -318,8 +318,10 @@ func (cs *PhononCommandSet) mutualAuthenticate() error {
 	return cs.checkOK(resp, err)
 }
 
-/*OpenSecureChannel is a convenience function to perform all of the necessary options to open a card
-to terminal secure channel in sequence. Runs SELECT, PAIR, OPEN_SECURE_CHANNEL*/
+/*
+OpenSecureChannel is a convenience function to perform all of the necessary options to open a card
+to terminal secure channel in sequence. Runs SELECT, PAIR, OPEN_SECURE_CHANNEL
+*/
 func (cs *PhononCommandSet) OpenSecureConnection() error {
 	_, _, initialized, err := cs.Select()
 	if err != nil {
@@ -395,7 +397,7 @@ func (cs *PhononCommandSet) checkOK(resp *apdu.Response, err error, allowedRespo
 	return apdu.NewErrBadResponse(resp.Sw, "unexpected response")
 }
 
-//Nonce must be 32 bytes in length
+// Nonce must be 32 bytes in length
 func (cs *PhononCommandSet) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, cardSig *util.ECDSASignature, err error) {
 	log.Debug("sending IDENTIFY_CARD command")
 	cmd := NewCommandIdentifyCard(nonce)
@@ -475,8 +477,8 @@ func (cs *PhononCommandSet) CreatePhonon(curveType model.CurveType) (keyIndex mo
 	return keyIndex, pubKey, nil
 }
 
-//Common error code checks for commands that deal with the phonon table
-//CREATE_PHONON, LIST_PHONONS, DESTROY_PHONON, etc.
+// Common error code checks for commands that deal with the phonon table
+// CREATE_PHONON, LIST_PHONONS, DESTROY_PHONON, etc.
 func checkPhononTableErrors(sw uint16) error {
 	switch sw {
 	case StatusPhononTableFull:
@@ -510,9 +512,9 @@ func (cs *PhononCommandSet) SetDescriptor(p *model.Phonon) error {
 	return cs.checkOK(resp, err)
 }
 
-//ListPhonons takes a currency type and range bounds and returns a listing of the phonons currently stored on the card
-//Set lessThanValue or greaterThanValue to 0 to ignore the parameter. Returned phonons omit the public key to reduce data transmission
-//After processing, the list client should send GET_PHONON_PUB_KEY to retrieve the corresponding pubkeys if necessary.
+// ListPhonons takes a currency type and range bounds and returns a listing of the phonons currently stored on the card
+// Set lessThanValue or greaterThanValue to 0 to ignore the parameter. Returned phonons omit the public key to reduce data transmission
+// After processing, the list client should send GET_PHONON_PUB_KEY to retrieve the corresponding pubkeys if necessary.
 func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessThanValue uint64, greaterThanValue uint64, continuation bool) ([]*model.Phonon, error) {
 	log.Debug("sending LIST_PHONONS command")
 	p2, cmdData, err := encodeListPhononsData(currencyType, lessThanValue, greaterThanValue)
@@ -561,7 +563,7 @@ func (cs *PhononCommandSet) ListPhonons(currencyType model.CurrencyType, lessTha
 	return phonons, nil
 }
 
-//Generally checks status, including extended responses
+// Generally checks status, including extended responses
 func checkContinuation(status uint16) (continues bool, err error) {
 	if status == 0x9000 {
 		return false, nil
@@ -690,7 +692,7 @@ func (cs *PhononCommandSet) ReceivePhonons(phononTransfer []byte) error {
 	return nil
 }
 
-//Implemented with support for single
+// Implemented with support for single
 func (cs *PhononCommandSet) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
 	log.Debug("sending SET_RECV_LIST command")
 	data, err := encodeSetReceiveListData(phononPubKeys)
@@ -726,8 +728,8 @@ func (cs *PhononCommandSet) TransactionAck(keyIndices []model.PhononKeyIndex) er
 	return nil
 }
 
-//InitCardPairing tells a card to initialized a pairing with another phonon card
-//Data is passed transparently from card to card since no client processing is necessary
+// InitCardPairing tells a card to initialized a pairing with another phonon card
+// Data is passed transparently from card to card since no client processing is necessary
 func (cs *PhononCommandSet) InitCardPairing(receiverCert cert.CardCertificate) (initPairingData []byte, err error) {
 	log.Debug("sending INIT_CARD_PAIRING command")
 	certTLV, err := tlv.NewTLV(TagCardCertificate, receiverCert.Serialize())
@@ -746,8 +748,8 @@ func (cs *PhononCommandSet) InitCardPairing(receiverCert cert.CardCertificate) (
 	return resp.Data, nil
 }
 
-//CardPair takes the response from initCardPairing and passes it to the counterparty card
-//for the next step of pairing
+// CardPair takes the response from initCardPairing and passes it to the counterparty card
+// for the next step of pairing
 func (cs *PhononCommandSet) CardPair(initPairingData []byte) (cardPairData []byte, err error) {
 	log.Debug("sending CARD_PAIR command")
 	cmd := NewCommandCardPair(initPairingData)
@@ -789,6 +791,16 @@ func (cs *PhononCommandSet) FinalizeCardPair(cardPair2Data []byte) (err error) {
 		return err
 	}
 
+	return nil
+}
+
+func (cs *PhononCommandSet) LoadCertAuthority(CAPubKey []byte) (err error) {
+	log.Debug("sending LOAD_CA command")
+	cmd := NewCommandLoadCertAuthority(CAPubKey)
+	_, err = cs.Send(cmd)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

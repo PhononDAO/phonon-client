@@ -2,7 +2,6 @@
 import { PhononCard as Card } from '../../classes/PhononCard';
 import { IonIcon } from '@ionic/react';
 import { lockClosed } from 'ionicons/icons';
-
 import { useContext } from 'react';
 import { CardManagementContext } from '../../assets/contexts/CardManagementContext';
 

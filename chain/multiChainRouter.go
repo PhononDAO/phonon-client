@@ -7,15 +7,17 @@ import (
 	"github.com/GridPlus/phonon-client/model"
 )
 
-/*MultiChainRouter is a ChainService supporting multiple currencyTypes by
-encapsulating a specific hardcoded collection of ChainServices keyed by CurrencyType*/
+/*
+MultiChainRouter is a ChainService supporting multiple currencyTypes by
+encapsulating a specific hardcoded collection of ChainServices keyed by CurrencyType
+*/
 type MultiChainRouter struct {
 	chainServices map[model.CurrencyType]ChainService
 }
 
 var ErrCurrencyTypeUnsupported = errors.New("currency type is not supported")
 
-//Initialize all supported chain services at start
+// Initialize all supported chain services at start
 func NewMultiChainRouter() (*MultiChainRouter, error) {
 	mcr := &MultiChainRouter{
 		chainServices: make(map[model.CurrencyType]ChainService),
@@ -35,7 +37,7 @@ func (mcr *MultiChainRouter) initBuiltinChainServices() (err error) {
 	return nil
 }
 
-//ChainService interface methods
+// ChainService interface methods
 func (mcr *MultiChainRouter) DeriveAddress(p *model.Phonon) (address string, err error) {
 	chain, ok := mcr.chainServices[p.CurrencyType]
 	if !ok {

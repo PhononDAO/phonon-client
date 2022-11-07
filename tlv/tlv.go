@@ -25,7 +25,7 @@ var ErrDataNotFound = errors.New("data read hit EOF before specified length was 
 var ErrTagNotFound = errors.New("tag not found in TLV collection")
 var ErrTagEmpty = errors.New("tag contained no parsed data")
 
-//Create a TLV struct from a tag identifier and a value represented as bytes
+// Create a TLV struct from a tag identifier and a value represented as bytes
 func NewTLV(tag byte, value []byte) (TLV, error) {
 	if len(value) > MaxValueBytes {
 		return TLV{}, ErrValueLengthExceedsMax
@@ -37,11 +37,52 @@ func NewTLV(tag byte, value []byte) (TLV, error) {
 	}, nil
 }
 
-//Encode a TLV structure as serialized bytes
+// Encode a TLV structure as serialized bytes
 func (tlv *TLV) Encode() []byte {
-	prefix := []byte{tlv.Tag, byte(tlv.Length)}
+	prefix := append([]byte{tlv.Tag}, tlv.EncodeLen()...)
 	serializedBytes := append(prefix, tlv.Value...)
 	return serializedBytes
+}
+
+// EncodeLen returns encoded length of the value.
+/*
+The TLV is encoded as follows:
+TAG: 1st byte
+LENGTH: can be encoded using a GROUP 1 to 3 bytes
+- 1st byte of LENGTH group defines the number of bytes encoding the LENGTH
+- case LENGTH < 0x7f (127) -> LENGTH encoded using single byte
+	- the LENGHT byte has already been read
+- CASE 0x7f < LENGTH < 0xff -> LENGTH encoded using 2 bytes
+    - the first byte will be 0x81
+	- second byte is the LENGTH
+- case LENGTH > 0xff (255) -> LENGTH encoded using 3 bytes
+    - first byte will be 0x82
+	- second and third bytes are the actual value LENGTH
+*/
+func (tlv TLV) EncodeLen() []byte {
+	if tlv.Length <= 0x7f {
+		return []byte{byte(tlv.Length)}
+	}
+
+	// check len and figure out how many bytes are needed to encode it
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, uint32(tlv.Length))
+	var idx int
+	for ; idx < 4; idx++ {
+		if buf[idx] != 0 {
+			break
+		}
+	}
+
+	octets := buf[idx:]
+	numOctets := len(octets)
+	encodedLen := make([]byte, 1+numOctets)
+	// 0x81 (len < 255, 0xff)
+	// 0x82 (len > 255 -> takes 2 bytes to encode)
+	encodedLen[0] = 0x80 | byte(numOctets)
+
+	copy(encodedLen[1:], octets)
+	return encodedLen
 }
 
 /*Parses a TLV encoded response structure
@@ -100,13 +141,15 @@ TAG: 1st byte
 LENGTH: can be encoded using a GROUP 1 to 3 bytes
 - 1st byte of LENGTH group defines the number of bytes encoding the LENGTH
 - case LENGTH < 0x7f (127) -> LENGTH encoded using single byte
-	- the LENGHT byte has already been read
+  - the LENGHT byte has already been read
+
 - CASE 0x7f < LENGTH < 0xff -> LENGTH encoded using 2 bytes
-    - the first byte will be 0x81
-	- second byte is the LENGTH
+  - the first byte will be 0x81
+  - second byte is the LENGTH
+
 - case LENGTH > 0xff (255) -> LENGTH encoded using 3 bytes
-    - first byte will be 0x82
-	- second and third bytes are the actual value LENGTH
+  - first byte will be 0x82
+  - second and third bytes are the actual value LENGTH
 */
 func ParseTLVPacket(data []byte, constructedTags ...byte) (TLVCollection, error) {
 	buf := bytes.NewBuffer(data)
@@ -181,7 +224,7 @@ func mergeTLVCollections(collections ...TLVCollection) TLVCollection {
 	return result
 }
 
-//FindTag takes a tag as input and returns the first instance of the tag's value
+// FindTag takes a tag as input and returns the first instance of the tag's value
 func (coll TLVCollection) FindTag(tag byte) (value []byte, err error) {
 	valueSlice, err := coll.FindTags(tag)
 	if err != nil {
@@ -190,7 +233,7 @@ func (coll TLVCollection) FindTag(tag byte) (value []byte, err error) {
 	return valueSlice[0], nil
 }
 
-//Findtags takes a tag as input and returns all instances of the tag's values as a slice of slice of byte
+// Findtags takes a tag as input and returns all instances of the tag's values as a slice of slice of byte
 func (coll TLVCollection) FindTags(tag byte) (value [][]byte, err error) {
 	valueSlice, exists := coll[tag]
 	if !exists {
@@ -202,7 +245,7 @@ func (coll TLVCollection) FindTags(tag byte) (value [][]byte, err error) {
 	return valueSlice, nil
 }
 
-//Takes a list of TLVs and encodes them as serialized bytes in FIFO order
+// Takes a list of TLVs and encodes them as serialized bytes in FIFO order
 func EncodeTLVList(tlvList ...TLV) []byte {
 	var data []byte
 	for _, tlv := range tlvList {
@@ -211,8 +254,8 @@ func EncodeTLVList(tlvList ...TLV) []byte {
 	return data
 }
 
-//Removes tags from a collection, returning the remaining TLV's
-//Useful for slicing out extended TLVs after the known ones are parsed
+// Removes tags from a collection, returning the remaining TLV's
+// Useful for slicing out extended TLVs after the known ones are parsed
 func (coll TLVCollection) GetRemainingTLVs(tags []byte) (remaining []TLV) {
 	for _, tag := range tags {
 		delete(coll, tag)

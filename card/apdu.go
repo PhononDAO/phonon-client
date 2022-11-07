@@ -35,6 +35,7 @@ const (
 	InsGenerateInvoice    = 0x54
 	InsGetFriendlyName    = 0x56
 	InsSetFriendlyName    = 0x57
+	InsLoadCA             = 0x58
 	InsReceiveInvoice     = 0x55
 	InsGetAvailableMemory = 0x99
 	InsMineNativePhonon   = 0x41
@@ -117,6 +118,8 @@ const (
 var (
 	ErrMiningFailed       = errors.New("native phonon mine attempt failed")
 	ErrInvalidPhononIndex = errors.New("invalid phonon index")
+	ErrInvalidKeyLength   = errors.New("key invalid length")
+	ErrCertLocked         = errors.New("certificate already locked. cannot be reset")
 	ErrDefault            = errors.New("unspecified error for command")
 )
 
@@ -138,9 +141,9 @@ func (cmd *Command) HumanReadableErr(res *apdu.Response) error {
 	return nil
 }
 
-//NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU
-//As a response it receives the card's public key and and a signature
-//on the salt to prove posession of the private key
+// NewCommandIdentifyCard takes a 32 byte nonce value and sends it along with the IDENTIFY_CARD APDU
+// As a response it receives the card's public key and and a signature
+// on the salt to prove posession of the private key
 func NewCommandIdentifyCard(nonce []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
@@ -315,8 +318,8 @@ func NewCommandSendPhonons(data []byte, p2Length byte, extendedRequest bool) *Co
 	}
 }
 
-//Receives a TLV encoded Phonon Transfer Packet Payload in encrypted form
-//and passes it on directly to a card
+// Receives a TLV encoded Phonon Transfer Packet Payload in encrypted form
+// and passes it on directly to a card
 func NewCommandReceivePhonons(phononTransferPacket []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
@@ -438,6 +441,21 @@ func NewCommandFinalizeCardPair(data []byte) *Command {
 	}
 }
 
+func NewCommandLoadCertAuthority(data []byte) *Command {
+	return &Command{
+		ApduCmd: apdu.NewCommand(
+			globalplatform.ClaGp,
+			InsLoadCA,
+			0x00,
+			0x00,
+			data,
+		),
+		PossibleErrs: CmdErrTable{
+			SW_FUNC_NOT_SUPPORTED: ErrCertLocked,
+			SW_WRONG_DATA:         ErrInvalidKeyLength,
+		},
+	}
+}
 func NewCommandInstallCert(data []byte) *Command {
 	return &Command{
 		ApduCmd: apdu.NewCommand(
@@ -448,7 +466,7 @@ func NewCommandInstallCert(data []byte) *Command {
 			data,
 		),
 		PossibleErrs: CmdErrTable{
-			SW_COMMAND_NOT_ALLOWED: errors.New("certificate already loaded"),
+			SW_COMMAND_NOT_ALLOWED: ErrCertLocked,
 			SW_DATA_INVALID:        errors.New("unable to save certificate"),
 		},
 	}

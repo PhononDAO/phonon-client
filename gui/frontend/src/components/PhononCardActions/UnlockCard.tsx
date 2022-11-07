@@ -2,21 +2,24 @@
 import { PhononCard as Card } from '../../classes/PhononCard';
 import { IonIcon } from '@ionic/react';
 import { lockClosed } from 'ionicons/icons';
-import { ModalUnlockCard } from '../ModalUnlockCard';
-import { useDisclosure } from '@chakra-ui/react';
+
 import { useContext } from 'react';
 import { CardManagementContext } from '../../assets/contexts/CardManagementContext';
 
 export const UnlockCard: React.FC<{
   card: Card;
 }> = ({ card }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isCardsMini } = useContext(CardManagementContext);
+  const { isCardsMini, addPhononCardsToState } = useContext(
+    CardManagementContext
+  );
 
   return (
     <>
       <button
-        onClick={onOpen}
+        onClick={() => {
+          card.AttemptUnlock = true;
+          addPhononCardsToState([card]);
+        }}
         className="w-full z-50 text-amber-400 hover:text-amber-300 text-center"
       >
         <IonIcon
@@ -27,7 +30,6 @@ export const UnlockCard: React.FC<{
           icon={lockClosed}
         />
       </button>
-      <ModalUnlockCard isOpen={isOpen} onClose={onClose} card={card} />
     </>
   );
 };

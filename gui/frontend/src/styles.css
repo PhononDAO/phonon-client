@@ -627,12 +627,16 @@ video {
   position: sticky;
 }
 
-.top-0{
-  top: 0px;
+.-top-16{
+  top: -4rem;
 }
 
 .right-0{
   right: 0px;
+}
+
+.top-0{
+  top: 0px;
 }
 
 .top-2{
@@ -705,14 +709,6 @@ video {
 
 .-left-16{
   left: -4rem;
-}
-
-.-top-20{
-  top: -5rem;
-}
-
-.-top-16{
-  top: -4rem;
 }
 
 .z-50{

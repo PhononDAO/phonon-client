@@ -60,6 +60,12 @@ export const ModalUnlockCard: React.FC<{
       }, 1000);
     } else {
       card.IsLocked = false;
+      if (card.FutureAction) {
+        card[card.FutureAction] = true;
+        card.FutureAction = null;
+      }
+      card.AttemptUnlock = false;
+
       addPhononCardsToState([card]);
 
       onClose();
@@ -68,13 +74,22 @@ export const ModalUnlockCard: React.FC<{
   };
 
   return (
-    <Modal size={'sm'} isOpen={isOpen} onClose={onClose}>
+    <Modal
+      size={'sm'}
+      isOpen={isOpen}
+      onClose={() => {
+        onClose();
+        card.AttemptUnlock = false;
+        addPhononCardsToState([card]);
+      }}
+    >
       <ModalOverlay />
       <ModalContent
         className={'overflow-hidden ' + (isError ? 'animate-errorShake' : '')}
       >
         <ModalHeader>
           <div className="font-noto-sans-mono">
+            <div className="text-sm">Unlocking</div>
             <div className="text-2xl">
               {card.VanityName ? card.VanityName : card.CardId}
             </div>
@@ -116,7 +131,15 @@ export const ModalUnlockCard: React.FC<{
 
           <ModalFooter>
             <ButtonGroup spacing={2}>
-              <Button size="sm" variant="ghost" onClick={onClose}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  onClose();
+                  card.AttemptUnlock = false;
+                  addPhononCardsToState([card]);
+                }}
+              >
                 {t('Cancel')}
               </Button>
               <Button size="sm" colorScheme="green" type="submit">

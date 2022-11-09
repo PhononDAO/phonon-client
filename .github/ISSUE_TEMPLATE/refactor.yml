@@ -1,6 +1,6 @@
 name: Refactoring Request
 description: Suggest a refactor to the phonon-client
-labels: [feature]
+labels: [refactor]
 body:
   - type: textarea
     id: Description

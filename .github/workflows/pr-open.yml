@@ -28,5 +28,7 @@ jobs:
       - name: Install Prereqs
         run: |
             sudo apt-get -y install libpcsclite-dev libgl1-mesa-dev xorg-dev
+      - name: Test
+        run: make test
       - name: build
         run: make build

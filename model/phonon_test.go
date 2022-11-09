@@ -3,7 +3,6 @@ package model
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -57,7 +56,7 @@ func TestDenominationSetAndPrint(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		fmt.Printf("d: %+v\n", d)
+		log.Tracef("d: %+v\n", d)
 		if d.String() != test.output {
 			t.Error("error value output should be '100000' but was ", d.String())
 		}
@@ -88,7 +87,7 @@ func TestDenominationJSONMarshal(t *testing.T) {
 		Denomination Denomination
 	}
 	d, _ := NewDenomination(big.NewInt(1000))
-	t.Log("printed d: ", d)
+	log.Trace("printed d: ", d)
 	input := denominationStruct{
 		Denomination: d,
 	}
@@ -96,7 +95,7 @@ func TestDenominationJSONMarshal(t *testing.T) {
 	if err != nil {
 		t.Error("error marshalling denomination: ", err)
 	}
-	t.Log("printed result: ", string(result))
+	log.Trace("printed result: ", string(result))
 	correct := []byte(`{"Denomination":"1000"}`)
 	if string(result) != string(correct) {
 		t.Errorf("resulting json incorrect. was %v, should be %v\n", string(result), string(correct))

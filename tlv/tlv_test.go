@@ -86,7 +86,7 @@ func TestParseBERTLVPacket(t *testing.T) {
 		collection, err := ParseTLVPacket(hexutils.HexToBytes(c))
 		require.NotEmptyf(t, collection, "empty tlv for case %d", i)
 		require.NoError(t, err, "unexpected err '%s' for case %d", i)
-		t.Logf("decoded TLV: %v", collection)
+		t.Logf("decoded TLV: % X", collection)
 	}
 }
 

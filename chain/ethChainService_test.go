@@ -7,14 +7,9 @@ import (
 	"testing"
 
 	"github.com/GridPlus/phonon-client/model"
-	// "github.com/GridPlus/phonon-client/util"
-	// "github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
-	// "github.com/ethereum/go-ethereum/core/types"
-
-	// "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
@@ -42,8 +37,7 @@ func getSimEVM() (*backends.SimulatedBackend, error) {
 	return simEVM, nil
 }
 
-// TestEthChainServiceRedeem smoke tests the basic redeem funtionality using a ganache backend.
-// Ganache must be stood up manually and this test must be hand edited with valid keys to function.
+// TestEthChainServiceRedeem smoke tests the basic redeem funtionality using a simulated EVM backend
 func TestEthChainServiceRedeem(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
@@ -52,10 +46,6 @@ func TestEthChainServiceRedeem(t *testing.T) {
 		t.Error("unable to start EVM simulator")
 		return
 	}
-	//Hand Edit Here!
-	//Manually change privKeyHex and redeemAddress to values from the ganache backend used for this test
-	// privKeyHex := "287f9caac470d6d8c0a921f60f912f81572ebd4aee6f91c41fdd20f950b27d1f"
-	// redeemAddress := "0x18579269D059CD91581A01C2C3d70B16940c1BA7"
 
 	//Generate sender account
 	senderPrivKey, _ := crypto.GenerateKey()

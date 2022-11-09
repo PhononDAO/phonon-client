@@ -35,5 +35,4 @@ func TestCardPair(t *testing.T) {
 		t.Error("error in card pair")
 		t.Error(err)
 	}
-
 }

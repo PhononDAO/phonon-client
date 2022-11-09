@@ -3,15 +3,15 @@ description: Create a report to help us improve Phonon client.
 labels: [feature]
 body:
   - type: textarea
-    id: description
+    id: Description
     attributes:
-      label: description
+      label: Description
       description: A clear and concise description of what feature you wish to have implemented. The more information you provide, the easier it is for us to know what you wish to have implemented.
   - type: textarea
     id: expected_behaviour
     attributes:
-      label: Expected Behaviour
+      label: Expected Behaviour of the feature
   - type: textarea
-    id: rationale
+    id: Rationale
     attributes:
-      label: reason you want this implemented
+      label: Reason you want this implemented

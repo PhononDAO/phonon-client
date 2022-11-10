@@ -28,23 +28,25 @@ type MockCard struct {
 	Phonons []*MockPhonon
 
 	// This is a slice of indeces of deleted phonons. This is to match the insert logic of the card implementation
-	deletedPhonons  []int
-	pin             string
-	pinVerified     bool
-	sc              SecureChannel
-	receiveList     []*ecdsa.PublicKey
-	caPubKey        []byte
-	caPubKeyLocked  bool
-	identityKey     *ecdsa.PrivateKey
-	IdentityPubKey  *ecdsa.PublicKey
-	IdentityCert    cert.CardCertificate
-	scPairData      SecureChannelPairingDetails
-	invoices        map[string][]byte
-	outgoingInvoice Invoice
-	staticPairing   bool
-	friendlyName    string
-	mintLimit       int
-	mintRate        int
+	deletedPhonons        []int
+	pin                   string
+	pinVerified           bool
+	sc                    SecureChannel
+	receiveList           []*ecdsa.PublicKey
+	caPubKey              []byte
+	caPubKeyLocked        bool
+	identityKey           *ecdsa.PrivateKey
+	IdentityPubKey        *ecdsa.PublicKey
+	IdentityCert          cert.CardCertificate
+	scPairData            SecureChannelPairingDetails
+	invoices              map[string][]byte
+	outgoingInvoice       Invoice
+	staticPairing         bool
+	friendlyName          string
+	mintLimit             int
+	mintRate              int
+	transactionProposedID []byte
+	transactionReceivedID []byte
 }
 
 type MockPhonon struct {
@@ -69,6 +71,40 @@ func (c *MockCard) addPhonon(p *MockPhonon) (index model.PhononKeyIndex) {
 func (c *MockCard) deletePhonon(index int) {
 	c.deletedPhonons = append(c.deletedPhonons, index)
 	c.Phonons[index].deleted = true
+}
+
+func (phonon *MockPhonon) EncodeTransferProposal(transferID []byte) (tlv.TLV, error) {
+	curveTypeTLV, err := tlv.NewTLV(TagCurveType, []byte{byte(phonon.CurveType)})
+	if err != nil {
+		return tlv.TLV{}, err
+	}
+	//Encode internal phonon
+	phononTLV, err := TLVEncodePhononDescriptor(&phonon.Phonon)
+	if err != nil {
+		log.Error("mock could not encode inner phonon: ", phonon.Phonon)
+		return tlv.TLV{}, err
+	}
+	data := append(curveTypeTLV.Encode(), phononTLV...)
+	data = append(data, transferID...)
+	data = append(data, phonon.PubKey.Bytes()...)
+	phononDescriptionTLV, err := tlv.NewTLV(TagPhononProposalDescriptor, data)
+	if err != nil {
+		log.Error("mock could not encode phonon description: ", err)
+		return tlv.TLV{}, err
+	}
+
+	return phononDescriptionTLV, nil
+}
+
+func DecodeTransferProposal(input tlv.TLVCollection) (phonon *model.Phonon, err error) {
+
+	publicPhonon, err := TLVDecodePublicPhononFields(input)
+	if err != nil {
+		return phonon, err
+	}
+	phonon = publicPhonon
+	return
+
 }
 
 func (phonon *MockPhonon) Encode() (tlv.TLV, error) {
@@ -268,7 +304,7 @@ func (c *MockCard) IdentifyCard(nonce []byte) (cardPubKey *ecdsa.PublicKey, card
 }
 
 func (c *MockCard) LoadCertAuthority(CAPubKey []byte) (err error) {
-	if c.caPubKeyLocked == true {
+	if c.caPubKeyLocked {
 		return ErrCertLocked
 	}
 	_, err = util.ParseECCPubKey(CAPubKey)
@@ -638,56 +674,14 @@ func (c *MockCard) GetPhononPubKey(keyIndex model.PhononKeyIndex, crv model.Curv
 	return c.Phonons[index].PubKey, nil
 }
 
-func (c *MockCard) SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error {
-	c.receiveList = phononPubKeys
-	return nil
-}
-
-//For invoiced tranfers
-// func (c *MockCard) SendPhonons(keyIndices []uint16, extendedRequest bool) (transferPhononPackets []byte, err error) {
-// 	var outgoingPhonons []byte
-// 	for _, k := range keyIndices {
-// 		if int(k) > len(c.Phonons) {
-// 			return nil, errors.New("keyIndex exceeds length of phonon list")
-// 		}
-// 		if c.Phonons[k].deleted {
-// 			return nil, errors.New("cannot access deleted phonon")
-// 		}
-// 		phononTLV, err := c.Phonons[k].Encode()
-// 		if err != nil {
-// 			return nil, errors.New("could not encode phonon TLV")
-// 		}
-
-// 		outgoingPhonons = append(outgoingPhonons, phononTLV.Encode()...)
-// 	}
-// 	invoiceSC := SecureChannel{}
-// 	log.Debugf("invoice before sendPhonon encryption")
-// 	log.Debugf("ID: % X", []byte(c.outgoingInvoice.ID))
-// 	log.Debugf("Key: % X", c.outgoingInvoice.Key)
-
-// 	//TODO: divide enckey and MAC
-// 	invoiceSC.Init([]byte(c.outgoingInvoice.ID), c.outgoingInvoice.Key, c.outgoingInvoice.Key)
-
-// 	phononTransferTLV, err := tlv.NewTLV(TagTransferPhononPacket, outgoingPhonons)
-// 	if err != nil {
-// 		return nil, errors.New("could not encode phonon transfer TLV")
-// 	}
-
-// 	encryptedPhonons, err := invoiceSC.Encrypt(phononTransferTLV.Encode())
-// 	if err != nil {
-// 		return nil, errors.New("could not encrypt outgoing phonons")
-// 	}
-
-// 	invoiceIDTLV, err := tlv.NewTLV(TagInvoiceID, []byte(c.outgoingInvoice.ID))
-// 	if err != nil {
-// 		return nil, errors.New("could not encode invoice with TLV")
-// 	}
-// 	response := append(invoiceIDTLV.Encode(), encryptedPhonons...)
-// 	return response, nil
-// }
-
-func (c *MockCard) SendPhonons(keyIndices []model.PhononKeyIndex, extendedRequest bool) (transferPhononPackets []byte, err error) {
-	log.Debug("mock SEND_PHONONS command")
+// SendPhononProposal sends a list of phonon descriptors as well as a randomly generated unique transfer ID to the opposing card
+func (c *MockCard) ProposeTransaction(keyIndices []model.PhononKeyIndex) (phononProposalPacket []byte, err error) {
+	log.Debug("mock SEND_PHONON_PROPOSAL command")
+	proposalID := make([]byte, 4)
+	_, err = rand.Reader.Read(proposalID)
+	if err != nil {
+		return []byte{}, err
+	}
 	var outgoingPhonons []byte
 	for _, k := range keyIndices {
 		if int(k) >= len(c.Phonons) {
@@ -697,7 +691,7 @@ func (c *MockCard) SendPhonons(keyIndices []model.PhononKeyIndex, extendedReques
 			return nil, errors.New("cannot access deleted phonon")
 		}
 		var phononTLV tlv.TLV
-		phononTLV, err = c.Phonons[k].Encode()
+		phononTLV, err = c.Phonons[k].EncodeTransferProposal(proposalID)
 		if err != nil {
 			return nil, errors.New("could not encode phonon TLV")
 		}
@@ -705,7 +699,7 @@ func (c *MockCard) SendPhonons(keyIndices []model.PhononKeyIndex, extendedReques
 		outgoingPhonons = append(outgoingPhonons, phononTLV.Encode()...)
 	}
 
-	phononTransferTLV, err := tlv.NewTLV(TagTransferPhononPacket, outgoingPhonons)
+	phononTransferTLV, err := tlv.NewTLV(TagPhononProposalPakcet, outgoingPhonons)
 	if err != nil {
 		return nil, errors.New("could not encode phonon transfer TLV")
 	}
@@ -723,61 +717,61 @@ func (c *MockCard) SendPhonons(keyIndices []model.PhononKeyIndex, extendedReques
 	return encryptedPhonons, nil
 }
 
-//For invoiced receives
-// func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
-// 	data, err := tlv.ParseTLVPacket(transaction)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	invoiceID, err := data.FindTag(TagInvoiceID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	encKey, ok := c.invoices[string(invoiceID)]
-// 	if !ok {
-// 		return errors.New("invoiceID not found")
-// 	}
-// 	delete(c.invoices, string(invoiceID))
+// ReceivePhononProposal receives a phonon transfer proposal packet and returns the descriptors of the phonons that are proposed to be received
+func (c *MockCard) ReceiveProposedTransaction(phononProposalPacket []byte) (proposedPhonons []*model.Phonon, err error) {
+	log.Debug("mock RECEIVE_TRANSFER_PROPOSAL command")
+	phononTransferProposalPacket, err := c.sc.Decrypt(phononProposalPacket)
+	if err != nil {
+		return []*model.Phonon{}, err
+	}
+	proposalTLV, err := tlv.ParseTLVPacket(phononTransferProposalPacket)
+	if err != nil {
+		return []*model.Phonon{}, err
+	}
 
-// 	//Grab the encrypted data after the 2 byte TLV + invoiceID
-// 	encData := transaction[len(invoiceID)+2:]
+	proposalID, err := proposalTLV.FindTag(TagPhononProposalID)
+	if err != nil {
+		return []*model.Phonon{}, err
+	}
+	c.transactionReceivedID = proposalID
+	proposedPhononsTLV, err := proposalTLV.FindTags(TagPhononProposalDescriptor)
+	ret := []*model.Phonon{}
+	for _, proposedPhononTLVRaw := range proposedPhononsTLV {
+		var proposedPhononTLV tlv.TLVCollection
+		proposedPhononTLV, err = tlv.ParseTLVPacket(proposedPhononTLVRaw)
+		if err != nil {
+			return nil, err
+		}
+		var proposedPhonon *model.Phonon
+		proposedPhonon, err = DecodeTransferProposal(proposedPhononTLV)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, proposedPhonon)
+	}
 
-// 	receiveSC := SecureChannel{}
-// 	receiveSC.Init(invoiceID, encKey, encKey)
-// 	phononTransferPacketData, err := receiveSC.Decrypt(encData)
-// 	if err != nil {
-// 		return err
-// 	}
+	return ret, err
+}
 
-// 	phononTransferPacketTLV, err := tlv.ParseTLVPacket(phononTransferPacketData, TagTransferPhononPacket)
-// 	if err != nil {
-// 		return err
-// 	}
+func (c *MockCard) CancelTransfer() error {
+	c.transactionProposedID = nil
+	c.transactionReceivedID = nil
+	return nil
+}
+func (c *MockCard) ApproveTransaction() (transferApprovalPacket []byte, err error) {
+	ret, err := c.sc.Encrypt(c.transactionReceivedID)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
 
-// 	phononTLVs, err := phononTransferPacketTLV.FindTags(TagPhononPrivateDescription)
-// 	if err != nil {
-// 		return err
-// 	}
+func (c *MockCard) IngestTransactionApproval(transferApprovalPacket []byte) (transferPacket []byte, err error) {
 
-// 	//Parse all received phonons
-// 	var phonons []MockPhonon
-// 	for _, tlv := range phononTLVs {
-// 		phonon, err := decodePhononTLV(tlv)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		phonons = append(phonons, phonon)
-// 	}
-// 	//Store all received phonons
-// 	for _, p := range phonons {
-// 		log.Debugf("adding phonon to table: %+v", p)
-// 		c.addPhonon(p)
-// 	}
+	return []byte{}, nil
+}
 
-// 	return nil
-// }
-
-func (c *MockCard) ReceivePhonons(transaction []byte) (err error) {
+func (c *MockCard) ReceiveTransfer(transaction []byte) (err error) {
 	log.Debug("mock RECEIVE_PHONONS command")
 	phononTransferPacketData, err := c.sc.Decrypt(transaction)
 	if err != nil {
@@ -825,57 +819,6 @@ func (c *MockCard) DestroyPhonon(keyIndex model.PhononKeyIndex) (privKey *ecdsa.
 		return nil, err
 	}
 	return ecdsaPrivKey, nil
-}
-
-func (c *MockCard) GenerateInvoice() (invoiceData []byte, err error) {
-	invoiceID := string(util.RandomKey(16))
-	invoiceKey := util.RandomKey(32)
-
-	c.invoices[invoiceID] = invoiceKey
-
-	keyTLV, err := tlv.NewTLV(TagAESKey, invoiceKey)
-	if err != nil {
-		return nil, err
-	}
-	idTLV, err := tlv.NewTLV(TagAesIV, []byte(invoiceID))
-	if err != nil {
-		return nil, err
-	}
-	data := append(keyTLV.Encode(), idTLV.Encode()...)
-
-	encData, err := c.sc.Encrypt(data)
-	if err != nil {
-		return nil, err
-	}
-
-	return encData, nil
-}
-
-func (c *MockCard) ReceiveInvoice(invoiceData []byte) (err error) {
-	data, err := c.sc.Decrypt(invoiceData)
-	if err != nil {
-		return err
-	}
-	collection, err := tlv.ParseTLVPacket(data)
-	if err != nil {
-		return err
-	}
-	invoiceKey, err := collection.FindTag(TagAESKey)
-	if err != nil {
-		return err
-	}
-	invoiceID, err := collection.FindTag(TagAesIV)
-	if err != nil {
-		return err
-	}
-
-	//One invoice active at a time
-	c.outgoingInvoice = Invoice{
-		ID:  string(invoiceID),
-		Key: invoiceKey,
-	}
-	log.Debugf("mock setting outgoingInvoice ID: % X, Key: % X", c.outgoingInvoice.ID, c.outgoingInvoice.Key)
-	return nil
 }
 
 func (c *MockCard) SetFriendlyName(name string) error {

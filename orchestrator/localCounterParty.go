@@ -59,14 +59,6 @@ func (lcp *localCounterParty) ReceivePhonons(phononTransfer []byte) error {
 	return nil
 }
 
-func (lcp *localCounterParty) GenerateInvoice() (invoiceData []byte, err error) {
-	return lcp.counterSession.GenerateInvoice()
-}
-
-func (lcp *localCounterParty) ReceiveInvoice(invoiceData []byte) error {
-	return lcp.counterSession.ReceiveInvoice(invoiceData)
-}
-
 func (lcp *localCounterParty) VerifyPaired() error {
 	if lcp.pairingStatus == model.StatusPaired {
 		return nil
@@ -77,4 +69,25 @@ func (lcp *localCounterParty) VerifyPaired() error {
 
 func (lcp *localCounterParty) PairingStatus() model.RemotePairingStatus {
 	return lcp.pairingStatus
+}
+
+func (lcp *localCounterParty) RecieveProposedTransaction(phononProposalPacket []byte) (err error) {
+	if lcp.pairingStatus != model.StatusPaired {
+		return ErrCardNotPairedToCard
+	}
+	_, err = lcp.counterSession.ReceiveTransferProposal(phononProposalPacket)
+	if err != nil {
+		return err
+	}
+	// todo: receive phonons from this call and put them in queue to be verified
+	return nil
+}
+func (lcp *localCounterParty) ReceiveTransfer(transferPacket []byte) error {
+	if lcp.pairingStatus != model.StatusPaired {
+		return ErrCardNotPairedToCard
+	}
+	return lcp.counterSession.ReceivePhonons(transferPacket)
+}
+func (lcp *localCounterParty) CancelTransfer() {
+	_ = lcp.counterSession.cs.CancelTransfer()
 }

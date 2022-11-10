@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"net/url"
 	"sync"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/GridPlus/phonon-client/cert"
 	"github.com/GridPlus/phonon-client/chain"
 	"github.com/GridPlus/phonon-client/model"
-	remote "github.com/GridPlus/phonon-client/remote/v1/client"
 	"github.com/GridPlus/phonon-client/util"
 
 	log "github.com/sirupsen/logrus"
@@ -47,6 +45,10 @@ type Session struct {
 	mutexedMiningReport   mutexedMiningReport
 	// cachePopulated indicates if all of the phonons present on the card have been cached. This is currently only set when listphonons is called with the values to list all phonons on the card.
 	cachePopulated bool
+	validator      Validator
+
+	phononTransferApproval chan struct{}
+	phononTransferCancel   chan struct{}
 }
 
 const (
@@ -111,6 +113,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		isMiningActive:        false,
 		mutexedMiningReport:   mutexedMiningReport{m: make(map[string]miningStatusReport), mtex: &sync.Mutex{}},
 		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
+		validator:             approveValidator,
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
 
@@ -597,6 +600,48 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 }
 
 func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
+	err := s.CreateTransferProposal(keyIndices)
+	if err != nil {
+		return err
+	}
+
+	s.phononTransferCancel = make(chan struct{})
+	s.phononTransferApproval = make(chan struct{})
+	go func() {
+		s.phononTransferApproval = nil
+		s.phononTransferCancel = nil
+	}()
+	select {
+	case <-s.phononTransferCancel:
+		return fmt.Errorf("transfer cancelled")
+	}
+	return nil
+}
+
+func (s *Session) ReceiveTransferProposal(proposalPacket []byte) ([]*model.Phonon, error) {
+	if !s.verified() && s.RemoteCard != nil {
+		return nil, ErrCardNotPairedToCard
+	}
+	s.ElementUsageMtex.Lock()
+	defer s.ElementUsageMtex.Unlock()
+
+	proposedPhonons, err := s.cs.ReceiveProposedTransaction(proposalPacket)
+	if err != nil {
+		return nil, err
+	}
+	valid, err := s.validator.Validate(proposedPhonons)
+	if err != nil {
+		return nil, err
+	}
+	if !valid {
+		s.cs.CancelTransfer()
+		s.RemoteCard.CancelTransfer()
+	}
+
+	return nil, nil
+}
+
+func (s *Session) CreateTransferProposal(keyIndices []model.PhononKeyIndex) error {
 	log.Debug("Sending phonons")
 	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
@@ -609,13 +654,14 @@ func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
 	log.Debug("locking mutex")
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
-	phononTransferPacket, err := s.cs.SendPhonons(keyIndices, false)
+	phononTransferPacket, err := s.cs.ProposeTransaction(keyIndices)
 	if err != nil {
 		return err
 	}
-	err = s.RemoteCard.ReceivePhonons(phononTransferPacket)
+	//send off the transfer
+	err = s.RemoteCard.RecieveProposedTransaction(phononTransferPacket)
 	if err != nil {
-		log.Debug("error receiving phonons on remote")
+		log.Debug("error receiving phonon proposal on remote")
 		return err
 	}
 	fmt.Println("unlockingMutex")
@@ -632,7 +678,7 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 
-	err := s.cs.ReceivePhonons(phononTransferPacket)
+	err := s.cs.ReceiveTransfer(phononTransferPacket)
 	if err != nil {
 		return err
 	}
@@ -641,30 +687,7 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 	return nil
 }
 
-func (s *Session) GenerateInvoice() ([]byte, error) {
-	if !s.verified() && s.RemoteCard != nil {
-		return nil, ErrCardNotPairedToCard
-	}
-	s.ElementUsageMtex.Lock()
-	defer s.ElementUsageMtex.Unlock()
-
-	return s.cs.GenerateInvoice()
-}
-
-func (s *Session) ReceiveInvoice(invoiceData []byte) error {
-	if !s.verified() && s.RemoteCard != nil {
-		return ErrCardNotPairedToCard
-	}
-	s.ElementUsageMtex.Lock()
-	defer s.ElementUsageMtex.Unlock()
-
-	err := s.cs.ReceiveInvoice(invoiceData)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
+/* temporarily removed to reduce the size of the possibly temporary change to secure transfers v2
 func (s *Session) ConnectToRemoteProvider(RemoteURL string) error {
 	u, err := url.Parse(RemoteURL)
 	if err != nil {
@@ -678,6 +701,7 @@ func (s *Session) ConnectToRemoteProvider(RemoteURL string) error {
 	s.RemoteCard = remConn
 	return nil
 }
+*/
 
 func (s *Session) RemoteConnectionStatus() model.RemotePairingStatus {
 	if s.RemoteCard == nil {
@@ -965,3 +989,12 @@ func (s *Session) addInfoToCache(p *model.Phonon) {
 	}
 
 }
+
+// temporary validator while we wait for the whole thing to be figured out
+type Validator struct{}
+
+func (Validator) Validate(interface{}) (bool, error) {
+	return true, nil
+}
+
+var approveValidator = Validator{}

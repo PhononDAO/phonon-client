@@ -94,12 +94,13 @@ func Start() {
 	// 	Func: getBalance,
 	// 	Help: "Retrieve the type and balance of a phonon on card. First argument is index of the card containing the phonon, and not needed if a card is selected. Second argument is the index of the phonon you wish to see the balance of",
 	// })
-
-	shell.AddCmd(&ishell.Cmd{
-		Name: "connectRemote",
-		Func: connectRemoteSession,
-		Help: "Connect to a remote server",
-	})
+	/*
+		shell.AddCmd(&ishell.Cmd{
+			Name: "connectRemote",
+			Func: connectRemoteSession,
+			Help: "Connect to a remote server",
+		})
+	*/
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "connectLocal",
@@ -256,30 +257,8 @@ func deactivateCard(c *ishell.Context) {
 	activeCard = nil
 }
 
-// func cardShell(c *ishell.Context, index int) {
-// 	if len(listedSessions) < index || index == 0 {
-// 		c.Err(fmt.Errorf("No card found at index %d", index))
-// 		return
-// 	}
-// 	activeCard = index
-// 	c.SetPrompt(fmt.Sprintf("Card %d >", index))
-// }
-
-func getBalance(c *ishell.Context) {
-	// sessionIndex, err := getSession(c, 1)
-	// if err != nil {
-	// 	c.Err(err)
-	// 	return
-	// }
-	// // last argument is index of phonon to use
-	// phononIndex, err := strconv.Atoi(c.Args[len(c.Args)-1])
-	// if err != nil {
-	// 	c.Err(fmt.Errorf("Unable to parse phonon index %s", err.Error()))
-	// 	return
-	// }
-	// c.Printf("Balance of card %d is %v", sessionIndex, t.GetBalance(sessionIndex, phononIndex))
-}
-
+//temporarily removed while changes are in flux
+/*
 func connectRemoteSession(c *ishell.Context) {
 	fmt.Println("connecting to remote")
 	if len(c.Args) != 1 {
@@ -292,6 +271,7 @@ func connectRemoteSession(c *ishell.Context) {
 		c.Err(err)
 	}
 }
+*/
 
 func connectLocalSession(c *ishell.Context) {
 	fmt.Println("Connecting to local counterparty provider")

@@ -926,3 +926,30 @@ func (cs *PhononCommandSet) MineNativePhonon(difficulty uint8) (keyIndex model.P
 
 	return keyIndex, hash, nil
 }
+
+// to be implemented at a later date
+
+func (cs *PhononCommandSet) ProposeTransaction(keyIndices []model.PhononKeyIndex) (phononProposalPacket []byte, err error) {
+	return nil, nil
+
+}
+func (cs *PhononCommandSet) ReceiveProposedTransaction(phononProposalPacket []byte) (proposedPhonons []*model.Phonon, err error) {
+
+	return nil, nil
+}
+func (cs *PhononCommandSet) CancelTransfer() error {
+
+	return nil
+}
+func (cs *PhononCommandSet) ApproveTransaction() (transferApprovalPacket []byte, err error) {
+
+	return nil, nil
+}
+func (cs *PhononCommandSet) IngestTransactionApproval(transferApprovalPacket []byte) (transferPacket []byte, err error) {
+
+	return nil, nil
+}
+func (cs *PhononCommandSet) ReceiveTransfer(transferPakcet []byte) error {
+
+	return nil
+}

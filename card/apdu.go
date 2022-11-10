@@ -69,6 +69,9 @@ const (
 	TagPhononKeyIndexList       = 0x42
 	TagTransferPhononPacket     = 0x43
 	TagPhononPrivateDescription = 0x44
+	TagPhononProposalPakcet     = 0x45
+	TagPhononProposalID         = 0x46
+	TagPhononProposalDescriptor = 0x47
 
 	TagPhononPubKeyList = 0x7F
 

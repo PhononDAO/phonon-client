@@ -104,7 +104,8 @@ func Server(port string, certFile string, keyFile string, mock bool) {
 	r.HandleFunc("/cards/{sessionID}/phonon/mineNative/status/{miningAttemptID}", session.miningReportStatus)
 	r.HandleFunc("/cards/{sessionID}/phonon/initDeposit", session.initDepositPhonons)
 	r.HandleFunc("/cards/{sessionID}/phonon/finalizeDeposit", session.finalizeDepositPhonons)
-	r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
+	//removed temporarily while changes are in flux
+	//r.HandleFunc("/cards/{sessionID}/connect", session.ConnectRemote)
 	r.HandleFunc("/cards/{sessionID}/connectionStatus", session.RemoteConnectionStatus)
 	r.HandleFunc("/cards/{sessionID}/connectLocal", session.ConnectLocal)
 	r.HandleFunc("/checkDenomination", verifyDenomination)
@@ -621,6 +622,9 @@ func (apiSession apiSession) unlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+//removed temporarily while changes are in flux
+/*
 func (apiSession apiSession) ConnectRemote(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sess, err := apiSession.sessionFromMuxVars(vars)
@@ -647,6 +651,7 @@ func (apiSession apiSession) ConnectRemote(w http.ResponseWriter, r *http.Reques
 		return
 	}
 }
+*/
 
 func (apiSession apiSession) RemoteConnectionStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

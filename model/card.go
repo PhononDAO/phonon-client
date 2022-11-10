@@ -21,9 +21,6 @@ type PhononCard interface {
 	ListPhonons(currencyType CurrencyType, lessThanValue uint64, greaterThanValue uint64, continuation bool) ([]*Phonon, error)
 	GetPhononPubKey(keyIndex PhononKeyIndex, crv CurveType) (pubkey PhononPubKey, err error)
 	DestroyPhonon(keyIndex PhononKeyIndex) (privKey *ecdsa.PrivateKey, err error)
-	SendPhonons(keyIndices []PhononKeyIndex, extendedRequest bool) (transferPhononPackets []byte, err error)
-	ReceivePhonons(phononTransfer []byte) error
-	SetReceiveList(phononPubKeys []*ecdsa.PublicKey) error
 	TransactionAck(keyIndices []PhononKeyIndex) error
 	InitCardPairing(receiverCertificate cert.CardCertificate) (initPairingData []byte, err error)
 	CardPair(initPairingData []byte) (cardPairData []byte, err error)
@@ -31,10 +28,15 @@ type PhononCard interface {
 	FinalizeCardPair(cardPair2Data []byte) (err error)
 	LoadCertAuthority(CAPubKey []byte) (err error)
 	InstallCertificate(signKeyFunc func([]byte) ([]byte, error)) (err error)
-	GenerateInvoice() (invoiceData []byte, err error)
-	ReceiveInvoice(invoiceData []byte) (err error)
 	SetFriendlyName(name string) error
 	GetFriendlyName() (string, error)
 	GetAvailableMemory() (persistentMem int, onResetMem int, onDeselectMem int, err error)
 	MineNativePhonon(difficulty uint8) (keyIndex PhononKeyIndex, hash []byte, err error)
+
+	ProposeTransaction(keyIndices []PhononKeyIndex) (phononProposalPacket []byte, err error)
+	ReceiveProposedTransaction(phononProposalPacket []byte) (proposedPhonons []*Phonon, err error)
+	CancelTransfer() error
+	ApproveTransaction() (transferApprovalPacket []byte, err error)
+	IngestTransactionApproval(transferApprovalPacket []byte) (transferPacket []byte, err error)
+	ReceiveTransfer(transferPakcet []byte) error
 }

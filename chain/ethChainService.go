@@ -161,7 +161,7 @@ func (eth *EthChainService) dialRPCNode(chainID uint32) (err error) {
 	case 42: //Kovan
 		RPCEndpoint = "https://poa-kovan.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
 	case 97: // Binance Testnet
-		RPCEndpoint = "https://data-seed-prebsc-1-s1.binance.org:8545"
+		RPCEndpoint = "https://data-seed-prebsc-1-s3.binance.org:8545"
 	case 43114: // Avalanche Fuji (C-Chain)
 		RPCEndpoint = "https://api.avax-test.network/ext/bc/C/rpc"
 	case 80001: // Mumbai (Polygon)

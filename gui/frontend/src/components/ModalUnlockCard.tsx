@@ -17,7 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { notifySuccess } from '../utils/notify';
-import { useRef, useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { CardManagementContext } from '../assets/contexts/CardManagementContext';
 
 type PINFormData = {
@@ -32,7 +32,6 @@ export const ModalUnlockCard: React.FC<{
   const { t } = useTranslation();
   const [isError, setIsError] = useState(false);
   const { addPhononCardsToState } = useContext(CardManagementContext);
-  const ref = useRef(null);
   const pinLength = 6;
 
   const {
@@ -61,6 +60,12 @@ export const ModalUnlockCard: React.FC<{
       }, 1000);
     } else {
       card.IsLocked = false;
+      if (card.FutureAction) {
+        card[card.FutureAction] = true;
+        card.FutureAction = null;
+      }
+      card.AttemptUnlock = false;
+
       addPhononCardsToState([card]);
 
       onClose();
@@ -69,13 +74,22 @@ export const ModalUnlockCard: React.FC<{
   };
 
   return (
-    <Modal size={'sm'} isOpen={isOpen} onClose={onClose} initialFocusRef={ref}>
+    <Modal
+      size={'sm'}
+      isOpen={isOpen}
+      onClose={() => {
+        onClose();
+        card.AttemptUnlock = false;
+        addPhononCardsToState([card]);
+      }}
+    >
       <ModalOverlay />
       <ModalContent
         className={'overflow-hidden ' + (isError ? 'animate-errorShake' : '')}
       >
         <ModalHeader>
           <div className="font-noto-sans-mono">
+            <div className="text-sm">Unlocking</div>
             <div className="text-2xl">
               {card.VanityName ? card.VanityName : card.CardId}
             </div>
@@ -98,18 +112,13 @@ export const ModalUnlockCard: React.FC<{
                 required: 'Card PIN Required',
                 minLength: { value: pinLength, message: 'Card PIN too short' },
               })}
-              render={({ field: { ref, ...restField } }) => (
+              render={({ field: { ...restField } }) => (
                 <HStack>
                   <PinInput {...restField} mask>
                     {Array(pinLength)
                       .fill(null)
                       .map((val, key) => (
-                        <PinInputField
-                          bg="gray.700"
-                          color="white"
-                          key={key}
-                          ref={key === 0 ? ref : null}
-                        />
+                        <PinInputField bg="gray.700" color="white" key={key} />
                       ))}
                   </PinInput>
                 </HStack>
@@ -122,7 +131,15 @@ export const ModalUnlockCard: React.FC<{
 
           <ModalFooter>
             <ButtonGroup spacing={2}>
-              <Button size="sm" variant="ghost" onClick={onClose}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  onClose();
+                  card.AttemptUnlock = false;
+                  addPhononCardsToState([card]);
+                }}
+              >
                 {t('Cancel')}
               </Button>
               <Button size="sm" colorScheme="green" type="submit">

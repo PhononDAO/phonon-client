@@ -15,7 +15,7 @@ export const CardSettings: React.FC<{ card: PhononCard }> = ({ card }) => {
 
   return (
     <>
-      {isCardsMini && !card.TrayId ? (
+      {isCardsMini && !card.InTray ? (
         <IconButton
           bg="darkGray.100"
           aria-label={t('Settings')}

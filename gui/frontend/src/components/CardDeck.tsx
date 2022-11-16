@@ -1,18 +1,19 @@
 import { useTranslation } from 'react-i18next';
 import { ButtonGroup, IconButton, Select } from '@chakra-ui/react';
-import { PhononCard } from '../classes/PhononCard';
 import { CardTray } from './CardTray';
 import { Phonon } from './Phonon';
 import { IonIcon } from '@ionic/react';
 import { reorderFour, apps } from 'ionicons/icons';
 import { useContext, useState } from 'react';
 import { CardManagementContext } from '../assets/contexts/CardManagementContext';
+import { PhononCard } from '../classes/PhononCard';
+import { MinePhonon } from './PhononCardActions/MinePhonon';
+import { CreatePhonon } from './PhononCardActions/CreatePhonon';
 
 export const CardDeck: React.FC<{
   card: PhononCard;
   canHaveRemote?: boolean;
-  setDeckCard;
-}> = ({ card = null, canHaveRemote = false, setDeckCard }) => {
+}> = ({ card, canHaveRemote }) => {
   const { t } = useTranslation();
   const [layoutType, setLayoutType] = useState<string>('list');
   const { addPhononCardsToState } = useContext(CardManagementContext);
@@ -38,15 +39,15 @@ export const CardDeck: React.FC<{
       }
     >
       <div className="absolute -mt-60">
-        <CardTray
-          card={card}
-          canHaveRemote={canHaveRemote}
-          setDeckCard={setDeckCard}
-        />
+        <CardTray card={card} canHaveRemote={canHaveRemote} />
       </div>
 
       {card && (
         <>
+          <div className="absolute -top-16 right-0 flex gap-x-4">
+            <MinePhonon card={card} />
+            <CreatePhonon card={card} />
+          </div>
           <div className="absolute top-0 right-0 p-4 flex gap-x-4">
             <div className="flex items-center">
               <div className="whitespace-nowrap mr-2 text-lg text-gray-600">

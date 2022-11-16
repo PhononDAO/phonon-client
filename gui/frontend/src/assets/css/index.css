@@ -1,5 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@300&display=swap');
 
+@font-face {
+  font-family: 'BandeinsSansBold';
+  src: local('BandeinsSansBold'),
+    url(./assets/fonts/bandeins-sans/BandeinsSansBold.otf) format('opentype');
+}
+
+@font-face {
+  font-family: 'BandeinsSansRegular';
+  src: local('BandeinsSansRegular'),
+    url(./assets/fonts/bandeins-sans/BandeinsSansRegular.otf) format('opentype');
+}
+
+@font-face {
+  font-family: 'BandeinsSansLight';
+  src: local('BandeinsSansLight'),
+    url(./assets/fonts/bandeins-sans/BandeinsSansLight.otf) format('opentype');
+}
+
+@font-face {
+  font-family: 'BandeinsSansSemiBold';
+  src: local('BandeinsSansSemiBold'),
+    url(./assets/fonts/bandeins-sans/BandeinsSansSemiBold.otf)
+      format('opentype');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -26,6 +51,6 @@
   transform: rotateY(180deg);
 }
 
-.card-selected:hover {
+.flip-card-tilt:hover {
   transform: perspective(2000px) rotateY(25deg);
 }

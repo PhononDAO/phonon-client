@@ -1,8 +1,9 @@
 import { useContext } from 'react';
 import { useDrag } from 'react-dnd';
+import { useDisclosure } from '@chakra-ui/react';
 import { CardManagementContext } from '../assets/contexts/CardManagementContext';
 import { PhononCard } from '../classes/PhononCard';
-
+import { ModalUnlockCard } from './ModalUnlockCard';
 import { CardBack } from './PhononCardStates/CardBack';
 import { CardFront } from './PhononCardStates/CardFront';
 
@@ -13,9 +14,10 @@ interface DropResult {
 export const Card: React.FC<{
   card: PhononCard;
 }> = ({ card }) => {
+  const { onClose } = useDisclosure();
   const { isCardsMini } = useContext(CardManagementContext);
 
-  const [{ isDragging }] = useDrag(() => ({
+  const [{ isDragging }, drag] = useDrag(() => ({
     type: 'PhononCard',
     item: card,
     end: (item, monitor) => {
@@ -25,38 +27,51 @@ export const Card: React.FC<{
       }
     },
     collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-      handlerId: monitor.getHandlerId(),
+      isDragging: !!monitor.getItem(),
     }),
   }));
 
-  console.log(card);
-
   // only show card if not a mock card or if mock cards are enabled
   return (
-    <div
-      className={
-        'transition-all flip-card duration-150 bg-transparent ' +
-        (isCardsMini && !card.TrayId ? 'w-56 h-36 ' : 'w-80 h-52 ') +
-        (card.IsLocked ? 'flip-card-locked' : '')
-      }
-    >
-      <div className="flip-card-inner relative w-full h-full">
-        <div className="flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
-          {isDragging ? (
-            !card.IsLocked && <CardBack card={card} />
-          ) : (
-            <CardBack card={card} />
-          )}
-        </div>
-        <div className="flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
-          {isDragging ? (
-            card.IsLocked && <CardFront card={card} />
-          ) : (
-            <CardFront card={card} />
-          )}
-        </div>
+    <>
+      <div
+        ref={drag}
+        data-testid={`PhononCard`}
+        className={
+          'opacity-100 absolute transition-all flip-card duration-150 bg-transparent ' +
+          (isCardsMini && !card.InTray ? 'w-56 h-36 ' : 'w-80 h-52') +
+          (card.IsLocked ? ' flip-card-locked ' : '') +
+          (card.InTray ? '' : ' flip-card-tilt')
+        }
+      >
+        {isDragging ? (
+          <div className="flip-card-inner relative w-full h-full">
+            {!card.IsLocked ? (
+              <div className="flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
+                <CardBack card={card} />
+              </div>
+            ) : (
+              <div className="flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
+                <CardFront card={card} />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flip-card-inner relative w-full h-full">
+            <div className="flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
+              <CardBack card={card} />
+            </div>
+            <div className="flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
+              <CardFront card={card} />
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+      <ModalUnlockCard
+        isOpen={card.AttemptUnlock}
+        onClose={onClose}
+        card={card}
+      />
+    </>
   );
 };

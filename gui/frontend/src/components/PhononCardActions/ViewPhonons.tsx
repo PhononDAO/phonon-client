@@ -16,11 +16,11 @@ export const ViewPhonons: React.FC<{
   );
 
   const viewPhonons = () => {
-    card.TrayId = true;
+    card.InTray = true;
     addPhononCardsToState([card]);
   };
 
-  return isCardsMini && !card.TrayId ? (
+  return isCardsMini && !card.InTray ? (
     <IconButton
       bg="darkGray.100"
       aria-label={t('View Phonons')}

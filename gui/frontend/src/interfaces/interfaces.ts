@@ -49,7 +49,7 @@ export interface PhononCard {
   VanityName: string;
   IsLocked: boolean;
   IsMock: boolean;
-  TrayId: boolean;
+  InTray: boolean;
   ShowActions: boolean;
   Phonons: Array<Phonon>;
 }
@@ -59,4 +59,11 @@ export interface PhononCard {
  */
 export interface PhononWallet {
   PhononCards: Array<PhononCard>;
+}
+
+/**
+ * CardDropzone interface
+ */
+export interface CardDropzone {
+  DropzoneID: string;
 }

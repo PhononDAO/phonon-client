@@ -1,6 +1,5 @@
 import { createContext, useState, ReactNode } from 'react';
-import { useRecords } from '../../hooks/useRecords';
-import { PhononCard } from '../../interfaces/interfaces';
+import { usePhononCards } from '../../hooks/usePhononCards';
 
 export const CardManagementContext = createContext(undefined);
 
@@ -13,15 +12,13 @@ export const CardManagementContextProvider = ({
 }) => {
   const [isLoadingPhononCards, setIsLoadingPhononCards] = useState(false);
   const [isCardsMini, setIsCardsMini] = useState<boolean>(false);
-  const [deckOneCard, setDeckOneCard] = useState<PhononCard | null>(null);
-  const [deckTwoCard, setDeckTwoCard] = useState<PhononCard | null>(null);
 
   const [
     phononCards,
     addPhononCardsToState,
     removePhononCardsFromState,
     resetPhononCardsInState,
-  ] = useRecords([]);
+  ] = usePhononCards([]);
 
   const defaultContext = {
     isLoadingPhononCards,
@@ -32,10 +29,6 @@ export const CardManagementContextProvider = ({
     addPhononCardsToState,
     removePhononCardsFromState,
     resetPhononCardsInState,
-    deckOneCard,
-    setDeckOneCard,
-    deckTwoCard,
-    setDeckTwoCard,
   };
 
   return (

@@ -17,11 +17,11 @@ export const LockCard: React.FC<{
 
   const lockCard = () => {
     card.IsLocked = true;
-    card.TrayId = false;
+    card.InTray = false;
     addPhononCardsToState([card]);
   };
 
-  return isCardsMini && !card.TrayId ? (
+  return isCardsMini && !card.InTray ? (
     <IconButton
       colorScheme="red"
       aria-label={t('Lock')}

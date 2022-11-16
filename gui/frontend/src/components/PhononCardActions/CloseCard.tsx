@@ -16,11 +16,11 @@ export const CloseCard: React.FC<{
   );
 
   const closeCard = () => {
-    card.TrayId = false;
+    card.InTray = false;
     addPhononCardsToState([card]);
   };
 
-  return isCardsMini && !card.TrayId ? (
+  return isCardsMini && !card.InTray ? (
     <IconButton
       bg="darkGray.100"
       aria-label={t('Close Card')}

@@ -7,7 +7,7 @@ import { Button } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { removeCircle, addCircle } from 'ionicons/icons';
 import { WalletSlot } from './WalletSlot';
-import { CardManagementContext } from '../assets/contexts/CardManagementContext';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 
 export const PhononWallet = () => {
   const { t } = useTranslation();

@@ -1,7 +1,7 @@
 import { UnlockCard } from '../PhononCardActions/UnlockCard';
 import { useTranslation } from 'react-i18next';
 import { useContext } from 'react';
-import { CardManagementContext } from '../../assets/contexts/CardManagementContext';
+import { CardManagementContext } from '../../contexts/CardManagementContext';
 
 export const CardFront: React.FC<{
   card;

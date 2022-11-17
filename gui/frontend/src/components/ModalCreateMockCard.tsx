@@ -15,7 +15,7 @@ import { PhononCard as Card } from '../classes/PhononCard';
 import { useTranslation } from 'react-i18next';
 import { notifySuccess } from '../utils/notify';
 import { useContext } from 'react';
-import { CardManagementContext } from '../assets/contexts/CardManagementContext';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 
 export const ModalCreateMockCard: React.FC<{
   isOpen;

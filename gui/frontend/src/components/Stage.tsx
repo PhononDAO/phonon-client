@@ -1,7 +1,7 @@
 import { PhononWallet } from './PhononWallet';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { CardManagementContextProvider } from '../assets/contexts/CardManagementContext';
+import { CardManagementContextProvider } from '../contexts/CardManagementContext';
 import { DeckManager } from './DeckManager';
 
 export const Stage = () => {

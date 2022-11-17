@@ -1,5 +1,5 @@
 import { createContext, useState, ReactNode } from 'react';
-import { usePhononCards } from '../../hooks/usePhononCards';
+import { usePhononCards } from '../hooks/usePhononCards';
 
 export const CardManagementContext = createContext(undefined);
 

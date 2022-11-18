@@ -10,9 +10,14 @@ import {
   repeatOutline,
 } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { notifySuccess } from '../utils/notify';
 import { CardRemote } from './PhononCardStates/CardRemote';
+
+type RemotePairingFormData = {
+  remotePairingCode: string;
+};
 
 export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
   setShowPairingOptions = false,
@@ -23,6 +28,21 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
   const { onCopy, value, hasCopied } = useClipboard(pairingCode);
   const [currentStep, setCurrentStep] = useState('share');
   const [isPaired, setIsPaired] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RemotePairingFormData>();
+
+  // event when you submit remote pairing form data
+  const onSubmit = (data: RemotePairingFormData, event) => {
+    event.preventDefault();
+
+    console.log(data);
+
+    setCurrentStep('pairing');
+  };
 
   useEffect(() => {
     if (currentStep === 'pairing') {
@@ -121,19 +141,35 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
                 )}
               </span>
             </div>
-            <InputGroup size="md">
-              <Input type="text" bgColor="white" />
-            </InputGroup>
-            <Button
-              leftIcon={<IonIcon icon={repeatOutline} />}
-              size="sm"
-              className="uppercase"
-              onClick={() => {
-                setCurrentStep('pairing');
-              }}
+            <form
+              className="w-full flex flex-col gap-y-2 px-2 items-center justify-center"
+              // eslint-disable-next-line @typescript-eslint/no-misused-promises
+              onSubmit={handleSubmit(onSubmit)}
             >
-              {t('Initiate Pairing')}
-            </Button>
+              <InputGroup size="md">
+                <Input
+                  type="text"
+                  bgColor="white"
+                  className="w-full"
+                  {...register('remotePairingCode', {
+                    required: 'Please provide a remote pairing code.',
+                  })}
+                />
+              </InputGroup>
+              {errors.remotePairingCode && (
+                <span className="absolute -mt-5 text-red-600 text-xs">
+                  {errors.remotePairingCode.message}
+                </span>
+              )}
+              <Button
+                leftIcon={<IonIcon icon={repeatOutline} />}
+                size="sm"
+                className="uppercase"
+                type="submit"
+              >
+                {t('Initiate Pairing')}
+              </Button>
+            </form>
           </div>
         </div>
       )}

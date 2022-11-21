@@ -3,10 +3,11 @@ import { useDrop } from 'react-dnd';
 import { Button } from '@chakra-ui/react';
 import { Card } from './Card';
 import { PhononCard } from '../classes/PhononCard';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import { cloudDownload } from 'ionicons/icons';
-import { CardManagementContext } from '../assets/contexts/CardManagementContext';
+import { CardManagementContext } from '../contexts/CardManagementContext';
+import { CardPairing } from './CardPairing';
 
 export const CardTray: React.FC<{
   card: PhononCard;
@@ -14,6 +15,7 @@ export const CardTray: React.FC<{
 }> = ({ card = null, canHaveRemote = false }) => {
   const { t } = useTranslation();
   const { addPhononCardsToState } = useContext(CardManagementContext);
+  const [showPairingOptions, setShowPairingOptions] = useState(false);
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'PhononCard',
@@ -43,34 +45,38 @@ export const CardTray: React.FC<{
     </>
   ) : (
     <>
-      <div
-        ref={drop}
-        className={
-          'w-80 h-52 rounded-lg border border-4 overflow-hidden flex flex-col gap-y-2 items-center justify-center text-xl transition-all ' +
-          (isOver
-            ? 'border-green-500 bg-green-200'
-            : 'border-dashed border-white bg-phonon-card bg-cover bg-no-repeat')
-        }
-      >
-        <div className="text-white ">Drop a card here</div>
-        {canHaveRemote && (
-          <>
-            <div>
-              <span className="block text-center text-white ">OR</span>
-            </div>
-            <Button
-              leftIcon={<IonIcon icon={cloudDownload} />}
-              size="md"
-              className="uppercase"
-              onClick={() => {
-                alert('TODO: Show pairing next steps.');
-              }}
-            >
-              {t('Pair Remote Card')}
-            </Button>
-          </>
-        )}
-      </div>
+      {showPairingOptions ? (
+        <CardPairing setShowPairingOptions={setShowPairingOptions} />
+      ) : (
+        <div
+          ref={drop}
+          className={
+            'w-80 h-52 rounded-lg border border-4 overflow-hidden flex flex-col gap-y-2 items-center justify-center text-xl transition-all ' +
+            (isOver
+              ? 'border-green-500 bg-green-200'
+              : 'border-dashed border-white bg-phonon-card-gray bg-cover bg-no-repeat')
+          }
+        >
+          <div className="text-white ">Drop a card here</div>
+          {canHaveRemote && (
+            <>
+              <div>
+                <span className="block text-center text-white ">OR</span>
+              </div>
+              <Button
+                leftIcon={<IonIcon icon={cloudDownload} />}
+                size="md"
+                className="uppercase"
+                onClick={() => {
+                  setShowPairingOptions(!showPairingOptions);
+                }}
+              >
+                {t('Pair Remote Card')}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 };

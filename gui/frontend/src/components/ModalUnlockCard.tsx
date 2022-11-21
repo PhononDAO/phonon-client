@@ -18,7 +18,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { notifySuccess } from '../utils/notify';
 import { useState, useContext } from 'react';
-import { CardManagementContext } from '../assets/contexts/CardManagementContext';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 
 type PINFormData = {
   cardPin: string;

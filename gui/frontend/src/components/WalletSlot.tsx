@@ -6,7 +6,7 @@ import { useFeature } from '../hooks/useFeature';
 import { CardShadow } from './CardShadow';
 import { Card } from './Card';
 import { useContext } from 'react';
-import { CardManagementContext } from '../assets/contexts/CardManagementContext';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 
 export const WalletSlot: React.FC<{
   card: PhononCard;

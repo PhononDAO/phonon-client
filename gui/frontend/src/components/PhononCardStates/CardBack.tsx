@@ -5,7 +5,7 @@ import { CloseCard } from '../PhononCardActions/CloseCard';
 import { LockCard } from '../PhononCardActions/LockCard';
 import { useTranslation } from 'react-i18next';
 import { useContext } from 'react';
-import { CardManagementContext } from '../../assets/contexts/CardManagementContext';
+import { CardManagementContext } from '../../contexts/CardManagementContext';
 
 export const CardBack: React.FC<{
   card;

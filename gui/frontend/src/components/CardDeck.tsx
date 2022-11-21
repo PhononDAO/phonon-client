@@ -5,7 +5,7 @@ import { Phonon } from './Phonon';
 import { IonIcon } from '@ionic/react';
 import { reorderFour, apps } from 'ionicons/icons';
 import { useContext, useState } from 'react';
-import { CardManagementContext } from '../assets/contexts/CardManagementContext';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../classes/PhononCard';
 import { MinePhonon } from './PhononCardActions/MinePhonon';
 import { CreatePhonon } from './PhononCardActions/CreatePhonon';

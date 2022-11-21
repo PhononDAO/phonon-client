@@ -14,6 +14,7 @@ describe('Phonon Card Class', () => {
     expect(aPhononCard.IsLocked).toBe(true);
     expect(aPhononCard.IsMock).toBe(false);
     expect(aPhononCard.InTray).toBe(false);
+    expect(aPhononCard.IsRemote).toBe(false);
     expect(aPhononCard.ShowActions).toBe(true);
     expect(aPhononCard.Phonons).toStrictEqual([]);
 
@@ -30,6 +31,7 @@ describe('Phonon Card Class', () => {
     expect(typeof bPhononCard.IsLocked).toBe('boolean');
     expect(typeof bPhononCard.IsMock).toBe('boolean');
     expect(typeof bPhononCard.InTray).toBe('boolean');
+    expect(typeof bPhononCard.IsRemote).toBe('boolean');
     expect(typeof bPhononCard.ShowActions).toBe('boolean');
     expect(typeof bPhononCard.Phonons).toBe('object');
     expect(bPhononCard.Phonons[0] instanceof Phonon).toBe(true);

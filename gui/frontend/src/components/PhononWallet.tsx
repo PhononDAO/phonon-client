@@ -78,8 +78,14 @@ export const PhononWallet = () => {
     <div className="">
       <div className="flex gap-x-2 text-xl">
         <span className="text-white">
-          {phononCards.length}{' '}
-          {t('card' + (phononCards.length === 1 ? '' : 's') + ' connected.')}
+          {phononCards.filter((card) => !card.IsRemote).length}{' '}
+          {t(
+            'card' +
+              (phononCards.filter((card) => !card.IsRemote).length === 1
+                ? ''
+                : 's') +
+              ' connected.'
+          )}
         </span>
         <Button
           leftIcon={<IonIcon icon={hideCards ? addCircle : removeCircle} />}
@@ -101,7 +107,9 @@ export const PhononWallet = () => {
         }
       >
         {phononCards.length > 0 &&
-          phononCards?.map((card, key) => <WalletSlot key={key} card={card} />)}
+          phononCards
+            ?.filter((card) => !card.IsRemote)
+            .map((card, key) => <WalletSlot key={key} card={card} />)}
 
         <AddMockCardButton />
       </div>

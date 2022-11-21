@@ -37,7 +37,7 @@ export const CardTray: React.FC<{
   }));
 
   // only show card if not a mock card or if mock cards are enabled
-  return card?.InTray ? (
+  return card?.InTray && !card?.IsRemote ? (
     <>
       <div className="w-80 h-52">
         <Card card={card} />

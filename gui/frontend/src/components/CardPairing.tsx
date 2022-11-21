@@ -9,9 +9,11 @@ import {
   arrowForward,
   repeatOutline,
 } from 'ionicons/icons';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { PhononCard } from '../classes/PhononCard';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 import { notifySuccess } from '../utils/notify';
 import { CardRemote } from './PhononCardStates/CardRemote';
 
@@ -28,6 +30,8 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
   const { onCopy, value, hasCopied } = useClipboard(pairingCode);
   const [currentStep, setCurrentStep] = useState('share');
   const [isPaired, setIsPaired] = useState(false);
+  const { phononCards, addPhononCardsToState, removePhononCardsFromState } =
+    useContext(CardManagementContext);
 
   const {
     register,
@@ -42,29 +46,42 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
     console.log(data);
 
     setCurrentStep('pairing');
-  };
 
-  useEffect(() => {
-    if (currentStep === 'pairing') {
+    const promise = new Promise((resolve) => {
       setTimeout(() => {
+        resolve('paired');
+      }, 3000);
+    })
+      .then(() => {
         setCurrentStep('success');
-
         notifySuccess(
           t('Successfully paired to remote card: ' + '04e0d5eb884a73c0' + '!')
         );
-      }, 3000);
-    }
 
-    if (currentStep === 'success') {
-      setTimeout(() => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve('success');
+          }, 1000);
+        });
+      })
+      .then(() => {
         setIsPaired(true);
-      }, 1000);
-    }
-  }, [currentStep, t]);
+        const remoteCard = new PhononCard();
+        remoteCard.CardId = '04e0d5eb884a73e9';
+        remoteCard.IsRemote = true;
+        remoteCard.InTray = true;
+        addPhononCardsToState([remoteCard]);
+      });
+  };
 
   const unpair = () => {
     setShowPairingOptions(false);
     setIsPaired(false);
+    setCurrentStep('share');
+
+    removePhononCardsFromState(
+      phononCards.filter((card: PhononCard) => card.IsRemote)
+    );
   };
 
   return (

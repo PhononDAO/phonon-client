@@ -10,6 +10,7 @@ export class PhononCard {
   IsLocked: boolean;
   IsMock: boolean;
   InTray: boolean;
+  IsRemote: boolean;
   AttemptUnlock: boolean;
   FutureAction: string | null;
   ShowActions: boolean;
@@ -21,6 +22,7 @@ export class PhononCard {
     this.IsLocked = true;
     this.IsMock = false;
     this.InTray = false;
+    this.IsRemote = false;
     this.AttemptUnlock = false;
     this.FutureAction = null;
     this.ShowActions = true;

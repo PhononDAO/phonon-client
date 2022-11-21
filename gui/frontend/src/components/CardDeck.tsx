@@ -9,6 +9,8 @@ import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../classes/PhononCard';
 import { MinePhonon } from './PhononCardActions/MinePhonon';
 import { CreatePhonon } from './PhononCardActions/CreatePhonon';
+import { PhononTransferDropzone } from './PhononTransferDropzone';
+import { RemoteCardPhononMessage } from './RemoteCardPhononMessage';
 
 export const CardDeck: React.FC<{
   card: PhononCard;
@@ -16,7 +18,9 @@ export const CardDeck: React.FC<{
 }> = ({ card, canHaveRemote }) => {
   const { t } = useTranslation();
   const [layoutType, setLayoutType] = useState<string>('list');
-  const { addPhononCardsToState } = useContext(CardManagementContext);
+  const { phononCards, addPhononCardsToState } = useContext(
+    CardManagementContext
+  );
 
   const sortPhononsBy = (key: string) => {
     if (key === 'ChainId') {
@@ -44,65 +48,78 @@ export const CardDeck: React.FC<{
 
       {card && (
         <>
-          <div className="absolute -top-16 right-0 flex gap-x-4">
-            <MinePhonon card={card} />
-            <CreatePhonon card={card} />
-          </div>
-          <div className="absolute top-0 right-0 p-4 flex gap-x-4">
-            <div className="flex items-center">
-              <div className="whitespace-nowrap mr-2 text-lg text-gray-600">
-                {t('Sort by')}:
+          {!card.IsRemote && (
+            <>
+              <div className="absolute -top-16 right-0 flex gap-x-4">
+                <MinePhonon card={card} />
+                <CreatePhonon card={card} />
               </div>
-              <Select
-                placeholder="Select order"
-                onChange={(evt) => {
-                  sortPhononsBy(evt.target.value);
-                }}
-              >
-                <option value="ChainId">{t('Network Chain')}</option>
-                <option value="Denomination">{t('Denomination')}</option>
-                <option value="CurrencyType">{t('Currency Type')}</option>
-              </Select>
-            </div>
-            <div className="rounded flex">
-              <ButtonGroup isAttached>
-                <IconButton
-                  bgColor={layoutType === 'list' ? 'black' : 'white'}
-                  textColor={layoutType === 'list' ? 'white' : 'black'}
-                  aria-label={t('List View')}
-                  icon={<IonIcon icon={reorderFour} />}
-                  onClick={() => {
-                    setLayoutType('list');
-                  }}
-                />
-                <IconButton
-                  bgColor={layoutType === 'grid' ? 'black' : 'white'}
-                  textColor={layoutType === 'grid' ? 'white' : 'black'}
-                  aria-label={t('Grid View')}
-                  icon={<IonIcon icon={apps} />}
-                  onClick={() => {
-                    setLayoutType('grid');
-                  }}
-                />
-              </ButtonGroup>
-            </div>
-          </div>
-          <div
-            className={
-              'overflow-scroll gap-2 ' +
-              (layoutType === 'grid' ? 'relative' : 'grid')
-            }
-          >
-            {card.Phonons.length > 0 ? (
-              card.Phonons?.map((phonon, key) => (
-                <Phonon key={key} phonon={phonon} layoutType={layoutType} />
-              ))
-            ) : (
-              <div className="text-2xl text-center my-12 italic text-gray-500">
-                {t('This card has no phonons yet.')}
+
+              <div className="absolute top-0 right-0 p-4 flex gap-x-4">
+                <div className="flex items-center">
+                  <div className="whitespace-nowrap mr-2 text-lg text-gray-600">
+                    {t('Sort by')}:
+                  </div>
+                  <Select
+                    placeholder="Select order"
+                    onChange={(evt) => {
+                      sortPhononsBy(evt.target.value);
+                    }}
+                  >
+                    <option value="ChainId">{t('Network Chain')}</option>
+                    <option value="Denomination">{t('Denomination')}</option>
+                    <option value="CurrencyType">{t('Currency Type')}</option>
+                  </Select>
+                </div>
+                <div className="rounded flex">
+                  <ButtonGroup isAttached>
+                    <IconButton
+                      bgColor={layoutType === 'list' ? 'black' : 'white'}
+                      textColor={layoutType === 'list' ? 'white' : 'black'}
+                      aria-label={t('List View')}
+                      icon={<IonIcon icon={reorderFour} />}
+                      onClick={() => {
+                        setLayoutType('list');
+                      }}
+                    />
+                    <IconButton
+                      bgColor={layoutType === 'grid' ? 'black' : 'white'}
+                      textColor={layoutType === 'grid' ? 'white' : 'black'}
+                      aria-label={t('Grid View')}
+                      icon={<IonIcon icon={apps} />}
+                      onClick={() => {
+                        setLayoutType('grid');
+                      }}
+                    />
+                  </ButtonGroup>
+                </div>
               </div>
-            )}
-          </div>
+            </>
+          )}
+          {(phononCards.filter(
+            (card: PhononCard) => card.InTray && !card.IsRemote
+          ).length > 1 ||
+            card.IsRemote) && <PhononTransferDropzone />}
+          {!card.IsRemote ? (
+            <div
+              className={
+                'overflow-scroll gap-2 ' +
+                (layoutType === 'grid' ? 'relative' : 'grid')
+              }
+            >
+              {card.Phonons.length > 0 ? (
+                card.Phonons?.map((phonon, key) => (
+                  <Phonon key={key} phonon={phonon} layoutType={layoutType} />
+                ))
+              ) : (
+                <div className="text-2xl text-center my-12 italic text-gray-500">
+                  {t('This card has no phonons yet.')}
+                </div>
+              )}
+            </div>
+          ) : (
+            <RemoteCardPhononMessage />
+          )}
         </>
       )}
     </div>

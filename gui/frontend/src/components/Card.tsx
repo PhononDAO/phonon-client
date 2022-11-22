@@ -9,6 +9,7 @@ import { CardFront } from './PhononCardStates/CardFront';
 
 interface DropResult {
   name: string;
+  type: string;
 }
 
 export const Card: React.FC<{
@@ -19,6 +20,7 @@ export const Card: React.FC<{
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'PhononCard',
+    name: card.CardId,
     item: card,
     end: (item, monitor) => {
       const dropResult = monitor.getDropResult<DropResult>();
@@ -27,7 +29,7 @@ export const Card: React.FC<{
       }
     },
     collect: (monitor) => ({
-      isDragging: !!monitor.getItem(),
+      isDragging: monitor.isDragging(),
     }),
   }));
 
@@ -36,7 +38,6 @@ export const Card: React.FC<{
     <>
       <div
         ref={drag}
-        data-testid={`PhononCard`}
         className={
           'opacity-100 absolute transition-all flip-card duration-150 bg-transparent ' +
           (isCardsMini && !card.InTray ? 'w-56 h-36 ' : 'w-80 h-52') +

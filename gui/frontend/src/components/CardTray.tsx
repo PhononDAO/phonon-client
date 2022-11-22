@@ -17,8 +17,8 @@ export const CardTray: React.FC<{
   const { addPhononCardsToState } = useContext(CardManagementContext);
   const [showPairingOptions, setShowPairingOptions] = useState(false);
 
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'PhononCard',
+  const [{ isOver, canDrop }, drop] = useDrop(() => ({
+    accept: ['PhononCard'],
     drop: (item: PhononCard, monitor) => {
       const itemCard = monitor.getItem();
 
@@ -52,7 +52,7 @@ export const CardTray: React.FC<{
           ref={drop}
           className={
             'w-80 h-52 rounded-lg border border-4 overflow-hidden flex flex-col gap-y-2 items-center justify-center text-xl transition-all ' +
-            (isOver
+            (isOver && canDrop
               ? 'border-green-500 bg-green-200'
               : 'border-dashed border-white bg-phonon-card-gray bg-cover bg-no-repeat')
           }

@@ -9,8 +9,8 @@ import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../classes/PhononCard';
 import { MinePhonon } from './PhononCardActions/MinePhonon';
 import { CreatePhonon } from './PhononCardActions/CreatePhonon';
-import { PhononTransferDropzone } from './PhononTransferDropzone';
 import { RemoteCardPhononMessage } from './RemoteCardPhononMessage';
+import { PhononTransferProposal } from './PhononTransferProposal';
 
 export const CardDeck: React.FC<{
   card: PhononCard;
@@ -99,7 +99,7 @@ export const CardDeck: React.FC<{
           {(phononCards.filter(
             (card: PhononCard) => card.InTray && !card.IsRemote
           ).length > 1 ||
-            card.IsRemote) && <PhononTransferDropzone />}
+            card.IsRemote) && <PhononTransferProposal card={card} />}
           {!card.IsRemote ? (
             <div
               className={
@@ -109,7 +109,12 @@ export const CardDeck: React.FC<{
             >
               {card.Phonons.length > 0 ? (
                 card.Phonons?.map((phonon, key) => (
-                  <Phonon key={key} phonon={phonon} layoutType={layoutType} />
+                  <Phonon
+                    key={key}
+                    phonon={phonon}
+                    card={card}
+                    layoutType={layoutType}
+                  />
                 ))
               ) : (
                 <div className="text-2xl text-center my-12 italic text-gray-500">

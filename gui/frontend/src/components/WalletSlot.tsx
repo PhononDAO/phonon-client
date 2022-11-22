@@ -17,8 +17,8 @@ export const WalletSlot: React.FC<{
     CardManagementContext
   );
 
-  const [{}, drop] = useDrop(() => ({
-    accept: 'PhononCard',
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: ['PhononCard'],
     drop: (item: PhononCard, monitor) => {
       monitor.getItem().InTray = false;
       addPhononCardsToState([item]);
@@ -36,7 +36,7 @@ export const WalletSlot: React.FC<{
         ref={drop}
         className={'relative ' + (isCardsMini ? 'w-56 h-36 ' : 'w-80 h-52')}
       >
-        {card.InTray ? <CardShadow /> : <Card card={card} />}
+        {card.InTray ? <CardShadow isOver={isOver} /> : <Card card={card} />}
       </div>
 
       {card.IsMock && (

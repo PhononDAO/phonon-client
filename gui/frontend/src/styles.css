@@ -723,6 +723,10 @@ video {
   margin: auto;
 }
 
+.m-2{
+  margin: 0.5rem;
+}
+
 .my-12{
   margin-top: 3rem;
   margin-bottom: 3rem;
@@ -1311,6 +1315,31 @@ video {
   background-color: rgb(153 27 27 / var(--tw-bg-opacity));
 }
 
+.bg-red-300{
+  --tw-bg-opacity: 1;
+  background-color: rgb(252 165 165 / var(--tw-bg-opacity));
+}
+
+.bg-green-500{
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 197 94 / var(--tw-bg-opacity));
+}
+
+.bg-gray-900{
+  --tw-bg-opacity: 1;
+  background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+}
+
+.bg-gray-700{
+  --tw-bg-opacity: 1;
+  background-color: rgb(55 65 81 / var(--tw-bg-opacity));
+}
+
+.bg-green-300{
+  --tw-bg-opacity: 1;
+  background-color: rgb(134 239 172 / var(--tw-bg-opacity));
+}
+
 .bg-phonon-card{
   background-image: url('./assets/images/card-bg.png');
 }
@@ -1395,6 +1424,11 @@ video {
 .py-12{
   padding-top: 3rem;
   padding-bottom: 3rem;
+}
+
+.py-6{
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
 }
 
 .pt-24{
@@ -1614,6 +1648,10 @@ video {
   opacity: 1;
 }
 
+.opacity-10{
+  opacity: 0.1;
+}
+
 .shadow-sm{
   --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
@@ -1709,7 +1747,28 @@ video {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+.hover\:shadow-lg:hover{
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .hover\:shadow-zinc-500\/60:hover{
   --tw-shadow-color: rgb(113 113 122 / 0.6);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.hover\:shadow-black:hover{
+  --tw-shadow-color: #000;
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.hover\:shadow-zinc-800\/60:hover{
+  --tw-shadow-color: rgb(39 39 42 / 0.6);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.hover\:shadow-zinc-800\/80:hover{
+  --tw-shadow-color: rgb(39 39 42 / 0.8);
   --tw-shadow: var(--tw-shadow-colored);
 }

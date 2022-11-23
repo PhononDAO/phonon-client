@@ -10,12 +10,9 @@ import { CardManagementContext } from '../contexts/CardManagementContext';
 
 export const PhononWallet = () => {
   const { t } = useTranslation();
-  const {
-    phononCards,
-    addPhononCardsToState,
-    addCardPhononsToState,
-    isCardsMini,
-  } = useContext(CardManagementContext);
+  const { phononCards, addCardsToState, isCardsMini } = useContext(
+    CardManagementContext
+  );
 
   const aPhonon = {
     Address: '0x7Ab7050217C76d729fa542161ca59Cb28654bf80',
@@ -38,6 +35,13 @@ export const PhononWallet = () => {
     CurrencyType: 3,
   } as Phonon;
 
+  const dPhonon = {
+    Address: '0x7Ab7050217C76d729fa542161ca59Cb28484e0fa',
+    ChainID: 43114,
+    Denomination: '5008000000000000000',
+    CurrencyType: 3,
+  } as Phonon;
+
   const aCard = {
     CardId: '04e0d5eb884a73cf',
     IsLocked: true,
@@ -46,21 +50,6 @@ export const PhononWallet = () => {
   } as PhononCard;
   aCard.Phonons.push(aPhonon);
   aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(aPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(aPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(aPhonon);
-  aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(aPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(aPhonon);
   aCard.Phonons.push(cPhonon);
 
   const bCard = {
@@ -70,8 +59,7 @@ export const PhononWallet = () => {
     ShowActions: true,
     Phonons: [],
   } as PhononCard;
-  bCard.Phonons.push(aPhonon);
-  bCard.Phonons.push(bPhonon);
+  bCard.Phonons.push(dPhonon);
 
   const cCard = {
     CardId: '04e0d5eb884a73c0',
@@ -81,11 +69,7 @@ export const PhononWallet = () => {
   } as PhononCard;
 
   useEffect(() => {
-    addPhononCardsToState([aCard, bCard, cCard]);
-
-    addCardPhononsToState(aCard.CardId, aCard.Phonons);
-    addCardPhononsToState(bCard.CardId, bCard.Phonons);
-    addCardPhononsToState(cCard.CardId, cCard.Phonons);
+    addCardsToState([aCard, bCard, cCard]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

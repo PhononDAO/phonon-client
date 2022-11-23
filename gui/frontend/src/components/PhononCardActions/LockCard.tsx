@@ -11,14 +11,12 @@ export const LockCard: React.FC<{
   card: PhononCard;
 }> = ({ card }) => {
   const { t } = useTranslation();
-  const { addPhononCardsToState, isCardsMini } = useContext(
-    CardManagementContext
-  );
+  const { addCardsToState, isCardsMini } = useContext(CardManagementContext);
 
   const lockCard = () => {
     card.IsLocked = true;
     card.InTray = false;
-    addPhononCardsToState([card]);
+    addCardsToState([card]);
   };
 
   return isCardsMini && !card.InTray ? (

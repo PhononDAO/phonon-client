@@ -14,7 +14,7 @@ export const CardTray: React.FC<{
   canHaveRemote?: boolean;
 }> = ({ card = null, canHaveRemote = false }) => {
   const { t } = useTranslation();
-  const { addPhononCardsToState } = useContext(CardManagementContext);
+  const { addCardsToState } = useContext(CardManagementContext);
   const [showPairingOptions, setShowPairingOptions] = useState(false);
 
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
@@ -28,7 +28,7 @@ export const CardTray: React.FC<{
       } else {
         itemCard.InTray = true;
       }
-      addPhononCardsToState([itemCard]);
+      addCardsToState([itemCard]);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),

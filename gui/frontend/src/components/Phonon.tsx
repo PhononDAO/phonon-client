@@ -3,6 +3,12 @@ import { abbreviateHash, fromDecimals } from '../utils/formatting';
 import { ChainIDTag } from './ChainIDTag';
 import { CURRENCIES } from '../constants/Currencies';
 import { useDrag } from 'react-dnd';
+import { Button, IconButton } from '@chakra-ui/react';
+import { IonIcon } from '@ionic/react';
+import { closeCircle } from 'ionicons/icons';
+import { useTranslation } from 'react-i18next';
+import { useContext } from 'react';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 
 interface DropResult {
   name: string;
@@ -13,7 +19,15 @@ export const Phonon: React.FC<{
   card: PhononCard;
   phonon: iPhonon;
   layoutType?: string;
-}> = ({ phonon, card, layoutType = 'list' }) => {
+  isProposed?: boolean;
+}> = ({ phonon, card, layoutType = 'list', isProposed = false }) => {
+  const { t } = useTranslation();
+  const { removePhononsFromCardTransferState } = useContext(
+    CardManagementContext
+  );
+
+  phonon.SourceCardId = card.CardId;
+
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'Phonon-' + card.CardId,
     name: phonon.Address,
@@ -29,19 +43,29 @@ export const Phonon: React.FC<{
     }),
   }));
 
+  const removeFromProposal = () => {
+    console.log('test');
+
+    removePhononsFromCardTransferState(card, [phonon]);
+  };
+
   return (
     <div
-      ref={drag}
+      ref={phonon.ProposedForTransfer ? null : drag}
       className={
-        'transition-all duration-300 rounded-full overflow-hidden hover:shadow-md hover:shadow-zinc-800/80' +
+        'transition-all duration-300 rounded-full overflow-hidden' +
+        (phonon.ProposedForTransfer
+          ? ''
+          : ' hover:shadow-md hover:shadow-zinc-800/80') +
         (layoutType === 'grid' ? ' inline-block relative w-1/4' : ' w-full')
       }
     >
       {layoutType === 'grid' && <div className="mt-full"></div>}
       <div
         className={
-          'rounded-full px-4 py-2 bg-black' +
-          (isDragging ? ' opacity-10' : '') +
+          'transition-all rounded-full px-4 py-2 bg-black' +
+          (phonon.ProposedForTransfer && !isProposed ? ' opacity-5' : '') +
+          (isDragging ? ' opacity-20' : '') +
           (layoutType === 'grid'
             ? ' absolute top-0 right-1 bottom-0 left-1 pt-12'
             : ' flex items-center gap-x-8')
@@ -78,6 +102,13 @@ export const Phonon: React.FC<{
         >
           {abbreviateHash(phonon.Address)}
         </div>
+        {isProposed && (
+          <IonIcon
+            icon={closeCircle}
+            className="text-red-500 bg-white rounded-full cursor-pointer"
+            onClick={removeFromProposal}
+          />
+        )}
       </div>
     </div>
   );

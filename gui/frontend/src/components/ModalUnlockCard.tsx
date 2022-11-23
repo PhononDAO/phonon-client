@@ -31,7 +31,7 @@ export const ModalUnlockCard: React.FC<{
 }> = ({ isOpen, onClose, card }) => {
   const { t } = useTranslation();
   const [isError, setIsError] = useState(false);
-  const { addPhononCardsToState } = useContext(CardManagementContext);
+  const { addCardsToState } = useContext(CardManagementContext);
   const pinLength = 6;
 
   const {
@@ -66,7 +66,7 @@ export const ModalUnlockCard: React.FC<{
       }
       card.AttemptUnlock = false;
 
-      addPhononCardsToState([card]);
+      addCardsToState([card]);
 
       onClose();
       notifySuccess(t('Card "' + String(card.CardId) + '" is unlocked!'));
@@ -80,7 +80,7 @@ export const ModalUnlockCard: React.FC<{
       onClose={() => {
         onClose();
         card.AttemptUnlock = false;
-        addPhononCardsToState([card]);
+        addCardsToState([card]);
       }}
     >
       <ModalOverlay />
@@ -137,7 +137,7 @@ export const ModalUnlockCard: React.FC<{
                 onClick={() => {
                   onClose();
                   card.AttemptUnlock = false;
-                  addPhononCardsToState([card]);
+                  addCardsToState([card]);
                 }}
               >
                 {t('Cancel')}

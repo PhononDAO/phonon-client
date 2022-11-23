@@ -30,8 +30,9 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
   const { onCopy, value, hasCopied } = useClipboard(pairingCode);
   const [currentStep, setCurrentStep] = useState('share');
   const [isPaired, setIsPaired] = useState(false);
-  const { phononCards, addPhononCardsToState, removePhononCardsFromState } =
-    useContext(CardManagementContext);
+  const { phononCards, addCardsToState, removeCardsFromState } = useContext(
+    CardManagementContext
+  );
 
   const {
     register,
@@ -72,7 +73,7 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
           InTray: true,
         } as PhononCard;
 
-        addPhononCardsToState([remoteCard]);
+        addCardsToState([remoteCard]);
       });
   };
 
@@ -81,7 +82,7 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
     setIsPaired(false);
     setCurrentStep('share');
 
-    removePhononCardsFromState(
+    removeCardsFromState(
       phononCards.filter((card: PhononCard) => card.IsRemote)
     );
   };

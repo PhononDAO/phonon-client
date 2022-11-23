@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import { useTranslation } from 'react-i18next';
 import { PhononCard, Phonon } from '../interfaces/interfaces';
@@ -8,19 +8,21 @@ export const PhononTransferDropzone: React.FC<{ card: PhononCard }> = ({
   card,
 }) => {
   const { t } = useTranslation();
-  const { phononCards } = useContext(CardManagementContext);
+  const { phononCards, addPhononsToCardTransferState } = useContext(
+    CardManagementContext
+  );
 
   const otherPhononCards = phononCards.filter(
     (thisCard: PhononCard) => thisCard.CardId !== card.CardId && thisCard.InTray
   );
 
-  console.log(otherPhononCards);
-
   const [{ isOver }, drop] = useDrop(() => ({
     accept: otherPhononCards.map((card: PhononCard) => 'Phonon-' + card.CardId),
     drop: (item: Phonon, monitor) => {
-      // monitor.getItem().InTray = false;
-      // addPhononCardsToState([item]);
+      const phonon = monitor.getItem();
+
+      // let's add the phonon to a transfer proposal for the destination card
+      addPhononsToCardTransferState(card, [phonon]);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),

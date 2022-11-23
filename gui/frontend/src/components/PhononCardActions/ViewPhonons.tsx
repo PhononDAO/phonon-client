@@ -11,13 +11,11 @@ export const ViewPhonons: React.FC<{
   card: PhononCard;
 }> = ({ card }) => {
   const { t } = useTranslation();
-  const { addPhononCardsToState, isCardsMini } = useContext(
-    CardManagementContext
-  );
+  const { addCardsToState, isCardsMini } = useContext(CardManagementContext);
 
   const viewPhonons = () => {
     card.InTray = true;
-    addPhononCardsToState([card]);
+    addCardsToState([card]);
   };
 
   return isCardsMini && !card.InTray ? (

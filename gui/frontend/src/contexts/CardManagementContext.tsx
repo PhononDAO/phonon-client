@@ -1,6 +1,5 @@
 import { createContext, useState, ReactNode } from 'react';
 import { usePhononCards } from '../hooks/usePhononCards';
-import { usePhonons } from '../hooks/usePhonons';
 
 export const CardManagementContext = createContext(undefined);
 
@@ -16,17 +15,17 @@ export const CardManagementContextProvider = ({
 
   const [
     phononCards,
-    addPhononCardsToState,
-    removePhononCardsFromState,
-    resetPhononCardsInState,
+    addCardsToState,
+    removeCardsFromState,
+    resetCardsInState,
+    getCardById,
+    addPhononsToCardState,
+    removePhononsFromCardState,
+    resetPhononsOnCardState,
+    addPhononsToCardTransferState,
+    removePhononsFromCardTransferState,
+    resetPhononsOnCardTransferState,
   ] = usePhononCards([]);
-
-  const [
-    phononsOnCards,
-    addCardPhononsToState,
-    removeCardPhononsFromState,
-    resetCardPhononsInState,
-  ] = usePhonons({});
 
   const defaultContext = {
     isLoadingPhononCards,
@@ -34,13 +33,16 @@ export const CardManagementContextProvider = ({
     setIsCardsMini,
     setIsLoadingPhononCards,
     phononCards,
-    addPhononCardsToState,
-    removePhononCardsFromState,
-    resetPhononCardsInState,
-    phononsOnCards,
-    addCardPhononsToState,
-    removeCardPhononsFromState,
-    resetCardPhononsInState,
+    addCardsToState,
+    removeCardsFromState,
+    resetCardsInState,
+    getCardById,
+    addPhononsToCardState,
+    removePhononsFromCardState,
+    resetPhononsOnCardState,
+    addPhononsToCardTransferState,
+    removePhononsFromCardTransferState,
+    resetPhononsOnCardTransferState,
   };
 
   return (

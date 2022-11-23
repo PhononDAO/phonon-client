@@ -22,7 +22,7 @@ export const ModalCreateMockCard: React.FC<{
   onClose;
 }> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
-  const { addPhononCardsToState } = useContext(CardManagementContext);
+  const { addCardsToState } = useContext(CardManagementContext);
 
   const createMockCard = () => {
     const aCard = {
@@ -30,7 +30,7 @@ export const ModalCreateMockCard: React.FC<{
       IsMock: true,
     } as PhononCard;
 
-    addPhononCardsToState([aCard]);
+    addCardsToState([aCard]);
 
     notifySuccess(t('New mock card created!'));
 

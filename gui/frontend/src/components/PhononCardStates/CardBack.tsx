@@ -6,6 +6,7 @@ import { LockCard } from '../PhononCardActions/LockCard';
 import { useTranslation } from 'react-i18next';
 import { useContext } from 'react';
 import { CardManagementContext } from '../../contexts/CardManagementContext';
+import { Pluralize } from 'pluralize-react';
 
 export const CardBack: React.FC<{
   card;
@@ -47,7 +48,13 @@ export const CardBack: React.FC<{
             (isCardsMini && !card.InTray ? 'py-px' : 'py-2')
           }
         >
-          {t('Contains ' + String(card.Phonons.length) + ' Phonons.')}
+          {t('Contains ')}
+          <Pluralize
+            count={card.Phonons.length}
+            singular="phonon"
+            zero="no phonons"
+          />
+          .
         </div>
         <div
           className={

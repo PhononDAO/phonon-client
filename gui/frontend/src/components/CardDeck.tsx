@@ -18,9 +18,7 @@ export const CardDeck: React.FC<{
 }> = ({ card, canHaveRemote }) => {
   const { t } = useTranslation();
   const [layoutType, setLayoutType] = useState<string>('list');
-  const { phononCards, addPhononCardsToState } = useContext(
-    CardManagementContext
-  );
+  const { phononCards, addCardsToState } = useContext(CardManagementContext);
 
   const sortPhononsBy = (key: string) => {
     if (key === 'ChainId') {
@@ -30,7 +28,7 @@ export const CardDeck: React.FC<{
     } else if (key === 'CurrencyType') {
       card.Phonons.sort((a, b) => a.CurrencyType - b.CurrencyType);
     }
-    addPhononCardsToState([card]);
+    addCardsToState([card]);
   };
 
   // only show card if not a mock card or if mock cards are enabled

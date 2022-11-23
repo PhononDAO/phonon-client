@@ -38,8 +38,8 @@ export interface Phonon {
   KeyIndex: number;
   PubKey: string;
   SchemaVersion: number;
-  IsStaged: boolean;
-  OriginCardId: string;
+  ProposedForTransfer: boolean;
+  SourceCardId: string;
 }
 
 /**
@@ -56,6 +56,7 @@ export interface PhononCard {
   FutureAction: string | null;
   ShowActions: boolean;
   Phonons: Array<Phonon>;
+  IncomingTransferProposal: Array<Phonon>;
 }
 
 /**
@@ -63,11 +64,4 @@ export interface PhononCard {
  */
 export interface PhononWallet {
   PhononCards: Array<PhononCard>;
-}
-
-/**
- * CardDropzone interface
- */
-export interface CardDropzone {
-  DropzoneID: string;
 }

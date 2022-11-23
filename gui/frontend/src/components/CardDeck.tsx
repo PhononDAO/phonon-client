@@ -6,7 +6,7 @@ import { IonIcon } from '@ionic/react';
 import { reorderFour, apps } from 'ionicons/icons';
 import { useContext, useState } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
-import { PhononCard } from '../classes/PhononCard';
+import { PhononCard } from '../interfaces/interfaces';
 import { MinePhonon } from './PhononCardActions/MinePhonon';
 import { CreatePhonon } from './PhononCardActions/CreatePhonon';
 import { RemoteCardPhononMessage } from './RemoteCardPhononMessage';
@@ -24,13 +24,12 @@ export const CardDeck: React.FC<{
 
   const sortPhononsBy = (key: string) => {
     if (key === 'ChainId') {
-      card.Phonons.sort((a, b) => a.ChainID.localeCompare(b.ChainID));
+      card.Phonons.sort((a, b) => a.ChainID - b.ChainID);
     } else if (key === 'Denomination') {
       card.Phonons.sort((a, b) => a.Denomination.localeCompare(b.Denomination));
     } else if (key === 'CurrencyType') {
       card.Phonons.sort((a, b) => a.CurrencyType - b.CurrencyType);
     }
-
     addPhononCardsToState([card]);
   };
 

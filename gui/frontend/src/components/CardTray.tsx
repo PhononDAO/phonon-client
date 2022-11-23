@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useDrop } from 'react-dnd';
 import { Button } from '@chakra-ui/react';
 import { Card } from './Card';
-import { PhononCard } from '../classes/PhononCard';
+import { PhononCard } from '../interfaces/interfaces';
 import { useContext, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import { cloudDownload } from 'ionicons/icons';

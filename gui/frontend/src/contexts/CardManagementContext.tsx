@@ -1,5 +1,6 @@
 import { createContext, useState, ReactNode } from 'react';
 import { usePhononCards } from '../hooks/usePhononCards';
+import { usePhonons } from '../hooks/usePhonons';
 
 export const CardManagementContext = createContext(undefined);
 
@@ -20,6 +21,13 @@ export const CardManagementContextProvider = ({
     resetPhononCardsInState,
   ] = usePhononCards([]);
 
+  const [
+    phononsOnCards,
+    addCardPhononsToState,
+    removeCardPhononsFromState,
+    resetCardPhononsInState,
+  ] = usePhonons({});
+
   const defaultContext = {
     isLoadingPhononCards,
     isCardsMini,
@@ -29,6 +37,10 @@ export const CardManagementContextProvider = ({
     addPhononCardsToState,
     removePhononCardsFromState,
     resetPhononCardsInState,
+    phononsOnCards,
+    addCardPhononsToState,
+    removeCardPhononsFromState,
+    resetCardPhononsInState,
   };
 
   return (

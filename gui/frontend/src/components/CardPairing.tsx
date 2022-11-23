@@ -12,7 +12,7 @@ import {
 import { useContext, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { PhononCard } from '../classes/PhononCard';
+import { PhononCard } from '../interfaces/interfaces';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { notifySuccess } from '../utils/notify';
 import { CardRemote } from './PhononCardStates/CardRemote';
@@ -66,10 +66,12 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
       })
       .then(() => {
         setIsPaired(true);
-        const remoteCard = new PhononCard();
-        remoteCard.CardId = '04e0d5eb884a73e9';
-        remoteCard.IsRemote = true;
-        remoteCard.InTray = true;
+        const remoteCard = {
+          CardId: '04e0d5eb884a73e9',
+          IsRemote: true,
+          InTray: true,
+        } as PhononCard;
+
         addPhononCardsToState([remoteCard]);
       });
   };

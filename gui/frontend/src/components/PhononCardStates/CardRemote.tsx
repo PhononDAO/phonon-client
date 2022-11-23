@@ -3,7 +3,7 @@ import { IonIcon } from '@ionic/react';
 import { cloud, flashOff } from 'ionicons/icons';
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PhononCard } from '../../classes/PhononCard';
+import { PhononCard } from '../../interfaces/interfaces';
 import { CardManagementContext } from '../../contexts/CardManagementContext';
 
 export const CardRemote: React.FC<{

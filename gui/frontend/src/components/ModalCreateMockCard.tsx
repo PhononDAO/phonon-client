@@ -11,7 +11,7 @@ import {
   ModalBody,
   ModalCloseButton,
 } from '@chakra-ui/react';
-import { PhononCard as Card } from '../classes/PhononCard';
+import { PhononCard } from '../interfaces/interfaces';
 import { useTranslation } from 'react-i18next';
 import { notifySuccess } from '../utils/notify';
 import { useContext } from 'react';
@@ -25,9 +25,10 @@ export const ModalCreateMockCard: React.FC<{
   const { addPhononCardsToState } = useContext(CardManagementContext);
 
   const createMockCard = () => {
-    const aCard = new Card();
-    aCard.CardId = '04e0d5eb884ae' + String(Math.floor(Math.random() * 999));
-    aCard.IsMock = true;
+    const aCard = {
+      CardId: '04e0d5eb884ae' + String(Math.floor(Math.random() * 999)),
+      IsMock: true,
+    } as PhononCard;
 
     addPhononCardsToState([aCard]);
 

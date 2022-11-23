@@ -39,6 +39,7 @@ export interface Phonon {
   PubKey: string;
   SchemaVersion: number;
   IsStaged: boolean;
+  OriginCardId: string;
 }
 
 /**
@@ -50,6 +51,9 @@ export interface PhononCard {
   IsLocked: boolean;
   IsMock: boolean;
   InTray: boolean;
+  IsRemote: boolean;
+  AttemptUnlock: boolean;
+  FutureAction: string | null;
   ShowActions: boolean;
   Phonons: Array<Phonon>;
 }

@@ -1,9 +1,8 @@
-import { Phonon as aPhonon } from '../classes/Phonon';
+import { Phonon as iPhonon, PhononCard } from '../interfaces/interfaces';
 import { abbreviateHash, fromDecimals } from '../utils/formatting';
 import { ChainIDTag } from './ChainIDTag';
 import { CURRENCIES } from '../constants/Currencies';
 import { useDrag } from 'react-dnd';
-import { PhononCard } from '../classes/PhononCard';
 
 interface DropResult {
   name: string;
@@ -12,7 +11,7 @@ interface DropResult {
 
 export const Phonon: React.FC<{
   card: PhononCard;
-  phonon: aPhonon;
+  phonon: iPhonon;
   layoutType?: string;
 }> = ({ phonon, card, layoutType = 'list' }) => {
   const [{ isDragging }, drag] = useDrag(() => ({

@@ -1,8 +1,7 @@
 import React, { useContext } from 'react';
 import { useDrop } from 'react-dnd';
 import { useTranslation } from 'react-i18next';
-import { Phonon } from '../classes/Phonon';
-import { PhononCard } from '../classes/PhononCard';
+import { PhononCard, Phonon } from '../interfaces/interfaces';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 
 export const PhononTransferDropzone: React.FC<{ card: PhononCard }> = ({

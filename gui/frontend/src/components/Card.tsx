@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { useDrag } from 'react-dnd';
 import { useDisclosure } from '@chakra-ui/react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
-import { PhononCard } from '../classes/PhononCard';
+import { PhononCard } from '../interfaces/interfaces';
 import { ModalUnlockCard } from './ModalUnlockCard';
 import { CardBack } from './PhononCardStates/CardBack';
 import { CardFront } from './PhononCardStates/CardFront';

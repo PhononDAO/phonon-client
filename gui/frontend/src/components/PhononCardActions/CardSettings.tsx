@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ModalCardSettings } from '../ModalCardSettings';
 import { useContext } from 'react';
 import { CardManagementContext } from '../../contexts/CardManagementContext';
-import { PhononCard } from '../../classes/PhononCard';
+import { PhononCard } from '../../interfaces/interfaces';
 
 export const CardSettings: React.FC<{ card: PhononCard }> = ({ card }) => {
   const { t } = useTranslation();

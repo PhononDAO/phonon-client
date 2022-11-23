@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { PhononCard as Card } from '../classes/PhononCard';
+import { PhononCard } from '../interfaces/interfaces';
 import { useForm, Controller } from 'react-hook-form';
 import {
   Button,
@@ -27,7 +27,7 @@ type PINFormData = {
 export const ModalUnlockCard: React.FC<{
   isOpen;
   onClose;
-  card: Card;
+  card: PhononCard;
 }> = ({ isOpen, onClose, card }) => {
   const { t } = useTranslation();
   const [isError, setIsError] = useState(false);

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useDrop } from 'react-dnd';
-import { PhononCard } from '../classes/PhononCard';
+import { PhononCard } from '../interfaces/interfaces';
 import { HelpTooltip } from './HelpTooltip';
 import { useFeature } from '../hooks/useFeature';
 import { CardShadow } from './CardShadow';

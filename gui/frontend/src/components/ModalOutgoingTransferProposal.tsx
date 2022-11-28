@@ -39,6 +39,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
     resetPhononsOnCardTransferState(destinationCard);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const promise = new Promise((resolve) => {
     setTimeout(() => {
       resolve('paired');

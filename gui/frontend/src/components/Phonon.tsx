@@ -3,10 +3,8 @@ import { abbreviateHash, fromDecimals } from '../utils/formatting';
 import { ChainIDTag } from './ChainIDTag';
 import { CURRENCIES } from '../constants/Currencies';
 import { useDrag } from 'react-dnd';
-import { Button, IconButton } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { closeCircle } from 'ionicons/icons';
-import { useTranslation } from 'react-i18next';
 import { useContext } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 
@@ -28,7 +26,6 @@ export const Phonon: React.FC<{
   isProposed = false,
   showAction = false,
 }) => {
-  const { t } = useTranslation();
   const { removePhononsFromCardTransferState } = useContext(
     CardManagementContext
   );

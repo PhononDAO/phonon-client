@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { PhononCard } from '../interfaces/interfaces';
 import { PhononTransferDropzone } from './PhononTransferDropzone';
 import { PhononTransferPayload } from './PhononTransferPayload';
@@ -8,8 +7,6 @@ import { SendPhononTransferButton } from './SendPhononTransferButton';
 export const PhononTransferProposal: React.FC<{
   card: PhononCard;
 }> = ({ card }) => {
-  const { t } = useTranslation();
-
   return (
     <>
       {card.IncomingTransferProposal &&

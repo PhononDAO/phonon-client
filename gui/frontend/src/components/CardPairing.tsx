@@ -9,7 +9,7 @@ import {
   arrowForward,
   repeatOutline,
 } from 'ionicons/icons';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { PhononCard } from '../interfaces/interfaces';
@@ -48,6 +48,7 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
 
     setCurrentStep('pairing');
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const promise = new Promise((resolve) => {
       setTimeout(() => {
         resolve('paired');

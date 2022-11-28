@@ -7,9 +7,9 @@ import { PhononCard } from '../interfaces/interfaces';
 import { ModalOutgoingTransferProposal } from './ModalOutgoingTransferProposal';
 import { Pluralize } from 'pluralize-react';
 
-export const SendPhononTransferButton: React.FC<{ card: PhononCard }> = ({
-  card,
-}) => {
+export const SendPhononTransferButton: React.FC<{
+  destinationCard: PhononCard;
+}> = ({ destinationCard }) => {
   const { t } = useTranslation();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -27,12 +27,12 @@ export const SendPhononTransferButton: React.FC<{ card: PhononCard }> = ({
 
         <Pluralize
           className="ml-1"
-          count={card.IncomingTransferProposal.length}
+          count={destinationCard.IncomingTransferProposal.length}
           singular=" Proposed Phonon"
         />
       </Button>
       <ModalOutgoingTransferProposal
-        card={card}
+        destinationCard={destinationCard}
         isOpen={isOpen}
         onClose={onClose}
       />

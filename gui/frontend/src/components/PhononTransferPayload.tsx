@@ -11,7 +11,13 @@ export const PhononTransferPayload: React.FC<{
   return (
     <div className={'overflow-scroll gap-2 grid w-full'}>
       {card.IncomingTransferProposal?.map((phonon, key) => (
-        <Phonon key={key} phonon={phonon} card={card} isProposed={true} />
+        <Phonon
+          key={key}
+          phonon={phonon}
+          card={card}
+          isProposed={true}
+          showAction={true}
+        />
       ))}
     </div>
   );

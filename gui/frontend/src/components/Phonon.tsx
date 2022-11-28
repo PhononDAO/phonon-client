@@ -20,13 +20,18 @@ export const Phonon: React.FC<{
   phonon: iPhonon;
   layoutType?: string;
   isProposed?: boolean;
-}> = ({ phonon, card, layoutType = 'list', isProposed = false }) => {
+  showAction?: boolean;
+}> = ({
+  phonon,
+  card,
+  layoutType = 'list',
+  isProposed = false,
+  showAction = false,
+}) => {
   const { t } = useTranslation();
   const { removePhononsFromCardTransferState } = useContext(
     CardManagementContext
   );
-
-  phonon.SourceCardId = card.CardId;
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'Phonon-' + card.CardId,
@@ -44,8 +49,6 @@ export const Phonon: React.FC<{
   }));
 
   const removeFromProposal = () => {
-    console.log('test');
-
     removePhononsFromCardTransferState(card, [phonon]);
   };
 
@@ -102,7 +105,7 @@ export const Phonon: React.FC<{
         >
           {abbreviateHash(phonon.Address)}
         </div>
-        {isProposed && (
+        {showAction && (
           <IonIcon
             icon={closeCircle}
             className="text-red-500 bg-white rounded-full cursor-pointer"

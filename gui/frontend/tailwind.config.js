@@ -49,11 +49,23 @@ module.exports = {
         success: {
           '50%': { transform: 'scale(1.2)' },
         },
+        outgoing: {
+          '0%': { opacity: '0', transform: 'translateX(0rem)' },
+          '50%': { opacity: '1', transform: 'translateX(10rem)' },
+          '100%': { opacity: '0', transform: 'translateX(32rem)' },
+        },
+        incoming: {
+          '0%': { opacity: '0', transform: 'translateX(32rem)' },
+          '50%': { opacity: '1', transform: 'translateX(10rem)' },
+          '100%': { opacity: '0', transform: 'translateX(0rem)' },
+        },
       },
       animation: {
         dismissIndicator: 'dismissIndicator 8s ease-out 1',
         errorShake: 'errorShake 0.8s cubic-bezier(0.97,0.19,0.07,0.36) both',
         success: 'success 0.4s linear 1',
+        outgoing: 'outgoing 4s linear infinite',
+        incoming: 'incoming 4s linear infinite',
       },
     },
   },

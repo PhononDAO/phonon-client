@@ -5,14 +5,19 @@ import { CardManagementContext } from '../../contexts/CardManagementContext';
 
 export const CardFront: React.FC<{
   card;
-}> = ({ card }) => {
+  isMini?: boolean;
+}> = ({ card, isMini = false }) => {
   const { t } = useTranslation();
   const { isCardsMini } = useContext(CardManagementContext);
+
+  const showCardsMini = isMini || isCardsMini;
 
   return (
     <div className="absolute w-full h-full">
       <div className="absolute w-full h-full p-2 font-noto-sans-mono">
-        <div className={'text-white ' + (isCardsMini ? 'text-md' : 'text-lg')}>
+        <div
+          className={'text-white ' + (showCardsMini ? 'text-md' : 'text-lg')}
+        >
           {card.VanityName ? card.VanityName : card.CardId}
         </div>
         {card.VanityName && (
@@ -22,7 +27,7 @@ export const CardFront: React.FC<{
       <img
         className={
           'absolute ' +
-          (isCardsMini ? 'w-16 right-10 bottom-3' : 'w-24 right-12 bottom-4')
+          (showCardsMini ? 'w-16 right-10 bottom-3' : 'w-24 right-12 bottom-4')
         }
         src="/assets/images/phonon-logo.png"
       />
@@ -30,7 +35,7 @@ export const CardFront: React.FC<{
         <div
           className={
             'absolute text-center font-bandeins-sans-bold text-white uppercase rotate-90 ' +
-            (isCardsMini
+            (showCardsMini
               ? 'text-3xl -right-[46px]'
               : 'text-phonon-card -right-[74px]')
           }
@@ -43,7 +48,7 @@ export const CardFront: React.FC<{
         <div
           className={
             'absolute rotate-30 font-bandeins-sans-bold text-center text-white bg-red-600 py-px ' +
-            (isCardsMini
+            (showCardsMini
               ? 'w-48 top-24 -left-12 text-sm'
               : 'w-60 top-40 -left-16 text-md')
           }

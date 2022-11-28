@@ -19,6 +19,7 @@ export const PhononWallet = () => {
     ChainID: 3,
     Denomination: '40000000000000000',
     CurrencyType: 2,
+    SourceCardId: '04e0d5eb884a73cf',
   } as Phonon;
 
   const bPhonon = {
@@ -26,6 +27,7 @@ export const PhononWallet = () => {
     ChainID: 137,
     Denomination: '50600000000000000',
     CurrencyType: 2,
+    SourceCardId: '04e0d5eb884a73cf',
   } as Phonon;
 
   const cPhonon = {
@@ -33,6 +35,7 @@ export const PhononWallet = () => {
     ChainID: 43114,
     Denomination: '3100000000000000000',
     CurrencyType: 3,
+    SourceCardId: '04e0d5eb884a73cf',
   } as Phonon;
 
   const dPhonon = {
@@ -40,6 +43,7 @@ export const PhononWallet = () => {
     ChainID: 43114,
     Denomination: '5008000000000000000',
     CurrencyType: 3,
+    SourceCardId: '04e0d5eb884a73ce',
   } as Phonon;
 
   const aCard = {

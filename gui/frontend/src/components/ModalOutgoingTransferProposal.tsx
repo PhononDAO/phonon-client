@@ -10,14 +10,16 @@ import {
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { send } from 'ionicons/icons';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
+import { PhononCard } from '../interfaces/interfaces';
+import { notifySuccess } from '../utils/notify';
 import { Card } from './Card';
 import { Phonon } from './Phonon';
 
 export const ModalOutgoingTransferProposal: React.FC<{
-  destinationCard;
+  destinationCard: PhononCard;
   isOpen;
   onClose;
 }> = ({ destinationCard, isOpen, onClose }) => {
@@ -48,7 +50,20 @@ export const ModalOutgoingTransferProposal: React.FC<{
     setTransferComplete(true);
   });
 
-  sourceCard.IsMini;
+  useEffect(() => {
+    if (transferComplete) {
+      notifySuccess(
+        t(
+          'Successfully transfered ' +
+            String(destinationCard.IncomingTransferProposal.length) +
+            ' phonons from ' +
+            String(sourceCard.CardId) +
+            ' → ' +
+            destinationCard.CardId
+        )
+      );
+    }
+  }, [transferComplete]);
 
   return (
     <Modal

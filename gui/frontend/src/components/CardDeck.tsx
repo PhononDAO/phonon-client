@@ -11,6 +11,7 @@ import { MinePhonon } from './PhononCardActions/MinePhonon';
 import { CreatePhonon } from './PhononCardActions/CreatePhonon';
 import { RemoteCardPhononMessage } from './RemoteCardPhononMessage';
 import { PhononTransferProposal } from './PhononTransferProposal';
+import { IncomingTransferNotice } from './IncomingTransferNotice';
 
 export const CardDeck: React.FC<{
   card: PhononCard;
@@ -93,6 +94,7 @@ export const CardDeck: React.FC<{
               </div>
             </>
           )}
+          {false && !card.IsRemote && <IncomingTransferNotice card={card} />}
           {(phononCards.filter(
             (card: PhononCard) => card.InTray && !card.IsRemote
           ).length > 1 ||

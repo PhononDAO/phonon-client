@@ -1,6 +1,5 @@
 import React from 'react';
 import { PhononCard } from '../interfaces/interfaces';
-import { IncomingTransferNotice } from './IncomingTransferNotice';
 import { PhononTransferDropzone } from './PhononTransferDropzone';
 import { PhononTransferPayload } from './PhononTransferPayload';
 import { OutgoingPhononTransferButton } from './OutgoingPhononTransferButton';
@@ -10,7 +9,6 @@ export const PhononTransferProposal: React.FC<{
 }> = ({ card }) => {
   return (
     <>
-      {true && <IncomingTransferNotice card={card} />}
       {card.IncomingTransferProposal &&
         card.IncomingTransferProposal.length > 0 && (
           <div className="flex justify-end mb-2">

@@ -47,8 +47,9 @@ type Session struct {
 	cachePopulated bool
 	validator      Validator
 
-	phononTransferApproval chan struct{}
-	phononTransferCancel   chan struct{}
+	phononTransferPacket chan []byte
+	phononTransferCancel chan struct{}
+	ProposalTimeout      int
 }
 
 const (
@@ -114,6 +115,7 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		mutexedMiningReport:   mutexedMiningReport{m: make(map[string]miningStatusReport), mtex: &sync.Mutex{}},
 		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 		validator:             approveValidator,
+		ProposalTimeout:       1,
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
 
@@ -600,73 +602,111 @@ func (s *Session) FinalizeCardPair(cardPair2Data []byte) error {
 }
 
 func (s *Session) SendPhonons(keyIndices []model.PhononKeyIndex) error {
-	err := s.CreateTransferProposal(keyIndices)
+	proposal, err := s.CreateTransferProposal(keyIndices)
 	if err != nil {
 		return err
 	}
 
+	// initialize messaging channels for transfer process
 	s.phononTransferCancel = make(chan struct{})
-	s.phononTransferApproval = make(chan struct{})
-	go func() {
-		s.phononTransferApproval = nil
+	s.phononTransferPacket = make(chan []byte)
+	errChan := make(chan error)
+	defer func() {
+		s.phononTransferPacket = nil
 		s.phononTransferCancel = nil
+
 	}()
+
+	//send off the transfer
+	go func() {
+		err2 := s.RemoteCard.RecieveProposedTransaction(proposal)
+		if err2 != nil {
+			log.Debug("error receiving phonon proposal on remote")
+			errChan <- err2
+		}
+	}()
+
 	select {
+	case err = <-errChan:
+		return fmt.Errorf("unable to complete transfer: %s", err.Error())
 	case <-s.phononTransferCancel:
 		return fmt.Errorf("transfer cancelled")
+	case <-time.After(time.Second * time.Duration(s.ProposalTimeout)):
+		return fmt.Errorf("timeout")
+	case phononFinalPacket := <-s.phononTransferPacket:
+		err = s.RemoteCard.ReceivePhonons(phononFinalPacket)
 	}
+
+	if err != nil {
+		return fmt.Errorf("unable to send phonon transfer packet to opposing card: %s", err.Error())
+	}
+	for _, index := range keyIndices {
+		delete(s.cache, index)
+	}
+
 	return nil
 }
 
-func (s *Session) ReceiveTransferProposal(proposalPacket []byte) ([]*model.Phonon, error) {
+func (s *Session) CreateTransferProposal(keyIndices []model.PhononKeyIndex) ([]byte, error) {
+	log.Debug("sending phonon proposal")
 	if !s.verified() && s.RemoteCard != nil {
 		return nil, ErrCardNotPairedToCard
+	}
+	log.Debug("verifying pairing")
+	err := s.RemoteCard.VerifyPaired()
+	if err != nil {
+		return nil, err
+	}
+	log.Debug("locking mutex")
+	s.ElementUsageMtex.Lock()
+	defer func() {
+		s.ElementUsageMtex.Unlock()
+		log.Debug("unlocking Mutex")
+	}()
+	phononTransferPacket, err := s.cs.ProposeTransaction(keyIndices)
+	if err != nil {
+		return nil, err
+	}
+	return phononTransferPacket, nil
+}
+
+func (s *Session) ReceiveTransferProposal(proposalPacket []byte) error {
+	if !s.verified() && s.RemoteCard != nil {
+		return ErrCardNotPairedToCard
 	}
 	s.ElementUsageMtex.Lock()
 	defer s.ElementUsageMtex.Unlock()
 
 	proposedPhonons, err := s.cs.ReceiveProposedTransaction(proposalPacket)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	valid, err := s.validator.Validate(proposedPhonons)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if !valid {
 		s.cs.CancelTransfer()
 		s.RemoteCard.CancelTransfer()
+		// not an error. Just an unapproved transaction
+		return fmt.Errorf("validator found proposed transaction unsatisfactory")
 	}
+	approvalPacket, err := s.cs.ApproveTransaction()
+	if err != nil {
+		return err
+	}
+	err = s.RemoteCard.IngestTransferApproval(approvalPacket)
 
-	return nil, nil
+	return err
 }
 
-func (s *Session) CreateTransferProposal(keyIndices []model.PhononKeyIndex) error {
-	log.Debug("Sending phonons")
-	if !s.verified() && s.RemoteCard != nil {
-		return ErrCardNotPairedToCard
-	}
-	log.Debug("verifying pairing")
-	err := s.RemoteCard.VerifyPaired()
+func (s *Session) IngestTransferApproval(approvalPacket []byte) error {
+	phononFinalPacket, err := s.cs.IngestTransactionApproval(approvalPacket)
 	if err != nil {
 		return err
 	}
-	log.Debug("locking mutex")
-	s.ElementUsageMtex.Lock()
-	defer s.ElementUsageMtex.Unlock()
-	phononTransferPacket, err := s.cs.ProposeTransaction(keyIndices)
-	if err != nil {
-		return err
-	}
-	//send off the transfer
-	err = s.RemoteCard.RecieveProposedTransaction(phononTransferPacket)
-	if err != nil {
-		log.Debug("error receiving phonon proposal on remote")
-		return err
-	}
-	fmt.Println("unlockingMutex")
-	for _, index := range keyIndices {
-		delete(s.cache, index)
+	if s.phononTransferPacket != nil {
+		s.phononTransferPacket <- phononFinalPacket
 	}
 	return nil
 }
@@ -675,8 +715,8 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 	if !s.verified() && s.RemoteCard != nil {
 		return ErrCardNotPairedToCard
 	}
-	s.ElementUsageMtex.Lock()
-	defer s.ElementUsageMtex.Unlock()
+	//s.ElementUsageMtex.Lock()
+	//defer s.ElementUsageMtex.Unlock()
 
 	err := s.cs.ReceiveTransfer(phononTransferPacket)
 	if err != nil {
@@ -686,22 +726,6 @@ func (s *Session) ReceivePhonons(phononTransferPacket []byte) error {
 	s.cachePopulated = false
 	return nil
 }
-
-/* temporarily removed to reduce the size of the possibly temporary change to secure transfers v2
-func (s *Session) ConnectToRemoteProvider(RemoteURL string) error {
-	u, err := url.Parse(RemoteURL)
-	if err != nil {
-		return fmt.Errorf("unable to parse url for card connection: %s", err.Error())
-	}
-	log.Info("connecting")
-	remConn, err := remote.Connect(s.remoteMessageChan, fmt.Sprintf("https://%s/phonon", u.Host), true)
-	if err != nil {
-		return fmt.Errorf("unable to connect to remote session: %s", err.Error())
-	}
-	s.RemoteCard = remConn
-	return nil
-}
-*/
 
 func (s *Session) RemoteConnectionStatus() model.RemotePairingStatus {
 	if s.RemoteCard == nil {
@@ -881,6 +905,7 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 		var resp model.ResponseSetRemote
 		resp.Err = nil
 		req.Ret <- resp
+
 	case "RequestReceivePhonons":
 		req, ok := r.(*model.RequestReceivePhonons)
 		if !ok {
@@ -889,6 +914,7 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 		var resp model.ResponseReceivePhonons
 		resp.Err = s.ReceivePhonons(req.Payload)
 		req.Ret <- resp
+
 	case "RequestGetName":
 		req, ok := r.(*model.RequestGetName)
 		if !ok {
@@ -898,6 +924,7 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 		resp.Name = s.GetCardId()
 		resp.Err = nil
 		req.Ret <- resp
+
 	case "RequestPairWithRemote":
 		req, ok := r.(*model.RequestPairWithRemote)
 		if !ok {
@@ -908,6 +935,7 @@ func (s *Session) handleRequest(r model.SessionRequest) {
 		log.Debug("Returning pairing stuff")
 		req.Ret <- resp
 		log.Debug("Done returning pairing stuff")
+
 	case "RequestSetPaired":
 		req, ok := r.(*model.RequestSetPaired)
 		if !ok {

@@ -52,10 +52,12 @@ func (lcp *localCounterParty) FinalizeCardPair(cardPair2Data []byte) error {
 }
 
 func (lcp *localCounterParty) ReceivePhonons(phononTransfer []byte) error {
+	fmt.Println(1)
 	err := lcp.counterSession.ReceivePhonons(phononTransfer)
 	if err != nil {
 		return err
 	}
+	fmt.Println(2)
 	return nil
 }
 
@@ -75,13 +77,20 @@ func (lcp *localCounterParty) RecieveProposedTransaction(phononProposalPacket []
 	if lcp.pairingStatus != model.StatusPaired {
 		return ErrCardNotPairedToCard
 	}
-	_, err = lcp.counterSession.ReceiveTransferProposal(phononProposalPacket)
+	err = lcp.counterSession.ReceiveTransferProposal(phononProposalPacket)
 	if err != nil {
 		return err
 	}
-	// todo: receive phonons from this call and put them in queue to be verified
 	return nil
 }
+
+func (lcp *localCounterParty) IngestTransferApproval(approvalPacket []byte) (err error) {
+	if lcp.pairingStatus != model.StatusPaired {
+		return ErrCardNotPairedToCard
+	}
+	return lcp.counterSession.IngestTransferApproval(approvalPacket)
+}
+
 func (lcp *localCounterParty) ReceiveTransfer(transferPacket []byte) error {
 	if lcp.pairingStatus != model.StatusPaired {
 		return ErrCardNotPairedToCard

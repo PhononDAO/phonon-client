@@ -15,6 +15,7 @@ type CounterpartyPhononCard interface {
 	ConnectToCard(string) error
 
 	RecieveProposedTransaction(phononProposalPacket []byte) (err error)
+	IngestTransferApproval(approvalPacket []byte) (err error)
 	ReceiveTransfer(transferPakcet []byte) error
 	CancelTransfer()
 }

@@ -20,6 +20,7 @@ export const usePhononCards = <T extends PhononCard>(
   (toRemove: T[]) => void,
   () => void,
   (cardId: string) => T,
+  (cardId: string) => string,
   (card: T, toAdd: Phonon[]) => void,
   (card: T, toRemove: Phonon[]) => void,
   (card: T) => void,
@@ -44,6 +45,16 @@ export const usePhononCards = <T extends PhononCard>(
   const getCardById = (cardId: string) => {
     const foundRecords = records.filter((card) => card.CardId === cardId);
     return foundRecords.length > 0 ? foundRecords[0] : null;
+  };
+
+  const getCardPairingCode = (cardId: string) => {
+    return btoa(
+      JSON.stringify({
+        IPAddress: '127.0.0.1', // TODO: NEED TO GET THIS
+        Port: '8080', // TODO NEED TO GET THIS
+        CardId: cardId,
+      })
+    );
   };
 
   const addPhononsToCard = (card: T, phononsToAdd: Phonon[]) => {
@@ -110,6 +121,7 @@ export const usePhononCards = <T extends PhononCard>(
     removePhononCards,
     resetPhononCards,
     getCardById,
+    getCardPairingCode,
     addPhononsToCard,
     removePhononsFromCard,
     resetPhononsOnCard,

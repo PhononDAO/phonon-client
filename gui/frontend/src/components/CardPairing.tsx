@@ -25,14 +25,18 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
   setShowPairingOptions = false,
 }) => {
   const { t } = useTranslation();
-  const pairingCode =
-    '6UqNxx9DGCCWrXt+36HuLY6Bmkzf99Xz9bq02HVadg3hZ3mgGsyorvDKyBY6WkkkpFgszXu9E+Uol0gnD3TnPw==';
-  const { onCopy, value, hasCopied } = useClipboard(pairingCode);
+  const {
+    phononCards,
+    addCardsToState,
+    removeCardsFromState,
+    getCardPairingCode,
+  } = useContext(CardManagementContext);
+  const loadedCards = phononCards.filter((card: PhononCard) => card.InTray);
+  const { onCopy, value, hasCopied } = useClipboard(
+    getCardPairingCode(loadedCards[0].CardId)
+  );
   const [currentStep, setCurrentStep] = useState('share');
   const [isPaired, setIsPaired] = useState(false);
-  const { phononCards, addCardsToState, removeCardsFromState } = useContext(
-    CardManagementContext
-  );
 
   const {
     register,
@@ -44,7 +48,7 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
   const onSubmit = (data: RemotePairingFormData, event) => {
     event.preventDefault();
 
-    console.log(data);
+    console.log(JSON.parse(atob(data.remotePairingCode)));
 
     setCurrentStep('pairing');
 

@@ -51,7 +51,12 @@ export const ModalOutgoingTransferProposal: React.FC<{
   sourceCard.IsMini;
 
   return (
-    <Modal isOpen={isOpen} size="3xl" onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      size="4xl"
+      onClose={closeTransfer}
+      closeOnOverlayClick={transferComplete}
+    >
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
@@ -59,11 +64,11 @@ export const ModalOutgoingTransferProposal: React.FC<{
             Outgoing Phonons
           </span>
         </ModalHeader>
-        <ModalCloseButton />
+        {transferComplete && <ModalCloseButton />}
         <ModalBody pb={6}>
           <div className="relative">
             <div className="absolute flex justify-center w-full z-10">
-              <div className="relative grid grid-row-1 content-center text-green-700 w-7/12 h-36">
+              <div className="relative grid grid-row-1 content-center text-green-700 w-2/3 h-36">
                 {transferComplete ? (
                   <>
                     <IonIcon

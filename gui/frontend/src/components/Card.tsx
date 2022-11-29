@@ -77,7 +77,7 @@ export const Card: React.FC<{
           <div className="flip-card-inner relative w-full h-full">
             <div
               className={
-                'flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-cover bg-no-repeat overflow-hidden' +
+                'flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-cover bg-no-repeat overflow-hidden' +
                 (card.IsRemote ? ' bg-phonon-card-blue' : ' bg-phonon-card') +
                 (showActions ? ' hover:shadow-md hover:shadow-zinc-500/60' : '')
               }

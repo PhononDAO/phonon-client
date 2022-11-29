@@ -63,7 +63,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
         )
       );
     }
-  }, [transferComplete]);
+  }, [destinationCard, sourceCard, t, transferComplete]);
 
   return (
     <Modal

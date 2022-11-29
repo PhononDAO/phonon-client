@@ -42,7 +42,7 @@ export const IncomingTransferNotice: React.FC<{
         <span>
           {t('Incoming transfer request: ')}
           <Pluralize
-            count={5}
+            count={sourceCard.IncomingTransferProposal.length}
             singular="phonon"
             className="font-bandeins-sans-bold text-xl"
           />

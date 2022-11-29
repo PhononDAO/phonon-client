@@ -7,7 +7,7 @@ import { PhononCard } from '../interfaces/interfaces';
 import { ModalOutgoingTransferProposal } from './ModalOutgoingTransferProposal';
 import { Pluralize } from 'pluralize-react';
 
-export const SendPhononTransferButton: React.FC<{
+export const OutgoingPhononTransferButton: React.FC<{
   destinationCard: PhononCard;
 }> = ({ destinationCard }) => {
   const { t } = useTranslation();

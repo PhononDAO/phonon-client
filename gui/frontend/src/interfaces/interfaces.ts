@@ -40,6 +40,7 @@ export interface Phonon {
   SchemaVersion: number;
   ProposedForTransfer: boolean;
   SourceCardId: string;
+  IsValidated: boolean;
 }
 
 /**

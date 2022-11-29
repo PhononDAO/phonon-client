@@ -93,7 +93,7 @@ export const PhononWallet = () => {
               (phononCards.filter((card) => !card.IsRemote).length === 1
                 ? ''
                 : 's') +
-              ' connected.'
+              ' in your wallet'
           )}
         </span>
         <Button

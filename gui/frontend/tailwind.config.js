@@ -56,7 +56,7 @@ module.exports = {
         },
         incoming: {
           '0%': { opacity: '0', transform: 'translateX(32rem)' },
-          '50%': { opacity: '1', transform: 'translateX(10rem)' },
+          '50%': { opacity: '1', transform: 'translateX(22rem)' },
           '100%': { opacity: '0', transform: 'translateX(0rem)' },
         },
       },

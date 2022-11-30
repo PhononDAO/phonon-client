@@ -23,38 +23,38 @@ export const CardDeck: React.FC<{
     useContext(CardManagementContext);
 
   // let's poll for updates on this card
-  if (false) {
-    const simulateIncomingRequest = setInterval(() => {
-      // let's fake an incoming proposal
-      if (phononCards.length > 1 && card?.CardId === '04e0d5eb884a73cf') {
-        const aPhonon = {
-          Address: '0x7Ab7050217C76d729fa542161ca59Cb28484e0fa',
-          ChainID: 43114,
-          Denomination: '5008000000000000000',
-          CurrencyType: 3,
-          SourceCardId: '04e0d5eb884a73ce',
-          ValidationStatus: 'unvalidated',
-        } as iPhonon;
+  // if (false) {
+  const simulateIncomingRequest = setInterval(() => {
+    // let's fake an incoming proposal
+    if (phononCards.length > 1 && card?.CardId === '04e0d5eb884a73cf') {
+      const aPhonon = {
+        Address: '0x7Ab7050217C76d729fa542161ca59Cb28484e0fa',
+        ChainID: 43114,
+        Denomination: '5008000000000000000',
+        CurrencyType: 3,
+        SourceCardId: '04e0d5eb884a73e9',
+        ValidationStatus: 'unvalidated',
+      } as iPhonon;
 
-        const bPhonon = {
-          Address: '0x7Ab7050217C76d729fa542161ca59Cb28484bf8e',
-          ChainID: 137,
-          Denomination: '50600000000000000',
-          CurrencyType: 2,
-          SourceCardId: '04e0d5eb884a73ce',
-          ValidationStatus: 'unvalidated',
-        } as iPhonon;
+      const bPhonon = {
+        Address: '0x7Ab7050217C76d729fa542161ca59Cb28484bf9a',
+        ChainID: 137,
+        Denomination: '50600000000000000',
+        CurrencyType: 2,
+        SourceCardId: '04e0d5eb884a73e9',
+        ValidationStatus: 'unvalidated',
+      } as iPhonon;
 
-        addPhononsToCardTransferState(
-          card,
-          [aPhonon, bPhonon],
-          'IncomingTransferProposal'
-        );
+      addPhononsToCardTransferState(
+        card,
+        [aPhonon, bPhonon],
+        'IncomingTransferProposal'
+      );
 
-        clearInterval(simulateIncomingRequest);
-      }
-    }, 12 * 1000);
-  }
+      clearInterval(simulateIncomingRequest);
+    }
+  }, 8 * 1000);
+  // }
 
   const sortPhononsBy = (key: string) => {
     if (key === 'ChainId') {

@@ -57,7 +57,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
     if (transferComplete) {
       notifySuccess(
         t(
-          'Successfully transfered ' +
+          'Successfully transferred ' +
             String(destinationCard.OutgoingTransferProposal.length) +
             ' phonons from ' +
             String(sourceCard.CardId) +
@@ -133,8 +133,8 @@ export const ModalOutgoingTransferProposal: React.FC<{
 
           <h3 className="mt-8 mb-2 text-xl text-gray-500">
             {transferComplete
-              ? t('The following Phonons were transfered:')
-              : t('The following Phonons are being transfered:')}
+              ? t('The following Phonons were transferred:')
+              : t('The following Phonons are being transferred:')}
           </h3>
           <div
             className={

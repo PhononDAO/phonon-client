@@ -94,7 +94,7 @@ export const ModalIncomingTransferProposal: React.FC<{
     if (transferState === 'transferred') {
       notifySuccess(
         t(
-          'Successfully transfered ' +
+          'Successfully transferred ' +
             String(destinationCard.IncomingTransferProposal.length) +
             ' phonons from ' +
             String(destinationCard.CardId) +
@@ -154,7 +154,7 @@ export const ModalIncomingTransferProposal: React.FC<{
                       </span>
                     </div>
                     <div className="mt-4 text-sm text-center">
-                      {t('Sending Phonons...')}
+                      {t('Receiving Phonons...')}
                     </div>
                   </>
                 )}
@@ -196,24 +196,33 @@ export const ModalIncomingTransferProposal: React.FC<{
           </div>
           <div className="relative flex justify-between z-30">
             <div className="relative w-56 h-36">
-              <Card card={sourceCard} isMini={true} showActions={false} />
+              <Card card={destinationCard} isMini={true} showActions={false} />
             </div>
             <div className="relative w-56 h-36">
-              <Card card={destinationCard} isMini={true} showActions={false} />
+              <Card card={sourceCard} isMini={true} showActions={false} />
             </div>
           </div>
 
           <h3 className="mt-8 mb-2 text-xl text-gray-500">
             {transferState === 'waiting' &&
-              t('The following Phonons are waiting to be transfered:')}
+              t('The following Phonons are waiting to be transferred:')}
             {transferState === 'validating' &&
               t('The following Phonons are being validated:')}
+            {transferState === 'validated' &&
+              t('The following Phonons have been validated:')}
             {transferState === 'transferring' &&
-              t('The following Phonons are being transfered:')}
-            {transferState === 'completed' &&
-              t('The following Phonons were transfered:')}
+              t('The following Phonons are being transferred:')}
+            {transferState === 'transferred' &&
+              t('The following Phonons were transferred:')}
           </h3>
-          <div className={'overflow-scroll gap-2 grid w-full'}>
+          <div
+            className={
+              'overflow-scroll gap-2 grid w-full' +
+              (transferState === 'transferring'
+                ? ' animate-pulse opacity-60'
+                : '')
+            }
+          >
             {getCardById(
               destinationCard?.CardId
             )?.IncomingTransferProposal?.map((phonon, key) => (
@@ -223,6 +232,7 @@ export const ModalIncomingTransferProposal: React.FC<{
                 card={sourceCard}
                 isProposed={true}
                 showAction={false}
+                isTransferred={transferState === 'transferred'}
               />
             ))}
           </div>

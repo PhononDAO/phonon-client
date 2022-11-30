@@ -9,8 +9,8 @@ export const PhononTransferProposal: React.FC<{
 }> = ({ card }) => {
   return (
     <>
-      {card.IncomingTransferProposal &&
-        card.IncomingTransferProposal.length > 0 && (
+      {card?.OutgoingTransferProposal &&
+        card?.OutgoingTransferProposal?.length > 0 && (
           <div className="flex justify-end mb-2">
             <OutgoingPhononTransferButton destinationCard={card} />
           </div>

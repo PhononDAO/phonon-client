@@ -7,7 +7,7 @@ export const PhononTransferPayload: React.FC<{
 }> = ({ card }) => {
   return (
     <div className={'overflow-scroll gap-2 grid w-full'}>
-      {card.IncomingTransferProposal?.map((phonon, key) => (
+      {card.OutgoingTransferProposal?.map((phonon, key) => (
         <Phonon
           key={key}
           phonon={phonon}

@@ -22,7 +22,7 @@ export const PhononTransferDropzone: React.FC<{ card: PhononCard }> = ({
       const phonon = monitor.getItem();
 
       // let's add the phonon to a transfer proposal for the destination card
-      addPhononsToCardTransferState(card, [phonon]);
+      addPhononsToCardTransferState(card, [phonon], 'OutgoingTransferProposal');
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),

@@ -27,7 +27,7 @@ export const OutgoingPhononTransferButton: React.FC<{
 
         <Pluralize
           className="ml-1"
-          count={destinationCard.IncomingTransferProposal.length}
+          count={destinationCard.OutgoingTransferProposal.length}
           singular=" Proposed Phonon"
         />
       </Button>

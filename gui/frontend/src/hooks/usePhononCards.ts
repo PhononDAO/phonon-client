@@ -24,9 +24,9 @@ export const usePhononCards = <T extends PhononCard>(
   (card: T, toAdd: Phonon[]) => void,
   (card: T, toRemove: Phonon[]) => void,
   (card: T) => void,
-  (card: T, toAdd: Phonon[]) => void,
-  (card: T, toRemove: Phonon[]) => void,
-  (card: T) => void
+  (card: T, toAdd: Phonon[], purpose: string) => void,
+  (card: T, toRemove: Phonon[], purpose: string) => void,
+  (card: T, purpose: string) => void
 ] => {
   const [records, setRecords] = useState<T[]>(defaultValue);
 
@@ -77,11 +77,12 @@ export const usePhononCards = <T extends PhononCard>(
 
   const addPhononsForTransferToCard = (
     destinationCard: T,
-    phononsToAdd: Phonon[]
+    phononsToAdd: Phonon[],
+    proposalPurpose: string
   ) => {
-    // let's we update the transfer proposal for this card
-    destinationCard.IncomingTransferProposal = unionBy(
-      destinationCard.IncomingTransferProposal,
+    // let's update the transfer proposal for this card
+    destinationCard[proposalPurpose] = unionBy(
+      destinationCard[proposalPurpose],
       phononsToAdd,
       Address
     );
@@ -95,11 +96,12 @@ export const usePhononCards = <T extends PhononCard>(
 
   const removePhononsForTransferFromCard = (
     destinationCard: T,
-    phononsToRemove: Phonon[]
+    phononsToRemove: Phonon[],
+    proposalPurpose: string
   ) => {
     // let's we update the transfer proposal for this card
-    destinationCard.IncomingTransferProposal = differenceBy(
-      destinationCard.IncomingTransferProposal,
+    destinationCard[proposalPurpose] = differenceBy(
+      destinationCard[proposalPurpose],
       phononsToRemove,
       Address
     );
@@ -111,8 +113,12 @@ export const usePhononCards = <T extends PhononCard>(
     });
   };
 
-  const resetPhononsForTransferOnCard = (card: T) => {
-    removePhononsForTransferFromCard(card, card.IncomingTransferProposal);
+  const resetPhononsForTransferOnCard = (card: T, proposalPurpose: string) => {
+    removePhononsForTransferFromCard(
+      card,
+      card[proposalPurpose],
+      proposalPurpose
+    );
   };
 
   return [

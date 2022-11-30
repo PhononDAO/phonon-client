@@ -30,7 +30,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
   const [transferComplete, setTransferComplete] = useState(false);
 
   const sourceCard = getCardById(
-    destinationCard.IncomingTransferProposal[0].SourceCardId
+    destinationCard?.OutgoingTransferProposal[0].SourceCardId
   );
 
   const closeTransfer = () => {
@@ -38,7 +38,10 @@ export const ModalOutgoingTransferProposal: React.FC<{
     onClose();
 
     // let's clear the incoming transfer proposal
-    resetPhononsOnCardTransferState(destinationCard);
+    resetPhononsOnCardTransferState(
+      destinationCard,
+      'OutgoingTransferProposal'
+    );
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -55,7 +58,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
       notifySuccess(
         t(
           'Successfully transfered ' +
-            String(destinationCard.IncomingTransferProposal.length) +
+            String(destinationCard.OutgoingTransferProposal.length) +
             ' phonons from ' +
             String(sourceCard.CardId) +
             ' → ' +
@@ -139,7 +142,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
               (transferComplete ? '' : ' animate-pulse opacity-60')
             }
           >
-            {destinationCard.IncomingTransferProposal?.map((phonon, key) => (
+            {destinationCard.OutgoingTransferProposal?.map((phonon, key) => (
               <Phonon
                 key={key}
                 phonon={phonon}

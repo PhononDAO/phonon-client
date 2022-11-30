@@ -24,8 +24,8 @@ export const IncomingPhononTransferButton: React.FC<{
         {t('See Incoming Transfer Request')}
       </Button>
       <ModalIncomingTransferProposal
-        destinationCard={destinationCard}
         sourceCard={sourceCard}
+        destinationCard={destinationCard}
         isOpen={isOpen}
         onClose={onClose}
       />

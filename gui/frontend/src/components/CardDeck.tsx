@@ -6,7 +6,7 @@ import { IonIcon } from '@ionic/react';
 import { reorderFour, apps } from 'ionicons/icons';
 import { useContext, useState } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
-import { PhononCard } from '../interfaces/interfaces';
+import { Phonon as iPhonon, PhononCard } from '../interfaces/interfaces';
 import { MinePhonon } from './PhononCardActions/MinePhonon';
 import { CreatePhonon } from './PhononCardActions/CreatePhonon';
 import { RemoteCardPhononMessage } from './RemoteCardPhononMessage';
@@ -19,7 +19,42 @@ export const CardDeck: React.FC<{
 }> = ({ card, canHaveRemote }) => {
   const { t } = useTranslation();
   const [layoutType, setLayoutType] = useState<string>('list');
-  const { phononCards, addCardsToState } = useContext(CardManagementContext);
+  const { phononCards, addCardsToState, addPhononsToCardTransferState } =
+    useContext(CardManagementContext);
+
+  // let's poll for updates on this card
+  if (false) {
+    const simulateIncomingRequest = setInterval(() => {
+      // let's fake an incoming proposal
+      if (phononCards.length > 1 && card?.CardId === '04e0d5eb884a73cf') {
+        const aPhonon = {
+          Address: '0x7Ab7050217C76d729fa542161ca59Cb28484e0fa',
+          ChainID: 43114,
+          Denomination: '5008000000000000000',
+          CurrencyType: 3,
+          SourceCardId: '04e0d5eb884a73ce',
+          ValidationStatus: 'unvalidated',
+        } as iPhonon;
+
+        const bPhonon = {
+          Address: '0x7Ab7050217C76d729fa542161ca59Cb28484bf8e',
+          ChainID: 137,
+          Denomination: '50600000000000000',
+          CurrencyType: 2,
+          SourceCardId: '04e0d5eb884a73ce',
+          ValidationStatus: 'unvalidated',
+        } as iPhonon;
+
+        addPhononsToCardTransferState(
+          card,
+          [aPhonon, bPhonon],
+          'IncomingTransferProposal'
+        );
+
+        clearInterval(simulateIncomingRequest);
+      }
+    }, 12 * 1000);
+  }
 
   const sortPhononsBy = (key: string) => {
     if (key === 'ChainId') {
@@ -94,7 +129,9 @@ export const CardDeck: React.FC<{
               </div>
             </>
           )}
-          {false && !card.IsRemote && <IncomingTransferNotice card={card} />}
+          {card?.IncomingTransferProposal?.length > 0 && (
+            <IncomingTransferNotice card={card} />
+          )}
           {(phononCards.filter(
             (card: PhononCard) => card.InTray && !card.IsRemote
           ).length > 1 ||

@@ -47,7 +47,7 @@
   backface-visibility: hidden;
 }
 
-.flip-card-back {
+.flip-card-front {
   transform: rotateY(180deg);
 }
 

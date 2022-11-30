@@ -234,10 +234,10 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
           }
         >
           <div className="flip-card-inner relative w-full h-full">
-            <div className="flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-phonon-card-blue bg-cover bg-no-repeat overflow-hidden">
+            <div className="flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-phonon-card-blue bg-cover bg-no-repeat overflow-hidden">
               <CardRemote unpair={unpair} />
             </div>
-            <div className="flip-card-back w-full h-full absolute rounded-lg border border-4 overflow-hidden transition-all border-dashed border-white bg-phonon-card-gray bg-cover bg-no-repeat">
+            <div className="flip-card-front w-full h-full absolute rounded-lg border border-4 overflow-hidden transition-all border-dashed border-white bg-phonon-card-gray bg-cover bg-no-repeat">
               <div className="flex flex-col gap-y-2 py-12 px-2 items-center justify-center text-xl">
                 <IonIcon
                   icon={cloudDone}

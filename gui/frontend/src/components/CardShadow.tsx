@@ -1,7 +1,9 @@
 import { useContext } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 
-export const CardShadow: React.FC<{ isOver }> = ({ isOver }) => {
+export const CardShadow: React.FC<{ isOver?: boolean }> = ({
+  isOver = false,
+}) => {
   const { isCardsMini } = useContext(CardManagementContext);
   return (
     <div

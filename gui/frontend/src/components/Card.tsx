@@ -7,6 +7,7 @@ import { ModalUnlockCard } from './ModalUnlockCard';
 import { CardBack } from './PhononCardStates/CardBack';
 import { CardFront } from './PhononCardStates/CardFront';
 import { CardRemote } from './PhononCardStates/CardRemote';
+import { CardShadow } from './CardShadow';
 
 interface DropResult {
   name: string;
@@ -47,37 +48,16 @@ export const Card: React.FC<{
             ? 'w-56 h-36 '
             : 'w-80 h-52') +
           (card.IsLocked ? ' flip-card-locked ' : '') +
-          (card.InTray ? '' : ' flip-card-tilt')
+          (card.InTray || isDragging ? '' : ' flip-card-tilt')
         }
       >
         {isDragging ? (
-          <div className="flip-card-inner relative w-full h-full">
-            {!card.IsLocked ? (
-              <div
-                className={
-                  'flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden' +
-                  (showActions
-                    ? ' hover:shadow-md hover:shadow-zinc-500/60'
-                    : '')
-                }
-              >
-                <CardBack
-                  card={card}
-                  isMini={isMini}
-                  showActions={showActions}
-                />
-              </div>
-            ) : (
-              <div className="flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
-                <CardFront card={card} isMini={isMini} />
-              </div>
-            )}
-          </div>
+          <CardShadow />
         ) : (
           <div className="flip-card-inner relative w-full h-full">
             <div
               className={
-                'flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-cover bg-no-repeat overflow-hidden' +
+                'flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-cover bg-no-repeat overflow-hidden' +
                 (card.IsRemote ? ' bg-phonon-card-blue' : ' bg-phonon-card') +
                 (showActions ? ' hover:shadow-md hover:shadow-zinc-500/60' : '')
               }
@@ -92,7 +72,7 @@ export const Card: React.FC<{
                 />
               )}
             </div>
-            <div className="flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
+            <div className="flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
               <CardFront card={card} isMini={isMini} />
             </div>
           </div>

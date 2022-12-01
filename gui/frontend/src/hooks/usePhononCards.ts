@@ -26,7 +26,8 @@ export const usePhononCards = <T extends PhononCard>(
   (card: T) => void,
   (card: T, toAdd: Phonon[], purpose: string) => void,
   (card: T, toRemove: Phonon[], purpose: string) => void,
-  (card: T, purpose: string) => void
+  (card: T, purpose: string) => void,
+  (card: T, purpose: string, status: string) => void
 ] => {
   const [records, setRecords] = useState<T[]>(defaultValue);
 
@@ -80,9 +81,17 @@ export const usePhononCards = <T extends PhononCard>(
     phononsToAdd: Phonon[],
     proposalPurpose: string
   ) => {
+    // if a proposal doesn't exist yet, let's create it
+    if (!destinationCard[proposalPurpose]) {
+      destinationCard[proposalPurpose] = {
+        Status: 'unvalidated',
+        Phonons: [],
+      };
+    }
+
     // let's update the transfer proposal for this card
-    destinationCard[proposalPurpose] = unionBy(
-      destinationCard[proposalPurpose],
+    destinationCard[proposalPurpose].Phonons = unionBy(
+      destinationCard[proposalPurpose].Phonons,
       phononsToAdd,
       Address
     );
@@ -100,8 +109,8 @@ export const usePhononCards = <T extends PhononCard>(
     proposalPurpose: string
   ) => {
     // let's we update the transfer proposal for this card
-    destinationCard[proposalPurpose] = differenceBy(
-      destinationCard[proposalPurpose],
+    destinationCard[proposalPurpose].Phonons = differenceBy(
+      destinationCard[proposalPurpose].Phonons,
       phononsToRemove,
       Address
     );
@@ -116,9 +125,19 @@ export const usePhononCards = <T extends PhononCard>(
   const resetPhononsForTransferOnCard = (card: T, proposalPurpose: string) => {
     removePhononsForTransferFromCard(
       card,
-      card[proposalPurpose],
+      card[proposalPurpose].Phonons,
       proposalPurpose
     );
+  };
+
+  const updateCardTransferStatus = (
+    card: T,
+    proposalPurpose: string,
+    status: string
+  ) => {
+    card[proposalPurpose].Status = status;
+
+    addPhononCards([card]);
   };
 
   return [
@@ -134,5 +153,6 @@ export const usePhononCards = <T extends PhononCard>(
     addPhononsForTransferToCard,
     removePhononsForTransferFromCard,
     resetPhononsForTransferOnCard,
+    updateCardTransferStatus,
   ];
 };

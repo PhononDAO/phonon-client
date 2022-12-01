@@ -14,7 +14,7 @@ export const IncomingTransferNotice: React.FC<{
   const { getCardById } = useContext(CardManagementContext);
 
   const sourceCard = getCardById(
-    card?.IncomingTransferProposal[0].SourceCardId
+    card?.IncomingTransferProposal?.Phonons[0].SourceCardId
   );
 
   return (
@@ -26,7 +26,7 @@ export const IncomingTransferNotice: React.FC<{
         <span>
           {t('Incoming transfer request: ')}
           <Pluralize
-            count={card?.IncomingTransferProposal?.length}
+            count={card?.IncomingTransferProposal?.Phonons?.length}
             singular="phonon"
             className="font-bandeins-sans-bold text-xl"
           />

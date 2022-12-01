@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { send } from 'ionicons/icons';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../interfaces/interfaces';
@@ -24,17 +24,22 @@ export const ModalOutgoingTransferProposal: React.FC<{
   onClose;
 }> = ({ destinationCard, isOpen, onClose }) => {
   const { t } = useTranslation();
-  const { getCardById, resetPhononsOnCardTransferState } = useContext(
-    CardManagementContext
-  );
-  const [transferComplete, setTransferComplete] = useState(false);
+  const {
+    getCardById,
+    resetPhononsOnCardTransferState,
+    updateCardTransferStatusState,
+  } = useContext(CardManagementContext);
 
   const sourceCard = getCardById(
-    destinationCard?.OutgoingTransferProposal[0].SourceCardId
+    destinationCard?.OutgoingTransferProposal.Phonons[0].SourceCardId
   );
 
   const closeTransfer = () => {
-    setTransferComplete(false);
+    updateCardTransferStatusState(
+      destinationCard,
+      'OutgoingTransferProposal',
+      'unvalidated'
+    );
     onClose();
 
     // let's clear the incoming transfer proposal
@@ -50,15 +55,19 @@ export const ModalOutgoingTransferProposal: React.FC<{
       resolve('paired');
     }, 8000);
   }).then(() => {
-    setTransferComplete(true);
+    updateCardTransferStatusState(
+      destinationCard,
+      'OutgoingTransferProposal',
+      'transferred'
+    );
   });
 
   useEffect(() => {
-    if (transferComplete) {
+    if (destinationCard.OutgoingTransferProposal.Status === 'transferred') {
       notifySuccess(
         t(
           'Successfully transferred ' +
-            String(destinationCard.OutgoingTransferProposal.length) +
+            String(destinationCard.OutgoingTransferProposal.Phonons.length) +
             ' phonons from ' +
             String(sourceCard.CardId) +
             ' → ' +
@@ -66,14 +75,16 @@ export const ModalOutgoingTransferProposal: React.FC<{
         )
       );
     }
-  }, [destinationCard, sourceCard, t, transferComplete]);
+  }, [destinationCard, sourceCard, t]);
 
   return (
     <Modal
       isOpen={isOpen}
       size="4xl"
       onClose={closeTransfer}
-      closeOnOverlayClick={transferComplete}
+      closeOnOverlayClick={
+        destinationCard.OutgoingTransferProposal.Status === 'transferred'
+      }
     >
       <ModalOverlay />
       <ModalContent>
@@ -82,12 +93,15 @@ export const ModalOutgoingTransferProposal: React.FC<{
             Outgoing Phonons
           </span>
         </ModalHeader>
-        {transferComplete && <ModalCloseButton />}
+        {destinationCard.OutgoingTransferProposal.Status === 'transferred' && (
+          <ModalCloseButton />
+        )}
         <ModalBody pb={6}>
           <div className="relative">
             <div className="absolute flex justify-center w-full z-10">
               <div className="relative grid grid-row-1 content-center text-green-700 w-2/3 h-36">
-                {transferComplete ? (
+                {destinationCard.OutgoingTransferProposal.Status ===
+                'transferred' ? (
                   <>
                     <IonIcon
                       icon={send}
@@ -132,30 +146,34 @@ export const ModalOutgoingTransferProposal: React.FC<{
           </div>
 
           <h3 className="mt-8 mb-2 text-xl text-gray-500">
-            {transferComplete
+            {destinationCard.OutgoingTransferProposal.Status === 'transferred'
               ? t('The following Phonons were transferred:')
               : t('The following Phonons are being transferred:')}
           </h3>
           <div
             className={
               'overflow-scroll gap-2 grid w-full' +
-              (transferComplete ? '' : ' animate-pulse opacity-60')
+              (destinationCard.OutgoingTransferProposal.Status === 'transferred'
+                ? ''
+                : ' animate-pulse opacity-60')
             }
           >
-            {destinationCard.OutgoingTransferProposal?.map((phonon, key) => (
-              <Phonon
-                key={key}
-                phonon={phonon}
-                card={destinationCard}
-                isProposed={true}
-                showAction={false}
-              />
-            ))}
+            {destinationCard.OutgoingTransferProposal?.Phonons?.map(
+              (phonon, key) => (
+                <Phonon
+                  key={key}
+                  phonon={phonon}
+                  card={destinationCard}
+                  isProposed={true}
+                  showAction={false}
+                />
+              )
+            )}
           </div>
         </ModalBody>
 
         <ModalFooter>
-          {transferComplete ? (
+          {destinationCard.OutgoingTransferProposal.Status === 'transferred' ? (
             <Button onClick={closeTransfer}>{t('Close')}</Button>
           ) : (
             <Button colorScheme="red" onClick={closeTransfer}>

@@ -10,12 +10,13 @@ import {
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { send, shieldCheckmark } from 'ionicons/icons';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../interfaces/interfaces';
 import { notifySuccess } from '../utils/notify';
 import { Card } from './Card';
+import { IncomingTransferActions } from './IncomingTransferActions';
 
 import { PhononValidator } from './PhononValidator';
 
@@ -26,61 +27,9 @@ export const ModalIncomingTransferProposal: React.FC<{
   onClose;
 }> = ({ sourceCard, destinationCard, isOpen, onClose }) => {
   const { t } = useTranslation();
-  const {
-    resetPhononsOnCardTransferState,
-    addPhononsToCardTransferState,
-    getCardById,
-  } = useContext(CardManagementContext);
-  const [transferState, setTransferState] = useState('waiting');
-
-  const startValidation = () => {
-    setTransferState('validating');
-
-    // loop through all phonons and mark as validating
-    destinationCard.IncomingTransferProposal?.map((phonon) => {
-      phonon.ValidationStatus = 'validating';
-
-      addPhononsToCardTransferState(
-        destinationCard,
-        [phonon],
-        'IncomingTransferProposal'
-      );
-
-      // simulate validation
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const promise = new Promise((resolve) => {
-        setTimeout(() => {
-          resolve('validating');
-        }, 3000);
-      }).then(() => {
-        setTransferState('validated');
-
-        phonon.ValidationStatus = 'valid';
-
-        addPhononsToCardTransferState(
-          destinationCard,
-          [phonon],
-          'IncomingTransferProposal'
-        );
-      });
-    });
-  };
-
-  const startTransfer = () => {
-    setTransferState('transferring');
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const promise = new Promise((resolve) => {
-      setTimeout(() => {
-        resolve('paired');
-      }, 8000);
-    }).then(() => {
-      setTransferState('transferred');
-    });
-  };
+  const { resetPhononsOnCardTransferState } = useContext(CardManagementContext);
 
   const closeTransfer = () => {
-    setTransferState('waiting');
     onClose();
 
     // let's clear the incoming transfer proposal
@@ -91,11 +40,11 @@ export const ModalIncomingTransferProposal: React.FC<{
   };
 
   useEffect(() => {
-    if (transferState === 'transferred') {
+    if (destinationCard.IncomingTransferProposal.Status === 'transferred') {
       notifySuccess(
         t(
           'Successfully transferred ' +
-            String(destinationCard.IncomingTransferProposal.length) +
+            String(destinationCard.IncomingTransferProposal?.Phonons.length) +
             ' phonons from ' +
             String(destinationCard.CardId) +
             ' → ' +
@@ -103,14 +52,16 @@ export const ModalIncomingTransferProposal: React.FC<{
         )
       );
     }
-  }, [destinationCard, sourceCard, t, transferState]);
+  }, [destinationCard, sourceCard, t]);
 
   return (
     <Modal
       isOpen={isOpen}
       size="4xl"
       onClose={closeTransfer}
-      closeOnOverlayClick={['waiting', 'completed'].includes(transferState)}
+      closeOnOverlayClick={['unvalidated', 'completed'].includes(
+        destinationCard.IncomingTransferProposal.Status
+      )}
     >
       <ModalOverlay />
       <ModalContent>
@@ -119,14 +70,15 @@ export const ModalIncomingTransferProposal: React.FC<{
             Incoming Phonons
           </span>
         </ModalHeader>
-        {['waiting', 'completed'].includes(transferState) && (
-          <ModalCloseButton />
-        )}
+        {['unvalidated', 'completed'].includes(
+          destinationCard.IncomingTransferProposal.Status
+        ) && <ModalCloseButton />}
         <ModalBody pb={6}>
           <div className="relative">
             <div className="absolute flex justify-center w-full z-10">
               <div className="relative grid grid-row-1 content-center text-green-700 w-2/3 h-36">
-                {transferState === 'transferred' && (
+                {destinationCard.IncomingTransferProposal.Status ===
+                  'transferred' && (
                   <>
                     <IonIcon
                       icon={send}
@@ -137,7 +89,8 @@ export const ModalIncomingTransferProposal: React.FC<{
                     </div>
                   </>
                 )}
-                {transferState === 'transferring' && (
+                {destinationCard.IncomingTransferProposal.Status ===
+                  'transferring' && (
                   <>
                     <div className="flex justify-content align-items">
                       <span className="animate-incoming">
@@ -158,7 +111,8 @@ export const ModalIncomingTransferProposal: React.FC<{
                     </div>
                   </>
                 )}
-                {transferState === 'waiting' && (
+                {destinationCard.IncomingTransferProposal.Status ===
+                  'unvalidated' && (
                   <>
                     <IonIcon
                       icon={send}
@@ -169,7 +123,8 @@ export const ModalIncomingTransferProposal: React.FC<{
                     </div>
                   </>
                 )}
-                {transferState === 'validating' && (
+                {destinationCard.IncomingTransferProposal.Status ===
+                  'validating' && (
                   <>
                     <IonIcon
                       icon={shieldCheckmark}
@@ -180,7 +135,8 @@ export const ModalIncomingTransferProposal: React.FC<{
                     </div>
                   </>
                 )}
-                {transferState === 'validated' && (
+                {destinationCard.IncomingTransferProposal.Status ===
+                  'validated' && (
                   <>
                     <IonIcon
                       icon={shieldCheckmark}
@@ -204,67 +160,51 @@ export const ModalIncomingTransferProposal: React.FC<{
           </div>
 
           <h3 className="mt-8 mb-2 text-xl text-gray-500">
-            {transferState === 'waiting' &&
+            {destinationCard.IncomingTransferProposal.Status ===
+              'unvalidated' &&
               t('The following Phonons are waiting to be transferred:')}
-            {transferState === 'validating' &&
+            {destinationCard.IncomingTransferProposal.Status === 'validating' &&
               t('The following Phonons are being validated:')}
-            {transferState === 'validated' &&
+            {destinationCard.IncomingTransferProposal.Status === 'validated' &&
               t('The following Phonons have been validated:')}
-            {transferState === 'transferring' &&
+            {destinationCard.IncomingTransferProposal.Status ===
+              'transferring' &&
               t('The following Phonons are being transferred:')}
-            {transferState === 'transferred' &&
-              t('The following Phonons were transferred:')}
+            {destinationCard.IncomingTransferProposal.Status ===
+              'transferred' && t('The following Phonons were transferred:')}
           </h3>
           <div
             className={
               'overflow-scroll gap-2 grid w-full' +
-              (transferState === 'transferring'
+              (destinationCard?.IncomingTransferProposal.Status ===
+              'transferring'
                 ? ' animate-pulse opacity-60'
                 : '')
             }
           >
-            {getCardById(
-              destinationCard?.CardId
-            )?.IncomingTransferProposal?.map((phonon, key) => (
-              <PhononValidator
-                key={key}
-                phonon={phonon}
-                card={sourceCard}
-                isProposed={true}
-                showAction={false}
-                isTransferred={transferState === 'transferred'}
-              />
-            ))}
+            {destinationCard?.IncomingTransferProposal?.Phonons?.map(
+              (phonon, key) => (
+                <PhononValidator
+                  key={key}
+                  phonon={phonon}
+                  card={sourceCard}
+                  isProposed={true}
+                  showAction={false}
+                  isTransferred={
+                    destinationCard.IncomingTransferProposal.Status ===
+                    'transferred'
+                  }
+                />
+              )
+            )}
           </div>
         </ModalBody>
 
         <ModalFooter>
-          {transferState === 'waiting' && (
-            <Button
-              className="mr-3"
-              colorScheme="green"
-              onClick={startValidation}
-            >
-              {t('Validate Assets')}
-            </Button>
-          )}
-          {transferState === 'validated' && (
-            <Button
-              className="mr-3"
-              colorScheme="green"
-              onClick={startTransfer}
-            >
-              {t('Accept Transfer')}
-            </Button>
-          )}
-          {!['transferring', 'transferred'].includes(transferState) && (
-            <Button className="mr-3" colorScheme="red" onClick={closeTransfer}>
-              {t('Decline Transfer')}
-            </Button>
-          )}
-          <Button onClick={closeTransfer}>
-            {t(transferState === 'transferred' ? 'Close' : 'Cancel')}
-          </Button>
+          <IncomingTransferActions
+            destinationCard={destinationCard}
+            closeTransfer={closeTransfer}
+          />
         </ModalFooter>
       </ModalContent>
     </Modal>

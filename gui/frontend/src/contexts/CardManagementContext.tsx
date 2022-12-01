@@ -26,6 +26,7 @@ export const CardManagementContextProvider = ({
     addPhononsToCardTransferState,
     removePhononsFromCardTransferState,
     resetPhononsOnCardTransferState,
+    updateCardTransferStatusState,
   ] = usePhononCards([]);
 
   const defaultContext = {
@@ -45,6 +46,7 @@ export const CardManagementContextProvider = ({
     addPhononsToCardTransferState,
     removePhononsFromCardTransferState,
     resetPhononsOnCardTransferState,
+    updateCardTransferStatusState,
   };
 
   return (

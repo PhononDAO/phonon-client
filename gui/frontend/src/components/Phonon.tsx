@@ -46,7 +46,11 @@ export const Phonon: React.FC<{
   }));
 
   const removeFromProposal = () => {
-    removePhononsFromCardTransferState(card, [phonon]);
+    removePhononsFromCardTransferState(
+      card,
+      [phonon],
+      'OutgoingTransferProposal'
+    );
   };
 
   return (

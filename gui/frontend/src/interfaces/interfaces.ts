@@ -57,8 +57,8 @@ export interface PhononCard {
   FutureAction: string | null;
   ShowActions: boolean;
   Phonons: Array<Phonon>;
-  IncomingTransferProposal: Array<Phonon>;
-  OutgoingTransferProposal: Array<Phonon>;
+  IncomingTransferProposal: PhononTransferProposal;
+  OutgoingTransferProposal: PhononTransferProposal;
 }
 
 /**
@@ -66,4 +66,17 @@ export interface PhononCard {
  */
 export interface PhononWallet {
   PhononCards: Array<PhononCard>;
+}
+
+/**
+ * PhononTransferProposal interface
+ */
+export interface PhononTransferProposal {
+  Status:
+    | 'unvalidated'
+    | 'validating'
+    | 'validated'
+    | 'transferring'
+    | 'transferred';
+  Phonons: Array<Phonon>;
 }

@@ -9,9 +9,11 @@ import {
   arrowForward,
   repeatOutline,
 } from 'ionicons/icons';
-import { useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { PhononCard } from '../interfaces/interfaces';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 import { notifySuccess } from '../utils/notify';
 import { CardRemote } from './PhononCardStates/CardRemote';
 
@@ -23,9 +25,16 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
   setShowPairingOptions = false,
 }) => {
   const { t } = useTranslation();
-  const pairingCode =
-    '6UqNxx9DGCCWrXt+36HuLY6Bmkzf99Xz9bq02HVadg3hZ3mgGsyorvDKyBY6WkkkpFgszXu9E+Uol0gnD3TnPw==';
-  const { onCopy, value, hasCopied } = useClipboard(pairingCode);
+  const {
+    phononCards,
+    addCardsToState,
+    removeCardsFromState,
+    getCardPairingCode,
+  } = useContext(CardManagementContext);
+  const loadedCards = phononCards.filter((card: PhononCard) => card.InTray);
+  const { onCopy, value, hasCopied } = useClipboard(
+    getCardPairingCode(loadedCards[0].CardId)
+  );
   const [currentStep, setCurrentStep] = useState('share');
   const [isPaired, setIsPaired] = useState(false);
 
@@ -39,32 +48,48 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
   const onSubmit = (data: RemotePairingFormData, event) => {
     event.preventDefault();
 
-    console.log(data);
+    console.log(JSON.parse(atob(data.remotePairingCode)));
 
     setCurrentStep('pairing');
-  };
 
-  useEffect(() => {
-    if (currentStep === 'pairing') {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const promise = new Promise((resolve) => {
       setTimeout(() => {
+        resolve('paired');
+      }, 3000);
+    })
+      .then(() => {
         setCurrentStep('success');
-
         notifySuccess(
           t('Successfully paired to remote card: ' + '04e0d5eb884a73c0' + '!')
         );
-      }, 3000);
-    }
 
-    if (currentStep === 'success') {
-      setTimeout(() => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve('success');
+          }, 1000);
+        });
+      })
+      .then(() => {
         setIsPaired(true);
-      }, 1000);
-    }
-  }, [currentStep, t]);
+        const remoteCard = {
+          CardId: '04e0d5eb884a73e9',
+          IsRemote: true,
+          InTray: true,
+        } as PhononCard;
+
+        addCardsToState([remoteCard]);
+      });
+  };
 
   const unpair = () => {
     setShowPairingOptions(false);
     setIsPaired(false);
+    setCurrentStep('share');
+
+    removeCardsFromState(
+      phononCards.filter((card: PhononCard) => card.IsRemote)
+    );
   };
 
   return (
@@ -209,10 +234,10 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
           }
         >
           <div className="flip-card-inner relative w-full h-full">
-            <div className="flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-phonon-card-blue bg-cover bg-no-repeat overflow-hidden">
+            <div className="flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-phonon-card-blue bg-cover bg-no-repeat overflow-hidden">
               <CardRemote unpair={unpair} />
             </div>
-            <div className="flip-card-back w-full h-full absolute rounded-lg border border-4 overflow-hidden transition-all border-dashed border-white bg-phonon-card-gray bg-cover bg-no-repeat">
+            <div className="flip-card-front w-full h-full absolute rounded-lg border border-4 overflow-hidden transition-all border-dashed border-white bg-phonon-card-gray bg-cover bg-no-repeat">
               <div className="flex flex-col gap-y-2 py-12 px-2 items-center justify-center text-xl">
                 <IonIcon
                   icon={cloudDone}

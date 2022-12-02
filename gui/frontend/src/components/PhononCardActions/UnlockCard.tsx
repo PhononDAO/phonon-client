@@ -1,23 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { PhononCard as Card } from '../../classes/PhononCard';
+import { PhononCard } from '../../interfaces/interfaces';
 import { IonIcon } from '@ionic/react';
 import { lockClosed } from 'ionicons/icons';
 import { useContext } from 'react';
 import { CardManagementContext } from '../../contexts/CardManagementContext';
 
 export const UnlockCard: React.FC<{
-  card: Card;
+  card: PhononCard;
 }> = ({ card }) => {
-  const { isCardsMini, addPhononCardsToState } = useContext(
-    CardManagementContext
-  );
+  const { isCardsMini, addCardsToState } = useContext(CardManagementContext);
 
   return (
     <>
       <button
         onClick={() => {
           card.AttemptUnlock = true;
-          addPhononCardsToState([card]);
+          addCardsToState([card]);
         }}
         className="w-full z-50 text-amber-400 hover:text-amber-300 text-center"
       >

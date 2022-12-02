@@ -15,9 +15,18 @@ export const CardManagementContextProvider = ({
 
   const [
     phononCards,
-    addPhononCardsToState,
-    removePhononCardsFromState,
-    resetPhononCardsInState,
+    addCardsToState,
+    removeCardsFromState,
+    resetCardsInState,
+    getCardById,
+    getCardPairingCode,
+    addPhononsToCardState,
+    removePhononsFromCardState,
+    resetPhononsOnCardState,
+    addPhononsToCardTransferState,
+    removePhononsFromCardTransferState,
+    resetPhononsOnCardTransferState,
+    updateCardTransferStatusState,
   ] = usePhononCards([]);
 
   const defaultContext = {
@@ -26,9 +35,18 @@ export const CardManagementContextProvider = ({
     setIsCardsMini,
     setIsLoadingPhononCards,
     phononCards,
-    addPhononCardsToState,
-    removePhononCardsFromState,
-    resetPhononCardsInState,
+    addCardsToState,
+    removeCardsFromState,
+    resetCardsInState,
+    getCardById,
+    getCardPairingCode,
+    addPhononsToCardState,
+    removePhononsFromCardState,
+    resetPhononsOnCardState,
+    addPhononsToCardTransferState,
+    removePhononsFromCardTransferState,
+    resetPhononsOnCardTransferState,
+    updateCardTransferStatusState,
   };
 
   return (

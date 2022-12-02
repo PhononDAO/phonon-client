@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useDrop } from 'react-dnd';
-import { PhononCard } from '../classes/PhononCard';
+import { PhononCard } from '../interfaces/interfaces';
 import { HelpTooltip } from './HelpTooltip';
 import { useFeature } from '../hooks/useFeature';
 import { CardShadow } from './CardShadow';
@@ -13,15 +13,13 @@ export const WalletSlot: React.FC<{
 }> = ({ card }) => {
   const { t } = useTranslation();
   const { ENABLE_MOCK_CARDS } = useFeature();
-  const { addPhononCardsToState, isCardsMini } = useContext(
-    CardManagementContext
-  );
+  const { addCardsToState, isCardsMini } = useContext(CardManagementContext);
 
-  const [{}, drop] = useDrop(() => ({
-    accept: 'PhononCard',
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: ['PhononCard'],
     drop: (item: PhononCard, monitor) => {
       monitor.getItem().InTray = false;
-      addPhononCardsToState([item]);
+      addCardsToState([item]);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
@@ -36,7 +34,7 @@ export const WalletSlot: React.FC<{
         ref={drop}
         className={'relative ' + (isCardsMini ? 'w-56 h-36 ' : 'w-80 h-52')}
       >
-        {card.InTray ? <CardShadow /> : <Card card={card} />}
+        {card.InTray ? <CardShadow isOver={isOver} /> : <Card card={card} />}
       </div>
 
       {card.IsMock && (

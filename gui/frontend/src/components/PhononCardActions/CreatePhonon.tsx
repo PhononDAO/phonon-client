@@ -3,7 +3,7 @@ import { IonIcon } from '@ionic/react';
 import { addCircleSharp } from 'ionicons/icons';
 import { Button, useDisclosure } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
-import { PhononCard } from '../../classes/PhononCard';
+import { PhononCard } from '../../interfaces/interfaces';
 import { ModalCreatePhonon } from '../ModalCreatePhonon';
 
 export const CreatePhonon: React.FC<{ card: PhononCard }> = ({ card }) => {

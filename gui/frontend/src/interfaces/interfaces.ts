@@ -38,7 +38,9 @@ export interface Phonon {
   KeyIndex: number;
   PubKey: string;
   SchemaVersion: number;
-  IsStaged: boolean;
+  ProposedForTransfer: boolean;
+  SourceCardId: string;
+  ValidationStatus: string;
 }
 
 /**
@@ -50,8 +52,13 @@ export interface PhononCard {
   IsLocked: boolean;
   IsMock: boolean;
   InTray: boolean;
+  IsRemote: boolean;
+  AttemptUnlock: boolean;
+  FutureAction: string | null;
   ShowActions: boolean;
   Phonons: Array<Phonon>;
+  IncomingTransferProposal: PhononTransferProposal;
+  OutgoingTransferProposal: PhononTransferProposal;
 }
 
 /**
@@ -62,8 +69,14 @@ export interface PhononWallet {
 }
 
 /**
- * CardDropzone interface
+ * PhononTransferProposal interface
  */
-export interface CardDropzone {
-  DropzoneID: string;
+export interface PhononTransferProposal {
+  Status:
+    | 'unvalidated'
+    | 'validating'
+    | 'validated'
+    | 'transferring'
+    | 'transferred';
+  Phonons: Array<Phonon>;
 }

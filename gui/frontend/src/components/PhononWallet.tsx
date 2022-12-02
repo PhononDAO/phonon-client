@@ -1,7 +1,6 @@
 import { useState, useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PhononCard } from '../classes/PhononCard';
-import { Phonon as PhononObj } from '../classes/Phonon';
+import { Phonon, PhononCard } from '../interfaces/interfaces';
 import { AddMockCardButton } from './AddMockCardButton';
 import { Button } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
@@ -11,60 +10,70 @@ import { CardManagementContext } from '../contexts/CardManagementContext';
 
 export const PhononWallet = () => {
   const { t } = useTranslation();
-  const { phononCards, addPhononCardsToState, isCardsMini } = useContext(
+  const { phononCards, addCardsToState, isCardsMini } = useContext(
     CardManagementContext
   );
 
-  const aPhonon = new PhononObj();
-  aPhonon.Address = '0x7Ab7050217C76d729fa542161ca59Cb28654bf80';
-  aPhonon.ChainID = '3';
-  aPhonon.Denomination = '40000000000000000';
-  aPhonon.CurrencyType = 2;
+  const aPhonon = {
+    Address: '0x7Ab7050217C76d729fa542161ca59Cb28654bf80',
+    ChainID: 3,
+    Denomination: '40000000000000000',
+    CurrencyType: 2,
+    SourceCardId: '04e0d5eb884a73cf',
+  } as Phonon;
 
-  const bPhonon = new PhononObj();
-  bPhonon.Address = '0x7Ab7050217C76d729fa542161ca59Cb28484bf8e';
-  bPhonon.ChainID = '137';
-  bPhonon.Denomination = '50600000000000000';
-  bPhonon.CurrencyType = 2;
+  const bPhonon = {
+    Address: '0x7Ab7050217C76d729fa542161ca59Cb28484bf8e',
+    ChainID: 137,
+    Denomination: '50600000000000000',
+    CurrencyType: 2,
+    SourceCardId: '04e0d5eb884a73cf',
+  } as Phonon;
 
-  const cPhonon = new PhononObj();
-  cPhonon.Address = '0x7Ab7050217C76d729fa542161ca59Cb28484ee04';
-  cPhonon.ChainID = '43114';
-  cPhonon.Denomination = '3100000000000000000';
-  cPhonon.CurrencyType = 3;
+  const cPhonon = {
+    Address: '0x7Ab7050217C76d729fa542161ca59Cb28484ee04',
+    ChainID: 43114,
+    Denomination: '3100000000000000000',
+    CurrencyType: 3,
+    SourceCardId: '04e0d5eb884a73cf',
+  } as Phonon;
 
-  const aCard = new PhononCard();
-  aCard.CardId = '04e0d5eb884a73cf';
+  const dPhonon = {
+    Address: '0x7Ab7050217C76d729fa542161ca59Cb28484e0fa',
+    ChainID: 43114,
+    Denomination: '5008000000000000000',
+    CurrencyType: 3,
+    SourceCardId: '04e0d5eb884a73ce',
+  } as Phonon;
+
+  const aCard = {
+    CardId: '04e0d5eb884a73cf',
+    IsLocked: true,
+    ShowActions: true,
+    Phonons: [],
+  } as PhononCard;
   aCard.Phonons.push(aPhonon);
   aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(aPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(aPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(aPhonon);
-  aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(bPhonon);
-  aCard.Phonons.push(aPhonon);
-  aCard.Phonons.push(cPhonon);
-  aCard.Phonons.push(aPhonon);
   aCard.Phonons.push(cPhonon);
 
-  const bCard = new PhononCard();
-  bCard.CardId = '04e0d5eb884a73ce';
-  bCard.VanityName = 'my favorite card';
+  const bCard = {
+    CardId: '04e0d5eb884a73ce',
+    VanityName: 'my favorite card',
+    IsLocked: true,
+    ShowActions: true,
+    Phonons: [],
+  } as PhononCard;
+  bCard.Phonons.push(dPhonon);
 
-  const cCard = new PhononCard();
-  cCard.CardId = '04e0d5eb884a73c0';
-  bCard.Phonons.push(aPhonon);
-  bCard.Phonons.push(bPhonon);
+  const cCard = {
+    CardId: '04e0d5eb884a73c0',
+    IsLocked: true,
+    ShowActions: true,
+    Phonons: [],
+  } as PhononCard;
 
   useEffect(() => {
-    addPhononCardsToState([aCard, bCard, cCard]);
+    addCardsToState([aCard, bCard, cCard]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -78,8 +87,14 @@ export const PhononWallet = () => {
     <div className="">
       <div className="flex gap-x-2 text-xl">
         <span className="text-white">
-          {phononCards.length}{' '}
-          {t('card' + (phononCards.length === 1 ? '' : 's') + ' connected.')}
+          {phononCards.filter((card) => !card.IsRemote).length}{' '}
+          {t(
+            'card' +
+              (phononCards.filter((card) => !card.IsRemote).length === 1
+                ? ''
+                : 's') +
+              ' in your wallet'
+          )}
         </span>
         <Button
           leftIcon={<IonIcon icon={hideCards ? addCircle : removeCircle} />}
@@ -101,7 +116,9 @@ export const PhononWallet = () => {
         }
       >
         {phononCards.length > 0 &&
-          phononCards?.map((card, key) => <WalletSlot key={key} card={card} />)}
+          phononCards
+            ?.filter((card) => !card.IsRemote)
+            .map((card, key) => <WalletSlot key={key} card={card} />)}
 
         <AddMockCardButton />
       </div>

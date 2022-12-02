@@ -2,7 +2,7 @@ import { CardDeck } from './CardDeck';
 import filter from 'lodash/filter';
 import { useContext, useEffect } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
-import { PhononCard } from '../classes/PhononCard';
+import { PhononCard } from '../interfaces/interfaces';
 import { maxTrays } from '../constants/Constants';
 
 export const DeckManager = () => {

@@ -1,7 +1,7 @@
 import { CHAINS } from '../constants/ChainID';
 
 export const ChainIDTag: React.FC<{
-  id: string;
+  id: number;
   className?: string;
 }> = ({ id, className = '' }) => {
   const chain = CHAINS[id];

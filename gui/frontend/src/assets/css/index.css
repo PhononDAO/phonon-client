@@ -47,10 +47,20 @@
   backface-visibility: hidden;
 }
 
-.flip-card-back {
+.flip-card-front {
   transform: rotateY(180deg);
 }
 
 .flip-card-tilt:hover {
   transform: perspective(2000px) rotateY(25deg);
+}
+
+.animation-delay-1 {
+  animation-delay: 1s;
+}
+.animation-delay-2 {
+  animation-delay: 2s;
+}
+.animation-delay-3 {
+  animation-delay: 3s;
 }

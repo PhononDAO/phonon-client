@@ -21,6 +21,7 @@
     "i18next-http-backend": "^1.4.4",
     "ionicons": "^6.0.3",
     "luxon": "^3.0.4",
+    "pluralize-react": "^0.0.1",
     "react": "^18.2.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",

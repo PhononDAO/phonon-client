@@ -9,11 +9,10 @@ import {
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { send, shieldCheckmark, warning } from 'ionicons/icons';
-import { useContext, useEffect } from 'react';
+import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../interfaces/interfaces';
-import { notifySuccess } from '../utils/notify';
 import { Card } from './Card';
 import { IncomingTransferActions } from './IncomingTransferActions';
 

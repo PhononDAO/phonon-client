@@ -23,7 +23,7 @@ export const CardDeck: React.FC<{
     useContext(CardManagementContext);
 
   // let's poll for updates on this card
-  if (true) {
+  if (false) {
     const simulateIncomingRequest = setInterval(() => {
       // let's fake an incoming proposal
       if (phononCards.length > 1 && card?.CardId === '04e0d5eb884a73cf') {

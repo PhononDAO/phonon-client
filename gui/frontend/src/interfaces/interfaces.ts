@@ -40,7 +40,7 @@ export interface Phonon {
   SchemaVersion: number;
   ProposedForTransfer: boolean;
   SourceCardId: string;
-  ValidationStatus: string;
+  ValidationStatus: 'unvalidated' | 'validating' | 'valid' | 'error';
 }
 
 /**
@@ -76,6 +76,7 @@ export interface PhononTransferProposal {
     | 'unvalidated'
     | 'validating'
     | 'validated'
+    | 'has_errors'
     | 'transferring'
     | 'transferred';
   Phonons: Array<Phonon>;

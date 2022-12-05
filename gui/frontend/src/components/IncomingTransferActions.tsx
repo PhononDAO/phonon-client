@@ -1,4 +1,14 @@
-import { Button } from '@chakra-ui/react';
+import {
+  Button,
+  ButtonGroup,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+} from '@chakra-ui/react';
+import { IonIcon } from '@ionic/react';
+import { caretDown } from 'ionicons/icons';
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
@@ -36,19 +46,23 @@ export const IncomingTransferActions: React.FC<{
           resolve('validating');
         }, 3000);
       }).then(() => {
-        updateCardTransferStatusState(
-          destinationCard,
-          'IncomingTransferProposal',
-          'validated'
-        );
-
-        phonon.ValidationStatus = 'valid';
+        // let's randomw determine the validation result
+        phonon.ValidationStatus = Math.round(Math.random()) ? 'valid' : 'error';
 
         addPhononsToCardTransferState(
           destinationCard,
           [phonon],
           'IncomingTransferProposal'
         );
+
+        // let's determine the card's status state
+        if (destinationCard.IncomingTransferProposal.Status !== 'has_errors') {
+          updateCardTransferStatusState(
+            destinationCard,
+            'IncomingTransferProposal',
+            phonon.ValidationStatus === 'valid' ? 'validated' : 'has_errors'
+          );
+        }
       });
     });
   };
@@ -76,10 +90,28 @@ export const IncomingTransferActions: React.FC<{
 
   return (
     <>
-      {destinationCard.IncomingTransferProposal.Status === 'unvalidated' && (
-        <Button className="mr-3" colorScheme="green" onClick={startValidation}>
-          {t('Validate Assets')}
-        </Button>
+      {['unvalidated', 'has_errors'].includes(
+        destinationCard.IncomingTransferProposal.Status
+      ) && (
+        <Menu offset={[-248, 4]}>
+          <ButtonGroup className="mr-3" isAttached>
+            <Button colorScheme="green" onClick={startValidation}>
+              {t('Validate Assets')}
+            </Button>
+            <MenuButton
+              as={IconButton}
+              colorScheme="green"
+              aria-label="More options"
+              icon={<IonIcon icon={caretDown} />}
+              className="border-l border-green-500"
+            />
+          </ButtonGroup>
+          <MenuList>
+            <MenuItem _hover={{ bg: 'green.300' }} onClick={startTransfer}>
+              {t('Ignore Validation and Accept Transfer')}
+            </MenuItem>
+          </MenuList>
+        </Menu>
       )}
       {destinationCard.IncomingTransferProposal.Status === 'validated' && (
         <Button className="mr-3" colorScheme="green" onClick={startTransfer}>

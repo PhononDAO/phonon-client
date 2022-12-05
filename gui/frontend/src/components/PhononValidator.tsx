@@ -8,6 +8,7 @@ import {
 } from 'ionicons/icons';
 import { Phonon } from './Phonon';
 import { useTranslation } from 'react-i18next';
+import { Tooltip } from '@chakra-ui/react';
 
 export const PhononValidator: React.FC<{
   phonon: iPhonon;
@@ -50,10 +51,31 @@ export const PhononValidator: React.FC<{
               <span className="ml-2 text-green-500">{t('Valid')}</span>
             </>
           )}
-          {phonon.ValidationStatus === 'not_valid' && (
+          {phonon.ValidationStatus === 'error' && (
             <>
-              <IonIcon icon={closeCircle} className="text-red-500 text-2xl" />
-              <span className="ml-2 text-red-500">{t('Not Valid')}</span>
+              <Tooltip
+                hasArrow
+                label={t(
+                  'Phonon includes a currency type that is unsupported.'
+                )}
+                aria-label="Phonon error message"
+                bg="red.600"
+                fontSize="lg"
+              >
+                <span className="text-red-500 whitespace-nowrap flex gap-x-2 items-center">
+                  <div className="relative h-6 mr-6">
+                    <IonIcon
+                      icon={closeCircle}
+                      className="absolute ext-red-500 text-2xl animate-ping"
+                    />
+                    <IonIcon
+                      icon={closeCircle}
+                      className="absolute text-red-500 text-2xl"
+                    />
+                  </div>
+                  {t('Validation Error')}
+                </span>
+              </Tooltip>
             </>
           )}
         </div>

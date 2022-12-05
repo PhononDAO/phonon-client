@@ -8,7 +8,7 @@ import {
   ModalCloseButton,
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
-import { send, shieldCheckmark } from 'ionicons/icons';
+import { send, shieldCheckmark, warning } from 'ionicons/icons';
 import { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
@@ -75,7 +75,7 @@ export const ModalIncomingTransferProposal: React.FC<{
         <ModalBody pb={6}>
           <div className="relative">
             <div className="absolute flex justify-center w-full z-10">
-              <div className="relative grid grid-row-1 content-center text-green-700 w-2/3 h-36">
+              <div className="relative grid grid-row-1 content-center text-green-700 w-2/3 px-28 h-36">
                 {destinationCard.IncomingTransferProposal.Status ===
                   'transferred' && (
                   <>
@@ -143,6 +143,20 @@ export const ModalIncomingTransferProposal: React.FC<{
                     />
                     <div className="mt-4 text-sm text-center text-green-600">
                       {t('The incoming Phonons have been validated.')}
+                    </div>
+                  </>
+                )}
+                {destinationCard.IncomingTransferProposal.Status ===
+                  'has_errors' && (
+                  <>
+                    <IonIcon
+                      icon={warning}
+                      className="mx-auto text-5xl text-yellow-500"
+                    />
+                    <div className="mt-4 text-sm text-center text-yellow-600">
+                      {t(
+                        'Error validating phonons. Hover over the validation errors below.'
+                      )}
                     </div>
                   </>
                 )}

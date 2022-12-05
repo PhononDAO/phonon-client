@@ -15,7 +15,7 @@ export const PhononTransferProposal: React.FC<{
         </div>
       )}
       <div className="text-xl px-6 py-2 mb-8 flex flex-col gap-y-2 items-center border-gray-400 text-gray-500 border-dashed border-4 rounded-md text-center font-bandeins-sans">
-        <PhononTransferPayload card={card} />
+        <PhononTransferPayload destinationCard={card} />
         <PhononTransferDropzone card={card} />
       </div>
     </>

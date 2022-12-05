@@ -5,8 +5,9 @@ import { CURRENCIES } from '../constants/Currencies';
 import { useDrag } from 'react-dnd';
 import { IonIcon } from '@ionic/react';
 import { closeCircle } from 'ionicons/icons';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
+import { getEmptyImage } from 'react-dnd-html5-backend';
 
 interface DropResult {
   name: string;
@@ -14,23 +15,29 @@ interface DropResult {
 }
 
 export const Phonon: React.FC<{
-  card: PhononCard;
   phonon: iPhonon;
+  destinationCard?: PhononCard;
   layoutType?: string;
   isProposed?: boolean;
   showAction?: boolean;
+  isCustomDragLayer?: boolean;
 }> = ({
   phonon,
-  card,
+  destinationCard = null,
   layoutType = 'list',
   isProposed = false,
   showAction = false,
+  isCustomDragLayer = false,
 }) => {
-  const { removePhononsFromCardTransferState } = useContext(
+  const { getCardById, removePhononsFromCardTransferState } = useContext(
     CardManagementContext
   );
 
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const card: PhononCard = destinationCard
+    ? destinationCard
+    : getCardById(phonon.SourceCardId);
+
+  const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: 'Phonon-' + card.CardId,
     name: phonon.Address,
     item: phonon,
@@ -44,6 +51,10 @@ export const Phonon: React.FC<{
       isDragging: monitor.isDragging(),
     }),
   }));
+
+  useEffect(() => {
+    preview(getEmptyImage(), { captureDraggingState: true });
+  }, [preview]);
 
   const removeFromProposal = () => {
     removePhononsFromCardTransferState(
@@ -61,7 +72,8 @@ export const Phonon: React.FC<{
         (phonon.ProposedForTransfer
           ? ''
           : ' hover:shadow-md hover:shadow-zinc-800/80') +
-        (layoutType === 'grid' ? ' inline-block relative w-1/4' : ' w-full')
+        (layoutType === 'grid' ? ' inline-block relative w-1/4' : ' w-full') +
+        (isCustomDragLayer ? ' -rotate-3 w-2/5' : '')
       }
     >
       {layoutType === 'grid' && <div className="mt-full"></div>}

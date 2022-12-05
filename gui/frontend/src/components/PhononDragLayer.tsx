@@ -1,9 +1,9 @@
 import { useDragLayer, XYCoord } from 'react-dnd';
-import { Card } from './Card';
+import { Phonon } from './Phonon';
 
-export const CardDragLayer: React.FC = () => {
-  const { isDragging, card, currentOffset } = useDragLayer((monitor) => ({
-    card: monitor.getItem(),
+export const PhononDragLayer: React.FC = () => {
+  const { isDragging, phonon, currentOffset } = useDragLayer((monitor) => ({
+    phonon: monitor.getItem(),
     currentOffset: monitor.getSourceClientOffset(),
     isDragging: monitor.isDragging(),
   }));
@@ -18,7 +18,7 @@ export const CardDragLayer: React.FC = () => {
     };
   };
 
-  if (!isDragging || !card.CardId) {
+  if (!isDragging || !phonon.Address) {
     return null;
   }
 
@@ -26,7 +26,7 @@ export const CardDragLayer: React.FC = () => {
   return (
     <div className="fixed w-full h-full top-0 left-0 z-50 pointer-events-none">
       <div style={getDragLayerStyles(currentOffset)}>
-        <Card card={card} isCustomDragLayer={true} />
+        <Phonon phonon={phonon} isCustomDragLayer={true} />
       </div>
     </div>
   );

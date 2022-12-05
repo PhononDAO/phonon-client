@@ -163,7 +163,6 @@ export const ModalOutgoingTransferProposal: React.FC<{
                 <Phonon
                   key={key}
                   phonon={phonon}
-                  card={destinationCard}
                   isProposed={true}
                   showAction={false}
                 />

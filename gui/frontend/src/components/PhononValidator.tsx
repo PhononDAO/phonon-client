@@ -60,12 +60,7 @@ export const PhononValidator: React.FC<{
           )}
         </div>
       )}
-      <Phonon
-        card={card}
-        phonon={phonon}
-        isProposed={isProposed}
-        showAction={showAction}
-      />
+      <Phonon phonon={phonon} isProposed={isProposed} showAction={showAction} />
     </div>
   );
 };

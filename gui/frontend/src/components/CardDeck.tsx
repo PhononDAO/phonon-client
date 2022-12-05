@@ -139,18 +139,13 @@ export const CardDeck: React.FC<{
           {!card.IsRemote ? (
             <div
               className={
-                'overflow-scroll gap-2 ' +
+                'overflow-visible gap-2 ' +
                 (layoutType === 'grid' ? 'relative' : 'grid')
               }
             >
               {card.Phonons.length > 0 ? (
                 card.Phonons?.map((phonon, key) => (
-                  <Phonon
-                    key={key}
-                    phonon={phonon}
-                    card={card}
-                    layoutType={layoutType}
-                  />
+                  <Phonon key={key} phonon={phonon} layoutType={layoutType} />
                 ))
               ) : (
                 <div className="text-2xl text-center my-12 italic text-gray-500">

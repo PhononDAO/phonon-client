@@ -739,6 +739,10 @@ video {
   margin: auto;
 }
 
+.m-2{
+  margin: 0.5rem;
+}
+
 .my-12{
   margin-top: 3rem;
   margin-bottom: 3rem;
@@ -747,6 +751,11 @@ video {
 .mx-auto{
   margin-left: auto;
   margin-right: auto;
+}
+
+.mx-2{
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
 }
 
 .mt-40{
@@ -923,6 +932,18 @@ video {
 
 .w-24{
   width: 6rem;
+}
+
+.w-96{
+  width: 24rem;
+}
+
+.w-1\/2{
+  width: 50%;
+}
+
+.w-2\/5{
+  width: 40%;
 }
 
 .flex-grow{
@@ -1347,6 +1368,10 @@ video {
 
 .overflow-hidden{
   overflow: hidden;
+}
+
+.overflow-visible{
+  overflow: visible;
 }
 
 .overflow-scroll{

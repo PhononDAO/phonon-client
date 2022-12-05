@@ -186,7 +186,6 @@ export const ModalIncomingTransferProposal: React.FC<{
                 <PhononValidator
                   key={key}
                   phonon={phonon}
-                  card={sourceCard}
                   isProposed={true}
                   showAction={false}
                   isTransferred={

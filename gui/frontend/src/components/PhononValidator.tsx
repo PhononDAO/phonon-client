@@ -1,4 +1,4 @@
-import { Phonon as iPhonon, PhononCard } from '../interfaces/interfaces';
+import { Phonon as iPhonon } from '../interfaces/interfaces';
 import { IonIcon } from '@ionic/react';
 import {
   helpCircle,
@@ -10,14 +10,12 @@ import { Phonon } from './Phonon';
 import { useTranslation } from 'react-i18next';
 
 export const PhononValidator: React.FC<{
-  card: PhononCard;
   phonon: iPhonon;
   isProposed?: boolean;
   showAction?: boolean;
   isTransferred?: boolean;
 }> = ({
   phonon,
-  card,
   isProposed = false,
   showAction = false,
   isTransferred = false,

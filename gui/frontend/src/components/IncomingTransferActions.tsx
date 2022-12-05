@@ -13,11 +13,13 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../interfaces/interfaces';
+import { notifyError, notifySuccess } from '../utils/notify';
 
 export const IncomingTransferActions: React.FC<{
   destinationCard: PhononCard;
+  sourceCard: PhononCard;
   closeTransfer;
-}> = ({ destinationCard, closeTransfer }) => {
+}> = ({ destinationCard, sourceCard, closeTransfer }) => {
   const { t } = useTranslation();
   const { addPhononsToCardTransferState, updateCardTransferStatusState } =
     useContext(CardManagementContext);
@@ -67,7 +69,7 @@ export const IncomingTransferActions: React.FC<{
     });
   };
 
-  const startTransfer = () => {
+  const acceptTransfer = () => {
     updateCardTransferStatusState(
       destinationCard,
       'IncomingTransferProposal',
@@ -85,7 +87,34 @@ export const IncomingTransferActions: React.FC<{
         'IncomingTransferProposal',
         'transferred'
       );
+
+      notifySuccess(
+        t(
+          'Successfully transferred ' +
+            String(destinationCard.IncomingTransferProposal?.Phonons.length) +
+            ' phonons from ' +
+            String(destinationCard.CardId) +
+            ' → ' +
+            sourceCard.CardId
+        )
+      );
     });
+  };
+
+  const declineTransfer = () => {
+    notifyError(
+      t(
+        'Transfer of ' +
+          String(destinationCard?.IncomingTransferProposal?.Phonons?.length) +
+          ' phonons from ' +
+          String(sourceCard.CardId) +
+          ' → ' +
+          destinationCard.CardId +
+          ' was declined.'
+      )
+    );
+
+    closeTransfer();
   };
 
   return (
@@ -107,21 +136,21 @@ export const IncomingTransferActions: React.FC<{
             />
           </ButtonGroup>
           <MenuList>
-            <MenuItem _hover={{ bg: 'green.300' }} onClick={startTransfer}>
+            <MenuItem _hover={{ bg: 'green.300' }} onClick={acceptTransfer}>
               {t('Ignore Validation and Accept Transfer')}
             </MenuItem>
           </MenuList>
         </Menu>
       )}
       {destinationCard.IncomingTransferProposal.Status === 'validated' && (
-        <Button className="mr-3" colorScheme="green" onClick={startTransfer}>
+        <Button className="mr-3" colorScheme="green" onClick={acceptTransfer}>
           {t('Accept Transfer')}
         </Button>
       )}
       {!['transferring', 'transferred'].includes(
         destinationCard.IncomingTransferProposal.Status
       ) && (
-        <Button className="mr-3" colorScheme="red" onClick={closeTransfer}>
+        <Button className="mr-3" colorScheme="red" onClick={declineTransfer}>
           {t('Decline Transfer')}
         </Button>
       )}

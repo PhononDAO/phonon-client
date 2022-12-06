@@ -139,7 +139,7 @@ export const CardDeck: React.FC<{
           <div className="flex justify-end text-gray-500 items-center mb-2">
             <>
               <IonIcon icon={bulb} />
-              {t('Double-click phonons to see details.')}
+              {t('Double-click Phonons to see details.')}
             </>
           </div>
           {!card.IsRemote ? (

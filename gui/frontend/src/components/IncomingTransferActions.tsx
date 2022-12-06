@@ -119,6 +119,7 @@ export const IncomingTransferActions: React.FC<{
 
   useEffect(() => {
     startValidation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

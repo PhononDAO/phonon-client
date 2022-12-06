@@ -18,13 +18,9 @@ import {
   TabPanel,
   TableContainer,
   Table,
-  Thead,
   Tr,
-  Th,
   Tbody,
   Td,
-  Tfoot,
-  Divider,
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';

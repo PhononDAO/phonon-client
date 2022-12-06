@@ -75,7 +75,7 @@ export const ModalUnlockCard: React.FC<{
 
   return (
     <Modal
-      size={'sm'}
+      size="sm"
       isOpen={isOpen}
       onClose={() => {
         onClose();

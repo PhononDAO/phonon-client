@@ -33,7 +33,7 @@ export const CardSettings: React.FC<{ card: PhononCard }> = ({ card }) => {
           {t('Settings')}
         </Button>
       )}
-      <ModalCardSettings isOpen={isOpen} onClose={onClose} />
+      <ModalCardSettings card={card} isOpen={isOpen} onClose={onClose} />
     </>
   );
 };

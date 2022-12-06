@@ -3,7 +3,7 @@ import { ButtonGroup, IconButton, Select } from '@chakra-ui/react';
 import { CardTray } from './CardTray';
 import { Phonon } from './Phonon';
 import { IonIcon } from '@ionic/react';
-import { reorderFour, apps } from 'ionicons/icons';
+import { reorderFour, apps, bulb } from 'ionicons/icons';
 import { useContext, useState } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { Phonon as iPhonon, PhononCard } from '../interfaces/interfaces';
@@ -23,7 +23,7 @@ export const CardDeck: React.FC<{
     useContext(CardManagementContext);
 
   // let's poll for updates on this card
-  if (false) {
+  if (true) {
     const simulateIncomingRequest = setInterval(() => {
       // let's fake an incoming proposal
       if (phononCards.length > 1 && card?.CardId === '04e0d5eb884a73cf') {
@@ -136,6 +136,12 @@ export const CardDeck: React.FC<{
             (card: PhononCard) => card.InTray && !card.IsRemote
           ).length > 1 ||
             card.IsRemote) && <PhononTransferProposal card={card} />}
+          <div className="flex justify-end text-gray-500 items-center mb-2">
+            <>
+              <IonIcon icon={bulb} />
+              {t('Double-click phonons to see details.')}
+            </>
+          </div>
           {!card.IsRemote ? (
             <div
               className={

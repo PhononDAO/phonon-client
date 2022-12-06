@@ -9,7 +9,7 @@ import {
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { caretDown } from 'ionicons/icons';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../interfaces/interfaces';
@@ -116,6 +116,10 @@ export const IncomingTransferActions: React.FC<{
 
     closeTransfer();
   };
+
+  useEffect(() => {
+    startValidation();
+  }, []);
 
   return (
     <>

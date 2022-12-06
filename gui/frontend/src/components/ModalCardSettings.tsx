@@ -86,7 +86,6 @@ export const ModalCardSettings: React.FC<{
                   color="white"
                   type="text"
                   maxLength={20}
-                  name="vanityName"
                   placeholder={card.CardId}
                   {...register('vanityName')}
                 />
@@ -109,7 +108,7 @@ export const ModalCardSettings: React.FC<{
                   })}
                   render={({ field: { ...restField } }) => (
                     <HStack>
-                      <PinInput {...restField} mask>
+                      <PinInput {...restField}>
                         {Array(pinLength)
                           .fill(null)
                           .map((val, key) => (

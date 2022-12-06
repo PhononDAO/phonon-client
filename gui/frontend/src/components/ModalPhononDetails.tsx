@@ -105,35 +105,11 @@ export const ModalPhononDetails: React.FC<{
               colorScheme="blackAlpha"
             >
               <TabList>
-                <Tab>Redeem</Tab>
                 <Tab>Details</Tab>
+                <Tab>Redeem</Tab>
               </TabList>
 
               <TabPanels>
-                <TabPanel padding={0} className="grid grid-cols-1 gap-y-6 mt-4">
-                  <FormControl>
-                    <FormLabel>{t('Address to Redeem')}</FormLabel>
-                    <Input
-                      bg="gray.700"
-                      color="white"
-                      type="text"
-                      placeholder="0x..."
-                      {...register('address', {
-                        required: 'Address to redeem is required.',
-                      })}
-                    />
-                    {errors.address && (
-                      <span className="text-red-600">
-                        {errors.address.message}
-                      </span>
-                    )}
-                    <FormHelperText>
-                      {t(
-                        'The redeemed Phonon will be sent to this address. Confirm the address belongs to the network above. Lost Phonons are lost forever.'
-                      )}
-                    </FormHelperText>
-                  </FormControl>
-                </TabPanel>
                 <TabPanel padding={0} className="mt-4">
                   <TableContainer>
                     <Table size="sm">
@@ -178,17 +154,43 @@ export const ModalPhononDetails: React.FC<{
                     </Table>
                   </TableContainer>
                 </TabPanel>
+                <TabPanel padding={0} className="grid grid-cols-1 gap-y-6 mt-4">
+                  <FormControl>
+                    <FormLabel>{t('Address to Redeem')}</FormLabel>
+                    <Input
+                      bg="gray.700"
+                      color="white"
+                      type="text"
+                      placeholder="0x..."
+                      {...register('address', {
+                        required: 'Address to redeem is required.',
+                      })}
+                    />
+                    {errors.address && (
+                      <span className="text-red-600">
+                        {errors.address.message}
+                      </span>
+                    )}
+                    <FormHelperText>
+                      {t(
+                        'The redeemed Phonon will be sent to this address. Confirm the address belongs to the network above. Lost Phonons are lost forever.'
+                      )}
+                    </FormHelperText>
+                  </FormControl>
+                </TabPanel>
               </TabPanels>
             </Tabs>
           </ModalBody>
 
           <ModalFooter>
-            {tabIndex === 0 && (
+            {tabIndex === 1 && (
               <Button colorScheme="green" type="submit" mr={3}>
                 {t('Redeem')}
               </Button>
             )}
-            <Button onClick={onClose}>{t('Cancel')}</Button>
+            <Button onClick={onClose}>
+              {tabIndex === 1 ? t('Cancel') : t('Close')}
+            </Button>
           </ModalFooter>
         </form>
       </ModalContent>

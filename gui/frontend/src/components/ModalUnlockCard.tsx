@@ -114,7 +114,7 @@ export const ModalUnlockCard: React.FC<{
               })}
               render={({ field: { ...restField } }) => (
                 <HStack>
-                  <PinInput {...restField} mask>
+                  <PinInput {...restField} mask autoFocus>
                     {Array(pinLength)
                       .fill(null)
                       .map((val, key) => (

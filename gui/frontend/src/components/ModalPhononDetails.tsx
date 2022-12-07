@@ -49,7 +49,7 @@ export const ModalPhononDetails: React.FC<{
     formState: { errors },
   } = useForm<PhononFormData>();
 
-  // event when you start mining a phonon
+  // event when you redeem a phonon
   const onSubmit = (data: PhononFormData, event) => {
     event.preventDefault();
 

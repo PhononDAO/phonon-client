@@ -19,7 +19,7 @@ export const ModalCreatePhonon: React.FC<{ card; isOpen; onClose }> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) " />
       <ModalContent>
         <ModalHeader>
           {t('Create Phonon')}: {card.CardId}

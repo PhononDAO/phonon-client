@@ -39,7 +39,7 @@ export const ModalCreateMockCard: React.FC<{
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) " />
       <ModalContent>
         <ModalHeader>{t('Create Mock Card')}</ModalHeader>
         <ModalCloseButton />

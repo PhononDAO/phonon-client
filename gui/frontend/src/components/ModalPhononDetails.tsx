@@ -71,7 +71,7 @@ export const ModalPhononDetails: React.FC<{
 
   return (
     <Modal size="2xl" isOpen={isOpen} onClose={onClose}>
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) " />
       <ModalContent className="overflow-hidden">
         <ModalHeader className="bg-black text-white text-center">
           <ChainIDTag id={phonon.ChainID} />

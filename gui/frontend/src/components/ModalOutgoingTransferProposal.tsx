@@ -86,7 +86,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
         destinationCard.OutgoingTransferProposal.Status === 'transferred'
       }
     >
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) " />
       <ModalContent>
         <ModalHeader>
           <span className="text-5xl font-bandeins-sans-light">

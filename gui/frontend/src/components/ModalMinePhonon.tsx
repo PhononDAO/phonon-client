@@ -19,15 +19,17 @@ export const ModalMinePhonon: React.FC<{ card; isOpen; onClose }> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+      <ModalContent className="bg-black overflow-hidden">
+        <ModalHeader className="text-white bg-black">
           {t('Mine Phonon')}: {card.CardId}
         </ModalHeader>
         <ModalCloseButton />
-        <ModalBody pb={6}>MINE PHONON HERE</ModalBody>
+        <ModalBody pb={6} className="text-white bg-black">
+          MINE PHONON HERE
+        </ModalBody>
 
-        <ModalFooter>
+        <ModalFooter className="bg-black">
           <Button colorScheme="green" mr={3}>
             {t('Save')}
           </Button>

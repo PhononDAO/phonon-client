@@ -59,7 +59,7 @@ export const ModalCardSettings: React.FC<{
 
   return (
     <Modal size="sm" isOpen={isOpen} onClose={onClose}>
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) " />
       <ModalContent>
         <ModalHeader>
           <div className="font-noto-sans-mono">

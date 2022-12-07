@@ -83,7 +83,7 @@ export const ModalUnlockCard: React.FC<{
         addCardsToState([card]);
       }}
     >
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) " />
       <ModalContent
         className={'overflow-hidden ' + (isError ? 'animate-errorShake' : '')}
       >

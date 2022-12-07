@@ -27,7 +27,7 @@ export const Card: React.FC<{
   isCustomDragLayer = false,
 }) => {
   const { onClose } = useDisclosure();
-  const { isCardsMini } = useContext(CardManagementContext);
+  const { isCardsMini, addCardsToState } = useContext(CardManagementContext);
 
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: 'PhononCard',
@@ -50,7 +50,15 @@ export const Card: React.FC<{
 
   // only show card if not a mock card or if mock cards are enabled
   return (
-    <>
+    <div
+      className={card.IsLocked && 'cursor-pointer'}
+      onClick={() => {
+        if (card.IsLocked) {
+          card.AttemptUnlock = true;
+          addCardsToState([card]);
+        }
+      }}
+    >
       <div
         ref={drag}
         className={
@@ -84,6 +92,7 @@ export const Card: React.FC<{
                 />
               )}
             </div>
+
             <div className="flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
               <CardFront card={card} isMini={isMini} />
             </div>
@@ -95,6 +104,6 @@ export const Card: React.FC<{
         onClose={onClose}
         card={card}
       />
-    </>
+    </div>
   );
 };

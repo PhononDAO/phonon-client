@@ -8,17 +8,11 @@ import { CardManagementContext } from '../../contexts/CardManagementContext';
 export const UnlockCard: React.FC<{
   card: PhononCard;
 }> = ({ card }) => {
-  const { isCardsMini, addCardsToState } = useContext(CardManagementContext);
+  const { isCardsMini } = useContext(CardManagementContext);
 
   return (
     <>
-      <button
-        onClick={() => {
-          card.AttemptUnlock = true;
-          addCardsToState([card]);
-        }}
-        className="w-full z-50 text-amber-400 hover:text-amber-300 text-center"
-      >
+      <div className="w-full z-50 text-amber-400 hover:text-amber-300 text-center">
         <IonIcon
           className={
             'p-16 duration-150 ' +
@@ -26,7 +20,7 @@ export const UnlockCard: React.FC<{
           }
           icon={lockClosed}
         />
-      </button>
+      </div>
     </>
   );
 };

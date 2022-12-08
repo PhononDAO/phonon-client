@@ -40,7 +40,7 @@ export const CardTray: React.FC<{
   return card?.InTray && !card?.IsRemote ? (
     <>
       <div className="w-80 h-52">
-        <Card card={card} />
+        <Card card={card} forceLarge={true} />
       </div>
     </>
   ) : (

@@ -1,9 +1,10 @@
 import { useContext } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 
-export const CardShadow: React.FC<{ isOver?: boolean }> = ({
-  isOver = false,
-}) => {
+export const CardShadow: React.FC<{
+  forceLarge?: boolean;
+  isOver?: boolean;
+}> = ({ forceLarge = false, isOver = false }) => {
   const { isCardsMini } = useContext(CardManagementContext);
   return (
     <div
@@ -12,7 +13,7 @@ export const CardShadow: React.FC<{ isOver?: boolean }> = ({
         (isOver
           ? ' border-green-500 bg-green-200'
           : ' border-dashed border-gray-700 bg-phonon-card-gray bg-cover bg-no-repeat') +
-        (isCardsMini ? ' w-56 h-36' : ' w-80 h-52')
+        (isCardsMini && !forceLarge ? ' w-56 h-36' : ' w-80 h-52')
       }
     ></div>
   );

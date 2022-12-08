@@ -18,11 +18,13 @@ interface DropResult {
 export const Card: React.FC<{
   card: PhononCard;
   isMini?: boolean;
+  forceLarge?: boolean;
   showActions?: boolean;
   isCustomDragLayer?: boolean;
 }> = ({
   card,
   isMini = false,
+  forceLarge = false,
   showActions = true,
   isCustomDragLayer = false,
 }) => {
@@ -72,7 +74,7 @@ export const Card: React.FC<{
         }
       >
         {isDragging ? (
-          <CardShadow />
+          <CardShadow forceLarge={forceLarge} />
         ) : (
           <div className="flip-card-inner relative w-full h-full">
             <div

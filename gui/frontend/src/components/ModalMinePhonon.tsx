@@ -48,6 +48,11 @@ export const ModalMinePhonon: React.FC<{
   };
   const { register, setValue, handleSubmit } = useForm<MiningFormData>();
 
+  const setDifficultyValue = (value: number) => {
+    setValue('difficulty', value);
+    setSliderValue(value);
+  };
+
   // event when you start mining a phonon
   const onSubmit = (data: MiningFormData, event) => {
     event.preventDefault();
@@ -86,7 +91,9 @@ export const ModalMinePhonon: React.FC<{
 
   const cancelMining = () => {
     setCurrentState('settings');
+
     if (['settings', 'result'].includes(currentState)) {
+      setDifficultyValue(defaultDifficulty);
       onClose();
     }
   };
@@ -131,8 +138,7 @@ export const ModalMinePhonon: React.FC<{
                     max={maxDifficulty}
                     value={sliderValue}
                     onChange={(val) => {
-                      setSliderValue(val);
-                      setValue('difficulty', val);
+                      setDifficultyValue(val);
                     }}
                   >
                     <SliderMark

@@ -21,6 +21,7 @@ import {
   Tr,
   Tbody,
   Td,
+  Code,
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -107,48 +108,21 @@ export const ModalPhononDetails: React.FC<{
 
               <TabPanels>
                 <TabPanel padding={0} className="mt-4">
-                  <TableContainer>
-                    <Table size="sm">
-                      <Tbody>
-                        <Tr>
-                          <Td>{t('Address')}</Td>
-                          <Td isNumeric>{phonon.Address}</Td>
-                        </Tr>
-                        <Tr>
-                          <Td>{t('Address Type')}</Td>
-                          <Td isNumeric>{phonon.AddressType}</Td>
-                        </Tr>
-                        <Tr>
-                          <Td>{t('Chain ID')}</Td>
-                          <Td isNumeric>{phonon.ChainID}</Td>
-                        </Tr>
-                        <Tr>
-                          <Td>{t('Curve Type')}</Td>
-                          <Td isNumeric>{phonon.CurveType}</Td>
-                        </Tr>
-                        <Tr>
-                          <Td>{t('Currency Type')}</Td>
-                          <Td isNumeric>{phonon.CurrencyType}</Td>
-                        </Tr>
-                        <Tr>
-                          <Td>{t('Denomination')}</Td>
-                          <Td isNumeric>{phonon.Denomination}</Td>
-                        </Tr>
-                        <Tr>
-                          <Td>{t('Public Key')}</Td>
-                          <Td isNumeric>{phonon.PubKey}</Td>
-                        </Tr>
-                        <Tr>
-                          <Td>{t('Schema Version')}</Td>
-                          <Td isNumeric>{phonon.SchemaVersion}</Td>
-                        </Tr>
-                        <Tr>
-                          <Td>{t('Extended Schema Version')}</Td>
-                          <Td isNumeric>{phonon.ExtendedSchemaVersion}</Td>
-                        </Tr>
-                      </Tbody>
-                    </Table>
-                  </TableContainer>
+                  <div className="text-sm">
+                    {Object.entries(phonon).map(([key, value]) => {
+                      return (
+                        <div
+                          key={key}
+                          className="grid grid-cols-3 pb-2 mb-2 px-4 border-b border-gray-100"
+                        >
+                          <div>{key}</div>
+                          <div className="col-span-2 break-words font-noto-sans-mono text-right">
+                            <span className=" bg-gray-100 p-1">{value}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </TabPanel>
                 <TabPanel padding={0} className="grid grid-cols-1 gap-y-6 mt-4">
                   <FormControl>

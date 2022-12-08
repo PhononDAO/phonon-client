@@ -26,6 +26,7 @@ export const PhononWallet = () => {
     Denomination: '40000000000000000',
     CurrencyType: 2,
     SourceCardId: '04e0d5eb884a73cf',
+    ValidationStatus: 'unvalidated',
   } as Phonon;
 
   const bPhonon = {
@@ -40,6 +41,7 @@ export const PhononWallet = () => {
     Denomination: '50600000000000000',
     CurrencyType: 2,
     SourceCardId: '04e0d5eb884a73cf',
+    ValidationStatus: 'unvalidated',
   } as Phonon;
 
   const cPhonon = {
@@ -54,6 +56,7 @@ export const PhononWallet = () => {
     Denomination: '3100000000000000000',
     CurrencyType: 3,
     SourceCardId: '04e0d5eb884a73cf',
+    ValidationStatus: 'unvalidated',
   } as Phonon;
 
   const dPhonon = {
@@ -68,6 +71,7 @@ export const PhononWallet = () => {
     Denomination: '5008000000000000000',
     CurrencyType: 3,
     SourceCardId: '04e0d5eb884a73ce',
+    ValidationStatus: 'unvalidated',
   } as Phonon;
 
   const aCard = {

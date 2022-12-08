@@ -16,13 +16,9 @@ import {
   Tab,
   TabPanels,
   TabPanel,
-  TableContainer,
-  Table,
-  Tr,
-  Tbody,
-  Td,
-  Code,
 } from '@chakra-ui/react';
+import { IonIcon } from '@ionic/react';
+import { shieldCheckmark } from 'ionicons/icons';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +27,7 @@ import { Phonon } from '../interfaces/interfaces';
 import { abbreviateHash, fromDecimals } from '../utils/formatting';
 import { notifySuccess } from '../utils/notify';
 import { ChainIDTag } from './ChainIDTag';
+import { PhononValidationStatus } from './PhononValidationStatus';
 
 type PhononFormData = {
   address: string;
@@ -117,7 +114,11 @@ export const ModalPhononDetails: React.FC<{
                         >
                           <div>{key}</div>
                           <div className="col-span-2 break-words font-noto-sans-mono text-right">
-                            <span className=" bg-gray-100 p-1">{value}</span>
+                            {key === 'ValidationStatus' ? (
+                              <PhononValidationStatus phonon={phonon} />
+                            ) : (
+                              <span className=" bg-gray-100 p-1">{value}</span>
+                            )}
                           </div>
                         </div>
                       );

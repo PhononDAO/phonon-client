@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { Phonon, PhononCard } from '../interfaces/interfaces';
+import { Phonon } from '../interfaces/interfaces';
 import { IonIcon } from '@ionic/react';
 import {
   closeCircle,

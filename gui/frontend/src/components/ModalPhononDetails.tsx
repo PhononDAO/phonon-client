@@ -17,8 +17,6 @@ import {
   TabPanels,
   TabPanel,
 } from '@chakra-ui/react';
-import { IonIcon } from '@ionic/react';
-import { shieldCheckmark } from 'ionicons/icons';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';

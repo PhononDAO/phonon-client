@@ -187,7 +187,7 @@ export const ModalMinePhonon: React.FC<{
                 </Box>
                 <FormHelperText>
                   {t(
-                    'The higher the difficulty, the onger it will take to mine a phonon.'
+                    'The higher the difficulty, the longer it will take to mine a phonon.'
                   )}
                 </FormHelperText>
               </FormControl>

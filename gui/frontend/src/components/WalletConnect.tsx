@@ -16,7 +16,7 @@ export const WalletConnect: React.FC = () => {
       )}
       {account && (
         <div className="text-right">
-          <div className="text-white text-xs mb-2">
+          <div className="text-white text-xs mb-1">
             {t('Connected as ') + abbreviateHash(account)}
           </div>
           <Button size="xs" colorScheme="gray" onClick={deactivate}>

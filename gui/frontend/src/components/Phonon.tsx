@@ -130,7 +130,7 @@ export const Phonon: React.FC<{
               (layoutType === 'grid' ? 'text-xs text-center' : '')
             }
           >
-            {abbreviateHash(phonon.Address)}
+            {abbreviateHash(phonon.PubKey)}
           </div>
           {showAction && (
             <IonIcon

@@ -18,7 +18,7 @@ export const PhononDragLayer: React.FC = () => {
     };
   };
 
-  if (!isDragging || !phonon.Address) {
+  if (!isDragging || !phonon.PubKey) {
     return null;
   }
 

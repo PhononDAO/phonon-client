@@ -104,23 +104,29 @@ export const ModalPhononDetails: React.FC<{
               <TabPanels>
                 <TabPanel padding={0} className="mt-4">
                   <div className="text-sm">
-                    {Object.entries(phonon).map(([key, value]) => {
-                      return (
-                        <div
-                          key={key}
-                          className="grid grid-cols-3 pb-2 mb-2 px-4 border-b border-gray-100"
-                        >
-                          <div>{key}</div>
-                          <div className="col-span-2 break-words font-noto-sans-mono text-right">
-                            {key === 'ValidationStatus' ? (
-                              <PhononValidationStatus phonon={phonon} />
-                            ) : (
-                              <span className=" bg-gray-100 p-1">{value}</span>
-                            )}
+                    {Object.entries(phonon)
+                      .filter(
+                        (prop) => !['ProposedForTransfer'].includes(prop[0])
+                      )
+                      .map(([key, value]) => {
+                        return (
+                          <div
+                            key={key}
+                            className="grid grid-cols-3 pb-2 mb-2 px-4 border-b border-gray-100"
+                          >
+                            <div>{key}</div>
+                            <div className="col-span-2 break-words font-noto-sans-mono text-right">
+                              {key === 'ValidationStatus' ? (
+                                <PhononValidationStatus phonon={phonon} />
+                              ) : (
+                                <span className=" bg-gray-100 p-1">
+                                  {value}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 </TabPanel>
                 <TabPanel padding={0} className="grid grid-cols-1 gap-y-6 mt-4">

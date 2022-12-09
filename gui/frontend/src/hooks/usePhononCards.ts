@@ -13,7 +13,7 @@ import { PhononCard, Phonon } from '../interfaces/interfaces';
 export const usePhononCards = <T extends PhononCard>(
   defaultValue: T[],
   CardId = 'CardId',
-  Address = 'Address'
+  PubKey = 'PubKey'
 ): [
   T[],
   (toAdd: T[]) => void,
@@ -59,13 +59,13 @@ export const usePhononCards = <T extends PhononCard>(
   };
 
   const addPhononsToCard = (card: T, phononsToAdd: Phonon[]) => {
-    card.Phonons = unionBy(card.Phonons, phononsToAdd, Address);
+    card.Phonons = unionBy(card.Phonons, phononsToAdd, PubKey);
 
     addPhononCards([card]);
   };
 
   const removePhononsFromCard = (card: T, phononsToRemove: Phonon[]) => {
-    card.Phonons = differenceBy(card.Phonons, phononsToRemove, Address);
+    card.Phonons = differenceBy(card.Phonons, phononsToRemove, PubKey);
 
     addPhononCards([card]);
   };
@@ -93,7 +93,7 @@ export const usePhononCards = <T extends PhononCard>(
     destinationCard[proposalPurpose].Phonons = unionBy(
       destinationCard[proposalPurpose].Phonons,
       phononsToAdd,
-      Address
+      PubKey
     );
     addPhononCards([destinationCard]);
 
@@ -112,7 +112,7 @@ export const usePhononCards = <T extends PhononCard>(
     destinationCard[proposalPurpose].Phonons = differenceBy(
       destinationCard[proposalPurpose].Phonons,
       phononsToRemove,
-      Address
+      PubKey
     );
     addPhononCards([destinationCard]);
 

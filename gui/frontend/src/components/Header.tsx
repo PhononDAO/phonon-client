@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { GlobalSettingsButton } from './GlobalSettingsButton';
 import { WalletConnect } from './WalletConnect';
 
 export const Header = () => {
@@ -9,7 +10,10 @@ export const Header = () => {
       <span className="text-4xl text-white font-bandeins-sans-bold">
         {t('PHONON MANAGER')}
       </span>
-      <WalletConnect />
+      <div className="flex gap-x-2">
+        <WalletConnect />
+        <GlobalSettingsButton />
+      </div>
     </header>
   );
 };

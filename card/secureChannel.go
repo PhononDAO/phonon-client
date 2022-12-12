@@ -114,18 +114,19 @@ func (sc *SecureChannel) Send(cmd *Command) (resp *apdu.Response, err error) {
 		}
 
 		encDataLen := len(encData) + 16
-		lcAndPadding := make([]byte, 11)
+		lcAndPadding := make([]byte, 12)
 		if encDataLen > 256 {
 			//Add 2 byte LC to first two positions of lcAndPadding slice
 			binary.BigEndian.PutUint16(lcAndPadding, uint16(encDataLen))
-			// for i := 0; i++;i<11{
-			// 	lcAndPadding = append(lcAndPadding, 0)
-			// }
 		} else {
 			lcAndPadding[0] = byte(encDataLen)
 		}
+		log.Debug("using extended secure channel LC")
+		meta := []byte{cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2}
+		//appends LC to APDU header while maintaining 16 byte length for encryption padding
+		meta = append(meta, lcAndPadding...)
+		log.Debugf("meta: % X", meta)
 
-		meta := []byte{cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2, byte(len(encData) + 16), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 		if err = sc.updateIV(meta, encData); err != nil {
 			return nil, err
 		}

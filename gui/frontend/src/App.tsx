@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { Stage } from './components/Stage';
 import { PageLoading } from './components/PageLoading';
 import { Mainnet, DAppProvider, Config, Goerli } from '@usedapp/core';
+import 'console.history';
 
 const config: Config = {
   readOnlyChainId: Mainnet.chainId,

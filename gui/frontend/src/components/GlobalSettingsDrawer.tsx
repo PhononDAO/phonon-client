@@ -11,30 +11,16 @@ import {
   TabPanels,
   TabPanel,
 } from '@chakra-ui/react';
-import { useContext } from 'react';
-import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { CardManagementContext } from '../contexts/CardManagementContext';
-import { PhononCard } from '../interfaces/interfaces';
-import { notifySuccess } from '../utils/notify';
-
-type SettingsFormData = {
-  vanityName: string;
-  cardPin: string;
-};
+import { GlobalSettingsActivityHistory } from './GlobalSettingsActivityHistory';
+import { GlobalSettingsDiagnostics } from './GlobalSettingsDiagnostics';
+import { GlobalSettingsSettingsForm } from './GlobalSettingsSettingsForm';
 
 export const GlobalSettingsDrawer: React.FC<{
   isOpen;
   onClose;
 }> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
-  const {
-    control,
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<SettingsFormData>();
 
   return (
     <Drawer onClose={onClose} isOpen={isOpen} size="xl">
@@ -44,23 +30,22 @@ export const GlobalSettingsDrawer: React.FC<{
         <Tabs>
           <DrawerHeader>
             <TabList>
-              <Tab>Settings</Tab>
-              <Tab>Activity History</Tab>
-              <Tab>Diagnostics</Tab>
+              <Tab>{t('Settings')}</Tab>
+              <Tab>{t('Activity History')}</Tab>
+              <Tab>{t('Diagnostics')}</Tab>
             </TabList>
           </DrawerHeader>
           <DrawerBody>
             <TabPanels>
               <TabPanel>
-                <ol>
-                  <li>set default mining difficulty</li>
-                  <li>auto-validate incoming phonon requests</li>
-                  <li>default phonon sort by</li>
-                  <li>default phonon layout</li>
-                </ol>
+                <GlobalSettingsSettingsForm />
               </TabPanel>
-              <TabPanel>activity history here</TabPanel>
-              <TabPanel>diagnostics here</TabPanel>
+              <TabPanel>
+                <GlobalSettingsActivityHistory />
+              </TabPanel>
+              <TabPanel>
+                <GlobalSettingsDiagnostics />
+              </TabPanel>
             </TabPanels>
           </DrawerBody>
         </Tabs>

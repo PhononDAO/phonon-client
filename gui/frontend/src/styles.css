@@ -30,7 +30,7 @@
 }
 
 /*
-! tailwindcss v3.1.8 | MIT License | https://tailwindcss.com
+! tailwindcss v3.2.4 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -61,6 +61,7 @@
 2. Prevent adjustments of font size after orientation changes in iOS.
 3. Use a more readable tab size.
 4. Use the user's configured `sans` font-family by default.
+5. Use the user's configured `sans` font-feature-settings by default.
 */
 
 html {
@@ -73,6 +74,9 @@ html {
   /* 3 */
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   /* 4 */
+  -webkit-font-feature-settings: normal;
+          font-feature-settings: normal;
+  /* 5 */
 }
 
 /*
@@ -439,6 +443,12 @@ video {
   height: auto;
 }
 
+/* Make elements with the HTML hidden attribute stay hidden by default */
+
+[hidden] {
+  display: none;
+}
+
 *, ::before, ::after{
   --tw-border-spacing-x: 0;
   --tw-border-spacing-y: 0;
@@ -778,6 +788,10 @@ video {
   margin-top: -1.25rem;
 }
 
+.mb-6{
+  margin-bottom: 1.5rem;
+}
+
 .mr-3{
   margin-right: 0.75rem;
 }
@@ -838,6 +852,18 @@ video {
   margin-bottom: 0.25rem;
 }
 
+.mb-px{
+  margin-bottom: 1px;
+}
+
+.mb-3{
+  margin-bottom: 0.75rem;
+}
+
+.mt-6{
+  margin-top: 1.5rem;
+}
+
 .block{
   display: block;
 }
@@ -878,16 +904,24 @@ video {
   height: 100%;
 }
 
+.h-144{
+  height: 48rem;
+}
+
+.h-6{
+  height: 1.5rem;
+}
+
+.h-80{
+  height: 20rem;
+}
+
 .h-32{
   height: 8rem;
 }
 
 .h-24{
   height: 6rem;
-}
-
-.h-6{
-  height: 1.5rem;
 }
 
 .h-0{
@@ -902,8 +936,8 @@ video {
   height: 15rem;
 }
 
-.h-16{
-  height: 4rem;
+.min-h-full{
+  min-height: 100%;
 }
 
 .w-full{
@@ -920,6 +954,10 @@ video {
 
 .w-80{
   width: 20rem;
+}
+
+.w-6{
+  width: 1.5rem;
 }
 
 .w-2\/3{
@@ -946,10 +984,6 @@ video {
   width: 40%;
 }
 
-.w-6{
-  width: 1.5rem;
-}
-
 .w-10{
   width: 2.5rem;
 }
@@ -964,6 +998,10 @@ video {
 
 .w-16{
   width: 4rem;
+}
+
+.w-auto{
+  width: auto;
 }
 
 .w-96{
@@ -1368,6 +1406,18 @@ video {
           column-gap: 2rem;
 }
 
+.gap-y-10{
+  row-gap: 2.5rem;
+}
+
+.gap-y-12{
+  row-gap: 3rem;
+}
+
+.gap-y-4{
+  row-gap: 1rem;
+}
+
 .space-x-1 > :not([hidden]) ~ :not([hidden]){
   --tw-space-x-reverse: 0;
   margin-right: calc(0.25rem * var(--tw-space-x-reverse));
@@ -1427,10 +1477,6 @@ video {
 
 .break-words{
   overflow-wrap: break-word;
-}
-
-.break-all{
-  word-break: break-all;
 }
 
 .rounded-full{
@@ -1497,6 +1543,11 @@ video {
   border-color: rgb(37 99 235 / var(--tw-border-opacity));
 }
 
+.border-gray-100{
+  --tw-border-opacity: 1;
+  border-color: rgb(243 244 246 / var(--tw-border-opacity));
+}
+
 .border-green-400{
   --tw-border-opacity: 1;
   border-color: rgb(74 222 128 / var(--tw-border-opacity));
@@ -1510,21 +1561,6 @@ video {
 .border-gray-400{
   --tw-border-opacity: 1;
   border-color: rgb(156 163 175 / var(--tw-border-opacity));
-}
-
-.border-gray-50{
-  --tw-border-opacity: 1;
-  border-color: rgb(249 250 251 / var(--tw-border-opacity));
-}
-
-.border-gray-100{
-  --tw-border-opacity: 1;
-  border-color: rgb(243 244 246 / var(--tw-border-opacity));
-}
-
-.border-gray-200{
-  --tw-border-opacity: 1;
-  border-color: rgb(229 231 235 / var(--tw-border-opacity));
 }
 
 .bg-black{
@@ -1551,6 +1587,11 @@ video {
   background-color: rgb(187 247 208 / var(--tw-bg-opacity));
 }
 
+.bg-red-200{
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
+}
+
 .bg-white{
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
@@ -1559,6 +1600,11 @@ video {
 .bg-gray-800{
   --tw-bg-opacity: 1;
   background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+}
+
+.bg-gray-100{
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity));
 }
 
 .bg-gray-200{
@@ -1606,11 +1652,6 @@ video {
   background-color: rgb(153 27 27 / var(--tw-bg-opacity));
 }
 
-.bg-gray-100{
-  --tw-bg-opacity: 1;
-  background-color: rgb(243 244 246 / var(--tw-bg-opacity));
-}
-
 .bg-phonon-card-blue{
   background-image: url('./assets/images/card-bg-blue.png');
 }
@@ -1635,6 +1676,14 @@ video {
   padding: 1rem;
 }
 
+.p-2{
+  padding: 0.5rem;
+}
+
+.p-1{
+  padding: 0.25rem;
+}
+
 .p-6{
   padding: 1.5rem;
 }
@@ -1643,16 +1692,8 @@ video {
   padding: 4rem;
 }
 
-.p-2{
-  padding: 0.5rem;
-}
-
 .p-px{
   padding: 1px;
-}
-
-.p-1{
-  padding: 0.25rem;
 }
 
 .px-2{
@@ -1680,14 +1721,14 @@ video {
   padding-bottom: 1px;
 }
 
-.px-6{
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-}
-
 .py-2{
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
+}
+
+.px-6{
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 
 .px-28{
@@ -1719,6 +1760,10 @@ video {
   padding-top: 6rem;
 }
 
+.pb-2{
+  padding-bottom: 0.5rem;
+}
+
 .pt-12{
   padding-top: 3rem;
 }
@@ -1733,10 +1778,6 @@ video {
 
 .pb-px{
   padding-bottom: 1px;
-}
-
-.pb-2{
-  padding-bottom: 0.5rem;
 }
 
 .pt-2{
@@ -1802,14 +1843,14 @@ video {
   line-height: 1;
 }
 
-.text-4xl{
-  font-size: 2.25rem;
-  line-height: 2.5rem;
-}
-
 .text-sm{
   font-size: 0.875rem;
   line-height: 1.25rem;
+}
+
+.text-4xl{
+  font-size: 2.25rem;
+  line-height: 2.5rem;
 }
 
 .text-3xl{
@@ -1883,14 +1924,19 @@ video {
   color: rgb(220 38 38 / var(--tw-text-opacity));
 }
 
-.text-blue-600{
+.text-green-600{
   --tw-text-opacity: 1;
-  color: rgb(37 99 235 / var(--tw-text-opacity));
+  color: rgb(22 163 74 / var(--tw-text-opacity));
 }
 
 .text-gray-400{
   --tw-text-opacity: 1;
   color: rgb(156 163 175 / var(--tw-text-opacity));
+}
+
+.text-blue-600{
+  --tw-text-opacity: 1;
+  color: rgb(37 99 235 / var(--tw-text-opacity));
 }
 
 .text-green-700{
@@ -1906,11 +1952,6 @@ video {
 .text-green-500{
   --tw-text-opacity: 1;
   color: rgb(34 197 94 / var(--tw-text-opacity));
-}
-
-.text-green-600{
-  --tw-text-opacity: 1;
-  color: rgb(22 163 74 / var(--tw-text-opacity));
 }
 
 .text-yellow-500{

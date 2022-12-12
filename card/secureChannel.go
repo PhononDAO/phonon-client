@@ -97,7 +97,7 @@ func (sc *SecureChannel) RawPublicKey() []byte {
 
 // AES-CBC-256 Symmetric encryption
 func (sc *SecureChannel) Send(cmd *Command) (resp *apdu.Response, err error) {
-	log.Debugf("raw command before encryption: CLA: % X Ins: % X P1: % X P2: % X Data: % X", cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2, cmd.ApduCmd.Data)
+	log.Debugf("raw command before encryption: CLA: % X Ins: % X P1: % X P2: % X Len: % X Data: % X", cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2, len(cmd.ApduCmd.Data), cmd.ApduCmd.Data)
 	log.Debugf("raw command in APDU format: %X", append([]byte{cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2}, cmd.ApduCmd.Data...))
 	defer func() {
 		if r := recover(); r != nil {

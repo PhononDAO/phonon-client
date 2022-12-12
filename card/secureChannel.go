@@ -3,6 +3,7 @@ package card
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"encoding/binary"
 	"errors"
 	"strings"
 
@@ -110,6 +111,18 @@ func (sc *SecureChannel) Send(cmd *Command) (resp *apdu.Response, err error) {
 		encData, err = crypto.EncryptData(cmd.ApduCmd.Data, sc.encKey, sc.iv)
 		if err != nil {
 			return nil, err
+		}
+
+		encDataLen := len(encData) + 16
+		lcAndPadding := make([]byte, 11)
+		if encDataLen > 256 {
+			//Add 2 byte LC to first two positions of lcAndPadding slice
+			binary.BigEndian.PutUint16(lcAndPadding, uint16(encDataLen))
+			// for i := 0; i++;i<11{
+			// 	lcAndPadding = append(lcAndPadding, 0)
+			// }
+		} else {
+			lcAndPadding[0] = byte(encDataLen)
 		}
 
 		meta := []byte{cmd.ApduCmd.Cla, cmd.ApduCmd.Ins, cmd.ApduCmd.P1, cmd.ApduCmd.P2, byte(len(encData) + 16), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}

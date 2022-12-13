@@ -136,7 +136,7 @@ export const CardDeck: React.FC<{
             (card: PhononCard) => card.InTray && !card.IsRemote
           ).length > 1 ||
             card.IsRemote) && <PhononTransferProposal card={card} />}
-          {!card.IsRemote && (
+          {!card.IsRemote && card?.Phonons.length > 0 && (
             <div className="flex justify-end text-gray-500 items-center mb-2">
               <>
                 <IonIcon icon={bulb} />

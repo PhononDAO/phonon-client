@@ -30,7 +30,7 @@ export const CardDeck: React.FC<{
     localStorage.getConfigurableSettings();
 
   // let's poll for updates on this card
-  if (true) {
+  if (false) {
     const simulateIncomingRequest = setInterval(() => {
       // let's fake an incoming proposal
       if (

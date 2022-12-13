@@ -66,12 +66,13 @@ export const ModalOutgoingTransferProposal: React.FC<{
     if (destinationCard.OutgoingTransferProposal.Status === 'transferred') {
       notifySuccess(
         t(
-          'Successfully transferred ' +
-            String(destinationCard.OutgoingTransferProposal.Phonons.length) +
-            ' phonons from ' +
-            String(sourceCard.CardId) +
-            ' → ' +
-            destinationCard.CardId
+          'Successfully transferred {{phononCount}} phonons from {{sourceCardId}} → {{destinationCardId}}',
+          {
+            phononCount:
+              destinationCard.OutgoingTransferProposal.Phonons.length,
+            sourceCardId: sourceCard.CardId,
+            destinationCardId: destinationCard.CardId,
+          }
         )
       );
     }
@@ -90,7 +91,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
       <ModalContent>
         <ModalHeader>
           <span className="text-5xl font-bandeins-sans-light">
-            Outgoing Phonons
+            {t('Outgoing Phonons')}
           </span>
         </ModalHeader>
         {destinationCard.OutgoingTransferProposal.Status === 'transferred' && (

@@ -22,9 +22,11 @@ import { calendarOutline, menu } from 'ionicons/icons';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { PhononCard } from '../interfaces/interfaces';
+import { GlobalSettings, PhononCard } from '../interfaces/interfaces';
 import { abbreviateHash } from '../utils/formatting';
 import { notifySuccess } from '../utils/notify';
+import { maxMiningDifficulty } from '../constants/Constants';
+import localStorage from '../utils/localStorage';
 
 type MiningFormData = {
   difficulty: number;
@@ -36,9 +38,11 @@ export const ModalMinePhonon: React.FC<{
   onClose;
 }> = ({ card, isOpen, onClose }) => {
   const { t } = useTranslation();
-  const defaultDifficulty = 5;
-  const maxDifficulty = 30;
-  const [sliderValue, setSliderValue] = useState(defaultDifficulty);
+  const defaultSettings: GlobalSettings =
+    localStorage.getConfigurableSettings();
+  const [defaultMiningDifficulty, setDefaultMiningDifficulty] = useState(
+    defaultSettings.defaultMiningDifficulty
+  );
   const [currentState, setCurrentState] = useState('settings');
 
   const labelStyles = {
@@ -50,7 +54,7 @@ export const ModalMinePhonon: React.FC<{
 
   const setDifficultyValue = (value: number) => {
     setValue('difficulty', value);
-    setSliderValue(value);
+    setDefaultMiningDifficulty(value);
   };
 
   // event when you start mining a phonon
@@ -93,7 +97,7 @@ export const ModalMinePhonon: React.FC<{
     setCurrentState('settings');
 
     if (['settings', 'result'].includes(currentState)) {
-      setDifficultyValue(defaultDifficulty);
+      setDifficultyValue(defaultSettings.defaultMiningDifficulty);
       onClose();
     }
   };
@@ -109,7 +113,7 @@ export const ModalMinePhonon: React.FC<{
       <ModalContent className="bg-black overflow-hidden">
         <ModalHeader className="text-white bg-black">
           <div className="font-noto-sans-mono">
-            <div className="text-sm">Mining a Phonon on</div>
+            <div className="text-sm">{t('Mining a Phonon on')}</div>
             <div className="text-2xl">
               {card.VanityName ? card.VanityName : card.CardId}
             </div>
@@ -132,35 +136,35 @@ export const ModalMinePhonon: React.FC<{
                 <Box pt={12} pb={4}>
                   <Slider
                     {...register('difficulty')}
-                    aria-label="mining-difficulty"
-                    defaultValue={defaultDifficulty}
+                    aria-label={t('mining difficulty')}
+                    defaultValue={defaultSettings.defaultMiningDifficulty}
                     min={1}
-                    max={maxDifficulty}
-                    value={sliderValue}
+                    max={maxMiningDifficulty}
+                    value={defaultMiningDifficulty}
                     onChange={(val) => {
                       setDifficultyValue(val);
                     }}
                   >
                     <SliderMark
-                      value={Math.ceil(maxDifficulty * 0.25)}
+                      value={Math.ceil(maxMiningDifficulty * 0.25)}
                       {...labelStyles}
                     >
-                      {Math.ceil(maxDifficulty * 0.25)}
+                      {Math.ceil(maxMiningDifficulty * 0.25)}
                     </SliderMark>
                     <SliderMark
-                      value={Math.ceil(maxDifficulty * 0.5)}
+                      value={Math.ceil(maxMiningDifficulty * 0.5)}
                       {...labelStyles}
                     >
-                      {Math.ceil(maxDifficulty * 0.5)}
+                      {Math.ceil(maxMiningDifficulty * 0.5)}
                     </SliderMark>
                     <SliderMark
-                      value={Math.ceil(maxDifficulty * 0.75)}
+                      value={Math.ceil(maxMiningDifficulty * 0.75)}
                       {...labelStyles}
                     >
-                      {Math.ceil(maxDifficulty * 0.75)}
+                      {Math.ceil(maxMiningDifficulty * 0.75)}
                     </SliderMark>
                     <SliderMark
-                      value={sliderValue}
+                      value={defaultMiningDifficulty}
                       textAlign="center"
                       bg="blue.500"
                       color="white"
@@ -170,7 +174,7 @@ export const ModalMinePhonon: React.FC<{
                       fontSize="2xl"
                       className="rounded"
                     >
-                      {sliderValue}
+                      {defaultMiningDifficulty}
                     </SliderMark>
                     <SliderTrack>
                       <SliderFilledTrack />
@@ -226,7 +230,7 @@ export const ModalMinePhonon: React.FC<{
                 )}
                 <div>
                   <h3 className="text-lg font-medium text-white">
-                    Mining stats
+                    {t('Mining stats')}
                   </h3>
                   <dl className="mt-2 md:flex justify-between rounded-lg bg-gray-800 overflow-hidden divide-y divide-gray-700 md:divide-y-0 md:divide-x">
                     <div className="px-4 py-3">
@@ -306,7 +310,9 @@ export const ModalMinePhonon: React.FC<{
                       </dt>
                       <dd className="mt-1 flex text-white">
                         {currentState === 'mining' && (
-                          <div className="text-xs inline">still mining...</div>
+                          <div className="text-xs inline">
+                            {t('still mining...')}
+                          </div>
                         )}
                         {currentState === 'result' && (
                           <>

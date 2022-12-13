@@ -12,8 +12,9 @@ import { caretDown } from 'ionicons/icons';
 import { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
-import { PhononCard } from '../interfaces/interfaces';
+import { GlobalSettings, PhononCard } from '../interfaces/interfaces';
 import { notifyError, notifySuccess } from '../utils/notify';
+import localStorage from '../utils/localStorage';
 
 export const IncomingTransferActions: React.FC<{
   destinationCard: PhononCard;
@@ -23,6 +24,8 @@ export const IncomingTransferActions: React.FC<{
   const { t } = useTranslation();
   const { addPhononsToCardTransferState, updateCardTransferStatusState } =
     useContext(CardManagementContext);
+  const defaultSettings: GlobalSettings =
+    localStorage.getConfigurableSettings();
 
   const startValidation = () => {
     updateCardTransferStatusState(
@@ -90,12 +93,13 @@ export const IncomingTransferActions: React.FC<{
 
       notifySuccess(
         t(
-          'Successfully transferred ' +
-            String(destinationCard.IncomingTransferProposal?.Phonons.length) +
-            ' phonons from ' +
-            String(destinationCard.CardId) +
-            ' → ' +
-            sourceCard.CardId
+          'Successfully transferred {{phononCount}} phonons from {{destinationCardId}} → {{sourceCardId}}',
+          {
+            phononCount:
+              destinationCard?.IncomingTransferProposal?.Phonons?.length,
+            sourceCardId: sourceCard.CardId,
+            destinationCardId: destinationCard.CardId,
+          }
         )
       );
     });
@@ -104,13 +108,13 @@ export const IncomingTransferActions: React.FC<{
   const declineTransfer = () => {
     notifyError(
       t(
-        'Transfer of ' +
-          String(destinationCard?.IncomingTransferProposal?.Phonons?.length) +
-          ' phonons from ' +
-          String(sourceCard.CardId) +
-          ' → ' +
-          destinationCard.CardId +
-          ' was declined.'
+        'Transfer of {{phononCount}} phonons from {{sourceCardId}} → {{destinationCardId}} was declined.',
+        {
+          phononCount:
+            destinationCard?.IncomingTransferProposal?.Phonons?.length,
+          sourceCardId: sourceCard.CardId,
+          destinationCardId: destinationCard.CardId,
+        }
       )
     );
 
@@ -118,7 +122,9 @@ export const IncomingTransferActions: React.FC<{
   };
 
   useEffect(() => {
-    startValidation();
+    if (defaultSettings.autoValidateIncomingPhononRequests) {
+      startValidation();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -135,7 +141,7 @@ export const IncomingTransferActions: React.FC<{
             <MenuButton
               as={IconButton}
               colorScheme="green"
-              aria-label="More options"
+              aria-label={t('More options')}
               icon={<IonIcon icon={caretDown} />}
               className="border-l border-green-500"
             />

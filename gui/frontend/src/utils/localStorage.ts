@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import omit from 'lodash/omit';
+import { defaultConfigurableSettings } from '../constants/Constants';
+
 const ROOT_STORE = process.env.REACT_APP_ROOT_STORE || 'phonon';
 
 // #region -- Generic Local Storage Functions
@@ -46,6 +48,15 @@ const setActivityHistory = (value) => setItem('activityHistory', value);
 
 // #endregion
 
+// #region -- Activity History Functions
+
+const getConfigurableSettings = () =>
+  getItem('configurableSettings') ?? defaultConfigurableSettings;
+const setConfigurableSettings = (value) =>
+  setItem('configurableSettings', value);
+
+// #endregion
+
 const exports = {
   getItem,
   setItem,
@@ -58,6 +69,8 @@ const exports = {
   removeRootStoreItem,
   getActivityHistory,
   setActivityHistory,
+  getConfigurableSettings,
+  setConfigurableSettings,
 };
 
 export default exports;

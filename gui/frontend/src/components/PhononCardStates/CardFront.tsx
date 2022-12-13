@@ -47,13 +47,13 @@ export const CardFront: React.FC<{
       {card.IsMock && (
         <div
           className={
-            'absolute rotate-30 font-bandeins-sans-bold text-center text-white bg-red-600 py-px ' +
+            'absolute uppercase rotate-30 font-bandeins-sans-bold text-center text-white bg-red-600 py-px ' +
             (showCardsMini
               ? 'w-48 top-24 -left-12 text-sm'
               : 'w-60 top-40 -left-16 text-md')
           }
         >
-          {t('MOCK CARD')}
+          {t('mock card')}
         </div>
       )}
     </div>

@@ -97,8 +97,8 @@ export const ModalPhononDetails: React.FC<{
               colorScheme="blackAlpha"
             >
               <TabList>
-                <Tab>Details</Tab>
-                <Tab>Redeem</Tab>
+                <Tab>{t('Details')}</Tab>
+                <Tab>{t('Redeem')}</Tab>
               </TabList>
 
               <TabPanels>
@@ -138,7 +138,7 @@ export const ModalPhononDetails: React.FC<{
                       type="text"
                       placeholder="0x..."
                       {...register('address', {
-                        required: 'Address to redeem is required.',
+                        required: t('Address to redeem is required.'),
                       })}
                     />
                     {errors.address && (

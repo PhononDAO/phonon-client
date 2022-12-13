@@ -103,7 +103,7 @@ export const ModalCardSettings: React.FC<{
                   {...register('cardPin', {
                     minLength: {
                       value: pinLength,
-                      message: 'Card PIN too short',
+                      message: t('Card PIN too short'),
                     },
                   })}
                   render={({ field: { ...restField } }) => (

@@ -7,7 +7,6 @@ import {
   FormHelperText,
   FormLabel,
   IconButton,
-  Input,
   Select,
   Slider,
   SliderFilledTrack,
@@ -21,31 +20,28 @@ import { IonIcon } from '@ionic/react';
 import { apps, menu, reorderFour } from 'ionicons/icons';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useFeature } from '../hooks/useFeature';
 import { useTranslation } from 'react-i18next';
+import { maxMiningDifficulty } from '../constants/Constants';
+import localStorage from '../utils/localStorage';
+import { notifySuccess } from '../utils/notify';
+import { GlobalSettings } from '../interfaces/interfaces';
 
-type GlobalSettingsFormData = {
-  defaultMiningDifficulty: number;
-  autoValidateIncomingPhononRequests: boolean;
-  defaultPhononSortBy: string;
-  defaultPhononLayout: string;
-};
+type GlobalSettingsFormData = GlobalSettings;
 
 export const GlobalSettingsSettingsForm: React.FC = () => {
   const { t } = useTranslation();
-  const defaultDifficulty = 5;
-  const maxDifficulty = 30;
-  const [sliderValue, setSliderValue] = useState(defaultDifficulty);
-  const [defaultPhononLayout, setDefaultPhononLayout] = useState('');
-
-  const {
-    control,
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    getValues,
-    formState: { errors },
-  } = useForm<GlobalSettingsFormData>();
+  const { CAN_MINE_PHONONS } = useFeature();
+  const { register, handleSubmit, getValues, setValue } =
+    useForm<GlobalSettingsFormData>({
+      defaultValues: localStorage.getConfigurableSettings(),
+    });
+  const [defaultMiningDifficulty, setDefaultMiningDifficulty] = useState(
+    getValues('defaultMiningDifficulty')
+  );
+  const [defaultPhononLayout, setDefaultPhononLayout] = useState(
+    getValues('defaultPhononLayout')
+  );
 
   const labelStyles = {
     mt: '4',
@@ -55,7 +51,20 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
 
   const setDifficultyValue = (value: number) => {
     setValue('defaultMiningDifficulty', value);
-    setSliderValue(value);
+    setDefaultMiningDifficulty(value);
+  };
+
+  const setPhononLayout = (value: string) => {
+    setValue('defaultPhononLayout', value);
+    setDefaultPhononLayout(value);
+  };
+
+  const onSubmit = (data: GlobalSettingsFormData, event) => {
+    event.preventDefault();
+
+    localStorage.setConfigurableSettings(data);
+
+    notifySuccess(t('Phonon Manager settings saved!'));
   };
 
   return (
@@ -66,7 +75,10 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
         )}
       </div>
 
-      <form>
+      <form
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <div className="grid grid-cols-1 gap-y-6">
           <Divider />
           <FormControl>
@@ -74,12 +86,32 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
             <div className="w-48">
               <Select
                 className="border rounded flex"
-                placeholder="Select order"
                 {...register('defaultPhononSortBy')}
               >
-                <option value="ChainId">{t('Network Chain')}</option>
-                <option value="Denomination">{t('Denomination')}</option>
-                <option value="CurrencyType">{t('Currency Type')}</option>
+                <option
+                  value="Key"
+                  selected={getValues('defaultPhononSortBy') === 'Key'}
+                >
+                  {t('Key')}
+                </option>
+                <option
+                  value="ChainId"
+                  selected={getValues('defaultPhononSortBy') === 'ChainId'}
+                >
+                  {t('Network Chain')}
+                </option>
+                <option
+                  value="Denomination"
+                  selected={getValues('defaultPhononSortBy') === 'Denomination'}
+                >
+                  {t('Denomination')}
+                </option>
+                <option
+                  value="CurrencyType"
+                  selected={getValues('defaultPhononSortBy') === 'CurrencyType'}
+                >
+                  {t('Currency Type')}
+                </option>
               </Select>
             </div>
             <FormHelperText>
@@ -97,8 +129,7 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
                   aria-label={t('List View')}
                   icon={<IonIcon icon={reorderFour} />}
                   onClick={() => {
-                    setValue('defaultPhononLayout', 'list');
-                    setDefaultPhononLayout('list');
+                    setPhononLayout('list');
                   }}
                 />
                 <IconButton
@@ -107,8 +138,7 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
                   aria-label={t('Grid View')}
                   icon={<IonIcon icon={apps} />}
                   onClick={() => {
-                    setValue('defaultPhononLayout', 'grid');
-                    setDefaultPhononLayout('grid');
+                    setPhononLayout('grid');
                   }}
                 />
               </ButtonGroup>
@@ -124,6 +154,7 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
               <Switch
                 colorScheme="green"
                 size="lg"
+                defaultChecked={getValues('autoValidateIncomingPhononRequests')}
                 {...register('autoValidateIncomingPhononRequests')}
               />
             </Stack>
@@ -134,71 +165,75 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
             </FormHelperText>
           </FormControl>
           <Divider />
-          <FormControl>
-            <FormLabel>{t('Default Mining Difficulty')}</FormLabel>
-            <div className="w-96">
-              <Box pt={12} pb={4}>
-                <Slider
-                  {...register('defaultMiningDifficulty')}
-                  aria-label="mining-difficulty"
-                  defaultValue={defaultDifficulty}
-                  min={1}
-                  max={maxDifficulty}
-                  value={sliderValue}
-                  onChange={(val) => {
-                    setDifficultyValue(val);
-                  }}
-                >
-                  <SliderMark
-                    value={Math.ceil(maxDifficulty * 0.25)}
-                    {...labelStyles}
-                  >
-                    {Math.ceil(maxDifficulty * 0.25)}
-                  </SliderMark>
-                  <SliderMark
-                    value={Math.ceil(maxDifficulty * 0.5)}
-                    {...labelStyles}
-                  >
-                    {Math.ceil(maxDifficulty * 0.5)}
-                  </SliderMark>
-                  <SliderMark
-                    value={Math.ceil(maxDifficulty * 0.75)}
-                    {...labelStyles}
-                  >
-                    {Math.ceil(maxDifficulty * 0.75)}
-                  </SliderMark>
-                  <SliderMark
-                    value={sliderValue}
-                    textAlign="center"
-                    bg="blue.500"
-                    color="white"
-                    mt="-14"
-                    ml="-5"
-                    w="10"
-                    fontSize="2xl"
-                    className="rounded"
-                  >
-                    {sliderValue}
-                  </SliderMark>
-                  <SliderTrack>
-                    <SliderFilledTrack />
-                  </SliderTrack>
-                  <SliderThumb
-                    boxSize={6}
-                    textColor="blue.500"
-                    _hover={{ bg: 'blue.500', textColor: 'white' }}
-                    _active={{ bg: 'blue.500', textColor: 'white' }}
-                  >
-                    <IonIcon icon={menu} />
-                  </SliderThumb>
-                </Slider>
-              </Box>
-            </div>
-            <FormHelperText>
-              {t('Set the default mining difficulty.')}
-            </FormHelperText>
-          </FormControl>
-          <Divider />
+          {CAN_MINE_PHONONS && (
+            <>
+              <FormControl>
+                <FormLabel>{t('Default Mining Difficulty')}</FormLabel>
+                <div className="w-96">
+                  <Box pt={12} pb={4}>
+                    <Slider
+                      {...register('defaultMiningDifficulty')}
+                      aria-label={t('mining difficulty')}
+                      defaultValue={getValues('defaultMiningDifficulty')}
+                      min={1}
+                      max={maxMiningDifficulty}
+                      value={defaultMiningDifficulty}
+                      onChange={(val) => {
+                        setDifficultyValue(val);
+                      }}
+                    >
+                      <SliderMark
+                        value={Math.ceil(maxMiningDifficulty * 0.25)}
+                        {...labelStyles}
+                      >
+                        {Math.ceil(maxMiningDifficulty * 0.25)}
+                      </SliderMark>
+                      <SliderMark
+                        value={Math.ceil(maxMiningDifficulty * 0.5)}
+                        {...labelStyles}
+                      >
+                        {Math.ceil(maxMiningDifficulty * 0.5)}
+                      </SliderMark>
+                      <SliderMark
+                        value={Math.ceil(maxMiningDifficulty * 0.75)}
+                        {...labelStyles}
+                      >
+                        {Math.ceil(maxMiningDifficulty * 0.75)}
+                      </SliderMark>
+                      <SliderMark
+                        value={defaultMiningDifficulty}
+                        textAlign="center"
+                        bg="blue.500"
+                        color="white"
+                        mt="-14"
+                        ml="-5"
+                        w="10"
+                        fontSize="2xl"
+                        className="rounded"
+                      >
+                        {defaultMiningDifficulty}
+                      </SliderMark>
+                      <SliderTrack>
+                        <SliderFilledTrack />
+                      </SliderTrack>
+                      <SliderThumb
+                        boxSize={6}
+                        textColor="blue.500"
+                        _hover={{ bg: 'blue.500', textColor: 'white' }}
+                        _active={{ bg: 'blue.500', textColor: 'white' }}
+                      >
+                        <IonIcon icon={menu} />
+                      </SliderThumb>
+                    </Slider>
+                  </Box>
+                </div>
+                <FormHelperText>
+                  {t('Set the default mining difficulty.')}
+                </FormHelperText>
+              </FormControl>
+              <Divider />
+            </>
+          )}
           <Button colorScheme="green" type="submit">
             {t('Save Settings')}
           </Button>

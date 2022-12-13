@@ -69,7 +69,11 @@ export const ModalUnlockCard: React.FC<{
       addCardsToState([card]);
 
       onClose();
-      notifySuccess(t('Card "' + String(card.CardId) + '" is unlocked!'));
+      notifySuccess(
+        t('Card "{{cardId}}" is unlocked!', {
+          cardId: card.CardId,
+        })
+      );
     }
   };
 
@@ -89,7 +93,7 @@ export const ModalUnlockCard: React.FC<{
       >
         <ModalHeader>
           <div className="font-noto-sans-mono">
-            <div className="text-sm">Unlocking</div>
+            <div className="text-sm">{t('Unlocking')}</div>
             <div className="text-2xl">
               {card.VanityName ? card.VanityName : card.CardId}
             </div>
@@ -109,8 +113,11 @@ export const ModalUnlockCard: React.FC<{
             <Controller
               control={control}
               {...register('cardPin', {
-                required: 'Card PIN Required',
-                minLength: { value: pinLength, message: 'Card PIN too short' },
+                required: t('Card PIN Required'),
+                minLength: {
+                  value: pinLength,
+                  message: t('Card PIN too short'),
+                },
               })}
               render={({ field: { ...restField } }) => (
                 <HStack>
@@ -142,8 +149,13 @@ export const ModalUnlockCard: React.FC<{
               >
                 {t('Cancel')}
               </Button>
-              <Button size="sm" colorScheme="green" type="submit">
-                {t('UNLOCK')}
+              <Button
+                size="sm"
+                className="uppercase"
+                colorScheme="green"
+                type="submit"
+              >
+                {t('unlock')}
               </Button>
             </ButtonGroup>
           </ModalFooter>

@@ -52,7 +52,7 @@ export const ModalCreatePhonon: React.FC<{ card; isOpen; onClose }> = ({
       <ModalContent>
         <ModalHeader>
           <div className="font-noto-sans-mono">
-            <div className="text-sm">Create Phonon for</div>
+            <div className="text-sm">{t('Create Phonon for')}</div>
             <div className="text-2xl">
               {card.VanityName ? card.VanityName : card.CardId}
             </div>
@@ -77,7 +77,7 @@ export const ModalCreatePhonon: React.FC<{ card; isOpen; onClose }> = ({
                   maxLength={20}
                   placeholder="0x..."
                   {...register('tokenAddress', {
-                    required: 'Token Address is required.',
+                    required: t('Token Address is required.'),
                   })}
                 />
                 {errors.tokenAddress && (
@@ -100,7 +100,7 @@ export const ModalCreatePhonon: React.FC<{ card; isOpen; onClose }> = ({
                   maxLength={20}
                   placeholder="0.00"
                   {...register('denomination', {
-                    required: 'Denomination is required.',
+                    required: t('Denomination is required.'),
                   })}
                 />
                 {errors.denomination && (

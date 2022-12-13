@@ -81,3 +81,13 @@ export interface PhononTransferProposal {
     | 'transferred';
   Phonons: Array<Phonon>;
 }
+
+/**
+ * GlobalSettings interface
+ */
+export interface GlobalSettings {
+  defaultMiningDifficulty: number;
+  autoValidateIncomingPhononRequests: boolean;
+  defaultPhononSortBy: string;
+  defaultPhononLayout: string;
+}

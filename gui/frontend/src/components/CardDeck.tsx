@@ -4,14 +4,19 @@ import { CardTray } from './CardTray';
 import { Phonon } from './Phonon';
 import { IonIcon } from '@ionic/react';
 import { reorderFour, apps, bulb } from 'ionicons/icons';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
-import { Phonon as iPhonon, PhononCard } from '../interfaces/interfaces';
+import {
+  GlobalSettings,
+  Phonon as iPhonon,
+  PhononCard,
+} from '../interfaces/interfaces';
 import { MinePhonon } from './PhononCardActions/MinePhonon';
 import { CreatePhonon } from './PhononCardActions/CreatePhonon';
 import { RemoteCardPhononMessage } from './RemoteCardPhononMessage';
 import { PhononTransferProposal } from './PhononTransferProposal';
 import { IncomingTransferNotice } from './IncomingTransferNotice';
+import localStorage from '../utils/localStorage';
 
 export const CardDeck: React.FC<{
   card: PhononCard;
@@ -21,12 +26,17 @@ export const CardDeck: React.FC<{
   const [layoutType, setLayoutType] = useState<string>('list');
   const { phononCards, addCardsToState, addPhononsToCardTransferState } =
     useContext(CardManagementContext);
+  const defaultSettings: GlobalSettings =
+    localStorage.getConfigurableSettings();
 
   // let's poll for updates on this card
-  if (false) {
+  if (true) {
     const simulateIncomingRequest = setInterval(() => {
       // let's fake an incoming proposal
-      if (phononCards.length > 1 && card?.CardId === '04e0d5eb884a73cf') {
+      if (
+        phononCards.filter((card: PhononCard) => card.InTray).length > 1 &&
+        card?.CardId === '04e0d5eb884a73cf'
+      ) {
         const aPhonon = {
           Address: '0x7Ab7050217C76d729fa542161ca59Cb28484e0fa',
           ChainID: 43114,
@@ -57,15 +67,25 @@ export const CardDeck: React.FC<{
   }
 
   const sortPhononsBy = (key: string) => {
-    if (key === 'ChainId') {
-      card.Phonons.sort((a, b) => a.ChainID - b.ChainID);
-    } else if (key === 'Denomination') {
-      card.Phonons.sort((a, b) => a.Denomination.localeCompare(b.Denomination));
-    } else if (key === 'CurrencyType') {
-      card.Phonons.sort((a, b) => a.CurrencyType - b.CurrencyType);
+    if (card?.Phonons) {
+      if (key === 'ChainId') {
+        card.Phonons.sort((a, b) => a.ChainID - b.ChainID);
+      } else if (key === 'Denomination') {
+        card.Phonons.sort((a, b) =>
+          a.Denomination.localeCompare(b.Denomination)
+        );
+      } else if (key === 'CurrencyType') {
+        card.Phonons.sort((a, b) => a.CurrencyType - b.CurrencyType);
+      }
+      addCardsToState([card]);
     }
-    addCardsToState([card]);
   };
+
+  useEffect(() => {
+    sortPhononsBy(defaultSettings.defaultPhononSortBy);
+
+    setLayoutType(defaultSettings.defaultPhononLayout);
+  }, []);
 
   // only show card if not a mock card or if mock cards are enabled
   return (
@@ -94,14 +114,40 @@ export const CardDeck: React.FC<{
                     {t('Sort by')}:
                   </div>
                   <Select
-                    placeholder="Select order"
                     onChange={(evt) => {
                       sortPhononsBy(evt.target.value);
                     }}
                   >
-                    <option value="ChainId">{t('Network Chain')}</option>
-                    <option value="Denomination">{t('Denomination')}</option>
-                    <option value="CurrencyType">{t('Currency Type')}</option>
+                    <option
+                      value="Key"
+                      selected={defaultSettings.defaultPhononSortBy === 'Key'}
+                    >
+                      {t('Key')}
+                    </option>
+                    <option
+                      value="ChainId"
+                      selected={
+                        defaultSettings.defaultPhononSortBy === 'ChainId'
+                      }
+                    >
+                      {t('Network Chain')}
+                    </option>
+                    <option
+                      value="Denomination"
+                      selected={
+                        defaultSettings.defaultPhononSortBy === 'Denomination'
+                      }
+                    >
+                      {t('Denomination')}
+                    </option>
+                    <option
+                      value="CurrencyType"
+                      selected={
+                        defaultSettings.defaultPhononSortBy === 'CurrencyType'
+                      }
+                    >
+                      {t('Currency Type')}
+                    </option>
                   </Select>
                 </div>
                 <div className="rounded flex">

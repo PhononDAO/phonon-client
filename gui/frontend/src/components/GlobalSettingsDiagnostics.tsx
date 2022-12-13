@@ -57,7 +57,7 @@ const DeviceDetails: React.FC = () => {
       <h2 className="text-2xl mb-2 flex items-center gap-x-2">
         {t('Device Details')}{' '}
         <Button size="sm" colorScheme="blue" onClick={onCopy}>
-          {hasCopied ? 'Copied!' : 'Copy'}
+          {hasCopied ? t('Copied!') : t('Copy')}
         </Button>
       </h2>
       <div className="h-80 w-full overflow-scroll rounded mb-6">
@@ -90,7 +90,7 @@ const ConsoleHistory: React.FC = () => {
       <h2 className="text-2xl mb-2 flex items-center gap-x-2">
         {t('Console History')}
         <Button size="sm" colorScheme="blue" onClick={onCopy}>
-          {hasCopied ? 'Copied!' : 'Copy'}
+          {hasCopied ? t('Copied!') : t('Copy')}
         </Button>
       </h2>
       <div className="h-80 w-full overflow-scroll rounded">

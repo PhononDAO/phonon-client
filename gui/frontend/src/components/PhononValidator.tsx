@@ -58,7 +58,7 @@ export const PhononValidator: React.FC<{
                 label={t(
                   'Phonon includes a currency type that is unsupported.'
                 )}
-                aria-label="Phonon error message"
+                aria-label={t('Phonon error message')}
                 bg="red.600"
                 fontSize="lg"
               >

@@ -50,7 +50,7 @@ export const ModalIncomingTransferProposal: React.FC<{
       <ModalContent>
         <ModalHeader>
           <span className="text-5xl font-bandeins-sans-light">
-            Incoming Phonons
+            {t('Incoming Phonons')}
           </span>
         </ModalHeader>
         {['unvalidated', 'completed'].includes(

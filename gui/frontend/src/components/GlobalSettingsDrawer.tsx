@@ -29,7 +29,7 @@ export const GlobalSettingsDrawer: React.FC<{
         <DrawerCloseButton />
         <Tabs>
           <DrawerHeader>
-            <TabList>
+            <TabList overflowX="scroll">
               <Tab>{t('Settings')}</Tab>
               <Tab>{t('Activity History')}</Tab>
               <Tab>{t('Diagnostics')}</Tab>

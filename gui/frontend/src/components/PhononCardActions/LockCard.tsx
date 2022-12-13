@@ -15,8 +15,10 @@ export const LockCard: React.FC<{
     useContext(CardManagementContext);
 
   const lockCard = () => {
-    card.IsLocked = true;
     card.InTray = false;
+    card.AttemptUnlock = false;
+    card.FutureAction = null;
+    card.IsLocked = true;
     addCardsToState([card]);
 
     // remove all remote cards

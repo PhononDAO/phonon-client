@@ -12,7 +12,7 @@ export const GlobalSettingsButton: React.FC = () => {
   return (
     <>
       <IconButton
-        aria-label="settings"
+        aria-label={t('settings')}
         colorScheme="whiteAlpha"
         icon={<IonIcon icon={cog} className="w-6 h-6" />}
         onClick={onOpen}

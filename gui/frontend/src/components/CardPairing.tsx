@@ -30,6 +30,7 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
     addCardsToState,
     removeCardsFromState,
     getCardPairingCode,
+    resetPhononsOnCardTransferState,
   } = useContext(CardManagementContext);
   const loadedCards = phononCards.filter((card: PhononCard) => card.InTray);
   const { onCopy, value, hasCopied } = useClipboard(
@@ -61,7 +62,9 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
       .then(() => {
         setCurrentStep('success');
         notifySuccess(
-          t('Successfully paired to remote card: ' + '04e0d5eb884a73c0' + '!')
+          t('Successfully paired to remote card: {{cardId}}!', {
+            cardId: '04e0d5eb884a73c0',
+          })
         );
 
         return new Promise((resolve) => {
@@ -86,6 +89,11 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
     setShowPairingOptions(false);
     setIsPaired(false);
     setCurrentStep('share');
+
+    resetPhononsOnCardTransferState(
+      phononCards.filter((card: PhononCard) => card.InTray)[0],
+      'IncomingTransferProposal'
+    );
 
     removeCardsFromState(
       phononCards.filter((card: PhononCard) => card.IsRemote)

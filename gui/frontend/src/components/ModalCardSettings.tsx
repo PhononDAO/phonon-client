@@ -54,7 +54,9 @@ export const ModalCardSettings: React.FC<{
     addCardsToState([card]);
 
     onClose();
-    notifySuccess(t('Card "' + String(card.CardId) + '" settings saved!'));
+    notifySuccess(
+      t('Card "{{cardId}}" settings saved!', { cardId: card.CardId })
+    );
   };
 
   return (

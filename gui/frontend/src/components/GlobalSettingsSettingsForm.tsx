@@ -15,6 +15,7 @@ import {
   SliderTrack,
   Stack,
   Switch,
+  usePrevious,
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { apps, menu, reorderFour } from 'ionicons/icons';
@@ -26,6 +27,7 @@ import { maxMiningDifficulty } from '../constants/Constants';
 import localStorage from '../utils/localStorage';
 import { notifySuccess } from '../utils/notify';
 import { GlobalSettings } from '../interfaces/interfaces';
+import { DateTime } from 'luxon';
 
 type GlobalSettingsFormData = GlobalSettings;
 
@@ -42,6 +44,12 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
   const [defaultPhononLayout, setDefaultPhononLayout] = useState(
     getValues('defaultPhononLayout')
   );
+  const languageOptions = {
+    'en-US': t('English'),
+    'es-MX': t('Spanish'),
+  };
+
+  const prevLanguage = usePrevious(getValues('defaultLanguage'));
 
   const changeLanguage = async (language) => {
     return await i18n.changeLanguage(language);
@@ -68,10 +76,27 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
 
     localStorage.setConfigurableSettings(data);
 
-    // update the language
-    void changeLanguage(data.defaultLanguage).then(() => {
-      document.title = t('PHONON MANAGER');
-    });
+    // if the language changes, then we update the manager
+    if (prevLanguage !== data.defaultLanguage) {
+      // update the language
+      void changeLanguage(data.defaultLanguage).then(() => {
+        document.title = t('PHONON MANAGER');
+      });
+
+      const activityHistory = localStorage.getActivityHistory();
+
+      activityHistory.push({
+        type: 'seperator',
+        datetime: DateTime.now(),
+        message: 'Language changed from {{prevLanguage}} to {{curLanguage}}',
+        data: {
+          prevLanguage: prevLanguage,
+          curLanguage: data.defaultLanguage,
+        },
+      });
+
+      localStorage.setActivityHistory(activityHistory);
+    }
 
     notifySuccess(t('Phonon Manager settings saved!'));
   };
@@ -98,8 +123,13 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
                 {...register('defaultLanguage')}
                 defaultValue={getValues('defaultLanguage')}
               >
-                <option value="en-US">{t('English')}</option>
-                <option value="es-MX">{t('Spanish')}</option>
+                {Object.entries(languageOptions).map(([key, value]) => {
+                  return (
+                    <option key={key} value={key}>
+                      {value}
+                    </option>
+                  );
+                })}
               </Select>
             </div>
             <FormHelperText>

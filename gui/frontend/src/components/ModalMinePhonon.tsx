@@ -67,10 +67,11 @@ export const ModalMinePhonon: React.FC<{
 
     notifySuccess(
       t(
-        'Starting mining with a difficulty of ' +
-          String(data.difficulty) +
-          ' on the card ' +
-          card.CardId
+        'Starting mining with a difficulty of {{difficulty}} on the card {{cardId}}',
+        {
+          difficulty: data.difficulty,
+          cardId: card.CardId,
+        }
       )
     );
 
@@ -84,10 +85,13 @@ export const ModalMinePhonon: React.FC<{
 
       notifySuccess(
         t(
-          'New Phonon mined with a hash of ' +
-            abbreviateHash('0x7Ab7050217C76d729fa542161ca59Cb28654bf80') +
-            ' on the card ' +
-            card.CardId
+          'New Phonon mined with a hash of {{phononHash}} on the card {{cardId}}',
+          {
+            phononHash: abbreviateHash(
+              '0x7Ab7050217C76d729fa542161ca59Cb28654bf80'
+            ),
+            cardId: card.CardId,
+          }
         )
       );
     });

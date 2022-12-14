@@ -52,15 +52,15 @@ export const ModalPhononDetails: React.FC<{
     onClose();
     notifySuccess(
       t(
-        'Phonon ' +
-          abbreviateHash(phonon.Address) +
-          ' in the amount of ' +
-          fromDecimals(
+        'Phonon {{phononAddress}} in the amount of {{amount}}{{ticker}} was redeemed!',
+        {
+          phononHash: abbreviateHash(phonon.Address),
+          amount: fromDecimals(
             phonon.Denomination,
             CURRENCIES[phonon.CurrencyType].decimals
-          ) +
-          CURRENCIES[phonon.CurrencyType].ticker +
-          ' was redeemed!'
+          ),
+          ticker: CURRENCIES[phonon.CurrencyType].ticker,
+        }
       )
     );
   };

@@ -115,10 +115,10 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
           >
             {t('Cancel')}
           </Button>
-          <div className="flex flex-col gap-y-2 px-2 items-center justify-center text-xl">
+          <div className="flex flex-col gap-y-2 px-1 items-center justify-center text-xl">
             <IonIcon icon={cloudDownload} className="text-white" />
             <div>
-              <span className="block text-center text-white text-base">
+              <span className="block text-center text-white text-sm">
                 {t(
                   "To pair, share this code with the person you'd like to pair with."
                 )}
@@ -165,10 +165,10 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
           >
             {t('Cancel')}
           </Button>
-          <div className="flex flex-col gap-y-2 px-2 items-center justify-center text-xl">
+          <div className="flex flex-col gap-y-2 px-1 items-center justify-center text-xl">
             <IonIcon icon={cloudDownload} className="text-white" />
             <div>
-              <span className="block text-center text-white text-base">
+              <span className="block text-center text-white text-sm">
                 {t(
                   "Input the person's pairing code below to initiate pairing."
                 )}

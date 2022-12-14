@@ -85,6 +85,7 @@ export const CardDeck: React.FC<{
     sortPhononsBy(defaultSettings.defaultPhononSortBy);
 
     setLayoutType(defaultSettings.defaultPhononLayout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // only show card if not a mock card or if mock cards are enabled

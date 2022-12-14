@@ -13,13 +13,19 @@ export const WalletSlot: React.FC<{
 }> = ({ card }) => {
   const { t } = useTranslation();
   const { ENABLE_MOCK_CARDS } = useFeature();
-  const { addCardsToState, isCardsMini } = useContext(CardManagementContext);
+  const { addCardsToState, isCardsMini, removeCardsFromState, phononCards } =
+    useContext(CardManagementContext);
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ['PhononCard'],
     drop: (item: PhononCard, monitor) => {
       monitor.getItem().InTray = false;
       addCardsToState([item]);
+
+      // remove all remote cards
+      removeCardsFromState(
+        phononCards.filter((card: PhononCard) => card.IsRemote)
+      );
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),

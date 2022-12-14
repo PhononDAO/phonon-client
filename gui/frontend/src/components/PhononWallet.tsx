@@ -7,7 +7,6 @@ import { IonIcon } from '@ionic/react';
 import { removeCircle, addCircle } from 'ionicons/icons';
 import { WalletSlot } from './WalletSlot';
 import { CardManagementContext } from '../contexts/CardManagementContext';
-import { Plural } from 'react-i18next/icu.macro';
 import { Pluralize } from 'pluralize-react';
 
 export const PhononWallet = () => {

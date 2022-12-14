@@ -6,6 +6,7 @@ export const maxMiningDifficulty = 30;
 
 // The default configurable settings for Phonon Manager
 export const defaultConfigurableSettings = {
+  defaultLanguage: 'en-US',
   defaultPhononSortBy: 'Key',
   autoValidateIncomingPhononRequests: true,
   defaultMiningDifficulty: 5,

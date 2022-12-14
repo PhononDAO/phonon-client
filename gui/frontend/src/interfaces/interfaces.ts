@@ -86,6 +86,7 @@ export interface PhononTransferProposal {
  * GlobalSettings interface
  */
 export interface GlobalSettings {
+  defaultLanguage: string;
   defaultMiningDifficulty: number;
   autoValidateIncomingPhononRequests: boolean;
   defaultPhononSortBy: string;

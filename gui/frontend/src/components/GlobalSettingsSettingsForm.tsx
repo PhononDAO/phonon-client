@@ -30,7 +30,7 @@ import { GlobalSettings } from '../interfaces/interfaces';
 type GlobalSettingsFormData = GlobalSettings;
 
 export const GlobalSettingsSettingsForm: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { CAN_MINE_PHONONS } = useFeature();
   const { register, handleSubmit, getValues, setValue } =
     useForm<GlobalSettingsFormData>({
@@ -42,6 +42,10 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
   const [defaultPhononLayout, setDefaultPhononLayout] = useState(
     getValues('defaultPhononLayout')
   );
+
+  const changeLanguage = async (language) => {
+    return await i18n.changeLanguage(language);
+  };
 
   const labelStyles = {
     mt: '4',
@@ -64,6 +68,11 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
 
     localStorage.setConfigurableSettings(data);
 
+    // update the language
+    void changeLanguage(data.defaultLanguage).then(() => {
+      document.title = t('PHONON MANAGER');
+    });
+
     notifySuccess(t('Phonon Manager settings saved!'));
   };
 
@@ -79,7 +88,33 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         onSubmit={handleSubmit(onSubmit)}
       >
-        <div className="grid grid-cols-1 gap-y-6">
+        <div className="grid grid-cols-1 gap-y-3 h-144 overflow-scroll">
+          <Divider />
+          <FormControl>
+            <FormLabel>{t('Language')}</FormLabel>
+            <div className="w-48">
+              <Select
+                className="border rounded flex"
+                {...register('defaultLanguage')}
+              >
+                <option
+                  value="en-US"
+                  selected={getValues('defaultLanguage') === 'en-US'}
+                >
+                  {t('English')}
+                </option>
+                <option
+                  value="es-MX"
+                  selected={getValues('defaultLanguage') === 'es-MX'}
+                >
+                  {t('Spanish')}
+                </option>
+              </Select>
+            </div>
+            <FormHelperText>
+              {t('This is the language used with Phonon Manager.')}
+            </FormHelperText>
+          </FormControl>
           <Divider />
           <FormControl>
             <FormLabel>{t('Default Phonon Sort')}</FormLabel>

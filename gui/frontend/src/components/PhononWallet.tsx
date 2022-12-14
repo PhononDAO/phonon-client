@@ -7,6 +7,8 @@ import { IonIcon } from '@ionic/react';
 import { removeCircle, addCircle } from 'ionicons/icons';
 import { WalletSlot } from './WalletSlot';
 import { CardManagementContext } from '../contexts/CardManagementContext';
+import { Plural } from 'react-i18next/icu.macro';
+import { Pluralize } from 'pluralize-react';
 
 export const PhononWallet = () => {
   const { t } = useTranslation();
@@ -115,14 +117,13 @@ export const PhononWallet = () => {
     <div className="">
       <div className="flex gap-x-2 text-xl">
         <span className="text-white">
-          {phononCards.filter((card) => !card.IsRemote).length}{' '}
-          {t(
-            'card' +
-              (phononCards.filter((card) => !card.IsRemote).length === 1
-                ? ''
-                : 's') +
-              ' in your wallet'
-          )}
+          <Pluralize
+            count={phononCards.filter((card) => !card.IsRemote).length}
+            singular={t('card')}
+            plural={t('cards')}
+            className="font-bandeins-sans-bold text-xl"
+          />{' '}
+          {t('in your wallet')}
         </span>
         <Button
           leftIcon={<IonIcon icon={hideCards ? addCircle : removeCircle} />}

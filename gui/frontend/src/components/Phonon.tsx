@@ -86,7 +86,7 @@ export const Phonon: React.FC<{
           (isCustomDragLayer ? ' -rotate-3 w-2/5' : '')
         }
         onClick={
-          (!phonon.ProposedForTransfer || !isProposed) && openPhononModal
+          !phonon.ProposedForTransfer || !isProposed ? openPhononModal : null
         }
       >
         {layoutType === 'grid' && <div className="mt-full"></div>}

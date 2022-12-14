@@ -96,19 +96,10 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
               <Select
                 className="border rounded flex"
                 {...register('defaultLanguage')}
+                defaultValue={getValues('defaultLanguage')}
               >
-                <option
-                  value="en-US"
-                  selected={getValues('defaultLanguage') === 'en-US'}
-                >
-                  {t('English')}
-                </option>
-                <option
-                  value="es-MX"
-                  selected={getValues('defaultLanguage') === 'es-MX'}
-                >
-                  {t('Spanish')}
-                </option>
+                <option value="en-US">{t('English')}</option>
+                <option value="es-MX">{t('Spanish')}</option>
               </Select>
             </div>
             <FormHelperText>
@@ -122,31 +113,12 @@ export const GlobalSettingsSettingsForm: React.FC = () => {
               <Select
                 className="border rounded flex"
                 {...register('defaultPhononSortBy')}
+                defaultValue={getValues('defaultPhononSortBy')}
               >
-                <option
-                  value="Key"
-                  selected={getValues('defaultPhononSortBy') === 'Key'}
-                >
-                  {t('Key')}
-                </option>
-                <option
-                  value="ChainId"
-                  selected={getValues('defaultPhononSortBy') === 'ChainId'}
-                >
-                  {t('Network Chain')}
-                </option>
-                <option
-                  value="Denomination"
-                  selected={getValues('defaultPhononSortBy') === 'Denomination'}
-                >
-                  {t('Denomination')}
-                </option>
-                <option
-                  value="CurrencyType"
-                  selected={getValues('defaultPhononSortBy') === 'CurrencyType'}
-                >
-                  {t('Currency Type')}
-                </option>
+                <option value="Key">{t('Key')}</option>
+                <option value="ChainId">{t('Network Chain')}</option>
+                <option value="Denomination">{t('Denomination')}</option>
+                <option value="CurrencyType">{t('Currency Type')}</option>
               </Select>
             </div>
             <FormHelperText>

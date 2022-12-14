@@ -53,7 +53,7 @@ export const Card: React.FC<{
   // only show card if not a mock card or if mock cards are enabled
   return (
     <div
-      className={card.IsLocked && 'cursor-pointer'}
+      className={card.IsLocked ? 'cursor-pointer' : ''}
       onClick={() => {
         if (card.IsLocked) {
           card.AttemptUnlock = true;

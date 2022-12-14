@@ -117,37 +117,12 @@ export const CardDeck: React.FC<{
                     onChange={(evt) => {
                       sortPhononsBy(evt.target.value);
                     }}
+                    defaultValue={defaultSettings.defaultPhononSortBy}
                   >
-                    <option
-                      value="Key"
-                      selected={defaultSettings.defaultPhononSortBy === 'Key'}
-                    >
-                      {t('Key')}
-                    </option>
-                    <option
-                      value="ChainId"
-                      selected={
-                        defaultSettings.defaultPhononSortBy === 'ChainId'
-                      }
-                    >
-                      {t('Network Chain')}
-                    </option>
-                    <option
-                      value="Denomination"
-                      selected={
-                        defaultSettings.defaultPhononSortBy === 'Denomination'
-                      }
-                    >
-                      {t('Denomination')}
-                    </option>
-                    <option
-                      value="CurrencyType"
-                      selected={
-                        defaultSettings.defaultPhononSortBy === 'CurrencyType'
-                      }
-                    >
-                      {t('Currency Type')}
-                    </option>
+                    <option value="Key">{t('Key')}</option>
+                    <option value="ChainId">{t('Network Chain')}</option>
+                    <option value="Denomination">{t('Denomination')}</option>
+                    <option value="CurrencyType">{t('Currency Type')}</option>
                   </Select>
                 </div>
                 <div className="rounded flex">

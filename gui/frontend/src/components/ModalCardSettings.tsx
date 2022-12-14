@@ -100,15 +100,19 @@ export const ModalCardSettings: React.FC<{
                 <FormLabel>{t('Change Card PIN')}</FormLabel>
                 <Controller
                   control={control}
-                  {...register('cardPin', {
+                  name="cardPin"
+                  rules={{
                     minLength: {
                       value: pinLength,
                       message: t('Card PIN too short'),
                     },
-                  })}
+                  }}
                   render={({ field: { ...restField } }) => (
                     <HStack>
-                      <PinInput {...restField}>
+                      <PinInput
+                        onChange={restField.onChange}
+                        value={restField.value}
+                      >
                         {Array(pinLength)
                           .fill(null)
                           .map((val, key) => (

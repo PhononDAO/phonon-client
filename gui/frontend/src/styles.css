@@ -758,6 +758,11 @@ video {
   margin-bottom: 3rem;
 }
 
+.mx-4{
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+
 .mx-auto{
   margin-left: auto;
   margin-right: auto;
@@ -766,11 +771,6 @@ video {
 .my-4{
   margin-top: 1rem;
   margin-bottom: 1rem;
-}
-
-.mx-4{
-  margin-left: 1rem;
-  margin-right: 1rem;
 }
 
 .mt-40{
@@ -1390,6 +1390,10 @@ video {
           column-gap: 0.5rem;
 }
 
+.gap-y-3{
+  row-gap: 0.75rem;
+}
+
 .gap-y-6{
   row-gap: 1.5rem;
 }
@@ -1397,14 +1401,6 @@ video {
 .gap-x-8{
   -webkit-column-gap: 2rem;
           column-gap: 2rem;
-}
-
-.gap-y-4{
-  row-gap: 1rem;
-}
-
-.gap-y-3{
-  row-gap: 0.75rem;
 }
 
 .space-x-1 > :not([hidden]) ~ :not([hidden]){
@@ -1500,16 +1496,16 @@ video {
   border-width: 2px;
 }
 
+.border-t{
+  border-top-width: 1px;
+}
+
 .border-l{
   border-left-width: 1px;
 }
 
 .border-b{
   border-bottom-width: 1px;
-}
-
-.border-t{
-  border-top-width: 1px;
 }
 
 .border-dashed{
@@ -1529,6 +1525,11 @@ video {
 .border-gray-700{
   --tw-border-opacity: 1;
   border-color: rgb(55 65 81 / var(--tw-border-opacity));
+}
+
+.border-gray-300{
+  --tw-border-opacity: 1;
+  border-color: rgb(209 213 219 / var(--tw-border-opacity));
 }
 
 .border-blue-600{
@@ -1554,11 +1555,6 @@ video {
 .border-gray-400{
   --tw-border-opacity: 1;
   border-color: rgb(156 163 175 / var(--tw-border-opacity));
-}
-
-.border-gray-300{
-  --tw-border-opacity: 1;
-  border-color: rgb(209 213 219 / var(--tw-border-opacity));
 }
 
 .bg-black{
@@ -1694,6 +1690,11 @@ video {
   padding: 1px;
 }
 
+.px-1{
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
 .px-2{
   padding-left: 0.5rem;
   padding-right: 0.5rem;
@@ -1752,21 +1753,6 @@ video {
 .py-8{
   padding-top: 2rem;
   padding-bottom: 2rem;
-}
-
-.px-1{
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
-}
-
-.px-px{
-  padding-left: 1px;
-  padding-right: 1px;
-}
-
-.py-5{
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
 }
 
 .pt-24{
@@ -1841,9 +1827,9 @@ video {
   line-height: 1.75rem;
 }
 
-.text-base{
-  font-size: 1rem;
-  line-height: 1.5rem;
+.text-sm{
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 .text-xs{
@@ -1856,9 +1842,9 @@ video {
   line-height: 1;
 }
 
-.text-sm{
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+.text-base{
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 
 .text-4xl{

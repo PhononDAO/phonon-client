@@ -17,10 +17,11 @@ import {
   TabPanels,
   TabPanel,
 } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { CURRENCIES } from '../constants/Currencies';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 import { Phonon } from '../interfaces/interfaces';
 import { abbreviateHash, fromDecimals } from '../utils/formatting';
 import { notifySuccess } from '../utils/notify';
@@ -38,6 +39,11 @@ export const ModalPhononDetails: React.FC<{
 }> = ({ phonon, isOpen, onClose }) => {
   const { t } = useTranslation();
   const [tabIndex, setTabIndex] = useState(0);
+  const { removePhononsFromCardState, getCardById } = useContext(
+    CardManagementContext
+  );
+
+  const sourceCard = getCardById(phonon?.SourceCardId);
 
   const {
     register,
@@ -50,11 +56,14 @@ export const ModalPhononDetails: React.FC<{
     event.preventDefault();
 
     onClose();
+
+    removePhononsFromCardState(sourceCard, [phonon]);
+
     notifySuccess(
       t(
-        'Phonon {{phononAddress}} in the amount of {{amount}}{{ticker}} was redeemed!',
+        'Phonon "{{phononPubKey}}" in the amount of {{amount}}{{ticker}} was redeemed!',
         {
-          phononHash: abbreviateHash(phonon.Address),
+          phononPubKey: abbreviateHash(phonon.PubKey),
           amount: fromDecimals(
             phonon.Denomination,
             CURRENCIES[phonon.CurrencyType].decimals

@@ -67,6 +67,7 @@ export const Phonon: React.FC<{
     );
   };
 
+  // require a double-click to open the phonon modal details
   const openPhononModal = (e) => {
     if (e.detail === 2) {
       onOpen();

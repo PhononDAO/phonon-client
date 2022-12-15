@@ -19,14 +19,19 @@ import {
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { calendarOutline, menu } from 'ionicons/icons';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { GlobalSettings, PhononCard } from '../interfaces/interfaces';
+import {
+  GlobalSettings,
+  PhononCard,
+  Phonon as iPhonon,
+} from '../interfaces/interfaces';
 import { abbreviateHash } from '../utils/formatting';
 import { notifySuccess } from '../utils/notify';
 import { maxMiningDifficulty } from '../constants/Constants';
 import localStorage from '../utils/localStorage';
+import { CardManagementContext } from '../contexts/CardManagementContext';
 
 type MiningFormData = {
   difficulty: number;
@@ -38,6 +43,7 @@ export const ModalMinePhonon: React.FC<{
   onClose;
 }> = ({ card, isOpen, onClose }) => {
   const { t } = useTranslation();
+  const { addPhononsToCardState } = useContext(CardManagementContext);
   const defaultSettings: GlobalSettings =
     localStorage.getConfigurableSettings();
   const [defaultMiningDifficulty, setDefaultMiningDifficulty] = useState(
@@ -83,16 +89,28 @@ export const ModalMinePhonon: React.FC<{
     }).then(() => {
       setCurrentState('result');
 
+      const nPhonon = {
+        PubKey:
+          '04fc53a5e843e76cac55e7ce43d7592fb5002a749832b1f65708e84108e958fe6cfdd459f144ccb7739f947c1f317e9cfaa1c40bd138358e155afffdd626de003ab',
+        Address: '',
+        AddressType: 0,
+        SchemaVersion: 0,
+        ExtendedSchemaVersion: 0,
+        CurveType: 0,
+        ChainID: 0,
+        Denomination: '88320000000000000',
+        CurrencyType: 0,
+        SourceCardId: card.CardId,
+        ValidationStatus: 'unvalidated',
+      } as iPhonon;
+
+      addPhononsToCardState(card, [nPhonon]);
+
       notifySuccess(
-        t(
-          'New Phonon mined with a hash of {{phononHash}} on the card {{cardId}}',
-          {
-            phononHash: abbreviateHash(
-              '0x7Ab7050217C76d729fa542161ca59Cb28654bf80'
-            ),
-            cardId: card.CardId,
-          }
-        )
+        t('Phonon "{{phononPubKey}}" was mined on the card {{cardId}}!', {
+          phononPubKey: abbreviateHash(nPhonon.PubKey),
+          cardId: card.CardId,
+        })
       );
     });
   };
@@ -227,7 +245,7 @@ export const ModalMinePhonon: React.FC<{
                     <h4 className="text-sm text-gray-300 mb-8 text-center">
                       Hash:{' '}
                       {abbreviateHash(
-                        '0x7Ab7050217C76d729fa542161ca59Cb28654bf80'
+                        '04fc53a5e843e76cac55e7ce43d7592fb5002a749832b1f65708e84108e958fe6cfdd459f144ccb7739f947c1f317e9cfaa1c40bd138358e155afffdd626de003ab'
                       )}
                     </h4>
                   </>

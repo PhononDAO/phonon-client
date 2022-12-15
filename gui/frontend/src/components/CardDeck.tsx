@@ -38,16 +38,28 @@ export const CardDeck: React.FC<{
         card?.CardId === '04e0d5eb884a73cf'
       ) {
         const aPhonon = {
-          Address: '0x7Ab7050217C76d729fa542161ca59Cb28484e0fa',
-          ChainID: 43114,
-          Denomination: '5008000000000000000',
-          CurrencyType: 3,
+          PubKey:
+            '04351ed0872482a41bd005d886b7151f40dd691f1efc8b03d9f5f24e9bee95afb01ef84c3d1515b9ed1c48cb86c14290ee0659233899d4387ad73bbff7bac7326d',
+          Address: '',
+          AddressType: 0,
+          SchemaVersion: 0,
+          ExtendedSchemaVersion: 0,
+          CurveType: 0,
+          ChainID: 3,
+          Denomination: '40000000000000000',
+          CurrencyType: 2,
           SourceCardId: '04e0d5eb884a73e9',
           ValidationStatus: 'unvalidated',
         } as iPhonon;
 
         const bPhonon = {
-          Address: '0x7Ab7050217C76d729fa542161ca59Cb28484bf9a',
+          PubKey:
+            '04fc53a5e843e76cac55e7ce43d7592fb9523a749832b1f65708e84108e958fe6cfdd459f144ccb7739f947c1f317e9cfaa1c40bd138358e155afffdd626d0303e',
+          Address: '',
+          AddressType: 0,
+          SchemaVersion: 0,
+          ExtendedSchemaVersion: 0,
+          CurveType: 0,
           ChainID: 137,
           Denomination: '50600000000000000',
           CurrencyType: 2,

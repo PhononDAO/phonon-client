@@ -15,18 +15,24 @@ import {
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { notifySuccess } from '../utils/notify';
+import { Phonon as iPhonon, PhononCard } from '../interfaces/interfaces';
+import { useContext } from 'react';
+import { CardManagementContext } from '../contexts/CardManagementContext';
+import { abbreviateHash, fromDecimals } from '../utils/formatting';
+import { CURRENCIES } from '../constants/Currencies';
 
 type CreatePhononFormData = {
   tokenAddress: string;
   denomination: string;
 };
 
-export const ModalCreatePhonon: React.FC<{ card; isOpen; onClose }> = ({
-  card,
-  isOpen,
-  onClose,
-}) => {
+export const ModalCreatePhonon: React.FC<{
+  card: PhononCard;
+  isOpen;
+  onClose;
+}> = ({ card, isOpen, onClose }) => {
   const { t } = useTranslation();
+  const { addPhononsToCardState } = useContext(CardManagementContext);
   const {
     register,
     handleSubmit,
@@ -40,10 +46,39 @@ export const ModalCreatePhonon: React.FC<{ card; isOpen; onClose }> = ({
 
     console.log(data);
 
+    const nPhonon = {
+      PubKey:
+        '04fc53a5e843e76cac55e7ce43d7592fb5002a749832b1f65708e84108e958fe6cfdd459f144ccb7739f947c1f317e9cfaa1c40bd138358e155afffdd626d43ff9',
+      Address: '',
+      AddressType: 0,
+      SchemaVersion: 0,
+      ExtendedSchemaVersion: 0,
+      CurveType: 0,
+      ChainID: 137,
+      Denomination: '7903000000000000000',
+      CurrencyType: 2,
+      SourceCardId: card.CardId,
+      ValidationStatus: 'unvalidated',
+    } as iPhonon;
+
+    addPhononsToCardState(card, [nPhonon]);
+
     onClose();
     reset();
 
-    notifySuccess(t('Phonon created!'));
+    notifySuccess(
+      t(
+        'Phonon "{{phononPubKey}}" in the amount of {{amount}}{{ticker}} was created!',
+        {
+          phononPubKey: abbreviateHash(nPhonon.PubKey),
+          amount: fromDecimals(
+            nPhonon.Denomination,
+            CURRENCIES[nPhonon.CurrencyType].decimals
+          ),
+          ticker: CURRENCIES[nPhonon.CurrencyType].ticker,
+        }
+      )
+    );
   };
 
   return (

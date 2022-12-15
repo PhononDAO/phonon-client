@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { send } from 'ionicons/icons';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../interfaces/interfaces';
@@ -29,6 +29,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
     resetPhononsOnCardTransferState,
     updateCardTransferStatusState,
   } = useContext(CardManagementContext);
+  const [isTransferred, setIsTransferred] = useState(false);
 
   const sourceCard = getCardById(
     destinationCard?.OutgoingTransferProposal.Phonons[0].SourceCardId
@@ -53,17 +54,19 @@ export const ModalOutgoingTransferProposal: React.FC<{
   const promise = new Promise((resolve) => {
     setTimeout(() => {
       resolve('paired');
-    }, 8000);
+    }, 15 * 1000);
   }).then(() => {
     updateCardTransferStatusState(
       destinationCard,
       'OutgoingTransferProposal',
       'transferred'
     );
+
+    setIsTransferred(true);
   });
 
   useEffect(() => {
-    if (destinationCard.OutgoingTransferProposal.Status === 'transferred') {
+    if (isTransferred) {
       notifySuccess(
         t(
           'Successfully transferred {{phononCount}} phonons from {{sourceCardId}} → {{destinationCardId}}',
@@ -76,7 +79,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
         )
       );
     }
-  }, [destinationCard, sourceCard, t]);
+  }, [isTransferred]);
 
   return (
     <Modal

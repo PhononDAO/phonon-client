@@ -1,6 +1,11 @@
 import { Chain } from '../interfaces/interfaces';
 
 export const CHAINS: { [key: string]: Chain } = {
+  '0': {
+    name: 'nPhonon',
+    textColor: 'text-black',
+    bgColor: 'bg-white',
+  },
   '1': {
     name: 'Mainnet',
     textColor: 'text-indigo-300',
@@ -15,11 +20,6 @@ export const CHAINS: { [key: string]: Chain } = {
     name: 'Kovan',
     textColor: 'text-purple-300',
     bgColor: 'bg-purple-800',
-  },
-  '0': {
-    name: 'Native',
-    textColor: 'text-cyan-300',
-    bgColor: 'bg-cyan-800',
   },
   '4': {
     name: 'Rinkeby',

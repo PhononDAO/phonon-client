@@ -1,5 +1,4 @@
 import {
-  Button,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -9,12 +8,11 @@ import {
   ModalCloseButton,
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
-import { send, shieldCheckmark } from 'ionicons/icons';
-import { useContext, useEffect } from 'react';
+import { send, shieldCheckmark, warning } from 'ionicons/icons';
+import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../interfaces/interfaces';
-import { notifySuccess } from '../utils/notify';
 import { Card } from './Card';
 import { IncomingTransferActions } from './IncomingTransferActions';
 
@@ -39,21 +37,6 @@ export const ModalIncomingTransferProposal: React.FC<{
     );
   };
 
-  useEffect(() => {
-    if (destinationCard.IncomingTransferProposal.Status === 'transferred') {
-      notifySuccess(
-        t(
-          'Successfully transferred ' +
-            String(destinationCard.IncomingTransferProposal?.Phonons.length) +
-            ' phonons from ' +
-            String(destinationCard.CardId) +
-            ' → ' +
-            sourceCard.CardId
-        )
-      );
-    }
-  }, [destinationCard, sourceCard, t]);
-
   return (
     <Modal
       isOpen={isOpen}
@@ -63,11 +46,11 @@ export const ModalIncomingTransferProposal: React.FC<{
         destinationCard.IncomingTransferProposal.Status
       )}
     >
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) " />
       <ModalContent>
         <ModalHeader>
           <span className="text-5xl font-bandeins-sans-light">
-            Incoming Phonons
+            {t('Incoming Phonons')}
           </span>
         </ModalHeader>
         {['unvalidated', 'completed'].includes(
@@ -76,7 +59,7 @@ export const ModalIncomingTransferProposal: React.FC<{
         <ModalBody pb={6}>
           <div className="relative">
             <div className="absolute flex justify-center w-full z-10">
-              <div className="relative grid grid-row-1 content-center text-green-700 w-2/3 h-36">
+              <div className="relative grid grid-row-1 content-center text-green-700 w-2/3 \ h-36">
                 {destinationCard.IncomingTransferProposal.Status ===
                   'transferred' && (
                   <>
@@ -84,7 +67,7 @@ export const ModalIncomingTransferProposal: React.FC<{
                       icon={send}
                       className="mx-auto -rotate-30 text-5xl"
                     />
-                    <div className="mt-4 text-sm text-center">
+                    <div className="mt-4 px-28 text-sm text-center">
                       {t('Phonons Transferred Successfully!')}
                     </div>
                   </>
@@ -106,7 +89,7 @@ export const ModalIncomingTransferProposal: React.FC<{
                         <IonIcon icon={send} className="rotate-180" />
                       </span>
                     </div>
-                    <div className="mt-4 text-sm text-center">
+                    <div className="mt-4 px-28 text-sm text-center">
                       {t('Receiving Phonons...')}
                     </div>
                   </>
@@ -118,7 +101,7 @@ export const ModalIncomingTransferProposal: React.FC<{
                       icon={send}
                       className="mx-auto -rotate-30 text-4xl text-black"
                     />
-                    <div className="mt-4 text-sm text-center text-black">
+                    <div className="mt-4 px-28 text-sm text-center text-black">
                       {t('The remote card is attempting to transfer Phonons.')}
                     </div>
                   </>
@@ -130,7 +113,7 @@ export const ModalIncomingTransferProposal: React.FC<{
                       icon={shieldCheckmark}
                       className="mx-auto text-4xl text-blue-600 animate-ping"
                     />
-                    <div className="mt-4 text-sm text-center text-blue-600">
+                    <div className="mt-4 px-28 text-sm text-center text-blue-600">
                       {t('The remote card is validating Phonons to transfer.')}
                     </div>
                   </>
@@ -142,8 +125,22 @@ export const ModalIncomingTransferProposal: React.FC<{
                       icon={shieldCheckmark}
                       className="mx-auto text-5xl text-green-500"
                     />
-                    <div className="mt-4 text-sm text-center text-green-600">
+                    <div className="mt-4 px-28 text-sm text-center text-green-600">
                       {t('The incoming Phonons have been validated.')}
+                    </div>
+                  </>
+                )}
+                {destinationCard.IncomingTransferProposal.Status ===
+                  'has_errors' && (
+                  <>
+                    <IonIcon
+                      icon={warning}
+                      className="mx-auto text-5xl text-yellow-500"
+                    />
+                    <div className="mt-4 px-28 text-sm text-center text-yellow-600">
+                      {t(
+                        'Error validating phonons. Hover over the validation errors below.'
+                      )}
                     </div>
                   </>
                 )}
@@ -187,7 +184,6 @@ export const ModalIncomingTransferProposal: React.FC<{
                 <PhononValidator
                   key={key}
                   phonon={phonon}
-                  card={sourceCard}
                   isProposed={true}
                   showAction={false}
                   isTransferred={
@@ -203,6 +199,7 @@ export const ModalIncomingTransferProposal: React.FC<{
         <ModalFooter>
           <IncomingTransferActions
             destinationCard={destinationCard}
+            sourceCard={sourceCard}
             closeTransfer={closeTransfer}
           />
         </ModalFooter>

@@ -7,6 +7,7 @@ import { IonIcon } from '@ionic/react';
 import { removeCircle, addCircle } from 'ionicons/icons';
 import { WalletSlot } from './WalletSlot';
 import { CardManagementContext } from '../contexts/CardManagementContext';
+import { Pluralize } from 'pluralize-react';
 
 export const PhononWallet = () => {
   const { t } = useTranslation();
@@ -15,35 +16,63 @@ export const PhononWallet = () => {
   );
 
   const aPhonon = {
-    Address: '0x7Ab7050217C76d729fa542161ca59Cb28654bf80',
+    PubKey:
+      '04351ed0872482a41bd005d886b7151f40dd691f1efc8b03d9f5f24d9bee80afb01ef84c3d1515b9ed1c48cb86c14290ee0659233899d4387ad73bbff7bac7326d',
+    Address: '',
+    AddressType: 0,
+    SchemaVersion: 0,
+    ExtendedSchemaVersion: 0,
+    CurveType: 0,
     ChainID: 3,
     Denomination: '40000000000000000',
     CurrencyType: 2,
     SourceCardId: '04e0d5eb884a73cf',
+    ValidationStatus: 'unvalidated',
   } as Phonon;
 
   const bPhonon = {
-    Address: '0x7Ab7050217C76d729fa542161ca59Cb28484bf8e',
+    PubKey:
+      '04fc53a5e843e76cac55e7ce43d7592fb9523a749832b1f65702783108e858fe6cfdd459f144ccb7739f947c1f317e9cfaa1c40bd138358e155afffdd626d0303e',
+    Address: '',
+    AddressType: 0,
+    SchemaVersion: 0,
+    ExtendedSchemaVersion: 0,
+    CurveType: 0,
     ChainID: 137,
     Denomination: '50600000000000000',
     CurrencyType: 2,
     SourceCardId: '04e0d5eb884a73cf',
+    ValidationStatus: 'unvalidated',
   } as Phonon;
 
   const cPhonon = {
-    Address: '0x7Ab7050217C76d729fa542161ca59Cb28484ee04',
+    PubKey:
+      '0406fae3f294d33c5b67c6d66199e9eb6b4c735efbb7a1e1677dfd681165be3fa533a38a0e301f9f0022ff6cc2620075d3e3e751f5f969caf7cf90d8f3484ff072',
+    Address: '',
+    AddressType: 0,
+    SchemaVersion: 0,
+    ExtendedSchemaVersion: 0,
+    CurveType: 0,
     ChainID: 43114,
     Denomination: '3100000000000000000',
     CurrencyType: 3,
     SourceCardId: '04e0d5eb884a73cf',
+    ValidationStatus: 'unvalidated',
   } as Phonon;
 
   const dPhonon = {
-    Address: '0x7Ab7050217C76d729fa542161ca59Cb28484e0fa',
+    PubKey:
+      '046d623e328c1b2e618f9131767dc92f33651e71538cccc7f0c8efe879cc292e663d2bf566fe99c1065406e158c83b710eadc733a802a54053242097a637916862',
+    Address: '',
+    AddressType: 0,
+    SchemaVersion: 0,
+    ExtendedSchemaVersion: 0,
+    CurveType: 0,
     ChainID: 43114,
     Denomination: '5008000000000000000',
     CurrencyType: 3,
     SourceCardId: '04e0d5eb884a73ce',
+    ValidationStatus: 'unvalidated',
   } as Phonon;
 
   const aCard = {
@@ -87,14 +116,13 @@ export const PhononWallet = () => {
     <div className="">
       <div className="flex gap-x-2 text-xl">
         <span className="text-white">
-          {phononCards.filter((card) => !card.IsRemote).length}{' '}
-          {t(
-            'card' +
-              (phononCards.filter((card) => !card.IsRemote).length === 1
-                ? ''
-                : 's') +
-              ' in your wallet'
-          )}
+          <Pluralize
+            count={phononCards.filter((card) => !card.IsRemote).length}
+            singular={t('card')}
+            plural={t('cards')}
+            className="font-bandeins-sans-bold text-xl"
+          />{' '}
+          {t('in your wallet')}
         </span>
         <Button
           leftIcon={<IonIcon icon={hideCards ? addCircle : removeCircle} />}

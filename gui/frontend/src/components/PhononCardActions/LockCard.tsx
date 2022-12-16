@@ -11,12 +11,20 @@ export const LockCard: React.FC<{
   card: PhononCard;
 }> = ({ card }) => {
   const { t } = useTranslation();
-  const { addCardsToState, isCardsMini } = useContext(CardManagementContext);
+  const { phononCards, addCardsToState, removeCardsFromState, isCardsMini } =
+    useContext(CardManagementContext);
 
   const lockCard = () => {
-    card.IsLocked = true;
     card.InTray = false;
+    card.AttemptUnlock = false;
+    card.FutureAction = null;
+    card.IsLocked = true;
     addCardsToState([card]);
+
+    // remove all remote cards
+    removeCardsFromState(
+      phononCards.filter((card: PhononCard) => card.IsRemote)
+    );
   };
 
   return isCardsMini && !card.InTray ? (

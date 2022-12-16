@@ -2,7 +2,7 @@ export default {
   contextSeparator: '_',
   // Key separator used in your translation keys
 
-  createOldCatalogs: true,
+  createOldCatalogs: false,
   // Save the \_old files
 
   defaultNamespace: 'translation',
@@ -42,7 +42,7 @@ export default {
   lineEnding: 'auto',
   // Control the line ending. See options at https://github.com/ryanve/eol
 
-  locales: ['en', 'en-US', 'fr-FR'],
+  locales: ['en', 'en-US', 'es-MX'],
   // An array of the locales in your applications
 
   namespaceSeparator: false,
@@ -69,7 +69,7 @@ export default {
   // Whether to ignore default values
   // You may also specify a function accepting the locale and namespace as arguments
 
-  useKeysAsDefaultValue: false,
+  useKeysAsDefaultValue: true,
   // Whether to use the keys as the default value; ex. "Hello": "Hello", "World": "World"
   // This option takes precedence over the `defaultValue` and `skipDefaultValues` options
   // You may also specify a function accepting the locale and namespace as arguments

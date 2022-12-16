@@ -13,11 +13,11 @@ export const UnlockCard: React.FC<{
   return (
     <>
       <button
+        className="w-full z-50 text-amber-400 hover:text-amber-300 text-center"
         onClick={() => {
           card.AttemptUnlock = true;
           addCardsToState([card]);
         }}
-        className="w-full z-50 text-amber-400 hover:text-amber-300 text-center"
       >
         <IonIcon
           className={

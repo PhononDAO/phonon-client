@@ -9,6 +9,9 @@ module.exports = {
       margin: {
         full: '96%',
       },
+      height: {
+        144: '48rem',
+      },
       boxShadow: {
         top: '0 0px 8px',
       },

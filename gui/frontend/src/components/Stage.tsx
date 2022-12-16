@@ -3,6 +3,8 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { CardManagementContextProvider } from '../contexts/CardManagementContext';
 import { DeckManager } from './DeckManager';
+import { CardDragLayer } from './CardDragLayer';
+import { PhononDragLayer } from './PhononDragLayer';
 
 export const Stage = () => {
   return (
@@ -11,6 +13,8 @@ export const Stage = () => {
         <DndProvider backend={HTML5Backend}>
           <PhononWallet />
           <DeckManager />
+          <CardDragLayer />
+          <PhononDragLayer />
         </DndProvider>
       </CardManagementContextProvider>
     </main>

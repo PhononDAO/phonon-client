@@ -18,6 +18,11 @@ export const abbreviateHash = (hash: string) =>
     ? `${hash.slice(0, 10)}...${hash.slice(hash.length - 8, hash.length)}`
     : hash ?? '';
 
+/**
+ * `fromDecimals` takes a denomination and decimal count and returns the denomination from decimals.
+ * @param {string} denomination - the denomination amount
+ * @param {number} decimals - the decimals
+ */
 export const fromDecimals = (denomination: string, decimals: number) => {
   const amount = new BigNumber(denomination);
 

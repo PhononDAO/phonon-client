@@ -37,13 +37,13 @@ export const CardBack: React.FC<{
       {card.IsMock && (
         <div
           className={
-            'absolute rotate-30 font-bandeins-sans-bold text-center text-white bg-red-600 py-px ' +
+            'absolute uppercase rotate-30 font-bandeins-sans-bold text-center text-white bg-red-600 py-px ' +
             (showCardsMini && !card.InTray
               ? 'w-48 top-5 -right-12 text-sm'
               : 'w-60 top-5 -right-16 text-md')
           }
         >
-          {t('MOCK CARD')}
+          {t('mock card')}
         </div>
       )}
 
@@ -58,8 +58,8 @@ export const CardBack: React.FC<{
             {t('Contains ')}
             <Pluralize
               count={card.Phonons.length}
-              singular="phonon"
-              zero="no phonons"
+              singular={t('phonon')}
+              zero={t('no phonons')}
             />
             .
           </div>

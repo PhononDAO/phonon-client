@@ -40,7 +40,7 @@ export const CardTray: React.FC<{
   return card?.InTray && !card?.IsRemote ? (
     <>
       <div className="w-80 h-52">
-        <Card card={card} />
+        <Card card={card} forceLarge={true} />
       </div>
     </>
   ) : (
@@ -57,11 +57,11 @@ export const CardTray: React.FC<{
               : 'border-dashed border-white bg-phonon-card-gray bg-cover bg-no-repeat')
           }
         >
-          <div className="text-white ">Drop a card here</div>
+          <div className="text-white ">{t('Drop a card here')}</div>
           {canHaveRemote && (
             <>
               <div>
-                <span className="block text-center text-white ">OR</span>
+                <span className="block text-center text-white ">{t('OR')}</span>
               </div>
               <Button
                 leftIcon={<IonIcon icon={cloudDownload} />}

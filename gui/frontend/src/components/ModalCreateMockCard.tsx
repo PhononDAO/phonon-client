@@ -39,7 +39,7 @@ export const ModalCreateMockCard: React.FC<{
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
       <ModalContent>
         <ModalHeader>{t('Create Mock Card')}</ModalHeader>
         <ModalCloseButton />
@@ -49,12 +49,14 @@ export const ModalCreateMockCard: React.FC<{
           </div>
           <UnorderedList>
             <ListItem>
-              Mock cards are deleted, including all phonons, when this app is
-              closed.
+              {t(
+                'Mock cards are deleted, including all phonons, when this app is closed.'
+              )}
             </ListItem>
             <ListItem>
-              Mock cards have a different certificate than alpha and testnet
-              phonon cards and therefore cannot communicate with them.
+              {t(
+                'Mock cards have a different certificate than alpha and testnet phonon cards and therefore cannot communicate with them.'
+              )}
             </ListItem>
           </UnorderedList>
         </ModalBody>

@@ -17,7 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { notifySuccess } from '../utils/notify';
-import { useState, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 
 type PINFormData = {
@@ -36,7 +36,6 @@ export const ModalUnlockCard: React.FC<{
 
   const {
     control,
-    register,
     handleSubmit,
     setError,
     setValue,
@@ -67,15 +66,20 @@ export const ModalUnlockCard: React.FC<{
       card.AttemptUnlock = false;
 
       addCardsToState([card]);
+      setValue('cardPin', '');
 
       onClose();
-      notifySuccess(t('Card "' + String(card.CardId) + '" is unlocked!'));
+      notifySuccess(
+        t('Card "{{cardId}}" is unlocked!', {
+          cardId: card.CardId,
+        })
+      );
     }
   };
 
   return (
     <Modal
-      size={'sm'}
+      size="sm"
       isOpen={isOpen}
       onClose={() => {
         onClose();
@@ -83,13 +87,13 @@ export const ModalUnlockCard: React.FC<{
         addCardsToState([card]);
       }}
     >
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) " />
       <ModalContent
         className={'overflow-hidden ' + (isError ? 'animate-errorShake' : '')}
       >
         <ModalHeader>
           <div className="font-noto-sans-mono">
-            <div className="text-sm">Unlocking</div>
+            <div className="text-sm">{t('Unlocking')}</div>
             <div className="text-2xl">
               {card.VanityName ? card.VanityName : card.CardId}
             </div>
@@ -108,13 +112,22 @@ export const ModalUnlockCard: React.FC<{
 
             <Controller
               control={control}
-              {...register('cardPin', {
-                required: 'Card PIN Required',
-                minLength: { value: pinLength, message: 'Card PIN too short' },
-              })}
+              name="cardPin"
+              rules={{
+                required: t('Card PIN Required'),
+                minLength: {
+                  value: pinLength,
+                  message: t('Card PIN too short'),
+                },
+              }}
               render={({ field: { ...restField } }) => (
                 <HStack>
-                  <PinInput {...restField} mask>
+                  <PinInput
+                    onChange={restField.onChange}
+                    value={restField.value}
+                    mask
+                    autoFocus
+                  >
                     {Array(pinLength)
                       .fill(null)
                       .map((val, key) => (
@@ -124,6 +137,7 @@ export const ModalUnlockCard: React.FC<{
                 </HStack>
               )}
             />
+
             {errors.cardPin && (
               <span className="text-red-600">{errors.cardPin.message}</span>
             )}
@@ -142,8 +156,13 @@ export const ModalUnlockCard: React.FC<{
               >
                 {t('Cancel')}
               </Button>
-              <Button size="sm" colorScheme="green" type="submit">
-                {t('UNLOCK')}
+              <Button
+                size="sm"
+                className="uppercase"
+                colorScheme="green"
+                type="submit"
+              >
+                {t('unlock')}
               </Button>
             </ButtonGroup>
           </ModalFooter>

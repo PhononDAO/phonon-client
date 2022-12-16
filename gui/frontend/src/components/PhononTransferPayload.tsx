@@ -3,15 +3,15 @@ import { PhononCard } from '../interfaces/interfaces';
 import { Phonon } from './Phonon';
 
 export const PhononTransferPayload: React.FC<{
-  card: PhononCard;
-}> = ({ card }) => {
+  destinationCard: PhononCard;
+}> = ({ destinationCard }) => {
   return (
     <div className={'overflow-scroll gap-2 grid w-full'}>
-      {card.OutgoingTransferProposal?.Phonons?.map((phonon, key) => (
+      {destinationCard.OutgoingTransferProposal?.Phonons?.map((phonon, key) => (
         <Phonon
           key={key}
           phonon={phonon}
-          card={card}
+          destinationCard={destinationCard}
           isProposed={true}
           showAction={true}
         />

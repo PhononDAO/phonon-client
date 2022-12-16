@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
 import { send } from 'ionicons/icons';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { PhononCard } from '../interfaces/interfaces';
@@ -29,6 +29,7 @@ export const ModalOutgoingTransferProposal: React.FC<{
     resetPhononsOnCardTransferState,
     updateCardTransferStatusState,
   } = useContext(CardManagementContext);
+  const [isTransferred, setIsTransferred] = useState(false);
 
   const sourceCard = getCardById(
     destinationCard?.OutgoingTransferProposal.Phonons[0].SourceCardId
@@ -53,29 +54,32 @@ export const ModalOutgoingTransferProposal: React.FC<{
   const promise = new Promise((resolve) => {
     setTimeout(() => {
       resolve('paired');
-    }, 8000);
+    }, 15 * 1000);
   }).then(() => {
     updateCardTransferStatusState(
       destinationCard,
       'OutgoingTransferProposal',
       'transferred'
     );
+
+    setIsTransferred(true);
   });
 
   useEffect(() => {
-    if (destinationCard.OutgoingTransferProposal.Status === 'transferred') {
+    if (isTransferred) {
       notifySuccess(
         t(
-          'Successfully transferred ' +
-            String(destinationCard.OutgoingTransferProposal.Phonons.length) +
-            ' phonons from ' +
-            String(sourceCard.CardId) +
-            ' → ' +
-            destinationCard.CardId
+          'Successfully transferred {{phononCount}} phonons from {{sourceCardId}} → {{destinationCardId}}',
+          {
+            phononCount:
+              destinationCard.OutgoingTransferProposal.Phonons.length,
+            sourceCardId: sourceCard.CardId,
+            destinationCardId: destinationCard.CardId,
+          }
         )
       );
     }
-  }, [destinationCard, sourceCard, t]);
+  }, [isTransferred]);
 
   return (
     <Modal
@@ -86,11 +90,11 @@ export const ModalOutgoingTransferProposal: React.FC<{
         destinationCard.OutgoingTransferProposal.Status === 'transferred'
       }
     >
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) " />
       <ModalContent>
         <ModalHeader>
           <span className="text-5xl font-bandeins-sans-light">
-            Outgoing Phonons
+            {t('Outgoing Phonons')}
           </span>
         </ModalHeader>
         {destinationCard.OutgoingTransferProposal.Status === 'transferred' && (
@@ -163,7 +167,6 @@ export const ModalOutgoingTransferProposal: React.FC<{
                 <Phonon
                   key={key}
                   phonon={phonon}
-                  card={destinationCard}
                   isProposed={true}
                   showAction={false}
                 />

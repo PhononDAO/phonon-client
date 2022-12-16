@@ -1,5 +1,7 @@
 import toast from 'react-hot-toast';
 import { capitalize } from './formatting';
+import localStorage from '../utils/localStorage';
+import { DateTime } from 'luxon';
 
 /**
  * Generates a success notification
@@ -7,6 +9,16 @@ import { capitalize } from './formatting';
  */
 export const notifySuccess = (text: string) => {
   toast.success(text);
+
+  const activityHistory = localStorage.getActivityHistory();
+
+  activityHistory.push({
+    type: 'success',
+    datetime: DateTime.now(),
+    message: text,
+  });
+
+  localStorage.setActivityHistory(activityHistory);
 };
 
 /**
@@ -15,6 +27,16 @@ export const notifySuccess = (text: string) => {
  */
 export const notifyError = (text: string) => {
   toast.error(text);
+
+  const activityHistory = localStorage.getActivityHistory();
+
+  activityHistory.push({
+    type: 'error',
+    datetime: DateTime.now(),
+    message: text,
+  });
+
+  localStorage.setActivityHistory(activityHistory);
 };
 
 /**

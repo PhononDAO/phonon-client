@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { useDrag } from 'react-dnd';
 import { useDisclosure } from '@chakra-ui/react';
 import { CardManagementContext } from '../contexts/CardManagementContext';
@@ -8,6 +8,7 @@ import { CardBack } from './PhononCardStates/CardBack';
 import { CardFront } from './PhononCardStates/CardFront';
 import { CardRemote } from './PhononCardStates/CardRemote';
 import { CardShadow } from './CardShadow';
+import { getEmptyImage } from 'react-dnd-html5-backend';
 
 interface DropResult {
   name: string;
@@ -17,12 +18,20 @@ interface DropResult {
 export const Card: React.FC<{
   card: PhononCard;
   isMini?: boolean;
+  forceLarge?: boolean;
   showActions?: boolean;
-}> = ({ card, isMini = false, showActions = true }) => {
+  isCustomDragLayer?: boolean;
+}> = ({
+  card,
+  isMini = false,
+  forceLarge = false,
+  showActions = true,
+  isCustomDragLayer = false,
+}) => {
   const { onClose } = useDisclosure();
   const { isCardsMini } = useContext(CardManagementContext);
 
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: 'PhononCard',
     name: card.CardId,
     item: card,
@@ -37,9 +46,13 @@ export const Card: React.FC<{
     }),
   }));
 
+  useEffect(() => {
+    preview(getEmptyImage(), { captureDraggingState: true });
+  }, [preview]);
+
   // only show card if not a mock card or if mock cards are enabled
   return (
-    <>
+    <div>
       <div
         ref={drag}
         className={
@@ -48,11 +61,12 @@ export const Card: React.FC<{
             ? 'w-56 h-36 '
             : 'w-80 h-52') +
           (card.IsLocked ? ' flip-card-locked ' : '') +
-          (card.InTray || isDragging ? '' : ' flip-card-tilt')
+          (card.InTray || isDragging ? '' : ' flip-card-tilt') +
+          (isCustomDragLayer ? ' -rotate-6' : '')
         }
       >
         {isDragging ? (
-          <CardShadow />
+          <CardShadow forceLarge={forceLarge} />
         ) : (
           <div className="flip-card-inner relative w-full h-full">
             <div
@@ -72,6 +86,7 @@ export const Card: React.FC<{
                 />
               )}
             </div>
+
             <div className="flip-card-front w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 bg-phonon-card bg-cover bg-no-repeat overflow-hidden">
               <CardFront card={card} isMini={isMini} />
             </div>
@@ -83,6 +98,6 @@ export const Card: React.FC<{
         onClose={onClose}
         card={card}
       />
-    </>
+    </div>
   );
 };

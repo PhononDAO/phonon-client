@@ -30,6 +30,7 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
     addCardsToState,
     removeCardsFromState,
     getCardPairingCode,
+    resetPhononsOnCardTransferState,
   } = useContext(CardManagementContext);
   const loadedCards = phononCards.filter((card: PhononCard) => card.InTray);
   const { onCopy, value, hasCopied } = useClipboard(
@@ -61,7 +62,9 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
       .then(() => {
         setCurrentStep('success');
         notifySuccess(
-          t('Successfully paired to remote card: ' + '04e0d5eb884a73c0' + '!')
+          t('Successfully paired to remote card: {{cardId}}!', {
+            cardId: '04e0d5eb884a73c0',
+          })
         );
 
         return new Promise((resolve) => {
@@ -87,6 +90,11 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
     setIsPaired(false);
     setCurrentStep('share');
 
+    resetPhononsOnCardTransferState(
+      phononCards.filter((card: PhononCard) => card.InTray)[0],
+      'IncomingTransferProposal'
+    );
+
     removeCardsFromState(
       phononCards.filter((card: PhononCard) => card.IsRemote)
     );
@@ -107,10 +115,10 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
           >
             {t('Cancel')}
           </Button>
-          <div className="flex flex-col gap-y-2 px-2 items-center justify-center text-xl">
+          <div className="flex flex-col gap-y-2 px-1 items-center justify-center text-xl">
             <IonIcon icon={cloudDownload} className="text-white" />
             <div>
-              <span className="block text-center text-white text-base">
+              <span className="block text-center text-white text-sm">
                 {t(
                   "To pair, share this code with the person you'd like to pair with."
                 )}
@@ -157,10 +165,10 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
           >
             {t('Cancel')}
           </Button>
-          <div className="flex flex-col gap-y-2 px-2 items-center justify-center text-xl">
+          <div className="flex flex-col gap-y-2 px-1 items-center justify-center text-xl">
             <IonIcon icon={cloudDownload} className="text-white" />
             <div>
-              <span className="block text-center text-white text-base">
+              <span className="block text-center text-white text-sm">
                 {t(
                   "Input the person's pairing code below to initiate pairing."
                 )}

@@ -1,3 +1,4 @@
+import { distance2D } from 'framer-motion';
 import differenceBy from 'lodash/differenceBy';
 import unionBy from 'lodash/unionBy';
 import { useState } from 'react';
@@ -118,16 +119,22 @@ export const usePhononCards = <T extends PhononCard>(
 
     // now update the phonons on the source cards
     phononsToRemove.map((phonon) => {
+      const sourceCard = getCardById(phonon.SourceCardId);
+
       phonon.ProposedForTransfer = false;
+
+      addPhononsToCard(sourceCard, [phonon]);
     });
   };
 
   const resetPhononsForTransferOnCard = (card: T, proposalPurpose: string) => {
-    removePhononsForTransferFromCard(
-      card,
-      card[proposalPurpose].Phonons,
-      proposalPurpose
-    );
+    if (proposalPurpose in card) {
+      removePhononsForTransferFromCard(
+        card,
+        card[proposalPurpose].Phonons,
+        proposalPurpose
+      );
+    }
   };
 
   const updateCardTransferStatus = (

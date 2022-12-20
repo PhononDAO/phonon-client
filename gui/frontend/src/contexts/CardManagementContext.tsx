@@ -1,5 +1,6 @@
-import { createContext, useState, ReactNode } from 'react';
+import { createContext, useState, ReactNode, useEffect } from 'react';
 import { usePhononCards } from '../hooks/usePhononCards';
+import localStorage from '../utils/localStorage';
 
 export const CardManagementContext = createContext(undefined);
 
@@ -27,7 +28,7 @@ export const CardManagementContextProvider = ({
     removePhononsFromCardTransferState,
     resetPhononsOnCardTransferState,
     updateCardTransferStatusState,
-  ] = usePhononCards([]);
+  ] = usePhononCards(localStorage.getPhononCards() ?? []);
 
   const defaultContext = {
     isLoadingPhononCards,
@@ -48,6 +49,13 @@ export const CardManagementContextProvider = ({
     resetPhononsOnCardTransferState,
     updateCardTransferStatusState,
   };
+
+  /**
+   * Whenever `phononCards` data changes, it is persisted to `localStorage`
+   */
+  useEffect(() => {
+    localStorage.setPhononCards(phononCards);
+  }, [phononCards]);
 
   return (
     <CardManagementContext.Provider value={{ ...defaultContext, ...overrides }}>

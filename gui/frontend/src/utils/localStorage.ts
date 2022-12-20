@@ -4,6 +4,9 @@ import omit from 'lodash/omit';
 import { defaultConfigurableSettings } from '../constants/Constants';
 
 const ROOT_STORE = process.env.REACT_APP_ROOT_STORE || 'phonon';
+const ACTIVITY_HISTORY_STORAGE_KEY = 'activity_history';
+const CONFIGURABLE_SETTINGS_STORAGE_KEY = 'configurable_settings';
+const PHONON_CARDS_STORAGE_KEY = 'phonon_cards';
 
 // #region -- Generic Local Storage Functions
 
@@ -43,17 +46,26 @@ const removeRootStoreItem = (key) =>
 
 // #region -- Activity History Functions
 
-const getActivityHistory = () => getItem('activityHistory') ?? [];
-const setActivityHistory = (value) => setItem('activityHistory', value);
+const getActivityHistory = () => getItem(ACTIVITY_HISTORY_STORAGE_KEY) ?? [];
+const setActivityHistory = (value) =>
+  setItem(ACTIVITY_HISTORY_STORAGE_KEY, value);
 
 // #endregion
 
 // #region -- Activity History Functions
 
 const getConfigurableSettings = () =>
-  getItem('configurableSettings') ?? defaultConfigurableSettings;
+  getItem(CONFIGURABLE_SETTINGS_STORAGE_KEY) ?? defaultConfigurableSettings;
 const setConfigurableSettings = (value) =>
-  setItem('configurableSettings', value);
+  setItem(CONFIGURABLE_SETTINGS_STORAGE_KEY, value);
+
+// #endregion
+
+// #region -- Activity History Functions
+
+const getPhononCards = () => getItem(PHONON_CARDS_STORAGE_KEY) ?? [];
+const setPhononCards = (value) => setItem(PHONON_CARDS_STORAGE_KEY, value);
+const clearPhononCards = () => removeItem(PHONON_CARDS_STORAGE_KEY);
 
 // #endregion
 
@@ -71,6 +83,9 @@ const exports = {
   setActivityHistory,
   getConfigurableSettings,
   setConfigurableSettings,
+  getPhononCards,
+  setPhononCards,
+  clearPhononCards,
 };
 
 export default exports;

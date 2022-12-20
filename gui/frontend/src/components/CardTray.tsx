@@ -8,13 +8,19 @@ import { IonIcon } from '@ionic/react';
 import { cloudDownload } from 'ionicons/icons';
 import { CardManagementContext } from '../contexts/CardManagementContext';
 import { CardPairing } from './CardPairing';
+import { CardRemote } from './PhononCardStates/CardRemote';
 
 export const CardTray: React.FC<{
   card: PhononCard;
   canHaveRemote?: boolean;
 }> = ({ card = null, canHaveRemote = false }) => {
   const { t } = useTranslation();
-  const { addCardsToState } = useContext(CardManagementContext);
+  const {
+    phononCards,
+    addCardsToState,
+    resetPhononsOnCardTransferState,
+    removeCardsFromState,
+  } = useContext(CardManagementContext);
   const [showPairingOptions, setShowPairingOptions] = useState(false);
 
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
@@ -36,11 +42,30 @@ export const CardTray: React.FC<{
     }),
   }));
 
+  const unpair = () => {
+    setShowPairingOptions(false);
+
+    resetPhononsOnCardTransferState(
+      phononCards.filter((card: PhononCard) => card.IsRemote)[0],
+      'OutgoingTransferProposal'
+    );
+
+    removeCardsFromState(
+      phononCards.filter((card: PhononCard) => card.IsRemote)
+    );
+  };
+
   // only show card if not a mock card or if mock cards are enabled
-  return card?.InTray && !card?.IsRemote ? (
+  return card?.InTray ? (
     <>
       <div className="w-80 h-52">
-        <Card card={card} forceLarge={true} />
+        {card?.IsRemote ? (
+          <div className="flip-card-back w-full h-full absolute rounded-lg shadow-sm shadow-zinc-600 hover:shadow-md hover:shadow-zinc-500/60 bg-phonon-card-blue bg-cover bg-no-repeat overflow-hidden">
+            <CardRemote unpair={unpair} />
+          </div>
+        ) : (
+          <Card card={card} forceLarge={true} />
+        )}
       </div>
     </>
   ) : (

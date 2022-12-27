@@ -18,8 +18,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/GridPlus/phonon-client/card"
-	"github.com/GridPlus/phonon-client/util"
+	"github.com/GridPlus/phonon-client/pkg/util"
+	"github.com/GridPlus/phonon-core/pkg/card"
 	"github.com/spf13/cobra"
 )
 

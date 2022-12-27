@@ -16,7 +16,7 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/GridPlus/phonon-client/repl"
+	"github.com/GridPlus/phonon-core/pkg/repl"
 	"github.com/spf13/cobra"
 )
 

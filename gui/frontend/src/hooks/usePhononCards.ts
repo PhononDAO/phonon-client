@@ -1,4 +1,3 @@
-import { distance2D } from 'framer-motion';
 import differenceBy from 'lodash/differenceBy';
 import unionBy from 'lodash/unionBy';
 import { useState } from 'react';

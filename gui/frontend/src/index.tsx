@@ -9,18 +9,22 @@ import i18n from './i18n';
 import { ChakraProvider } from '@chakra-ui/react';
 import theme from './chakra-theme';
 import './styles.css';
+import { store } from './store';
+import { Provider } from 'react-redux';
 
 const container = document.getElementById('root');
 
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
-    <ErrorBoundary FallbackComponent={ErrorFallback} onError={ErrorHandler}>
-      <I18nextProvider i18n={i18n}>
-        <ChakraProvider theme={theme}>
-          <App />
-        </ChakraProvider>
-      </I18nextProvider>
-    </ErrorBoundary>
+    <Provider store={store}>
+      <ErrorBoundary FallbackComponent={ErrorFallback} onError={ErrorHandler}>
+        <I18nextProvider i18n={i18n}>
+          <ChakraProvider theme={theme}>
+            <App />
+          </ChakraProvider>
+        </I18nextProvider>
+      </ErrorBoundary>
+    </Provider>
   </React.StrictMode>
 );

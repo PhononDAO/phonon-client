@@ -102,104 +102,106 @@ export const CardDeck: React.FC<{
 
   // only show card if not a mock card or if mock cards are enabled
   return (
-    <div
-      className={
-        'relative w-full p-4 rounded-sm mt-40 pt-24 ' +
-        (card ? 'bg-gray-300' : '')
-      }
-    >
-      <div className="absolute -mt-60">
-        <CardTray card={card} canHaveRemote={canHaveRemote} />
-      </div>
+    phononCards.length > 0 && (
+      <div
+        className={
+          'relative w-full p-4 rounded-sm mt-40 pt-24 ' +
+          (card ? 'bg-gray-300' : '')
+        }
+      >
+        <div className="absolute -mt-60">
+          <CardTray card={card} canHaveRemote={canHaveRemote} />
+        </div>
 
-      {card && (
-        <>
-          {!card.IsRemote && (
-            <>
-              <div className="absolute -top-16 right-0 flex gap-x-4">
-                <MinePhonon card={card} />
-                <CreatePhonon card={card} />
-              </div>
-
-              <div className="absolute top-0 right-0 p-4 flex gap-x-4">
-                <div className="flex items-center">
-                  <div className="whitespace-nowrap mr-2 text-lg text-gray-600">
-                    {t('Sort by')}:
-                  </div>
-                  <Select
-                    onChange={(evt) => {
-                      sortPhononsBy(evt.target.value);
-                    }}
-                    defaultValue={defaultSettings.defaultPhononSortBy}
-                  >
-                    <option value="Key">{t('Key')}</option>
-                    <option value="ChainId">{t('Network Chain')}</option>
-                    <option value="Denomination">{t('Denomination')}</option>
-                    <option value="CurrencyType">{t('Currency Type')}</option>
-                  </Select>
-                </div>
-                <div className="rounded flex">
-                  <ButtonGroup isAttached>
-                    <IconButton
-                      bgColor={layoutType === 'list' ? 'black' : 'white'}
-                      textColor={layoutType === 'list' ? 'white' : 'black'}
-                      aria-label={t('List View')}
-                      icon={<IonIcon icon={reorderFour} />}
-                      onClick={() => {
-                        setLayoutType('list');
-                      }}
-                    />
-                    <IconButton
-                      bgColor={layoutType === 'grid' ? 'black' : 'white'}
-                      textColor={layoutType === 'grid' ? 'white' : 'black'}
-                      aria-label={t('Grid View')}
-                      icon={<IonIcon icon={apps} />}
-                      onClick={() => {
-                        setLayoutType('grid');
-                      }}
-                    />
-                  </ButtonGroup>
-                </div>
-              </div>
-            </>
-          )}
-          {card?.IncomingTransferProposal?.Phonons?.length > 0 && (
-            <IncomingTransferNotice card={card} />
-          )}
-          {(phononCards.filter(
-            (card: PhononCard) => card.InTray && !card.IsRemote
-          ).length > 1 ||
-            card.IsRemote) && <PhononTransferProposal card={card} />}
-          {!card.IsRemote && card?.Phonons.length > 0 && (
-            <div className="flex justify-end text-gray-500 items-center mb-2">
+        {card && (
+          <>
+            {!card.IsRemote && (
               <>
-                <IonIcon icon={bulb} />
-                {t('Double-click Phonons to see details.')}
-              </>
-            </div>
-          )}
-          {!card.IsRemote ? (
-            <div
-              className={
-                'overflow-visible gap-2 ' +
-                (layoutType === 'grid' ? 'relative' : 'grid')
-              }
-            >
-              {card.Phonons.length > 0 ? (
-                card.Phonons?.map((phonon, key) => (
-                  <Phonon key={key} phonon={phonon} layoutType={layoutType} />
-                ))
-              ) : (
-                <div className="text-2xl text-center my-12 italic text-gray-500">
-                  {t('This card has no phonons yet.')}
+                <div className="absolute -top-16 right-0 flex gap-x-4">
+                  <MinePhonon card={card} />
+                  <CreatePhonon card={card} />
                 </div>
-              )}
-            </div>
-          ) : (
-            <RemoteCardPhononMessage />
-          )}
-        </>
-      )}
-    </div>
+
+                <div className="absolute top-0 right-0 p-4 flex gap-x-4">
+                  <div className="flex items-center">
+                    <div className="whitespace-nowrap mr-2 text-lg text-gray-600">
+                      {t('Sort by')}:
+                    </div>
+                    <Select
+                      onChange={(evt) => {
+                        sortPhononsBy(evt.target.value);
+                      }}
+                      defaultValue={defaultSettings.defaultPhononSortBy}
+                    >
+                      <option value="Key">{t('Key')}</option>
+                      <option value="ChainId">{t('Network Chain')}</option>
+                      <option value="Denomination">{t('Denomination')}</option>
+                      <option value="CurrencyType">{t('Currency Type')}</option>
+                    </Select>
+                  </div>
+                  <div className="rounded flex">
+                    <ButtonGroup isAttached>
+                      <IconButton
+                        bgColor={layoutType === 'list' ? 'black' : 'white'}
+                        textColor={layoutType === 'list' ? 'white' : 'black'}
+                        aria-label={t('List View')}
+                        icon={<IonIcon icon={reorderFour} />}
+                        onClick={() => {
+                          setLayoutType('list');
+                        }}
+                      />
+                      <IconButton
+                        bgColor={layoutType === 'grid' ? 'black' : 'white'}
+                        textColor={layoutType === 'grid' ? 'white' : 'black'}
+                        aria-label={t('Grid View')}
+                        icon={<IonIcon icon={apps} />}
+                        onClick={() => {
+                          setLayoutType('grid');
+                        }}
+                      />
+                    </ButtonGroup>
+                  </div>
+                </div>
+              </>
+            )}
+            {card?.IncomingTransferProposal?.Phonons?.length > 0 && (
+              <IncomingTransferNotice card={card} />
+            )}
+            {(phononCards.filter(
+              (card: PhononCard) => card.InTray && !card.IsRemote
+            ).length > 1 ||
+              card.IsRemote) && <PhononTransferProposal card={card} />}
+            {!card.IsRemote && card?.Phonons.length > 0 && (
+              <div className="flex justify-end text-gray-500 items-center mb-2">
+                <>
+                  <IonIcon icon={bulb} />
+                  {t('Double-click Phonons to see details.')}
+                </>
+              </div>
+            )}
+            {!card.IsRemote ? (
+              <div
+                className={
+                  'overflow-visible gap-2 ' +
+                  (layoutType === 'grid' ? 'relative' : 'grid')
+                }
+              >
+                {card.Phonons.length > 0 ? (
+                  card.Phonons?.map((phonon, key) => (
+                    <Phonon key={key} phonon={phonon} layoutType={layoutType} />
+                  ))
+                ) : (
+                  <div className="text-2xl text-center my-12 italic text-gray-500">
+                    {t('This card has no phonons yet.')}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <RemoteCardPhononMessage />
+            )}
+          </>
+        )}
+      </div>
+    )
   );
 };

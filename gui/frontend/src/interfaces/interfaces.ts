@@ -27,6 +27,17 @@ export interface Currency {
 /**
  * Phonon interface
  */
+export interface Session {
+  Id: string;
+  Name?: string;
+  Initialized: boolean;
+  TerminalPaired: boolean;
+  PinVerified: boolean;
+}
+
+/**
+ * Phonon interface
+ */
 export interface Phonon {
   Address: string;
   AddressType: number;

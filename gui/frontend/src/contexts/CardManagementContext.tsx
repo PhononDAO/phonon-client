@@ -1,5 +1,6 @@
 import { createContext, useState, ReactNode, useEffect } from 'react';
 import { usePhononCards } from '../hooks/usePhononCards';
+import { PhononCard, Session } from '../interfaces/interfaces';
 import localStorage from '../utils/localStorage';
 
 export const CardManagementContext = createContext(undefined);
@@ -13,6 +14,17 @@ export const CardManagementContextProvider = ({
 }) => {
   const [isLoadingPhononCards, setIsLoadingPhononCards] = useState(false);
   const [isCardsMini, setIsCardsMini] = useState<boolean>(false);
+
+  const convertSessionToCardSession = (session: Session): PhononCard => {
+    const card = {
+      CardId: session.Id,
+      IsLocked: !session.PinVerified,
+      ShowActions: true,
+      Phonons: [],
+    } as PhononCard;
+    console.log(card);
+    return card;
+  };
 
   const [
     phononCards,
@@ -36,6 +48,7 @@ export const CardManagementContextProvider = ({
     setIsCardsMini,
     setIsLoadingPhononCards,
     phononCards,
+    convertSessionToCardSession,
     addCardsToState,
     removeCardsFromState,
     resetCardsInState,

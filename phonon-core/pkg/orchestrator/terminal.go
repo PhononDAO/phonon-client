@@ -28,8 +28,6 @@ func NewPhononTerminal() *PhononTerminal {
 // basic multi-session management
 // //
 
-func (t *PhononTerminal) 
-
 func (t *PhononTerminal) ListSessions() []*Session {
 	return t.sessions
 }

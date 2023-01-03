@@ -23,12 +23,13 @@ type SecureChannel struct {
 	encKey     []byte
 	macKey     []byte
 	iv         []byte
-	apduLogger logrus.Logger
+	ApduLogger logrus.Logger
 }
 
-func NewSecureChannel(c types.Channel) *SecureChannel {
+func NewSecureChannel(c types.Channel, logger logrus.Logger) *SecureChannel {
 	return &SecureChannel{
-		c: c,
+		c:          c,
+		ApduLogger: logger,
 	}
 }
 

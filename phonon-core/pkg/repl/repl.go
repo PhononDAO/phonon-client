@@ -25,11 +25,6 @@ func Start() {
 	shell.SetPrompt(standardPrompt)
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "refresh",
-		Func: refresh,
-		Help: "Check for attached phonon cards. Restarts all phonon card sessions.",
-	})
-	shell.AddCmd(&ishell.Cmd{
 		Name:    "listCards",
 		Aliases: []string{},
 		Func:    listCards,
@@ -181,21 +176,6 @@ func checkCardPaired(c *ishell.Context) bool {
 		return false
 	}
 	return true
-}
-
-func refresh(c *ishell.Context) {
-	c.Println("refreshing sessions")
-	sessions, err := t.RefreshSessions()
-	if err != nil {
-		c.Printf("error refreshing sessions: %v", err)
-	} else if len(sessions) == 0 {
-		c.Println("no attached cards detected")
-	} else if len(sessions) == 1 {
-		c.Println("one attached card detected, setting as active")
-		setActiveCard(c, sessions[0])
-	} else {
-		c.Println("multiple cards detected, please use activate command to choose one")
-	}
 }
 
 func listCards(c *ishell.Context) {

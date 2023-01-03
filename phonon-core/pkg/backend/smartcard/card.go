@@ -4,14 +4,15 @@ import (
 	"github.com/GridPlus/keycard-go/io"
 	"github.com/GridPlus/phonon-core/pkg/backend/smartcard/usb"
 	"github.com/GridPlus/phonon-core/pkg/model"
+	"github.com/sirupsen/logrus"
 )
 
-func Connect(readerIndex int) (*PhononCommandSet, error) {
+func Connect(readerIndex int, cert []byte, logger logrus.Logger) (*PhononCommandSet, error) {
 	scard, err := usb.ConnectUSBReader(readerIndex)
 	if err != nil {
 		return nil, err
 	}
-	cs := NewPhononCommandSet(io.NewNormalChannel(scard))
+	cs := NewPhononCommandSet(io.NewNormalChannel(scard), cert, logger)
 	return cs, nil
 }
 
@@ -21,16 +22,12 @@ to the readerIndex given and immediately attempts to open a secure channel with 
 Equivalent to running SELECT, PAIR, OPEN_SECURE_CHANNEL.
 Does not handle the details of uninitialized cards
 */
-func QuickSecureConnection(readerIndex int, isStatic bool) (cs model.PhononCard, err error) {
-	baseCS, err := Connect(readerIndex)
+func QuickSecureConnection(readerIndex int, cert []byte, logger logrus.Logger) (cs model.PhononCard, err error) {
+	baseCS, err := Connect(readerIndex, cert, logger)
 	if err != nil {
 		return nil, err
 	}
-	if isStatic {
-		cs = NewStaticPhononCommandSet(baseCS)
-	} else {
-		cs = baseCS
-	}
+	cs = baseCS
 	err = cs.OpenSecureConnection()
 	if err != nil {
 		return nil, err

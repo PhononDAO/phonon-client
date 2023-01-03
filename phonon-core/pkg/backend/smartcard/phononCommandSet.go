@@ -37,7 +37,6 @@ const (
 )
 
 var apduLogFile *os.File
-var apduLogger *log.Logger
 
 type PhononCommandSet struct {
 	c               types.Channel
@@ -45,6 +44,7 @@ type PhononCommandSet struct {
 	ApplicationInfo *types.ApplicationInfo
 	PairingInfo     *types.PairingInfo
 	PhononCACert    []byte
+	apduLogger      logrus.Logger
 }
 
 type smartCardSecureChannel struct {
@@ -52,21 +52,21 @@ type smartCardSecureChannel struct {
 }
 
 func NewPhononCommandSet(c types.Channel, certificate []byte, apduLogger logrus.Logger) *PhononCommandSet {
-	apduLogger = apduLogger
 	return &PhononCommandSet{
 		c:               c,
-		sc:              &smartCardSecureChannel{backend.NewSecureChannel(c)},
+		sc:              &smartCardSecureChannel{backend.NewSecureChannel(c, apduLogger)},
 		ApplicationInfo: &types.ApplicationInfo{},
 		PhononCACert:    certificate,
+		apduLogger:      apduLogger,
 	}
 }
 
 func (cs PhononCommandSet) Send(cmd *Command) (*apdu.Response, error) {
 	//Log commands to apdu log
 	//Log APDUs in debugger format to file
-	apduLogger.Debugf("#INS % X\n", cmd.ApduCmd.Ins)
+	cs.apduLogger.Debugf("#INS % X\n", cmd.ApduCmd.Ins)
 	outputAPDU, _ := cmd.ApduCmd.Serialize()
-	apduLogger.Debugf("/send %X\n", outputAPDU)
+	cs.apduLogger.Debugf("/send %X\n", outputAPDU)
 
 	resp, err := cs.c.Send(cmd.ApduCmd)
 	if err != nil {
@@ -925,9 +925,9 @@ func (sc *smartCardSecureChannel) Send(cmd *Command) (resp *apdu.Response, err e
 	}
 
 	//Log APDUs in debugger format to file
-	apduLogger.Debugf("#INS % X\n", cmd.ApduCmd.Ins)
+	sc.ApduLogger.Debugf("#INS % X\n", cmd.ApduCmd.Ins)
 	outputAPDU, _ := cmd.ApduCmd.Serialize()
-	apduLogger.Debugf("/send %X\n", outputAPDU)
+	sc.ApduLogger.Debugf("/send %X\n", outputAPDU)
 
 	resp, err = sc.C().Send(cmd.ApduCmd)
 	if err != nil {

@@ -2,64 +2,74 @@ package chain
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"errors"
+	"math/big"
 
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/validator"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 )
+
+var ErrUntrustworthy = errors.New("phonon balance is less than what is stated in denomination value")
+var ErrUnsupportedCurrency = errors.New("unsupported currency type")
 
 type EthChainInterface interface {
 	bind.ContractTransactor
 	ethereum.ChainStateReader
 }
 type EthChainService struct {
+	gasLimit  uint64
 	cl        EthChainInterface //*ethclient.Client // //bind.ContractTransactor
 	clChainID uint32
 }
 
-func NewEthChainService() *EthChainService {
-	return &EthChainService{}
+func NewEthChainService() (*EthChainService, error) {
+	ethchainSrv := &EthChainService{
+		gasLimit: uint64(21000), //Setting to default magic value for now
+	}
+	log.Debugf("successfully loaded EthChainServiceConfig: %+v", ethchainSrv)
+
+	return ethchainSrv, nil
 }
 
-func (eth *EthChainService) Validate(proposal []*model.Phonon) ([]*validator.AssetValidationResult, error) {
-	result := []*validator.AssetValidationResult{}
+func (eth *EthChainService) Validate(proposal []*model.Phonon) (result []*model.AssetValidationResult, err error) {
+	if len(proposal) == 0 {
+		return nil, model.ErrEmptyProposal
+	}
 
 	for _, p := range proposal {
 		err := eth.dialRPCNode(p.ChainID)
 		if err != nil {
-			result = append(result, &validator.AssetValidationResult{
-				P:     p,
-				Valid: false,
-				Err:   err,
+			result = append(result, &model.AssetValidationResult{
+				P:   p,
+				Err: err,
 			})
 		}
 
 		balance, err := eth.cl.BalanceAt(context.Background(), common.HexToAddress(p.Address), nil)
 		if err != nil {
 			log.Error("could not fetch on chain Phonon value: ", err)
-			result = append(result, &validator.AssetValidationResult{
-				P:     p,
-				Valid: false,
-				Err:   err,
+			result = append(result, &model.AssetValidationResult{
+				P:   p,
+				Err: err,
 			})
 		}
 
 		if balance.Cmp(p.Denomination.Value()) < 0 {
 			log.Error("phonon balance is less than the denomination value")
-			result = append(result, &validator.AssetValidationResult{
-				P:     p,
-				Valid: false,
-				Err:   errors.New("phonon balance is less than what is stated in denomination value"),
+			result = append(result, &model.AssetValidationResult{
+				P:   p,
+				Err: ErrUntrustworthy,
 			})
 		}
 
-		result = append(result, &validator.AssetValidationResult{
+		result = append(result, &model.AssetValidationResult{
 			P:     p,
 			Valid: true,
 			Err:   nil,
@@ -67,6 +77,50 @@ func (eth *EthChainService) Validate(proposal []*model.Phonon) ([]*validator.Ass
 	}
 
 	return result, nil
+}
+
+func (eth *EthChainService) fetchPreTransactionInfo(ctx context.Context, fromAddress common.Address) (nonce uint64, balance *big.Int, suggestedGas *big.Int, err error) {
+	nonce, err = eth.cl.PendingNonceAt(ctx, fromAddress)
+	if err != nil {
+		log.Error("could not fetch pending nonce for eth account: ", err)
+		return 0, nil, nil, err
+	}
+	log.Debug("pending nonce: ", nonce)
+	//Check actual balance of phonon
+	balance, err = eth.cl.BalanceAt(ctx, fromAddress, nil)
+	if err != nil {
+		log.Error("could not fetch on chain Phonon value: ", err)
+		return 0, nil, nil, err
+	}
+	log.Debug("on chain balance: ", balance)
+	suggestedGasPrice, err := eth.cl.SuggestGasPrice(ctx)
+	if err != nil {
+		log.Error("error fetching suggested gas price: ", err)
+		return 0, nil, nil, err
+	}
+	log.Debug("suggest gas price is: ", suggestedGasPrice)
+	return nonce, balance, suggestedGasPrice, nil
+}
+
+func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce uint64, chainID *big.Int, redeemAddress common.Address, redeemValue *big.Int, gasLimit uint64, gasPrice *big.Int, privKey *ecdsa.PrivateKey) (*types.Transaction, error) {
+	//Submit transaction
+	//build transaction payload
+	tx := types.NewTransaction(nonce, redeemAddress, redeemValue, gasLimit, gasPrice, nil)
+	//Sign it
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privKey)
+	if err != nil {
+		log.Error("error forming signed transaction: ", err)
+		return signedTx, err
+	}
+
+	//Send the transaction through the ETH client
+	err = eth.cl.SendTransaction(ctx, signedTx)
+	if err != nil {
+		log.Error("error sending transaction: ", err)
+		return signedTx, err
+	}
+	log.Debug("sent redeem transaction")
+	return signedTx, nil
 }
 
 func (eth *EthChainService) DeriveAddress(p *model.Phonon) (address string, err error) {

@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 var simEVM *backends.SimulatedBackend
@@ -37,99 +38,93 @@ func getSimEVM() (*backends.SimulatedBackend, error) {
 	return simEVM, nil
 }
 
-// TestEthChainServiceRedeem smoke tests the basic redeem funtionality using a simulated EVM backend
-func TestEthChainServiceRedeem(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-
+func fundSimEVM(currencyType model.CurrencyType) (*model.Phonon, error) {
 	sim, err := getSimEVM()
 	if err != nil {
-		t.Error("unable to start EVM simulator")
-		return
+		return nil, err
 	}
-
-	//Generate sender account
-	senderPrivKey, _ := crypto.GenerateKey()
-
-	//Generate destination account
-	redeemPrivKey, _ := crypto.GenerateKey()
-	redeemAddress := crypto.PubkeyToAddress(redeemPrivKey.PublicKey)
 
 	eth, err := NewEthChainService()
 	if err != nil {
-		t.Error(err)
+		return nil, err
 	}
 
-	//Manually substitute simulated backend for usual RPC client
-	testChainID := 1337
+	testChainID := uint32(1337)
 	eth.cl = sim
 	eth.clChainID = testChainID
 
+	ctx := context.Background()
+
+	nonce, _, _, err := eth.fetchPreTransactionInfo(ctx, genesisAcct.From)
+	if err != nil {
+		return nil, err
+	}
+
+	fixedGasPrice := big.NewInt(875000000)
+	phononValue := big.NewInt(10000000000000000)
+
+	senderPrivKey, _ := crypto.GenerateKey()
+
 	pubKey, err := model.NewPhononPubKey(crypto.FromECDSAPub(&senderPrivKey.PublicKey), model.Secp256k1)
 	if err != nil {
-		t.Fatal("could not construct pubKey: ", err)
+		return nil, err
 	}
 
 	p := &model.Phonon{
 		KeyIndex:     1,
 		PubKey:       pubKey,
-		CurrencyType: model.Ethereum,
-		ChainID:      testChainID,
+		CurrencyType: currencyType,
+		ChainID:      int(testChainID),
 	}
 	p.Address, err = eth.DeriveAddress(p)
 	if err != nil {
-		t.Error(err)
+		return nil, err
 	}
-	ctx := context.Background()
-	//Fund phonon with sim ETH from genesis account
-	nonce, _, _, err := eth.fetchPreTransactionInfo(ctx, genesisAcct.From)
-	if err != nil {
-		t.Error("could not fetch banker transaction info", err)
-		return
-	}
-	fixedGasPrice := big.NewInt(875000000)
-	phononValue := big.NewInt(10000000000000000)
 	_, err = eth.submitLegacyTransaction(ctx, nonce,
-		big.NewInt(int64(testChainID)),
+		big.NewInt(int64(eth.clChainID)),
 		common.HexToAddress(p.Address),
 		phononValue,
 		eth.gasLimit,
 		fixedGasPrice,
 		genesisKey)
 	if err != nil {
-		t.Error("unable to submit simulated phonon deposit transaction. err: ", err)
+		return nil, err
 	}
 
-	//Commit funding transaction
+	//Wait for the transaction to be mined
 	sim.Commit()
 
-	//Testing redeem function
-	//Redeem to redeemAddress
-	_, err = eth.RedeemPhonon(p, senderPrivKey, redeemAddress.Hex())
+	return p, nil
+}
+
+func TestEthChainServiceValidate(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+
+	fund, err := fundSimEVM(model.Ethereum)
 	if err != nil {
-		t.Error("error redeeming phonon. err: ", err)
+		t.Error("unable to fund simEVM. err: ", err)
 	}
-	//Mine the pending transaction
-	sim.Commit()
 
-	//Check that the redeem succeeded
-	resultBalance, err := eth.cl.BalanceAt(context.Background(), redeemAddress, nil)
+	fund2, err := fundSimEVM(model.Bitcoin)
 	if err != nil {
-		t.Error("could not check balance of phonon redeem address. err: ", err)
+		t.Error("unable to fund simEVM. err: ", err)
 	}
 
-	//TODO: boundary cases with expected errors
+	phonons := []*model.Phonon{fund, fund2}
 
-	//Calculate how much the gas fee * gas limit cost to redeem
-	expectedBalance := big.NewInt(0)
-	calculatedRedeemGasPrice, _ := big.NewInt(0).SetString("766199219", 10) //Taken from log of redeem results
-	redeemGasPaid := big.NewInt(0).Mul(calculatedRedeemGasPrice, big.NewInt(21000))
-
-	//TODO: Test a range of phonon values
-	expectedBalance = expectedBalance.Sub(phononValue, redeemGasPaid)
-	if expectedBalance.Cmp(resultBalance) != 0 {
-		t.Error("expected balance was incorrect")
-		t.Errorf("expectedBalance: %v, resultBalance: %v, phononValue: %v, redeemGasPaid: %v\n", expectedBalance, resultBalance, phononValue, redeemGasPaid)
+	validator := NewMultiAssetValidator()
+	valid, err := validator.Validate(phonons)
+	if err != nil {
+		t.Error("unable to validate phonons. err: ", err)
 	}
-	//Check for correct balance output
-	t.Log("resultBalance was: ", resultBalance)
+
+	for _, r := range valid {
+		if r.P.CurrencyType == model.Bitcoin {
+			assert.False(t, r.Valid)
+		}
+
+		if r.P.CurrencyType == model.Ethereum {
+			assert.True(t, r.Valid)
+		}
+	}
 }

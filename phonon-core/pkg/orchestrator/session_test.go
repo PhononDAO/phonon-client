@@ -3,19 +3,19 @@ package orchestrator_test
 import (
 	"testing"
 
-	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/orchestrator"
+	"github.com/GridPlus/phonon-core/pkg/backend/mock"
+	"github.com/GridPlus/phonon-core/pkg/model"
+	"github.com/GridPlus/phonon-core/pkg/orchestrator"
 	log "github.com/sirupsen/logrus"
 )
 
 func TestE2ELocalSendPhonon(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	term := orchestrator.NewPhononTerminal()
-	mock1, _ := term.GenerateMock()
-	mock2, _ := term.GenerateMock()
+	mock2, _ := mock.NewMockCard(true, false)
+	mock1, _ := mock.NewMockCard(true, false)
 
-	sess1 := term.SessionFromID(mock1)
-	sess2 := term.SessionFromID(mock2)
+	sess1, _ := orchestrator.NewSession(mock1)
+	sess2, _ := orchestrator.NewSession(mock2)
 
 	sess1.VerifyPIN("111111")
 	sess2.VerifyPIN("111111")
@@ -23,8 +23,8 @@ func TestE2ELocalSendPhonon(t *testing.T) {
 	sess1.ConnectToLocalProvider()
 	sess2.ConnectToLocalProvider()
 
-	sess1.ConnectToCounterparty(mock2)
-	sess2.ConnectToCounterparty(mock1)
+	sess1.ConnectToCounterparty(sess2.GetCardId())
+	sess2.ConnectToCounterparty(sess1.GetCardId())
 
 	keyIndex, _, err := sess2.CreatePhonon()
 	if err != nil {

@@ -30,12 +30,6 @@ frontend:
 	(cd gui/frontend && npm install)
 	(cd gui/frontend && npm run build)
 
-jumpbox-only: generate
-	go build -o jumpbox extra/jumpbox/main.go
-
-repl-only: generate
-	go build -o phonon-repl extra/repl-only/main.go
-
 release-mac: generate frontend
 	go get ./...
 	CGO_ENABLED=1 CC="clang -target arm64v8-apple-darwin-macho" GOOS=darwin GOARCH=arm64 go build -o phonon_arm64 main/phonon.go

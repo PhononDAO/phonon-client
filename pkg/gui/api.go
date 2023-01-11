@@ -15,7 +15,12 @@ import (
 	"strconv"
 	"time"
 
+	keycardIO "github.com/GridPlus/keycard-go/io"
 	"github.com/GridPlus/phonon-client/internal/config"
+	"github.com/GridPlus/phonon-client/internal/config/hooks"
+	"github.com/GridPlus/phonon-core/pkg/backend/mock"
+	"github.com/GridPlus/phonon-core/pkg/backend/smartcard"
+	"github.com/GridPlus/phonon-core/pkg/backend/smartcard/usb"
 	"github.com/GridPlus/phonon-core/pkg/model"
 	"github.com/GridPlus/phonon-core/pkg/orchestrator"
 	"github.com/gorilla/mux"
@@ -50,35 +55,61 @@ type apiSession struct {
 	telemetryKey string
 }
 
-func Server(port string, certFile string, keyFile string, mock bool) {
-	// parse configurations
+func Server(port string, certFile string, keyFile string, autoGenMock bool) {
 
-	// initialize backends
+	// parse configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal("Unable to load configuration")
+	}
+	//todo: make a graphical window pop up indicating an error state
+	//////////////////////////////////
+	//     An error has occured:    //
+	//     "something something"    //
+	//        --------              //
+	//        |  ok  |              //
+	//        ________              //
+	//////////////////////////////////
 
-	// initialize orchestrator
+	if cfg.TelemetryKey != "" {
+		log.Debug("setting up logging hook")
+		log.AddHook(hooks.NewLoggingHook(cfg.TelemetryKey))
+	}
 
 	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.JSONFormatter{})
 	log.Debug("starting local api server")
-	// loading this here is going to be only temporary for testnet. Will be removed later
-	conf, err := config.LoadConfig()
-	if err != nil {
-		log.Fatal("Unable to load configuration")
-	}
-	session := apiSession{orchestrator.NewPhononTerminal(), conf.TelemetryKey}
+	session := apiSession{orchestrator.NewPhononTerminal(), cfg.TelemetryKey}
+
+	// initialize backends
+
+	// initialize orchestrator
 	//initialize cache map
-	if mock {
+	if autoGenMock {
 		//Start server with a mock and ignore actual cards
-		_, err = session.t.GenerateMock()
-		log.Debug("mock generated")
+		mock, err := mock.NewMockCard(true, false)
 		if err != nil {
-			log.Error("unable to generate mock during REST server startup: ", err)
+			log.Error("unable to generate mock card during REST server startup: ", err)
 			return
 		}
-	} else {
-		_, err = session.t.RefreshSessions()
+		sess, err := orchestrator.NewSession(mock)
 		if err != nil {
-			log.Error("unable to refresh card sessions during REST server startup: ", err)
+			log.Error("unable to generate mock session during REST server startup: ", err)
+		}
+		session.t.AddSession(sess)
+		log.Debug("mock generated")
+	} else {
+		readers, err := usb.ConnectAllUSBReaders()
+		if err != nil {
+
+			log.Error("Unable to connect to local card readers: %s", err.Error)
+		}
+		for _, reader := range readers {
+			sess, err := orchestrator.NewSession(smartcard.NewPhononCommandSet(keycardIO.NewNormalChannel(reader), cfg.Certificate, *log.StandardLogger()))
+			if err != nil {
+				log.Error("unable to connect to reader")
+			}
+			session.t.AddSession(sess)
 		}
 	}
 	r := mux.NewRouter()
@@ -591,15 +622,6 @@ func (apiSession apiSession) init(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Errorf("unable to initialize card with given PIN. err: %v", err).Error(), http.StatusInternalServerError)
 		return
 	}
-	/*Workaround for error in mutual auth that occurs in rest of session after INIT
-	  Blows away all sessions, but shouldn't cause problems except when a mock is configured
-	  or another card is already unlocked, which should generally not come up when
-	  Initializing a real card
-	*/
-	_, err = apiSession.t.RefreshSessions()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
 }
 
 func (apiSession apiSession) unlock(w http.ResponseWriter, r *http.Request) {
@@ -889,11 +911,17 @@ func (apiSession apiSession) exportPhonon(w http.ResponseWriter, r *http.Request
 }
 
 func (apiSession apiSession) generatemock(w http.ResponseWriter, r *http.Request) {
-	_, err := apiSession.t.GenerateMock()
+	m, err := mock.NewMockCard(true, false)
 	if err != nil {
 		http.Error(w, "unable to generate mock", http.StatusInternalServerError)
 		return
 	}
+	sess, err := orchestrator.NewSession(m)
+	if err != nil {
+		http.Error(w, "unable to generate mock session", http.StatusInternalServerError)
+		return
+	}
+	apiSession.t.AddSession(sess)
 }
 
 func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestrator.Session, error) {

@@ -236,15 +236,6 @@ func deactivateCard(c *ishell.Context) {
 	activeCard = nil
 }
 
-// func cardShell(c *ishell.Context, index int) {
-// 	if len(listedSessions) < index || index == 0 {
-// 		c.Err(fmt.Errorf("No card found at index %d", index))
-// 		return
-// 	}
-// 	activeCard = index
-// 	c.SetPrompt(fmt.Sprintf("Card %d >", index))
-// }
-
 func getBalance(c *ishell.Context) {
 	// sessionIndex, err := getSession(c, 1)
 	// if err != nil {

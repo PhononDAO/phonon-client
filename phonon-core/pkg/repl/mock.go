@@ -10,15 +10,15 @@ import (
 
 func addMock(ctx *ishell.Context) {
 	c, err := mock.NewMockCard(true, false)
+	if err != nil {
+		ctx.Err(fmt.Errorf("unable to create mock %s", err.Error()))
+	}
 	terminal := orchestrator.NewPhononTerminal()
 	sess, err := orchestrator.NewSession(c)
 	if err != nil {
-		ctx.Err(fmt.Errorf("unable to generate session from newly created mock: %s", err.Error))
+		ctx.Err(fmt.Errorf("unable to generate session from newly created mock: %s", err.Error()))
 		return
 	}
 	terminal.AddSession(sess)
-	if err != nil {
-		fmt.Println("Error generating mock phonon card")
-	}
 
 }

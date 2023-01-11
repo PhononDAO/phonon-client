@@ -16,18 +16,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ErrUntrustworthy = errors.New("phonon balance is less than what is stated in denomination value")
-var ErrUnsupportedCurrency = errors.New("unsupported currency type")
-
 type EthChainInterface interface {
 	bind.ContractTransactor
 	ethereum.ChainStateReader
 }
+
 type EthChainService struct {
 	gasLimit  uint64
 	cl        EthChainInterface //*ethclient.Client // //bind.ContractTransactor
 	clChainID uint32
 }
+
+// optional arguments
 
 func NewEthChainService() (*EthChainService, error) {
 	ethchainSrv := &EthChainService{
@@ -44,7 +44,7 @@ func (eth *EthChainService) Validate(proposal []*model.Phonon) (result []*model.
 	}
 
 	for _, p := range proposal {
-		err := eth.dialRPCNode(p.ChainID)
+		err := eth.dialRPCNode(uint32(p.ChainID))
 		if err != nil {
 			result = append(result, &model.AssetValidationResult{
 				P:   p,
@@ -65,7 +65,7 @@ func (eth *EthChainService) Validate(proposal []*model.Phonon) (result []*model.
 			log.Error("phonon balance is less than the denomination value")
 			result = append(result, &model.AssetValidationResult{
 				P:   p,
-				Err: ErrUntrustworthy,
+				Err: model.ErrBalanceTooLow,
 			})
 		}
 
@@ -103,6 +103,18 @@ func (eth *EthChainService) fetchPreTransactionInfo(ctx context.Context, fromAdd
 }
 
 func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce uint64, chainID *big.Int, redeemAddress common.Address, redeemValue *big.Int, gasLimit uint64, gasPrice *big.Int, privKey *ecdsa.PrivateKey) (*types.Transaction, error) {
+	// Eth package returns a panic on some errors, this catches any panics and converts them into an error that the validator can display.
+	defer func() {
+		if err := recover(); err != nil {
+			r, ok := err.(error)
+			if !ok {
+				err = r.Error()
+			}
+
+			return
+		}
+	}()
+
 	//Submit transaction
 	//build transaction payload
 	tx := types.NewTransaction(nonce, redeemAddress, redeemValue, gasLimit, gasPrice, nil)
@@ -132,11 +144,11 @@ func (eth *EthChainService) DeriveAddress(p *model.Phonon) (address string, err 
 }
 
 // dialRPCNode establishes a connection to the proper RPC node based on the chainID
-func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
+func (eth *EthChainService) dialRPCNode(chainID uint32) (err error) {
 	log.Debugf("ethChainID: %v, chainID: %v\n", eth.clChainID, chainID)
 	var RPCEndpoint string
 	//If chainID is already set, correct RPC node is already connected
-	if eth.clChainID != 0 && eth.clChainID == uint32(chainID) {
+	if eth.clChainID != 0 {
 		log.Debug("eth chainID already set to ", chainID)
 		return nil
 	}
@@ -169,7 +181,7 @@ func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
 	}
 
 	//If connection succeeded, set currently configured chainID
-	eth.clChainID = uint32(chainID)
+	eth.clChainID = chainID
 	log.Trace("eth chain ID set to ", chainID)
 	return nil
 }

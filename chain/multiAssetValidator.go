@@ -36,7 +36,7 @@ func (m *MultiAssetValidator) Validate(proposal []*model.Phonon) (result []*mode
 		default:
 			result = append(result, &model.AssetValidationResult{
 				P:   p,
-				Err: ErrUnsupportedCurrency,
+				Err: model.ErrUnsupportedCurrency,
 			})
 		}
 	}

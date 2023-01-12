@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 func getSimEVM() (simEVM *backends.SimulatedBackend, genesisKey *ecdsa.PrivateKey, genesisAcct *bind.TransactOpts, err error) {
@@ -43,21 +44,36 @@ func generatePubKey() (model.PhononPubKey, error) {
 	return pubKey, nil
 }
 
-func initSimEthChainSrv(chainId uint32, sim *backends.SimulatedBackend) (*EthChainService, error) {
+func initSimEthChainSrv(chainID int, sim *backends.SimulatedBackend) (*EthChainService, error) {
 	ethChainSrv, err := NewEthChainService()
 	if err != nil {
 		return nil, err
 	}
 
 	ethChainSrv.cl = sim
-	ethChainSrv.clChainID = chainId
 
 	return ethChainSrv, err
 }
 
-// read transactions / docs, describes how eth works
+func createEthPhonon(desc *model.Phonon) (*model.Phonon, error) {
+	pubKey, err := generatePubKey()
+	if err != nil {
+		return nil, err
+	}
 
-func fundEthPhonon(value *big.Int, chainId int, ethChainSrv *EthChainService, sim *backends.SimulatedBackend, genesisKey *ecdsa.PrivateKey, genesisAcct *bind.TransactOpts) (*model.Phonon, *EthChainService, error) {
+	singlePhonon := &model.Phonon{
+		KeyIndex:     desc.KeyIndex,
+		PubKey:       pubKey,
+		CurrencyType: desc.CurrencyType,
+		ChainID:      desc.ChainID,
+		CurveType:    desc.CurveType,
+		Denomination: desc.Denomination,
+	}
+
+	return singlePhonon, nil
+}
+
+func fundEthPhonon(desc *model.Phonon, ethChainSrv *EthChainService, sim *backends.SimulatedBackend, genesisKey *ecdsa.PrivateKey, genesisAcct *bind.TransactOpts) (*model.Phonon, *EthChainService, error) {
 	ctx := context.Background()
 	nonce, _, _, err := ethChainSrv.fetchPreTransactionInfo(ctx, genesisAcct.From)
 	if err != nil {
@@ -65,32 +81,18 @@ func fundEthPhonon(value *big.Int, chainId int, ethChainSrv *EthChainService, si
 	}
 
 	fixedGasPrice := big.NewInt(875000000)
-	phononValue, err := model.NewDenomination(value)
+	phononValue, err := model.NewDenomination(desc.Denomination.Value())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	pubKey, err := generatePubKey()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	p := &model.Phonon{
-		KeyIndex:     1,
-		PubKey:       pubKey,
-		CurrencyType: model.Ethereum,
-		ChainID:      chainId,
-		CurveType:    model.Secp256k1,
-		Denomination: phononValue,
-	}
-
-	p.Address, err = ethChainSrv.DeriveAddress(p)
+	desc.Address, err = ethChainSrv.DeriveAddress(desc)
 	if err != nil {
 		return nil, nil, err
 	}
 	_, err = ethChainSrv.submitLegacyTransaction(ctx, nonce,
 		big.NewInt(int64(ethChainSrv.clChainID)),
-		common.HexToAddress(p.Address),
+		common.HexToAddress(desc.Address),
 		phononValue.Value(),
 		ethChainSrv.gasLimit,
 		fixedGasPrice,
@@ -102,7 +104,7 @@ func fundEthPhonon(value *big.Int, chainId int, ethChainSrv *EthChainService, si
 	//Wait for the transaction to be mined
 	sim.Commit()
 
-	return p, ethChainSrv, nil
+	return desc, ethChainSrv, nil
 }
 
 func TestValidate(t *testing.T) {
@@ -113,27 +115,100 @@ func TestValidate(t *testing.T) {
 		t.Error("unable to get simEVM. err: ", err)
 	}
 
-	chainID := 1337
+	testChainID := 1337
 
-	ethChainSrv, err := initSimEthChainSrv(uint32(chainID), sim)
+	ethChainSrv, err := initSimEthChainSrv(testChainID, sim)
 	if err != nil {
 		t.Error("unable to init simEVM. err: ", err)
 	}
 
-	// should take in an entire phonon def.
-	// change facility to check for validity of phonons on chain
-	phonon, ethChainSrv, err := fundEthPhonon(big.NewInt(1000000000000000000), chainID, ethChainSrv, sim, key, acct)
+	value, err := model.NewDenomination(big.NewInt(10000000000000))
 	if err != nil {
-		t.Error("unable to fund simEVM. err: ", err)
+		t.Error("unable to create phonon. err: ", err)
 	}
 
-	phonons := []*model.Phonon{phonon}
+	highValue, err := model.NewDenomination(big.NewInt(9900000000000))
+	if err != nil {
+		t.Error("unable to create phonon. err: ", err)
+	}
+
+	lowValue, err := model.NewDenomination(big.NewInt(1000000000000000))
+	if err != nil {
+		t.Error("unable to create phonon. err: ", err)
+	}
+
+	phonons := []*model.Phonon{}
+	for i := 0; i < 10; i++ {
+		phonon, err := createEthPhonon(&model.Phonon{
+			KeyIndex:     model.PhononKeyIndex(i),
+			CurrencyType: model.Ethereum,
+			ChainID:      testChainID,
+			CurveType:    model.Secp256k1,
+			Denomination: value,
+		})
+		if err != nil {
+			t.Error("unable to create phonon. err: ", err)
+		}
+
+		if i == 7 {
+			phonon.ChainID = 9
+		}
+
+		ethChainSrv.clChainID = uint32(phonon.ChainID)
+
+		phonon, ethChainSrv, err = fundEthPhonon(phonon, ethChainSrv, sim, key, acct)
+		if err != nil {
+			t.Error("unable to fund phonon. err: ", err)
+		}
+
+		if i == 2 {
+			phonon.Denomination = lowValue
+		}
+
+		if i == 3 {
+			phonon.CurrencyType = model.Bitcoin
+		}
+
+		if i == 5 {
+			phonon.Denomination = highValue
+		}
+
+		phonons = append(phonons, phonon)
+	}
+
 	valid, err := ethChainSrv.Validate(phonons)
 	if err != nil {
 		t.Error("unable to validate phonons. err: ", err)
 	}
 
 	for _, r := range valid {
-		t.Log(r.P.KeyIndex, r.P.CurrencyType, r.Valid, r.Err)
+		if r.P.KeyIndex == 0 {
+			t.Log("validating a true phonon")
+			assert.Equal(t, r.Valid, true)
+		}
+
+		if r.P.KeyIndex == 2 {
+			t.Log("validating an invalid phonon with too low of the balance stated")
+			assert.Equal(t, r.Valid, false)
+			assert.EqualError(t, r.Err, model.ErrBalanceTooLow.Error())
+		}
+
+		if r.P.KeyIndex == 3 {
+			t.Log("validating an invalid phonon with an unsupported currency type")
+			assert.Equal(t, r.Valid, false)
+			assert.EqualError(t, r.Err, model.ErrUnsupportedCurrency.Error())
+		}
+
+		if r.P.KeyIndex == 5 {
+			t.Log("validating an invalid phonon with too high of the balance stated")
+			assert.Equal(t, r.Valid, false)
+			assert.EqualError(t, r.Err, model.ErrBalanceTooHigh.Error())
+		}
+
+		if r.P.KeyIndex == 7 {
+			t.Log("validating an invalid phonon with an invalid chain id")
+			assert.Equal(t, r.Valid, false)
+			assert.EqualError(t, r.Err, model.ErrInvalidChainID.Error())
+		}
 	}
 }

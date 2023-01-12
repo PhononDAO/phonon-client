@@ -3,7 +3,6 @@ package chain
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"math/big"
 
 	"github.com/GridPlus/phonon-client/model"
@@ -27,8 +26,6 @@ type EthChainService struct {
 	clChainID uint32
 }
 
-// optional arguments
-
 func NewEthChainService() (*EthChainService, error) {
 	ethchainSrv := &EthChainService{
 		gasLimit: uint64(21000), //Setting to default magic value for now
@@ -44,36 +41,57 @@ func (eth *EthChainService) Validate(proposal []*model.Phonon) (result []*model.
 	}
 
 	for _, p := range proposal {
+		var resultForPhonon *model.AssetValidationResult
+
+		if p.CurrencyType != model.Ethereum {
+			resultForPhonon = &model.AssetValidationResult{
+				P:   p,
+				Err: model.ErrUnsupportedCurrency,
+			}
+		}
+
 		err := eth.dialRPCNode(uint32(p.ChainID))
 		if err != nil {
-			result = append(result, &model.AssetValidationResult{
+			resultForPhonon = &model.AssetValidationResult{
 				P:   p,
 				Err: err,
-			})
+			}
 		}
 
 		balance, err := eth.cl.BalanceAt(context.Background(), common.HexToAddress(p.Address), nil)
 		if err != nil {
 			log.Error("could not fetch on chain Phonon value: ", err)
-			result = append(result, &model.AssetValidationResult{
+			resultForPhonon = &model.AssetValidationResult{
 				P:   p,
 				Err: err,
-			})
+			}
 		}
 
 		if balance.Cmp(p.Denomination.Value()) < 0 {
 			log.Error("phonon balance is less than the denomination value")
-			result = append(result, &model.AssetValidationResult{
+			resultForPhonon = &model.AssetValidationResult{
 				P:   p,
 				Err: model.ErrBalanceTooLow,
-			})
+			}
 		}
 
-		result = append(result, &model.AssetValidationResult{
-			P:     p,
-			Valid: true,
-			Err:   nil,
-		})
+		if balance.Cmp(p.Denomination.Value()) > 0 {
+			log.Error("phonon balance is greater than the denomination value")
+			resultForPhonon = &model.AssetValidationResult{
+				P:   p,
+				Err: model.ErrBalanceTooHigh,
+			}
+		}
+
+		if resultForPhonon == nil {
+			resultForPhonon = &model.AssetValidationResult{
+				P:     p,
+				Valid: true,
+				Err:   nil,
+			}
+		}
+
+		result = append(result, resultForPhonon)
 	}
 
 	return result, nil
@@ -172,7 +190,7 @@ func (eth *EthChainService) dialRPCNode(chainID uint32) (err error) {
 		RPCEndpoint = "HTTP://127.0.0.1:8545"
 	default:
 		log.Debug("unsupported eth chainID requested")
-		return errors.New("eth chainID unsupported")
+		return model.ErrInvalidChainID
 	}
 	eth.cl, err = ethclient.Dial(RPCEndpoint)
 	if err != nil {

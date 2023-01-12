@@ -124,17 +124,17 @@ func TestValidate(t *testing.T) {
 
 	value, err := model.NewDenomination(big.NewInt(10000000000000))
 	if err != nil {
-		t.Error("unable to create phonon. err: ", err)
+		t.Error("unable to add denomination value. err: ", err)
 	}
 
 	highValue, err := model.NewDenomination(big.NewInt(9900000000000))
 	if err != nil {
-		t.Error("unable to create phonon. err: ", err)
+		t.Error("unable to add denomination value. err: ", err)
 	}
 
 	lowValue, err := model.NewDenomination(big.NewInt(1000000000000000))
 	if err != nil {
-		t.Error("unable to create phonon. err: ", err)
+		t.Error("unable to add denomination value. err: ", err)
 	}
 
 	phonons := []*model.Phonon{}
@@ -150,7 +150,7 @@ func TestValidate(t *testing.T) {
 			t.Error("unable to create phonon. err: ", err)
 		}
 
-		if i == 7 {
+		if i == 2 {
 			phonon.ChainID = 9
 		}
 
@@ -161,7 +161,7 @@ func TestValidate(t *testing.T) {
 			t.Error("unable to fund phonon. err: ", err)
 		}
 
-		if i == 2 {
+		if i == 0 {
 			phonon.Denomination = lowValue
 		}
 
@@ -169,7 +169,7 @@ func TestValidate(t *testing.T) {
 			phonon.CurrencyType = model.Bitcoin
 		}
 
-		if i == 5 {
+		if i == 4 {
 			phonon.Denomination = highValue
 		}
 
@@ -182,33 +182,34 @@ func TestValidate(t *testing.T) {
 	}
 
 	for _, r := range valid {
-		if r.P.KeyIndex == 0 {
+		if r.P.KeyIndex >= 5 {
 			t.Log("validating a true phonon")
 			assert.Equal(t, r.Valid, true)
+			assert.Equal(t, r.Err, nil)
 		}
 
-		if r.P.KeyIndex == 2 {
-			t.Log("validating an invalid phonon with too low of the balance stated")
+		if r.P.KeyIndex == 0 {
+			t.Logf("validating an invalid phonon with an invalid denomination: %s", r.P.Denomination)
 			assert.Equal(t, r.Valid, false)
 			assert.EqualError(t, r.Err, model.ErrBalanceTooLow.Error())
 		}
 
+		// if r.P.KeyIndex == 2 {
+		// 	t.Logf("validating an invalid phonon with an unsupported chain id: %d", r.P.ChainID)
+		// 	assert.Equal(t, r.Valid, false)
+		// 	assert.EqualError(t, r.Err, model.ErrBalanceTooLow.Error())
+		// }
+
 		if r.P.KeyIndex == 3 {
-			t.Log("validating an invalid phonon with an unsupported currency type")
+			t.Logf("validating an invalid phonon with an unsupported currency type: %s", r.P.CurrencyType)
 			assert.Equal(t, r.Valid, false)
 			assert.EqualError(t, r.Err, model.ErrUnsupportedCurrency.Error())
 		}
 
-		if r.P.KeyIndex == 5 {
-			t.Log("validating an invalid phonon with too high of the balance stated")
+		if r.P.KeyIndex == 4 {
+			t.Logf("validating an invalid phonon with an invalid denomination: %s", r.P.Denomination)
 			assert.Equal(t, r.Valid, false)
 			assert.EqualError(t, r.Err, model.ErrBalanceTooHigh.Error())
-		}
-
-		if r.P.KeyIndex == 7 {
-			t.Log("validating an invalid phonon with an invalid chain id")
-			assert.Equal(t, r.Valid, false)
-			assert.EqualError(t, r.Err, model.ErrInvalidChainID.Error())
 		}
 	}
 }

@@ -88,10 +88,6 @@ var ErrMiningReportNotAvailable = errors.New("could not find mining status repor
 // Creates a new card session, automatically connecting if the card is already initialized with a PIN
 // The next step is to run VerifyPIN to gain access to the secure commands on the card
 func NewSession(storage model.PhononCard) (s *Session, err error) {
-	// chainSrv, err := chain.NewMultiChainRouter()
-	// if err != nil {
-	// 	return nil, err
-	// }
 	s = &Session{
 		cs:                    storage,
 		RemoteCard:            nil,
@@ -106,11 +102,10 @@ func NewSession(storage model.PhononCard) (s *Session, err error) {
 		Cert:                  nil,
 		ElementUsageMtex:      sync.Mutex{},
 		logger:                log.WithField("CardID", "unknown"),
-		// chainSrv:              chainSrv,
-		cancelMiningChan:    make(chan struct{}),
-		isMiningActive:      false,
-		mutexedMiningReport: mutexedMiningReport{m: make(map[string]miningStatusReport), mtex: &sync.Mutex{}},
-		cache:               make(map[model.PhononKeyIndex]cachedPhonon),
+		cancelMiningChan:      make(chan struct{}),
+		isMiningActive:        false,
+		mutexedMiningReport:   mutexedMiningReport{m: make(map[string]miningStatusReport), mtex: &sync.Mutex{}},
+		cache:                 make(map[model.PhononKeyIndex]cachedPhonon),
 	}
 	s.logger = log.WithField("cardID", s.GetCardId())
 

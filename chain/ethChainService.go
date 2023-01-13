@@ -35,63 +35,66 @@ func NewEthChainService() (*EthChainService, error) {
 	return ethchainSrv, nil
 }
 
+func (eth *EthChainService) ValidateSingle(proposal *model.Phonon) (*model.AssetValidationResult, error) {
+	if proposal.CurrencyType != model.Ethereum {
+		return &model.AssetValidationResult{
+			P:   proposal,
+			Err: model.ErrUnsupportedCurrency,
+		}, nil
+	}
+
+	err := eth.dialRPCNode(uint32(proposal.ChainID))
+	if err != nil {
+		log.Error("could not dial rpc node: ", err)
+		return &model.AssetValidationResult{
+			P:   proposal,
+			Err: err,
+		}, nil
+	}
+
+	balance, err := eth.cl.BalanceAt(context.Background(), common.HexToAddress(proposal.Address), nil)
+	if err != nil {
+		log.Error("could not fetch on chain Phonon value: ", err)
+		return &model.AssetValidationResult{
+			P:   proposal,
+			Err: err,
+		}, nil
+	}
+
+	if balance.Cmp(proposal.Denomination.Value()) < 0 {
+		log.Error("phonon balance is less than the denomination value")
+		return &model.AssetValidationResult{
+			P:   proposal,
+			Err: model.ErrBalanceTooLow,
+		}, nil
+	}
+
+	if balance.Cmp(proposal.Denomination.Value()) > 0 {
+		log.Error("phonon balance is greater than the denomination value")
+		return &model.AssetValidationResult{
+			P:   proposal,
+			Err: model.ErrBalanceTooHigh,
+		}, nil
+	}
+
+	return &model.AssetValidationResult{
+		P:     proposal,
+		Valid: true,
+	}, nil
+}
+
 func (eth *EthChainService) Validate(proposal []*model.Phonon) (result []*model.AssetValidationResult, err error) {
 	if len(proposal) == 0 {
 		return nil, model.ErrEmptyProposal
 	}
 
 	for _, p := range proposal {
-		var resultForPhonon *model.AssetValidationResult
-
-		if p.CurrencyType != model.Ethereum {
-			resultForPhonon = &model.AssetValidationResult{
-				P:   p,
-				Err: model.ErrUnsupportedCurrency,
-			}
-		}
-
-		err := eth.dialRPCNode(uint32(p.ChainID))
+		validationResult, err := eth.ValidateSingle(p)
 		if err != nil {
-			resultForPhonon = &model.AssetValidationResult{
-				P:   p,
-				Err: err,
-			}
+			return nil, err
 		}
 
-		balance, err := eth.cl.BalanceAt(context.Background(), common.HexToAddress(p.Address), nil)
-		if err != nil {
-			log.Error("could not fetch on chain Phonon value: ", err)
-			resultForPhonon = &model.AssetValidationResult{
-				P:   p,
-				Err: err,
-			}
-		}
-
-		if balance.Cmp(p.Denomination.Value()) < 0 {
-			log.Error("phonon balance is less than the denomination value")
-			resultForPhonon = &model.AssetValidationResult{
-				P:   p,
-				Err: model.ErrBalanceTooLow,
-			}
-		}
-
-		if balance.Cmp(p.Denomination.Value()) > 0 {
-			log.Error("phonon balance is greater than the denomination value")
-			resultForPhonon = &model.AssetValidationResult{
-				P:   p,
-				Err: model.ErrBalanceTooHigh,
-			}
-		}
-
-		if resultForPhonon == nil {
-			resultForPhonon = &model.AssetValidationResult{
-				P:     p,
-				Valid: true,
-				Err:   nil,
-			}
-		}
-
-		result = append(result, resultForPhonon)
+		result = append(result, validationResult)
 	}
 
 	return result, nil

@@ -5,6 +5,9 @@ go 1.19
 require (
 	fyne.io/fyne/v2 v2.2.3
 	fyne.io/systray v1.10.1-0.20220621085403-9a2652634e93
+	github.com/GridPlus/keycard-go v0.0.0-20221026185543-f6ad0fa141c0
+	github.com/PhononDAO/phonon-core v0.0.0-20230117181242-72df18e02b8e
+	github.com/ebfe/scard v0.0.0-20190212122703-c3d1b1916a95
 	github.com/gorilla/mux v1.8.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/rs/cors v1.8.0
@@ -13,7 +16,6 @@ require (
 )
 
 require (
-	github.com/GridPlus/keycard-go v0.0.0-20221026185543-f6ad0fa141c0 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/certusone/yubihsm-go v0.2.0 // indirect
@@ -21,7 +23,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v2 v2.0.0 // indirect
-	github.com/ebfe/scard v0.0.0-20190212122703-c3d1b1916a95 // indirect
 	github.com/enceve/crypto v0.0.0-20160707101852-34d48bb93815 // indirect
 	github.com/ethereum/go-ethereum v1.10.15 // indirect
 	github.com/fredbi/uri v0.0.0-20181227131451-3dcfdacbaaf3 // indirect

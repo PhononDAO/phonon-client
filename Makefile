@@ -5,13 +5,13 @@ else
 endif
 
 build: generate frontend
-	go build main/phonon.go
+	go build -o phonon main.go
 
 client-build: generate #build just the golang code without the frontend
-	go build main/phonon.go
+	go build -o phonon main.go 
 
 windows-build: generate frontend
-	GOOS=windows CGO_ENABLED=1 go build -ldflags "-H=windowsgui" main/phonon.go
+	GOOS=windows CGO_ENABLED=1 go build -ldflags "-H=windowsgui" -o phonon.exe main.go
 
 test:
 	go test -v -count=1 ./...
@@ -27,13 +27,13 @@ android-sdk:
 	cd session && gomobile bind  -target android -o ../androidSDK/phononAndroid.aar
 
 frontend:
-	(cd gui/frontend && npm install)
-	(cd gui/frontend && npm run build)
+	(cd pkg/gui/frontend && npm install)
+	(cd pkg/gui/frontend && npm run build)
 
 release-mac: generate frontend
 	go get ./...
-	CGO_ENABLED=1 CC="clang -target arm64v8-apple-darwin-macho" GOOS=darwin GOARCH=arm64 go build -o phonon_arm64 main/phonon.go
-	CGO_ENABLED=1 CC="clang -target x86_64-apple-darwin-macho" GOOS=darwin GOARCH=amd64 go build -o phonon_x86_64 main/phonon.go
+	CGO_ENABLED=1 CC="clang -target arm64v8-apple-darwin-macho" GOOS=darwin GOARCH=arm64 go build -o phonon_arm64 main.go
+	CGO_ENABLED=1 CC="clang -target x86_64-apple-darwin-macho" GOOS=darwin GOARCH=amd64 go build -o phonon_x86_64 main.go
 	cp phonon_arm64 ./release/MacOS/Phonon.app/Contents/MacOS/phonon_arm64
 	cp phonon_x86_64 ./release/MacOS/Phonon.app/Contents/MacOS/phonon_x86_64
 	create-dmg \

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/GridPlus/phonon-core/pkg/cert"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -23,7 +22,7 @@ type ConfigFile struct {
 type Config struct {
 	TelemetryKey string
 	Certificate  []byte
-	Level        logrus.Level
+	Level        log.Level
 }
 
 func DefaultConfig() Config {
@@ -85,9 +84,9 @@ func LoadConfig() (config Config, err error) {
 	config.TelemetryKey = configFile.TelemetryKey
 
 	if configFile.LoggingLevel == "" {
-		config.Level = logrus.ErrorLevel
+		config.Level = log.ErrorLevel
 	} else {
-		config.Level, err = logrus.ParseLevel(configFile.LoggingLevel)
+		config.Level, err = log.ParseLevel(configFile.LoggingLevel)
 		if err != nil {
 			return Config{}, fmt.Errorf("unable to determine logging level from %s: %s", configFile.LoggingLevel, err.Error())
 		}
@@ -105,9 +104,6 @@ func DefaultConfigPath() (string, error) {
 	switch runtime.GOOS {
 	case "darwin", "linux":
 		ret = homedir + "/.phonon/"
-		if err != nil {
-			return "", err
-		}
 	case "windows":
 		ret = homedir + "\\.phonon\\"
 	default:

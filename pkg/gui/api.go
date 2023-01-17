@@ -16,13 +16,12 @@ import (
 	"time"
 
 	keycardIO "github.com/GridPlus/keycard-go/io"
-	"github.com/GridPlus/phonon-client/internal/config"
-	"github.com/GridPlus/phonon-client/internal/config/hooks"
 	"github.com/GridPlus/phonon-core/pkg/backend/mock"
 	"github.com/GridPlus/phonon-core/pkg/backend/smartcard"
 	"github.com/GridPlus/phonon-core/pkg/backend/smartcard/usb"
 	"github.com/GridPlus/phonon-core/pkg/model"
 	"github.com/GridPlus/phonon-core/pkg/orchestrator"
+	"github.com/ebfe/scard"
 	"github.com/gorilla/mux"
 	"github.com/pkg/browser"
 	"github.com/rs/cors"
@@ -51,61 +50,40 @@ var manifest []byte
 var swagger embed.FS
 
 type apiSession struct {
-	t            *orchestrator.PhononTerminal
-	telemetryKey string
+	t *orchestrator.PhononTerminal
 }
 
-func Server(port string, certFile string, keyFile string, autoGenMock bool) {
-
-	// parse configuration
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		log.Fatal("Unable to load configuration")
-	}
-	//todo: make a graphical window pop up indicating an error state
-	//////////////////////////////////
-	//     An error has occured:    //
-	//     "something something"    //
-	//        --------              //
-	//        |  ok  |              //
-	//        ________              //
-	//////////////////////////////////
-
-	if cfg.TelemetryKey != "" {
-		log.Debug("setting up logging hook")
-		log.AddHook(hooks.NewLoggingHook(cfg.TelemetryKey))
-	}
-
-	log.SetLevel(log.DebugLevel)
-	log.SetFormatter(&log.JSONFormatter{})
-	log.Debug("starting local api server")
-	session := apiSession{orchestrator.NewPhononTerminal(), cfg.TelemetryKey}
-
-	// initialize backends
-
+func Server(port string, certFile string, keyFile string, autoGenMock bool, logger *log.Logger, certificate []byte) {
 	// initialize orchestrator
 	//initialize cache map
+	var err error
+
+	session := apiSession{orchestrator.NewPhononTerminal()}
 	if autoGenMock {
-		//Start server with a mock and ignore actual cards
-		mock, err := mock.NewMockCard(true, false)
+		//Start server with a m and ignore actual cards
+		var m model.PhononCard
+		m, err = mock.NewMockCard(true, false)
 		if err != nil {
 			log.Error("unable to generate mock card during REST server startup: ", err)
 			return
 		}
-		sess, err := orchestrator.NewSession(mock)
+		var sess *orchestrator.Session
+		sess, err = orchestrator.NewSession(m)
 		if err != nil {
 			log.Error("unable to generate mock session during REST server startup: ", err)
 		}
 		session.t.AddSession(sess)
 		log.Debug("mock generated")
 	} else {
-		readers, err := usb.ConnectAllUSBReaders()
+		var readers []*scard.Card
+		readers, err = usb.ConnectAllUSBReaders()
 		if err != nil {
 
 			log.Error("Unable to connect to local card readers: %s", err.Error)
 		}
 		for _, reader := range readers {
-			sess, err := orchestrator.NewSession(smartcard.NewPhononCommandSet(keycardIO.NewNormalChannel(reader), cfg.Certificate, *log.StandardLogger()))
+			var sess *orchestrator.Session
+			sess, err = orchestrator.NewSession(smartcard.NewPhononCommandSet(keycardIO.NewNormalChannel(reader), certificate, *logger))
 			if err != nil {
 				log.Error("unable to connect to reader")
 			}
@@ -152,7 +130,6 @@ func Server(port string, certFile string, keyFile string, autoGenMock bool) {
 	// log sink
 	r.HandleFunc("/logs", logsink)
 	// telemetry check
-	r.HandleFunc("/telemetryCheck", session.checkTelemetryKey)
 	// frontend
 	static, err := fs.Sub(frontendStatic, "frontend/build/static")
 	if err != nil {
@@ -302,8 +279,8 @@ func (apiSession apiSession) createPhonon(w http.ResponseWriter, r *http.Request
 
 	enc := json.NewEncoder(w)
 	enc.Encode(struct {
-		Index  model.PhononKeyIndex `json:"index"`
 		PubKey string               `json:"pubkey"`
+		Index  model.PhononKeyIndex `json:"index"`
 	}{Index: index,
 		PubKey: pubKey.String()})
 }
@@ -417,8 +394,8 @@ func (apiSession *apiSession) initDepositPhonons(w http.ResponseWriter, r *http.
 		return
 	}
 	var depositPhononReq struct {
-		CurrencyType  model.CurrencyType
 		Denominations []*model.Denomination
+		CurrencyType  model.CurrencyType
 	}
 	err = json.NewDecoder(r.Body).Decode(&depositPhononReq)
 	if err != nil {
@@ -491,7 +468,7 @@ func (apiSession apiSession) redeemPhonons(w http.ResponseWriter, r *http.Reques
 	}
 	if len(reqs) == 0 {
 		log.Error("request data empty")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "empty request", http.StatusBadRequest)
 		return
 	}
 	for _, req := range reqs {
@@ -942,12 +919,4 @@ func (apiSession apiSession) sessionFromMuxVars(p map[string]string) (*orchestra
 		return nil, fmt.Errorf("unable to find session")
 	}
 	return targetSession, nil
-}
-
-func (apiSession apiSession) checkTelemetryKey(w http.ResponseWriter, r *http.Request) {
-	err := config.CheckTelemetryKey(apiSession.telemetryKey)
-	if err != nil {
-		http.Error(w, "telemetry check not successful", http.StatusInternalServerError)
-	}
-	// blank return gives 200 on successful test
 }

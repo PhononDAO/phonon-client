@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/GridPlus/phonon-core/pkg/cert"
+	"github.com/PhononDAO/phonon-core/pkg/cert"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )

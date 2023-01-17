@@ -5,15 +5,12 @@ go 1.19
 require (
 	fyne.io/fyne/v2 v2.2.3
 	fyne.io/systray v1.10.1-0.20220621085403-9a2652634e93
-	github.com/GridPlus/phonon-core v0.0.0
 	github.com/gorilla/mux v1.8.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/rs/cors v1.8.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.10.1
 )
-
-replace github.com/GridPlus/phonon-core => ./phonon-core
 
 require (
 	github.com/GridPlus/keycard-go v0.0.0-20221026185543-f6ad0fa141c0 // indirect

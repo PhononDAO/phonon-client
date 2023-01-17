@@ -1,5 +1,6 @@
 .vscode/
 jumpbox
+main
 phonon
 phonon.wxs
 phonon.wixobj

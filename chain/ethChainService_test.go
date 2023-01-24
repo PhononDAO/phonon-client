@@ -52,7 +52,7 @@ func initSimEthChainSrv(chainID int, sim *backends.SimulatedBackend) (*EthChainS
 	return ethChainSrv, err
 }
 
-func fundEthPhonon(phonons []*model.Phonon, ethChainSrv *EthChainService, sim *backends.SimulatedBackend, genesisKey *ecdsa.PrivateKey, genesisAcct *bind.TransactOpts) ([]*model.Phonon, *EthChainService, error) {
+func fundEthPhonon(phonon *model.Phonon, ethChainSrv *EthChainService, sim *backends.SimulatedBackend, genesisKey *ecdsa.PrivateKey, genesisAcct *bind.TransactOpts) (*model.Phonon, *EthChainService, error) {
 	ctx := context.Background()
 	nonce, _, _, err := ethChainSrv.fetchPreTransactionInfo(ctx, genesisAcct.From)
 	if err != nil {
@@ -61,35 +61,39 @@ func fundEthPhonon(phonons []*model.Phonon, ethChainSrv *EthChainService, sim *b
 
 	fixedGasPrice := big.NewInt(875000000)
 
-	for _, p := range phonons {
-		phononValue, err := model.NewDenomination(p.Denomination.Value())
-		if err != nil {
-			return nil, nil, err
-		}
+	phononValue, err := model.NewDenomination(phonon.Denomination.Value())
+	if err != nil {
+		return nil, nil, err
+	}
 
-		p.Address, err = ethChainSrv.DeriveAddress(p)
-		if err != nil {
-			return nil, nil, err
-		}
-		_, err = ethChainSrv.submitLegacyTransaction(ctx, nonce,
-			big.NewInt(int64(ethChainSrv.clChainID)),
-			common.HexToAddress(p.Address),
-			phononValue.Value(),
-			ethChainSrv.gasLimit,
-			fixedGasPrice,
-			genesisKey)
-		if err != nil {
-			return nil, nil, err
-		}
+	phonon.Address, err = ethChainSrv.DeriveAddress(phonon)
+	if err != nil {
+		return nil, nil, err
+	}
+	_, err = ethChainSrv.submitLegacyTransaction(ctx, nonce,
+		big.NewInt(int64(ethChainSrv.clChainID)),
+		common.HexToAddress(phonon.Address),
+		phononValue.Value(),
+		ethChainSrv.gasLimit,
+		fixedGasPrice,
+		genesisKey)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	//Wait for the transaction to be mined
 	sim.Commit()
 
-	return phonons, ethChainSrv, nil
+	return phonon, ethChainSrv, nil
 }
 
 func TestValidate(t *testing.T) {
+	type validateTest struct {
+		p     *model.Phonon
+		valid bool
+		err   error
+	}
+
 	log.SetLevel(log.DebugLevel)
 
 	sim, key, acct, err := getSimEVM()
@@ -104,96 +108,104 @@ func TestValidate(t *testing.T) {
 		t.Error("unable to init simEVM. err: ", err)
 	}
 
-	// 13 zeros
-	value, err := model.NewDenomination(big.NewInt(10000000000000))
+	// 1e zeros
+	value, err := model.NewDenomination(big.NewInt(100000000000000))
 	if err != nil {
 		t.Error("unable to add denomination value. err: ", err)
 	}
 
-	// 12 zeros
-	highValue, err := model.NewDenomination(big.NewInt(9900000000000))
+	// 14 zeros
+	lowValue, err := model.NewDenomination(big.NewInt(900000000000000))
 	if err != nil {
 		t.Error("unable to add denomination value. err: ", err)
 	}
 
-	// 15 zeros
-	lowValue, err := model.NewDenomination(big.NewInt(1000000000000000))
+	// 8 zeros
+	highValue, err := model.NewDenomination(big.NewInt(100000000))
 	if err != nil {
 		t.Error("unable to add denomination value. err: ", err)
 	}
 
-	pubKey, err := generatePubKey()
-	if err != nil {
-		t.Error("unable to generate pub key. err: ", err)
-	}
-
-	phonons := []*model.Phonon{
+	vt := []validateTest{
 		{
-			KeyIndex:     0,
-			Denomination: value,
-			CurrencyType: model.Ethereum,
-			PubKey:       pubKey,
-			CurveType:    model.Secp256k1,
-			ChainID:      testChainID,
+			p: &model.Phonon{
+				KeyIndex:     0,
+				Denomination: value,
+				ChainID:      testChainID,
+				CurveType:    model.Secp256k1,
+				CurrencyType: model.Ethereum,
+			},
+			valid: true,
 		},
 		{
-			KeyIndex:     1,
-			Denomination: lowValue,
-			CurrencyType: model.Ethereum,
-			PubKey:       pubKey,
-			CurveType:    model.Secp256k1,
-			ChainID:      testChainID,
+			p: &model.Phonon{
+				KeyIndex:     1,
+				Denomination: value,
+				ChainID:      testChainID,
+				CurveType:    model.Secp256k1,
+				CurrencyType: model.Bitcoin,
+			},
+			valid: false,
+			err:   model.ErrUnsupportedCurrency,
 		},
 		{
-			KeyIndex:     2,
-			Denomination: highValue,
-			CurrencyType: model.Ethereum,
-			PubKey:       pubKey,
-			CurveType:    model.Secp256k1,
-			ChainID:      testChainID,
+			p: &model.Phonon{
+				KeyIndex:     2,
+				Denomination: value,
+				ChainID:      testChainID,
+				CurveType:    model.Secp256k1,
+				CurrencyType: model.Ethereum,
+			},
+			valid: false,
+			err:   model.ErrBalanceTooLow,
 		},
 		{
-			KeyIndex:     3,
-			Denomination: value,
-			CurrencyType: model.Bitcoin,
-			PubKey:       pubKey,
-			CurveType:    model.Secp256k1,
-			ChainID:      testChainID,
+			p: &model.Phonon{
+				KeyIndex:     3,
+				Denomination: value,
+				ChainID:      testChainID,
+				CurveType:    model.Secp256k1,
+				CurrencyType: model.Ethereum,
+			},
+			valid: false,
+			err:   model.ErrBalanceTooHigh,
 		},
 	}
 
-	phononsToValidate, ethChainSrv, err := fundEthPhonon(phonons, ethChainSrv, sim, key, acct)
-	if err != nil {
-		t.Error("unable to fund phonon. err: ", err)
-	}
-
-	validationResult, err := ethChainSrv.Validate(phononsToValidate)
-	if err != nil {
-		t.Error("unable to validate phonons. err: ", err)
-	}
-
-	for _, r := range validationResult {
-		if r.P.KeyIndex == 0 {
-			if !(r.Valid == true && r.Err == nil) {
-				t.Error("valid phonon should return true with no error")
-			}
+	phononV := []*model.Phonon{}
+	for _, phonon := range vt {
+		phonon.p.PubKey, err = generatePubKey()
+		if err != nil {
+			t.Error("unable to generate pub key. err: ", err)
 		}
 
-		if r.P.KeyIndex == 1 {
-			if !(r.Valid == false && r.Err == model.ErrBalanceTooLow) {
-				t.Error("invalid phonon with an invalid denomination should return an error")
-			}
+		phononsToValidate, ethChainSrv, err := fundEthPhonon(phonon.p, ethChainSrv, sim, key, acct)
+		if err != nil {
+			t.Error("unable to fund phonon. err: ", err)
 		}
 
-		if r.P.KeyIndex == 3 {
-			if !(r.Valid == false && r.Err == model.ErrUnsupportedCurrency) {
-				t.Error("invalid phonon with an unsupported currency type should return an error")
-			}
-		}
+		phononV = append(phononV, phononsToValidate)
 
-		if r.P.KeyIndex == 2 {
-			if !(r.Valid == false && r.Err == model.ErrBalanceTooHigh) {
-				t.Error("invalid phonon with an invalid denomination should return an error")
+		for i := range phononV {
+			if phononV[i].KeyIndex == 3 {
+				phononV[i].Denomination = highValue
+			}
+
+			if phononV[i].KeyIndex == 2 {
+				phononV[i].Denomination = lowValue
+			}
+
+			validationResult, err := ethChainSrv.Validate(phononV)
+			if err != nil {
+				t.Error("unable to validate phonons. err: ", err)
+			}
+
+			if validationResult[i].Valid != vt[i].valid {
+				t.Errorf("expected validation result to be %v, got %v for index %v", vt[i].valid, validationResult[i].Valid, vt[i].p.KeyIndex)
+			}
+
+			if validationResult[i].Err != vt[i].err {
+				t.Errorf("expected validation error to be %v, got %v for index %v", vt[i].err, validationResult[i].Err, vt[i].p.KeyIndex)
 			}
 		}
 	}

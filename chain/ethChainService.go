@@ -47,22 +47,22 @@ func (eth *EthChainService) ValidateSingle(proposal *model.Phonon) (*model.Asset
 	if err != nil {
 		log.Error("could not dial rpc node: ", err)
 		return &model.AssetValidationResult{
-			P:   proposal,
-			Err: err,
-		}, nil
+			P:     proposal,
+			Valid: true,
+		}, err
 	}
 
 	balance, err := eth.cl.BalanceAt(context.Background(), common.HexToAddress(proposal.Address), nil)
 	if err != nil {
 		log.Error("could not fetch on chain Phonon value: ", err)
 		return &model.AssetValidationResult{
-			P:   proposal,
-			Err: err,
-		}, nil
+			P:     proposal,
+			Valid: true,
+		}, err
 	}
 
 	if balance.Cmp(proposal.Denomination.Value()) < 0 {
-		log.Error("phonon balance is less than the denomination value")
+		log.Errorf("phonon balance %v is less than the denomination value", proposal.KeyIndex)
 		return &model.AssetValidationResult{
 			P:   proposal,
 			Err: model.ErrBalanceTooLow,
@@ -70,7 +70,7 @@ func (eth *EthChainService) ValidateSingle(proposal *model.Phonon) (*model.Asset
 	}
 
 	if balance.Cmp(proposal.Denomination.Value()) > 0 {
-		log.Error("phonon balance is greater than the denomination value")
+		log.Errorf("phonon balance %v is greater than the denomination value", proposal.KeyIndex)
 		return &model.AssetValidationResult{
 			P:   proposal,
 			Err: model.ErrBalanceTooHigh,

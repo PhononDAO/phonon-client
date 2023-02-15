@@ -48,7 +48,7 @@ func (eth *EthChainService) ValidateSingle(proposal *model.Phonon) (*model.Asset
 		log.Error("could not dial rpc node: ", err)
 		return &model.AssetValidationResult{
 			P:     proposal,
-			Valid: true,
+			Valid: false,
 		}, err
 	}
 

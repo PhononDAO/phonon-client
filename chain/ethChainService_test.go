@@ -108,7 +108,7 @@ func TestValidate(t *testing.T) {
 		t.Error("unable to init simEVM. err: ", err)
 	}
 
-	// 1e zeros
+	// 14 zeros
 	value, err := model.NewDenomination(big.NewInt(100000000000000))
 	if err != nil {
 		t.Error("unable to add denomination value. err: ", err)

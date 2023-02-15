@@ -3,14 +3,11 @@ package chain
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"math/big"
 
 	"github.com/GridPlus/phonon-client/model"
-	"github.com/GridPlus/phonon-client/util"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -18,18 +15,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ErrGasCostExceedsRedeemValue = errors.New("cannot redeem phonon where gas cost would exceed on chain balance")
-var ErrRedeemAddressInvalid = errors.New("redeem address is invalid")
-
-// Composite interface supporting all needed EVM RPC calls
 type EthChainInterface interface {
 	bind.ContractTransactor
 	ethereum.ChainStateReader
 }
+
 type EthChainService struct {
 	gasLimit  uint64
 	cl        EthChainInterface //*ethclient.Client // //bind.ContractTransactor
-	clChainID int
+	clChainID uint32
 }
 
 func NewEthChainService() (*EthChainService, error) {
@@ -41,127 +35,69 @@ func NewEthChainService() (*EthChainService, error) {
 	return ethchainSrv, nil
 }
 
-// Derives an ETH address from a phonon's ECDSA Public Key
-func (eth *EthChainService) DeriveAddress(p *model.Phonon) (address string, err error) {
-	eccPubKey, err := model.PhononPubKeyToECDSA(p.PubKey)
-	if err != nil {
-		return "", err
+func (eth *EthChainService) ValidateSingle(proposal *model.Phonon) (*model.AssetValidationResult, error) {
+	if proposal.CurrencyType != model.Ethereum {
+		return &model.AssetValidationResult{
+			P:   proposal,
+			Err: model.ErrUnsupportedCurrency,
+		}, nil
 	}
-	return ethcrypto.PubkeyToAddress(*eccPubKey).Hex(), nil
+
+	err := eth.dialRPCNode(uint32(proposal.ChainID))
+	if err != nil {
+		log.Error("could not dial rpc node: ", err)
+		return &model.AssetValidationResult{
+			P:     proposal,
+			Valid: false,
+		}, err
+	}
+
+	balance, err := eth.cl.BalanceAt(context.Background(), common.HexToAddress(proposal.Address), nil)
+	if err != nil {
+		log.Error("could not fetch on chain Phonon value: ", err)
+		return &model.AssetValidationResult{
+			P:     proposal,
+			Valid: true,
+		}, err
+	}
+
+	if balance.Cmp(proposal.Denomination.Value()) < 0 {
+		log.Errorf("phonon balance %v is less than the denomination value", proposal.KeyIndex)
+		return &model.AssetValidationResult{
+			P:   proposal,
+			Err: model.ErrBalanceTooLow,
+		}, nil
+	}
+
+	if balance.Cmp(proposal.Denomination.Value()) > 0 {
+		log.Errorf("phonon balance %v is greater than the denomination value", proposal.KeyIndex)
+		return &model.AssetValidationResult{
+			P:   proposal,
+			Err: model.ErrBalanceTooHigh,
+		}, nil
+	}
+
+	return &model.AssetValidationResult{
+		P:     proposal,
+		Valid: true,
+	}, nil
 }
 
-func (eth *EthChainService) RedeemPhonon(p *model.Phonon, privKey *ecdsa.PrivateKey, redeemAddress string) (transactionData string, err error) {
-	err = eth.ValidateRedeemData(p, privKey, redeemAddress)
-	if err != nil {
-		log.Error("phonon did not contain complete data for redemption: ", err)
-		return "", err
+func (eth *EthChainService) Validate(proposal []*model.Phonon) (result []*model.AssetValidationResult, err error) {
+	if len(proposal) == 0 {
+		return nil, model.ErrEmptyProposal
 	}
 
-	//Will validate that we have a valid RPC endpoint for the given p.ChainID
-	err = eth.dialRPCNode(p.ChainID)
-	if err != nil {
-		return "", err
-	}
-	ctx := context.Background()
-
-	//Collect on chain details for redeem
-	nonce, onChainBalance, suggestedGasPrice, err := eth.fetchPreTransactionInfo(ctx, common.HexToAddress(p.Address))
-	if err != nil {
-		return "", err
-	}
-	redeemable, redeemValue := eth.checkRedeemValue(onChainBalance, suggestedGasPrice)
-	if !redeemable {
-		return "", ErrGasCostExceedsRedeemValue
-	}
-
-	tx, err := eth.submitLegacyTransaction(ctx, nonce, big.NewInt(int64(p.ChainID)), common.HexToAddress(redeemAddress), redeemValue, eth.gasLimit, suggestedGasPrice, privKey)
-	if err != nil {
-		return "", err
-	}
-
-	//Parse Response
-	return tx.Hash().String(), nil
-}
-
-// ReconcileRedeemData validates the input data to ensure it contains all that's needed for a successful redemption.
-// It will update the phonon data structure with a derived address if necessary
-func (eth *EthChainService) ValidateRedeemData(p *model.Phonon, privKey *ecdsa.PrivateKey, redeemAddress string) (err error) {
-	eccPubKey, err := model.PhononPubKeyToECDSA(p.PubKey)
-	if err != nil {
-		return err
-	}
-	//Check that pubkey listed in metadata matches pubKey derived from phonon's private key
-	if !eccPubKey.Equal(privKey.Public()) {
-		log.Error("phonon pubkey metadata and pubkey derived from redemption privKey did not match. err: ", err)
-		log.Error("metadata pubkey: ", util.ECCPubKeyToHexString(eccPubKey))
-		log.Error("privKey derived key: ", util.ECCPubKeyToHexString(&privKey.PublicKey))
-		return errors.New("pubkey metadata and redemption private key did not match")
-	}
-
-	//Check that fromAddress exists, if not derive it
-	if p.Address == "" {
-		p.Address, err = eth.DeriveAddress(p)
+	for _, p := range proposal {
+		validationResult, err := eth.ValidateSingle(p)
 		if err != nil {
-			log.Error("unable to derive source address for redemption: ", err)
-			return err
+			return nil, err
 		}
+
+		result = append(result, validationResult)
 	}
 
-	//Check that redeemAddress is valid
-	//Just checks for correct address length, works with or without 0x prefix
-	valid := common.IsHexAddress(redeemAddress)
-	if !valid {
-		return ErrRedeemAddressInvalid
-	}
-
-	return nil
-}
-
-// dialRPCNode establishes a connection to the proper RPC node based on the chainID
-func (eth *EthChainService) dialRPCNode(chainID int) (err error) {
-	log.Debugf("ethChainID: %v, chainID: %v\n", eth.clChainID, chainID)
-	var RPCEndpoint string
-	//If chainID is already set, correct RPC node is already connected
-	if eth.clChainID != 0 && eth.clChainID == chainID {
-		return nil
-	}
-	switch chainID {
-	// case 1: //Mainnet
-	// 	//untested
-	// 	RPCEndpoint = "https://eth-mainnet.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
-	case 3: //Ropsten
-		//untested
-		RPCEndpoint = "https://eth-ropsten.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
-	case 4: //Rinkeby
-		RPCEndpoint = "https://eth-rinkeby.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
-	case 5: // Goerli
-		RPCEndpoint = "https://eth-goerli.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
-	case 42: //Kovan
-		RPCEndpoint = "https://poa-kovan.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
-	case 97: // Binance Testnet
-		RPCEndpoint = "https://data-seed-prebsc-1-s1.binance.org:8545"
-	case 43114: // Avalanche Fuji (C-Chain)
-		RPCEndpoint = "https://api.avax-test.network/ext/bc/C/rpc"
-	case 80001: // Mumbai (Polygon)
-		RPCEndpoint = "https://rpc-mumbai.maticvigil.com"
-	case 4002: // Fantom testnet
-		RPCEndpoint = "https://rpc.testnet.fantom.network"
-	case 1337: //Local Ganache
-		RPCEndpoint = "HTTP://127.0.0.1:8545"
-	default:
-		log.Debug("unsupported eth chainID requested")
-		return errors.New("eth chainID unsupported")
-	}
-	eth.cl, err = ethclient.Dial(RPCEndpoint)
-	if err != nil {
-		log.Errorf("could not dial eth chain provider at endpoint %v: %v\n", RPCEndpoint, err)
-		return err
-	}
-
-	//If connection succeeded, set currently configured chainID
-	eth.clChainID = chainID
-	log.Trace("eth chain ID set to ", chainID)
-	return nil
+	return result, nil
 }
 
 func (eth *EthChainService) fetchPreTransactionInfo(ctx context.Context, fromAddress common.Address) (nonce uint64, balance *big.Int, suggestedGas *big.Int, err error) {
@@ -187,14 +123,19 @@ func (eth *EthChainService) fetchPreTransactionInfo(ctx context.Context, fromAdd
 	return nonce, balance, suggestedGasPrice, nil
 }
 
-func (eth *EthChainService) calcRedemptionValue(balance *big.Int, gasPrice *big.Int) *big.Int {
-	valueMinusGas := big.NewInt(0)
-	estimatedGasCost := big.NewInt(0)
-	gasLimit := int(eth.gasLimit)
-	return valueMinusGas.Sub(balance, estimatedGasCost.Mul(gasPrice, big.NewInt(int64(gasLimit))))
-}
-
 func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce uint64, chainID *big.Int, redeemAddress common.Address, redeemValue *big.Int, gasLimit uint64, gasPrice *big.Int, privKey *ecdsa.PrivateKey) (*types.Transaction, error) {
+	// Eth package returns a panic on some errors, this catches any panics and converts them into an error that the validator can display.
+	defer func() {
+		if err := recover(); err != nil {
+			r, ok := err.(error)
+			if !ok {
+				err = r.Error()
+			}
+
+			return
+		}
+	}()
+
 	//Submit transaction
 	//build transaction payload
 	tx := types.NewTransaction(nonce, redeemAddress, redeemValue, gasLimit, gasPrice, nil)
@@ -215,53 +156,53 @@ func (eth *EthChainService) submitLegacyTransaction(ctx context.Context, nonce u
 	return signedTx, nil
 }
 
-// Hacky function to ensure a phonon can be redeemed before an irreversible DESTROY_PHONON command is executed to redeem it.
-// Returns an error if the phonon can't be redeemed, or nil if it can
-func (eth *EthChainService) CheckRedeemable(p *model.Phonon, redeemAddress string) (err error) {
-	//Check that fromAddress exists, if not derive it
-	if p.Address == "" {
-		p.Address, err = eth.DeriveAddress(p)
-		if err != nil {
-			log.Error("unable to derive source address for redemption: ", err)
-			return err
-		}
-	}
-
-	//Check that redeemAddress is valid
-	//Just checks for correct address length, works with or without 0x prefix
-	valid := common.IsHexAddress(redeemAddress)
-	if !valid {
-		return ErrRedeemAddressInvalid
-	}
-
-	//Will validate that we have a valid RPC endpoint for the given p.ChainID
-	err = eth.dialRPCNode(p.ChainID)
+func (eth *EthChainService) DeriveAddress(p *model.Phonon) (address string, err error) {
+	eccPubKey, err := model.PhononPubKeyToECDSA(p.PubKey)
 	if err != nil {
-		return err
+		return "", err
 	}
-	ctx := context.Background()
-
-	//Collect on chain details for redeem
-	_, onChainBalance, suggestedGasPrice, err := eth.fetchPreTransactionInfo(ctx, common.HexToAddress(p.Address))
-	if err != nil {
-		return err
-	}
-
-	redeemable, _ := eth.checkRedeemValue(onChainBalance, suggestedGasPrice)
-	if !redeemable {
-		return ErrGasCostExceedsRedeemValue
-	}
-	return nil
+	return ethcrypto.PubkeyToAddress(*eccPubKey).Hex(), nil
 }
 
-func (eth *EthChainService) checkRedeemValue(balance *big.Int, gasPrice *big.Int) (positive bool, redeemValue *big.Int) {
-	redeemValue = eth.calcRedemptionValue(balance, gasPrice)
-	log.Debug("transaction redemption value is: ", redeemValue)
-
-	if redeemValue.Cmp(big.NewInt(0)) < 1 {
-		log.Error("phonon not large enough to pay gas for redemption")
-		return false, redeemValue
+// dialRPCNode establishes a connection to the proper RPC node based on the chainID
+func (eth *EthChainService) dialRPCNode(chainID uint32) (err error) {
+	log.Debugf("ethChainID: %v, chainID: %v\n", eth.clChainID, chainID)
+	var RPCEndpoint string
+	//If chainID is already set, correct RPC node is already connected
+	if eth.clChainID != 0 {
+		log.Debug("eth chainID already set to ", chainID)
+		return nil
+	}
+	switch chainID {
+	// case 1: //Mainnet
+	// 	//untested
+	// 	RPCEndpoint = "https://eth-mainnet.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
+	case 5: // Goerli
+		RPCEndpoint = "https://eth-goerli.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
+	case 42: //Kovan
+		RPCEndpoint = "https://poa-kovan.gateway.pokt.network/v1/lb/621e9e234e140e003a32b8ba"
+	case 97: // Binance Testnet
+		RPCEndpoint = "https://data-seed-prebsc-1-s1.binance.org:8545"
+	case 43114: // Avalanche Fuji (C-Chain)
+		RPCEndpoint = "https://api.avax-test.network/ext/bc/C/rpc"
+	case 80001: // Mumbai (Polygon)
+		RPCEndpoint = "https://rpc-mumbai.maticvigil.com"
+	case 4002: // Fantom testnet
+		RPCEndpoint = "https://rpc.testnet.fantom.network"
+	case 1337: //Local Ganache
+		RPCEndpoint = "HTTP://127.0.0.1:8545"
+	default:
+		log.Debug("unsupported eth chainID requested")
+		return model.ErrInvalidChainID
+	}
+	eth.cl, err = ethclient.Dial(RPCEndpoint)
+	if err != nil {
+		log.Errorf("could not dial eth chain provider at endpoint %v: %v\n", RPCEndpoint, err)
+		return err
 	}
 
-	return true, redeemValue
+	//If connection succeeded, set currently configured chainID
+	eth.clChainID = chainID
+	log.Trace("eth chain ID set to ", chainID)
+	return nil
 }

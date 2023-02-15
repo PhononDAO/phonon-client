@@ -12,7 +12,6 @@ require (
 	github.com/certusone/yubihsm-go v0.2.0
 	github.com/ebfe/scard v0.0.0-20190212122703-c3d1b1916a95
 	github.com/ethereum/go-ethereum v1.10.15
-	github.com/google/go-cmp v0.5.7
 	github.com/gorilla/mux v1.8.0
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mitchellh/go-homedir v1.1.0

@@ -15,121 +15,198 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var simEVM *backends.SimulatedBackend
-var genesisKey *ecdsa.PrivateKey
-var genesisAcct *bind.TransactOpts
-
-func getSimEVM() (*backends.SimulatedBackend, error) {
-	var err error
-	if simEVM != nil {
-		return simEVM, nil
-	}
+func getSimEVM() (simEVM *backends.SimulatedBackend, genesisKey *ecdsa.PrivateKey, genesisAcct *bind.TransactOpts, err error) {
 	genesisKey, _ = crypto.GenerateKey()
 	genesisAcct, err = bind.NewKeyedTransactorWithChainID(genesisKey, big.NewInt(1337))
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	genesisValue, _ := big.NewInt(0).SetString("1000000000000000000", 0)
 	simEVM = backends.NewSimulatedBackend(core.GenesisAlloc{
 		genesisAcct.From: {Balance: genesisValue},
 	}, 8000000)
 
-	return simEVM, nil
+	return simEVM, genesisKey, genesisAcct, nil
 }
 
-// TestEthChainServiceRedeem smoke tests the basic redeem funtionality using a simulated EVM backend
-func TestEthChainServiceRedeem(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-
-	sim, err := getSimEVM()
-	if err != nil {
-		t.Error("unable to start EVM simulator")
-		return
-	}
-
-	//Generate sender account
+func generatePubKey() (model.PhononPubKey, error) {
 	senderPrivKey, _ := crypto.GenerateKey()
-
-	//Generate destination account
-	redeemPrivKey, _ := crypto.GenerateKey()
-	redeemAddress := crypto.PubkeyToAddress(redeemPrivKey.PublicKey)
-
-	eth, err := NewEthChainService()
-	if err != nil {
-		t.Error(err)
-	}
-
-	//Manually substitute simulated backend for usual RPC client
-	testChainID := 1337
-	eth.cl = sim
-	eth.clChainID = testChainID
 
 	pubKey, err := model.NewPhononPubKey(crypto.FromECDSAPub(&senderPrivKey.PublicKey), model.Secp256k1)
 	if err != nil {
-		t.Fatal("could not construct pubKey: ", err)
+		return nil, err
 	}
 
-	p := &model.Phonon{
-		KeyIndex:     1,
-		PubKey:       pubKey,
-		CurrencyType: model.Ethereum,
-		ChainID:      testChainID,
-	}
-	p.Address, err = eth.DeriveAddress(p)
+	return pubKey, nil
+}
+
+func initSimEthChainSrv(chainID int, sim *backends.SimulatedBackend) (*EthChainService, error) {
+	ethChainSrv, err := NewEthChainService()
 	if err != nil {
-		t.Error(err)
+		return nil, err
 	}
+
+	ethChainSrv.cl = sim
+	ethChainSrv.clChainID = uint32(chainID)
+
+	return ethChainSrv, err
+}
+
+func fundEthPhonon(phonon *model.Phonon, ethChainSrv *EthChainService, sim *backends.SimulatedBackend, genesisKey *ecdsa.PrivateKey, genesisAcct *bind.TransactOpts) (*model.Phonon, *EthChainService, error) {
 	ctx := context.Background()
-	//Fund phonon with sim ETH from genesis account
-	nonce, _, _, err := eth.fetchPreTransactionInfo(ctx, genesisAcct.From)
+	nonce, _, _, err := ethChainSrv.fetchPreTransactionInfo(ctx, genesisAcct.From)
 	if err != nil {
-		t.Error("could not fetch banker transaction info", err)
-		return
+		return nil, nil, err
 	}
+
 	fixedGasPrice := big.NewInt(875000000)
-	phononValue := big.NewInt(10000000000000000)
-	_, err = eth.submitLegacyTransaction(ctx, nonce,
-		big.NewInt(int64(testChainID)),
-		common.HexToAddress(p.Address),
-		phononValue,
-		eth.gasLimit,
+
+	phononValue, err := model.NewDenomination(phonon.Denomination.Value())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	phonon.Address, err = ethChainSrv.DeriveAddress(phonon)
+	if err != nil {
+		return nil, nil, err
+	}
+	_, err = ethChainSrv.submitLegacyTransaction(ctx, nonce,
+		big.NewInt(int64(ethChainSrv.clChainID)),
+		common.HexToAddress(phonon.Address),
+		phononValue.Value(),
+		ethChainSrv.gasLimit,
 		fixedGasPrice,
 		genesisKey)
 	if err != nil {
-		t.Error("unable to submit simulated phonon deposit transaction. err: ", err)
+		return nil, nil, err
 	}
 
-	//Commit funding transaction
+	//Wait for the transaction to be mined
 	sim.Commit()
 
-	//Testing redeem function
-	//Redeem to redeemAddress
-	_, err = eth.RedeemPhonon(p, senderPrivKey, redeemAddress.Hex())
+	return phonon, ethChainSrv, nil
+}
+
+func TestValidate(t *testing.T) {
+	type validateTest struct {
+		p     *model.Phonon
+		valid bool
+		err   error
+	}
+
+	log.SetLevel(log.DebugLevel)
+
+	sim, key, acct, err := getSimEVM()
 	if err != nil {
-		t.Error("error redeeming phonon. err: ", err)
+		t.Error("unable to get simEVM. err: ", err)
 	}
-	//Mine the pending transaction
-	sim.Commit()
 
-	//Check that the redeem succeeded
-	resultBalance, err := eth.cl.BalanceAt(context.Background(), redeemAddress, nil)
+	testChainID := 1337
+
+	ethChainSrv, err := initSimEthChainSrv(testChainID, sim)
 	if err != nil {
-		t.Error("could not check balance of phonon redeem address. err: ", err)
+		t.Error("unable to init simEVM. err: ", err)
 	}
 
-	//TODO: boundary cases with expected errors
-
-	//Calculate how much the gas fee * gas limit cost to redeem
-	expectedBalance := big.NewInt(0)
-	calculatedRedeemGasPrice, _ := big.NewInt(0).SetString("766199219", 10) //Taken from log of redeem results
-	redeemGasPaid := big.NewInt(0).Mul(calculatedRedeemGasPrice, big.NewInt(21000))
-
-	//TODO: Test a range of phonon values
-	expectedBalance = expectedBalance.Sub(phononValue, redeemGasPaid)
-	if expectedBalance.Cmp(resultBalance) != 0 {
-		t.Error("expected balance was incorrect")
-		t.Errorf("expectedBalance: %v, resultBalance: %v, phononValue: %v, redeemGasPaid: %v\n", expectedBalance, resultBalance, phononValue, redeemGasPaid)
+	// 14 zeros
+	value, err := model.NewDenomination(big.NewInt(100000000000000))
+	if err != nil {
+		t.Error("unable to add denomination value. err: ", err)
 	}
-	//Check for correct balance output
-	t.Log("resultBalance was: ", resultBalance)
+
+	// 14 zeros
+	lowValue, err := model.NewDenomination(big.NewInt(900000000000000))
+	if err != nil {
+		t.Error("unable to add denomination value. err: ", err)
+	}
+
+	// 8 zeros
+	highValue, err := model.NewDenomination(big.NewInt(100000000))
+	if err != nil {
+		t.Error("unable to add denomination value. err: ", err)
+	}
+
+	vt := []validateTest{
+		{
+			p: &model.Phonon{
+				KeyIndex:     0,
+				Denomination: value,
+				ChainID:      testChainID,
+				CurveType:    model.Secp256k1,
+				CurrencyType: model.Ethereum,
+			},
+			valid: true,
+		},
+		{
+			p: &model.Phonon{
+				KeyIndex:     1,
+				Denomination: value,
+				ChainID:      testChainID,
+				CurveType:    model.Secp256k1,
+				CurrencyType: model.Bitcoin,
+			},
+			valid: false,
+			err:   model.ErrUnsupportedCurrency,
+		},
+		{
+			p: &model.Phonon{
+				KeyIndex:     2,
+				Denomination: value,
+				ChainID:      testChainID,
+				CurveType:    model.Secp256k1,
+				CurrencyType: model.Ethereum,
+			},
+			valid: false,
+			err:   model.ErrBalanceTooLow,
+		},
+		{
+			p: &model.Phonon{
+				KeyIndex:     3,
+				Denomination: value,
+				ChainID:      testChainID,
+				CurveType:    model.Secp256k1,
+				CurrencyType: model.Ethereum,
+			},
+			valid: false,
+			err:   model.ErrBalanceTooHigh,
+		},
+	}
+
+	phononV := []*model.Phonon{}
+	for _, phonon := range vt {
+		phonon.p.PubKey, err = generatePubKey()
+		if err != nil {
+			t.Error("unable to generate pub key. err: ", err)
+		}
+
+		phononsToValidate, ethChainSrv, err := fundEthPhonon(phonon.p, ethChainSrv, sim, key, acct)
+		if err != nil {
+			t.Error("unable to fund phonon. err: ", err)
+		}
+
+		phononV = append(phononV, phononsToValidate)
+
+		for i := range phononV {
+			if phononV[i].KeyIndex == 3 {
+				phononV[i].Denomination = highValue
+			}
+
+			if phononV[i].KeyIndex == 2 {
+				phononV[i].Denomination = lowValue
+			}
+
+			validationResult, err := ethChainSrv.Validate(phononV)
+			if err != nil {
+				t.Error("unable to validate phonons. err: ", err)
+			}
+
+			if validationResult[i].Valid != vt[i].valid {
+				t.Errorf("expected validation result to be %v, got %v for index %v", vt[i].valid, validationResult[i].Valid, vt[i].p.KeyIndex)
+			}
+
+			if validationResult[i].Err != vt[i].err {
+				t.Errorf("expected validation error to be %v, got %v for index %v", vt[i].err, validationResult[i].Err, vt[i].p.KeyIndex)
+			}
+		}
+	}
 }

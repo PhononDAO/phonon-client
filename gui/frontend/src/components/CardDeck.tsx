@@ -11,7 +11,6 @@ import {
   Phonon as iPhonon,
   PhononCard,
 } from '../interfaces/interfaces';
-import { MinePhonon } from './PhononCardActions/MinePhonon';
 import { CreatePhonon } from './PhononCardActions/CreatePhonon';
 import { RemoteCardPhononMessage } from './RemoteCardPhononMessage';
 import { PhononTransferProposal } from './PhononTransferProposal';
@@ -118,7 +117,6 @@ export const CardDeck: React.FC<{
             {!card.IsRemote && (
               <>
                 <div className="absolute -top-16 right-0 flex gap-x-4">
-                  <MinePhonon card={card} />
                   <CreatePhonon card={card} />
                 </div>
 

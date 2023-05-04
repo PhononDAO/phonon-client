@@ -1,4 +1,4 @@
-import { Button } from '@chakra-ui/button';
+import { Button, IconButton } from '@chakra-ui/button';
 import { Input, InputGroup, InputRightElement } from '@chakra-ui/input';
 import { useClipboard } from '@chakra-ui/react';
 import { IonIcon } from '@ionic/react';
@@ -8,6 +8,9 @@ import {
   cloudDone,
   arrowForward,
   repeatOutline,
+  peopleCircleOutline,
+  peopleCircle,
+  peopleOutline,
 } from 'ionicons/icons';
 import { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -21,7 +24,7 @@ type RemotePairingFormData = {
   remotePairingCode: string;
 };
 
-export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
+export const CardConnect: React.FC<{ setShowPairingOptions }> = ({
   setShowPairingOptions = false,
 }) => {
   const { t } = useTranslation();
@@ -120,7 +123,7 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
             <div>
               <span className="block text-center text-white text-sm">
                 {t(
-                  "To pair, share this code with the person you'd like to pair with."
+                  'Add the remote card address or select from your address book to send phonons to.'
                 )}
               </span>
             </div>
@@ -132,10 +135,13 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
                 disabled={true}
                 value={value}
               />
-              <InputRightElement width="4.5rem">
-                <Button h="1.75rem" size="sm" onClick={onCopy}>
-                  {hasCopied ? t('Copied!') : t('Copy')}
-                </Button>
+              <InputRightElement width="3rem">
+                <IconButton
+                  icon={<IonIcon icon={peopleOutline} />}
+                  colorScheme="telegram"
+                  size="sm"
+                  aria-label="Address book"
+                />
               </InputRightElement>
             </InputGroup>
             <Button
@@ -143,93 +149,11 @@ export const CardPairing: React.FC<{ setShowPairingOptions }> = ({
               size="sm"
               className="uppercase"
               onClick={() => {
-                setCurrentStep('request');
+                setCurrentStep('success');
               }}
             >
               {t('Next')}
             </Button>
-          </div>
-        </div>
-      )}
-
-      {currentStep === 'request' && (
-        <div className="w-80 h-52 rounded-lg border border-4 overflow-hidden transition-all border-dashed border-white bg-phonon-card-gray bg-cover bg-no-repeat">
-          <Button
-            size="xs"
-            colorScheme="red"
-            variant="ghost"
-            className="absolute top-0 left-1"
-            onClick={() => {
-              setShowPairingOptions(false);
-            }}
-          >
-            {t('Cancel')}
-          </Button>
-          <div className="flex flex-col gap-y-2 px-1 items-center justify-center text-xl">
-            <IonIcon icon={cloudDownload} className="text-white" />
-            <div>
-              <span className="block text-center text-white text-sm">
-                {t(
-                  "Input the person's pairing code below to initiate pairing."
-                )}
-              </span>
-            </div>
-            <form
-              className="w-full flex flex-col gap-y-2 px-2 items-center justify-center"
-              // eslint-disable-next-line @typescript-eslint/no-misused-promises
-              onSubmit={handleSubmit(onSubmit)}
-            >
-              <InputGroup size="md">
-                <Input
-                  type="text"
-                  bgColor="white"
-                  className="w-full"
-                  {...register('remotePairingCode', {
-                    required: 'Please provide a remote pairing code.',
-                  })}
-                />
-              </InputGroup>
-              {errors.remotePairingCode && (
-                <span className="absolute -mt-5 text-red-600 text-xs">
-                  {errors.remotePairingCode.message}
-                </span>
-              )}
-              <Button
-                leftIcon={<IonIcon icon={repeatOutline} />}
-                size="sm"
-                className="uppercase"
-                type="submit"
-              >
-                {t('Initiate Pairing')}
-              </Button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {currentStep === 'pairing' && (
-        <div className="w-80 h-52 rounded-lg border border-4 overflow-hidden transition-all border-dashed border-white bg-phonon-card-gray bg-cover bg-no-repeat">
-          <Button
-            size="xs"
-            colorScheme="red"
-            variant="ghost"
-            className="absolute top-0 left-1"
-            onClick={() => {
-              setShowPairingOptions(false);
-            }}
-          >
-            {t('Cancel')}
-          </Button>
-          <div className="flex flex-col gap-y-2 py-4 px-2 items-center justify-center text-xl">
-            <IonIcon
-              icon={cloudUpload}
-              className="text-white animate-pulse text-5xl"
-            />
-            <div>
-              <span className="block text-center text-white text-base">
-                {t('Awaiting other person to establish pairing...')}
-              </span>
-            </div>
           </div>
         </div>
       )}

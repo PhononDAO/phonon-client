@@ -7,7 +7,7 @@ import { useContext, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import { cloudDownload } from 'ionicons/icons';
 import { CardManagementContext } from '../contexts/CardManagementContext';
-import { CardPairing } from './CardPairing';
+import { CardConnect } from './CardConnect';
 import { CardRemote } from './PhononCardStates/CardRemote';
 
 export const CardTray: React.FC<{
@@ -71,7 +71,7 @@ export const CardTray: React.FC<{
   ) : (
     <>
       {showPairingOptions ? (
-        <CardPairing setShowPairingOptions={setShowPairingOptions} />
+        <CardConnect setShowPairingOptions={setShowPairingOptions} />
       ) : (
         <div
           ref={drop}
@@ -96,7 +96,7 @@ export const CardTray: React.FC<{
                   setShowPairingOptions(!showPairingOptions);
                 }}
               >
-                {t('Pair Remote Card')}
+                {t('Send to Remote Card')}
               </Button>
             </>
           )}

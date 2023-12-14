@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@300&display=swap');
+
+@font-face {
+  font-family: 'BandeinsSansBold';
+  src: local('BandeinsSansBold'),
+    url(./assets/fonts/bandeins-sans/BandeinsSansBold.otf) format('opentype');
+}
+
+@font-face {
+  font-family: 'BandeinsSansRegular';
+  src: local('BandeinsSansRegular'),
+    url(./assets/fonts/bandeins-sans/BandeinsSansRegular.otf) format('opentype');
+}
+
+@font-face {
+  font-family: 'BandeinsSansLight';
+  src: local('BandeinsSansLight'),
+    url(./assets/fonts/bandeins-sans/BandeinsSansLight.otf) format('opentype');
+}
+
+@font-face {
+  font-family: 'BandeinsSansSemiBold';
+  src: local('BandeinsSansSemiBold'),
+    url(./assets/fonts/bandeins-sans/BandeinsSansSemiBold.otf)
+      format('opentype');
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.flip-card {
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.flip-card-locked .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  backface-visibility: hidden;
+}
+
+.flip-card-front {
+  transform: rotateY(180deg);
+}
+
+.flip-card-tilt:hover {
+  transform: perspective(2000px) rotateY(25deg);
+}
+
+.animation-delay-1 {
+  animation-delay: 1s;
+}
+.animation-delay-2 {
+  animation-delay: 2s;
+}
+.animation-delay-3 {
+  animation-delay: 3s;
+}

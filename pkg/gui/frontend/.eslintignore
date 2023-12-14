@@ -1,0 +1,12 @@
+# folders
+lib/
+node_modules/
+# files
+**/*.less
+**/*.css
+**/*.scss
+**/*.json
+**/*.png
+**/*.svg
+**/*.otf
+tailwind.config.js

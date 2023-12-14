@@ -1,0 +1,102 @@
+{
+  "name": "frontend",
+  "description": "Phonon Manager",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@chakra-ui/react": "^2.3.5",
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
+    "@ionic/core": "^6.3.0",
+    "@ionic/react": "^6.3.0",
+    "@ionic/react-router": "^6.3.0",
+    "@ionic/react-test-utils": "^0.3.1",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "bignumber.js": "^9.1.0",
+    "framer-motion": "^7.5.3",
+    "i18next": "^21.9.2",
+    "i18next-browser-languagedetector": "^6.1.5",
+    "i18next-http-backend": "^1.4.4",
+    "ionicons": "^6.0.3",
+    "luxon": "^3.0.4",
+    "pluralize-react": "^0.0.1",
+    "react": "^18.2.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dom": "^18.2.0",
+    "react-error-boundary": "^3.1.4",
+    "react-hook-form": "^7.38.0",
+    "react-hot-toast": "^2.4.0",
+    "react-i18next": "^11.18.6",
+    "react-scripts": "5.0.1",
+    "uuid": "^9.0.0",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "start:tailwind": "tailwindcss -i src/assets/css/index.css -o src/styles.css --watch",
+    "version": "npx genversion ./src/constants/Version.ts --es6",
+    "build": "npm run version && react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint --config .eslintrc.js --ignore-path .eslintignore src/**/*",
+    "i18n-extract": "i18next 'src/**/*.{ts,tsx}' -c './i18next-parser.config.mjs'"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.20",
+    "@types/node": "^12.19.15",
+    "@types/qrcode.react": "^1.0.2",
+    "@types/react": "^18.0.21",
+    "@types/react-dom": "^18.0.6",
+    "@types/react-router": "^5.1.18",
+    "@types/react-router-dom": "^5.1.7",
+    "@typescript-eslint/eslint-plugin": "^5.39.0",
+    "@typescript-eslint/parser": "^5.39.0",
+    "autoprefixer": "^10.4.12",
+    "eslint": "^8.24.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard-with-typescript": "^23.0.0",
+    "eslint-plugin-formatjs": "^2.20.2",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-promise": "^6.0.1",
+    "eslint-plugin-react": "^7.31.8",
+    "eslint-plugin-react-hooks": "^4.3.0",
+    "eslint-plugin-testing-library": "^5.0.4",
+    "eslint-plugin-unused-imports": "^2.0.0",
+    "genversion": "^3.1.1",
+    "i18next-parser": "^6.5.0",
+    "lint-staged": "^12.5.0",
+    "postcss": "^8.4.17",
+    "prettier": "2.7.1",
+    "react-test-renderer": "^18.2.0",
+    "tailwindcss": "^3.1.8",
+    "typescript": "^4.8.4"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "npm run lint -- --quiet --fix --no-error-on-unmatched-pattern"
+    ]
+  }
+}

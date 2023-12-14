@@ -1,5 +1,6 @@
 .vscode/
 jumpbox
+main
 phonon
 phonon.wxs
 phonon.wixobj
@@ -10,7 +11,7 @@ phonon.wixpdb
 release/win/wix/phonon.wixobj
 localCerts/
 apdu.log
-gui/frontend/build/*
+
 androidSDK/
 release/MacOS/Phonon.app/Contents/MacOS/phonon
 phonon.dmg
@@ -18,4 +19,7 @@ phonon_arm64
 phonon_x86_64
 release/MacOS/Phonon.app/Contents/MacOS/phonon_arm64
 release/MacOS/Phonon.app/Contents/MacOS/phonon_x86_64
-result
+
+# Build directories
+node_modules
+build
